@@ -1,0 +1,1440 @@
+\documentclass{llncs}
+\usepackage{amsmath}
+\usepackage{amssymb}
+% \usepackage[left=4.8cm,right=4.8cm]{geometry}
+\input{commands.tex}
+
+\newcommand{\chartp}{\ctext{char}}
+\newcommand{\fonttp}{\ctext{font}}
+
+% \renewcommand{\baselinestretch}{0.95}
+
+\begin{document}
+\pagestyle{plain}
+\title{Design Patterns in Separation Logic}
+
+\author{Neelakantan R. Krishnaswami\inst{1} \and Jonathan Aldrich\inst{1} 
+        \and Lars Birkedal\inst{2}}
+
+\institute{
+Carnegie Mellon University, Pittsburgh, USA
+\and
+IT University of Copenhagen, Copenhagen, Denmark
+}
+% %       \affaddr{Rued Langgaards Vej 7}\\
+% %       \affaddr{Copenhagen, Denmark}\\
+%        \email{birkedal@itu.dk}
+% }
+
+\maketitle
+% \vspace{-2em}
+\begin{abstract}
+Object-oriented programs are notable for making use of both
+higher-order abstractions and mutable, aliased state. Either feature
+alone is challenging for formal verification, and the combination
+yields very flexible program designs and correspondingly difficult
+verification problems. In this paper, we show how to
+formally specify and verify programs that use several common design
+patterns in concert.
+\end{abstract}
+
+% \category{F.3}{Logics and Meanings of Programs}{Specifying and Verifying and Reasoning about Programs}
+%A category including the fourth, optional field follows...
+% \category{D.2.8}{Software Engineering}{Metrics}[complexity measures, performance measures]
+
+% \terms{Separation Logic, Design Patterns, Formal Verification}
+
+\section{Introduction}
+% \vspace{-1em}
+% {\large \textbf{TODO: Fix line numbering}}
+
+% It is more difficult to reason about programs that use aliasing than
+% programs that do not use mutable shared data. Likewise, it is more
+% difficult to reason about programs that use higher order features than
+% first order programs. When both features are combined, we run into new
+% problems which are more complex than the sum of these
+% already-challenging parts.
+% 
+% Furthermore, higher-order imperative programs are commonly found in
+% practice. Object-oriented programs make heavy use of both shared
+% state, and objects themselves can be seen as a form of higher-order
+% state, via the closure-object correspondence. So beyond the inherent
+% technical interest in learning how to reason about higher-order
+% imperative programs, there are also great practical applications for
+% good answers to the question of how to verify such programs.
+
+The widespread use of object-oriented languages creates an opportunity
+for designers of formal verification systems, above and beyond a
+potential ``target market''. Object-oriented languages have been used
+for almost forty years, and in that time practitioners have developed
+a large body of informal techniques for structuring object-oriented
+programs called \emph{design patterns}\cite{GoF}.  Design patterns
+were developed to both take best advantage of the flexibility
+object-oriented languages permit, and to control the potential
+complexities arising from the unstructured use of these features.
+
+This pair of characteristics make design patterns an excellent set of
+benchmarks for a program logic.  First, design patterns use higher
+order programs to manipulate aliased, mutable state. This is a
+difficult combination for program verification systems to handle, and
+attempting to verify these programs will readily reveal weaknesses or
+lacunae in the program logic. Second, the fact that patterns are
+intended to structure and modularize programs means that we can use
+them to evaluate whether the proofs in a program logic respect the
+conceptual structure of the program -- we can check to see if we need
+to propagate conceptually irrelevant information out of program
+modules order to meet our proof obligations. Third, we have the
+confidence that these programs, though small, actually reflect
+realistic patterns of usage.
+
+In this paper, we describe a core higher-order imperative language and
+a specification language based on separation logic for it. Then, we
+give good specifications for and verify the following programs:
+
+\begin{itemize}
+\item We prove a collection and iterator implementation, which builds
+  the Java aliasing rules for iterators into its specification, and
+  which allows the construction of new iterators from old ones via the
+  composite and decorator patterns.  
+
+\item We prove a general version of the flyweight pattern (also known as
+  hash-consing in the functional programming community), which is a
+  strategy for aggressively creating aliased objects to save memory
+  and permit fast equality tests. This also illustrates the use of the
+  factory pattern.
+
+\item We prove a general version of the subject-observer pattern in a
+  way that supports a strong form of information hiding between the
+  subject and the observers.
+\end{itemize}
+% \vspace{-2.5em}
+
+\begin{figure*}
+\renewcommand{\baselinestretch}{0.9}
+\begin{displaymath}
+\begin{array}{llcl}  
+\mbox{Types} & A & ::= & 1 \bnfalt A \to B \bnfalt \listtype{A} \bnfalt \opttype{A} \bnfalt  \N \bnfalt \reftype{A} \bnfalt \monad{A}\\ 
+
+\mbox{Pure Terms} 
+& e & ::= & \unit \bnfalt x \bnfalt e\;e' \bnfalt \fun{x}{A}{e} \bnfalt
+            \ctext{Nil} \bnfalt \ctext{Cons}(e,e') \bnfalt 
+            \ctext{None} \bnfalt \ctext{Some}(e) \\
+&   & |   & \listcase{e}{e'}{x}{xs}{e''} \bnfalt
+            \optcase{e}{e'}{x}{e''}\\ 
+&   & |   & \z \bnfalt \s{e} \bnfalt \iter{e}{e_z}{x}{e_s} \bnfalt
+            \fix{}{e} \bnfalt \comp{c} \\
+\mbox{Computations} 
+& c & ::= & e \bnfalt \letv{x}{e}{c} \bnfalt \run{e}  \bnfalt
+            \newref{A}{(e)}\bnfalt !e \bnfalt e := e' \\
+\end{array}
+\end{displaymath}
+\caption{Types and Syntax of the Programming Language}
+\label{lang-syntax}
+\renewcommand{\baselinestretch}{0.95}
+\end{figure*}
+
+
+
+% \vspace{-2em}
+\section{Formal System}
+% \vspace{-1em}
+
+The formal system we present has three layers. First, we have a core
+programming language, a simply-typed functional language which
+isolates all side effects inside a monadic
+type~\cite{pfenning-davies}. The side effects include nontermination
+and the allocation, access, and modification of general references
+(including pointers to closures).  Then, we give an assertion language
+based on higher-order separation logic~\cite{hosl} to describe the
+state of a heap. Separation logic allows us to give a clean treatment
+of issues related to specifying and controlling aliasing, and
+higher-order predicates allow us to abstract over the heap. This
+enables us to enforce encapsulation by hiding the exact layout of a
+module's heap data structures.  Finally, we give a specification logic
+to describe the effects of programs. We begin with Hoare triples
+$\spec{P}{c}{a:A}{Q}$, which assert that if the heap is in a state
+described by the assertion $P$, then executing the command $c$ will
+result in a postcondition state $Q$ (with the return value of the
+command bound to $a$). We then build a first-order logic of
+specifications, with Hoare triples as the atomic propositions.
+
+% % \vspace{-2em}
+% % \vspace{-3em}
+\textbf{Programming Language.} The core programming language we have
+formalized is an extension of the simply-typed lambda calculus with a
+monadic type constructor to represent side-effecting computations.
+The types of our language are the unit type $1$, the function space $A
+\to B$, the natural number type $\N$, the reference type
+$\reftype{A}$, as well as the option type $\opttype{A}$ and the
+mutable linked list type $\listtype{A}$. In addition, we have the
+monadic type $\monad{A}$, which is the type of suspended
+side-effecting computations producing values of type $A$. Side effects
+include both heap effects (such as reading, writing, or allocating a
+reference) and nontermination.
+
+We maintain such a strong distinction between pure and impure code for
+two reasons. First, it allows us to validate very powerful equational
+reasoning principles for our language: we can validate the full
+$\beta$ and $\eta$ rules of the lambda calculus for each of the pure
+types. This simplifies reasoning even about imperative programs,
+because we can relatively freely restructure the program source to
+follow the logical structure of a proof. Second, when program
+expressions appear in assertions -- that is, the pre- and
+post-conditions of Hoare triples -- they must be pure. However,
+allowing a rich set of program expressions like function calls or
+arithmetic in assertions makes it much easier to write
+specifications. So we restrict which types can contain side-effects,
+and thereby satisfy both requirements.
+%
+The pure terms of the language are typed with the typing judgement
+$\judgeE{\Gamma}{e}{A}$, given in Figure~\ref{lang-typing}, and which
+can be read as ``In variable context $\Gamma$, the pure expression $e$
+has type $A$.'' Computations are typed with the judgement
+$\judgeC{\Gamma}{c}{A}$ (also in Figure~\ref{lang-typing}), which can
+be read as ``In the context $\Gamma$, the computation $c$ is
+well-typed at type $A$ .''
+
+We have $\unit$ as the inhabitant of $1$, natural numbers $\z$ and
+$\s{e}$, functions $\fun{x}{A}{e}$, optional expressions
+$\ctext{None}$ and $\ctext{Some }e$, and list expressions
+$\ctext{Nil}$ and $\ctext{Cons}(e,e')$. $\ctext{Nil}$ is the
+constructor for an empty list, and $\ctext{Cons}(e, e')$ is the
+constructor for a cons-cell.  In Figure~\ref{lang-typing},
+\textsc{EListCons} states the tail of a list is of \emph{reference} type
+$\reftype{\listtype{A}}$, which means that our list type is a type of
+\emph{mutable} lists. We also have the corresponding eliminations for
+each type, including case statements for option types and list
+types. For the natural numbers, we add a primitive recursion construct
+$\iter{e}{e_z}{x}{e_s}$. If $e = \z$, this computes $e_z$ , and if $e
+= \s{e'}$, it computes $e_s[(\iter{e'}{e_z}{x}{e_s})/x]$.  This
+bounded iteration allows us to implement (for example) arithmetic
+operations as pure expressions.
+
+Suspended computations $\comp{c}$ inhabit the monadic type
+$\monad{A}$.  These computations are not immediately evaluated, which
+allows us to embed them into the pure part of the programming
+language. Furthermore, we can take fixed points of monad-valued
+functions (\textsc{EFix}), which gives us a general recursion
+facility. (We restrict $\ctext{fix}$ to monad-valued domains because
+of the possibility of nontermination. Also, we will write recursive
+functions as syntactic sugar for $\ctext{fix}$.)  As \textsc{CPure}
+shows, we can treat any pure expression of type $A$ as a computation
+that coincidentally has no side-effects.  In \textsc{CRun}, a
+suspended computation of type $\monad{A}$ can be forced to execute
+with the $\run{e}$ command.
+
+In \textsc{CLet}, we have a sequential composition
+$\letv{x}{e}{c}$. Intuitively, the behavior of this command is as
+follows. We evaluate $e$ until we get some $\comp{c'}$, and then
+evaluate $c'$, modifying the heap and binding its return value to
+$x$. Then, in this augmented environment, we run $c$. The fact that
+monadic commands have return values explains why our sequential
+composition is also a binding construct. Finally, we have computations
+$\newref{A}{(e)}$, $!e$, and $e := e'$, which let us allocate, read
+and write references, respectively.
+
+This language has been given a typed denotational semantics, which for
+space reasons we do not give here. The details of the semantics
+(including the assertion and specification levels) can be found in the
+companion tech report~\cite{tech-report}.
+% % % \vspace{-2em}
+
+\begin{figure*}
+\begin{mathpar}
+% \inferrule*[right=EVar]
+%           {x:A \in \Gamma}
+%           {\judgeE{\Gamma}{x}{A}}
+% \and
+% \inferrule*[right=ELam]
+%           {\judgeE{\Gamma, x:A}{e}{B}}
+%           {\judgeE{\Gamma}{\fun{x}{A}{e}}{A \to B}}
+% \and
+% \inferrule*[right=EApp]
+%           {\judgeE{\Gamma}{e_1}{B \to A} \\
+%            \judgeE{\Gamma}{e_2}{B}}
+%           {\judgeE{\Gamma}{e_1\;e_2}{A}}
+% \and
+% \inferrule*[right=EUnit]
+%           { }
+%           {\judgeE{\Gamma}{\unit}{1}}
+% \and
+% \inferrule*[right=EListNil]
+%           { }
+%           {\judgeE{\Gamma}{\ctext{Nil}}{\listtype{A}}}
+% \and
+\inferrule*[right=EListCons]
+          {\judgeE{\Gamma}{e}{A} \\
+           \judgeE{\Gamma}{e'}{\reftype{\listtype{A}}}}
+          {\judgeE{\Gamma}{\ctext{Cons}(e, e')}{\listtype{A}}}
+\and
+% \inferrule*[right=EListCase]
+%           {\judgeE{\Gamma}{e}{\listtype{A}} \\
+%            \judgeE{\Gamma}{e'}{B} \\
+%            \judgeE{\Gamma, h:A, t:\reftype{\listtype{A}}}{e''}{B}}
+%           {\judgeE{\Gamma}{\listcase{e}{e'}{h}{t}{e''}}{B}}
+% \and
+% \inferrule*[right=EOptNone]
+%           { }
+%           {\judgeE{\Gamma}{\ctext{None}}{\opttype{A}}}
+% \and
+% \inferrule*[right=EOptSome]
+%           {\judgeE{\Gamma}{e}{A}}
+%           {\judgeE{\Gamma}{\ctext{Some}\;e}{\opttype{A}}}
+% \and
+% \inferrule*[right=EOptCase]
+%           {\judgeE{\Gamma}{e}{\opttype{A}} \\
+%            \judgeE{\Gamma}{e'}{B} \\
+%            \judgeE{\Gamma, x:A}{e''}{B}}
+%           {\judgeE{\Gamma}{\optcase{e}{e'}{x}{e''}}{B}}
+% \and
+\inferrule*[right=EMonad]
+          {\judgeC{\Gamma}{c}{A}}
+          {\judgeE{\Gamma}{\comp{c}}{\monad{A}}}
+\and
+\inferrule*[right=EFix]
+          {\judgeE{\Gamma}{e}{(A \to \monad{B}) \to (A \to \monad{B})}}
+          {\judgeE{\Gamma}{\fix{}{e}}{A \to \monad{B}}}
+\\
+\inferrule*[right=CLet]
+          {\judgeE{\Gamma}{e}{\monad{A}} \\
+           \judgeC{\Gamma,x:A}{c}{B}}
+          {\judgeC{\Gamma}{\letv{x}{e}{c}}{B}}
+\and
+\inferrule*[right=CPure]
+          {\judgeE{\Gamma}{e}{A}}
+          {\judgeC{\Gamma}{e}{A}}
+\and
+\inferrule*[right=CRun]
+          {\judgeE{\Gamma}{e}{\monad{A}}}
+          {\judgeC{\Gamma}{\run{e}}{A}}
+\and
+\inferrule*[right=CRefNew]
+          {\judgeE{\Gamma}{e}{A}}
+          {\judgeC{\Gamma}{\newref{A}{(e)}}{\reftype{A}}}
+\and
+\inferrule*[right=CRefRead]
+          {\judgeE{\Gamma}{e}{\reftype{A}}}
+          {\judgeC{\Gamma}{!e}{A}}
+\and
+\inferrule*[right=CRefWrite]
+          {\judgeE{\Gamma}{e}{\reftype{A}} \\
+           \judgeE{\Gamma}{e'}{A}}
+          {\judgeE{\Gamma}{e := e'}{1}}
+\end{mathpar}
+\caption{Selected Typing Rules}
+\label{lang-typing}
+\end{figure*}
+
+
+
+\textbf{Assertion Language.} The sorts and syntax of the assertion
+language are given in Figure~\ref{assert-syntax}. The assertion
+language is a version of separation logic, extended to higher order.
+
+% \renewcommand{\baselinestretch}{0.95}
+In ordinary Hoare logic, a predicate describes a set of program states
+(in our case, heaps), and a conjunction like $p \land q$ means that a
+heap in $p \land q$ is in the set described by $p$ and the described
+by $q$. While this is a natural approach, aliasing can become quite
+difficult to treat -- if $x$ and $y$ are pointer variables, we need to
+explicitly state whether they alias or not. This means that as the
+number of variables in a program grows, the number of aliasing
+conditions grows quadratically. 
+% Worse still, this can defeat modular
+% proof, since as soon as we put a subprogram into a larger one, we need
+% to add aliasing assertions describing possible interference between
+% the subprogram and the larger program.
+With separation logic, we add the \emph{spatial} connectives to
+address this difficulty. A separating conjunction $p * q$ means that
+the state can be broken into two \emph{disjoint} parts, one of which
+is in the state described by $p$, and the other of which is in the
+state described by $q$. The disjointness property makes the
+noninterference of $p$ and $q$ implicit. This avoids the unwanted
+quadratic growth in the size of our assertions. In addition to the
+separating conjunction, we have its unit $\emp$, which is true of the
+empty heap, and the points-to relation $e \pointsto e'$, which holds
+of the one-element heap in which the reference $e$ has contents
+$e'$. A heap is described by the ``magic wand'' $p \wand q$, when we
+can merge it with any disjoint heap described by $p$, and the
+combination is described by $q$.
+
+% \renewcommand{\baselinestretch}{1}
+The universal and existential quantifiers $\forall x:\omega.\;p$ and
+$\exists x:\omega.\;p$ are higher-order quantifiers ranging over all
+sorts $\omega$. The sorts include the language types $A$, the sort of
+propositions $\assert$, function spaces over sorts $\omega \To
+\omega'$, and mathematical sequences $\seqsort{\omega}$. Constructors
+for terms of all these sorts in the syntax given in
+Figure~\ref{assert-syntax}. For the function space, we include
+lambda-abstraction and application. For sequence sorts, we have
+sequence-formers $\epsilon$ for the empty sequence and $p \cdot ps$
+for adding one element to a sequence, as well as a primitive iteration
+construct over sequences,
+$\iterseq{p}{p_\epsilon}{(x,acc)}{p_\cdot}$. With iteration, we can
+write constructor-level map and filter functions (as in functional
+programming) and use them in our specifications. Our examples will
+also make use of finite sets and functions, without formalizing them
+in our syntax.
+
+Finally, we include the atomic formulas $\validprop{S}$, which are
+\emph{assertions} that a \emph{specification} $S$ holds. This facility
+is useful when we write assertions about pointers to code -- for
+example, the assertion $r \pointsto cmd$ $\land$
+$(\spec{p}{\run{cmd}}{a:A}{q})$ $\valid$ says that the reference $r$
+points to a monadic term $cmd$, whose behavior is described by the
+Hoare triple $\spec{p}{\run{cmd}}{a:A}{q}$.
+
+% % \vspace{-2em}
+\begin{figure}
+\begin{displaymath}
+\begin{array}{llcl}
+\mbox{Assertion Sorts} & 
+\omega & ::= & A \bnfalt \omega \To \omega \bnfalt \seqsort{\omega} 
+               \bnfalt \assert 
+\\[0.5em]
+\mbox{Assertion} & 
+p & ::= & e \bnfalt x \bnfalt \fun{x}{\omega}{p} \bnfalt p\;q \bnfalt
+          \epsilon \bnfalt p \cdot ps \bnfalt 
+          \iter{p}{p_{\epsilon}}{(x,acc)}{p_\cdot} \\
+\mbox{Constructors}& &  |  & \top \bnfalt p \land q \bnfalt p \implies q 
+          \bnfalt \bot \bnfalt p \vee q \bnfalt
+          \emp \bnfalt p * q \bnfalt p \wand q \bnfalt e \pointsto e' \\
+& &  |  & \forall x:\omega.\; p \bnfalt \exists x:\omega.\; p \bnfalt
+          \validprop{S} 
+\\[0.5em]
+\mbox{Specifications} &
+S & ::= & \spec{p}{c}{a:A}{q} \bnfalt S \specand S' \bnfalt
+          S \specimp S' \bnfalt S \specor S' \\
+& &  |  & \forall x:\omega.\; S \bnfalt \exists x:\omega.\;S \bnfalt \setof{p}
+\\
+\end{array}
+\end{displaymath}
+\caption{Syntax of Assertions and Specifications}
+\label{assert-syntax}
+\end{figure}
+% % \vspace{-3em}
+\textbf{Specification Language.} Given programs and assertions about
+the heap, we need specifications to relate the two. We begin with the
+Hoare triple $\spec{p}{c}{a:A}{q}$. This specification represents the
+claim that if we run the computation $c$ in any heap the predicate $p$
+describes, then if $c$ terminates, it will end in a heap described by
+the predicate $q$. Since monadic computations can return a value in
+addition to having side-effects, we add the binder $a:A$ to the third
+clause of the triple to let us name and use the return value in the
+postcondition.
+
+We then treat Hoare triples as one of the atomic proposition forms of
+a first-order intuitionistic logic (see
+Figure~\ref{assert-syntax}). The other form of atomic proposition are
+the specifications $\setof{p}$, which are $specifications$ saying that
+an \emph{assertion} $p$ is true. These formulas are useful for
+expressing aliasing relations between defined predicates, without
+necessarily revealing the implementations. In addition, we can form
+specifications with conjunction, disjunction, implication, and
+universal and existential quantification over the sorts of the
+assertion language. 
+
+% For example, we give a simple specification for a hash table module
+% below:
+% 
+% {\small
+% \begin{tabbing}
+% 1 \qquad \= $\exists table : A_t \times (B \to^{fin} C) \To \assert.$ \\
+% 2 \> $\exists$\=$ \ctext{newtable} : 1 \to \monad{A_t}, \;\;
+%               \ctext{update} : A_t \times B \times C \to \monad{1}, \;\;
+%               \ctext{lookup} : A_t \times B \to \monad{(\opttype{C})}.$
+% \\[0.5em]
+% 5 \> $\spec{\emp}{\ctext{newtable}()}{a:A_t}{table(a, [])}$ \\
+% 6 \> $\specand$ \\
+% 7 \> $\forall t, f, b, c.\;$\=$\setof{table(t, f)}$ \\
+% 8 \> \> $\run{\ctext{update}(t, b, c)}$ \\
+% 9 \> \> $\setof{a:1. table(t, [f|b:c])}$ \\
+% 10 \> $\specand$ \\
+% 11 \> $\forall t, b, f.\; $\=$\setof{table(t, f)}$\\
+% 12 \> \>  $\run{\ctext{lookup}(t, b)}$ \\
+% 13 \> \>  $\{$\=$a:\opttype{C}.\;$ \\
+% 14 \> \> \>     $table(t, fn) \land ($\=$(b \in \mbox{dom}(f) \land a = \ctext{Some }f(b)) \vee$ \\
+% 15 \> \> \> \> $(b \not\in \mbox{dom}(f) \land a = \ctext{None})\}$\\
+% \end{tabbing}
+% }
+% % % \vspace{-1.5em}
+% In line 1, we assert the existence of a predicate $table(t,f)$, which
+% describes the region of heap owned by the hash table $t$, and which
+% currently implements the finite function $f$. Then we assert the
+% existence of functions $\ctext{newtable}$, $\ctext{update}$, and
+% $\ctext{lookup}$. On line 5, we give a triple asserting that calling
+% $\ctext{newtable}$ produces a new, empty $table$ object (we write $[]$
+% for an empty finite function). On lines 7-9, we give a triple
+% asserting that $\ctext{update}(t, b, c)$ will update the finite
+% function in $table(t,f)$ to one that is the same, except that it maps
+% $b$ to $c$. And on lines 11-15, we give a triple asserting that
+% $\ctext{lookup}(t,b)$ will return $\ctext{None}$ if $b$ is not in the
+% domain of the table's finite function, and will return the appropriate
+% value if it is.  All of these triples are combined together into one
+% specification using conjunction of specifications $S \specand S'$.
+
+Having a full logic of triples also lets us express program modules as
+formulas of the specification logic. We can expose a module to a
+client as a collection of existentially quantified functions
+variables, and provide the client with Hoare triples describing the
+behavior of those functions. Furthermore, modules can existentially
+quantify over predicates to grant client programs access to module
+state without revealing the actual implementation. A client program
+that uses an existentially quantified specification cannot depend on
+the concrete implementation of this module, since the existential
+quantifier hides that from it -- for example, we can expose a
+$table(t, map)$ predicate that does not reveal whether a hash table is
+implemented with single or double hashing.
+ 
+% Also, we can represent client dependencies within our logic using
+% implication over specifications. If a client program uses a table
+% module $T$, we can prove it separately from the implementation by
+% proving that the client satisfies the specification $T \specimp
+% S$. Then, given any implementation satisfying $T$, we can use modus
+% ponens to conclude that the whole program satisfies $S$.
+% 
+% Specification implications also lets us more easily specify the
+% behavior of higher-order imperative functions. For example, consider
+% the $repeat$ function of type $(\N \times \monad{1}) \to \monad{1}$,
+% which takes a natural number $n$ and a command argument $cmd$ and runs
+% it $n$ times. Clearly, the specification of $repeat$ should depend on
+% the specification of its argument. We can write this as:
+% {\small
+% \begin{tabbing}
+% $\forall$\=$P, i, n, cmd.\;$\\ 
+% \> $(\forall k.\; \spec{P(k)}{\run{cmd}}{a:1}{P(k+1)})$ \\
+% \> $\specimp \spec{P(i)}{\run{repeat(n,cmd)}}{a:1}{P(i+n)}$ \\
+% \end{tabbing}
+% }
+% This specification says that if $cmd$ increments a predicate $P$ by
+% one step (from $P(k)$ to $P(k+1)$, then $repeat(n, cmd)$ will
+% increment it by $n$ steps, which is just what we want.
+
+% 
+% \begin{figure}
+% \begin{tabular}{ll}
+% $\judgeE{\Gamma}{e}{A}$           & Pure Expression Typing \\
+% $\judgeC{\Gamma}{c}{A}$           & Computation Typing \\
+% $\judgeEqE{\Gamma}{e}{e'}{A}$     & Expression Equality \\
+% $\judgeEqC{\Gamma}{c}{c'}{A}$     & Computation Equality \\
+% $\judgeP{\Delta}{p}{\omega}$      & Assertion Constructor Sorting \\
+% $\judgeEqP{\Delta}{p}{q}{\omega}$ & Assertion Constructor Equality \\
+% $\entailsP{\Delta}{p}{p'}$        & Assertion Entailment \\
+% $\judgeS{\Delta}{S}$              & Specification Well-Formedness \\
+% $\entailsS{\Delta}{\Sigma}{S}$    & Specification Validity \\
+% \end{tabular}
+% \caption{Judgements of the Theory}
+% \label{all-judgements}
+% \end{figure}
+% 
+% \vspace{-1em}
+\section{Iterators, Composites and Decorators}
+% % \vspace{-1em}
+% In this section, we show how to integrate the composite, decorator and
+% iterator patterns in a single module. 
+% \vspace{-1em}
+The iterator pattern is a design pattern for uniformly enumerating the
+elements of a collection. The idea is that in addition to a
+collection, we have an auxiliary data structure called the iterator,
+which has an operation $\ctext{next}$. Each time $\ctext{next}$ is
+called, it produces one more element of the collection, with some
+signal when all of the elements have been produced. The iterators are
+mutable data structures whose invariants depend on the collection,
+itself another mutable data structure. Therefore, most object oriented
+libraries state that while an iterator is active, a client is only
+permitted to call methods on a collection that do not change the
+collection state (for example, querying the size of a collection). If
+destructive methods are invoked (for example, adding or removing an
+element), it is no longer valid to query the iterator again.
+
+We also support operations to create new iterators from old ones, and
+to aggregate them into composite iterators. For example, given an
+iterator and a predicate, we can construct a new iterator that only
+returns those elements for which the predicate returns true. This sort
+of decorator takes an iterator object, and \emph{decorates} it to
+yield an iterator with different behavior. Likewise, we can take two
+iterators and a function, and combine them into a new,
+\emph{composite} iterator that returns the result of a parallel
+iteration over them.  These sorts of synthesized iterators are found
+in the \texttt{itertools} library in the Python programming language,
+the Google Java collections library, or the C5 library~\cite{C5} for
+C\#.
+
+Aliasing enters into the picture, above and beyond the restrictions on
+the underlying collections, because iterators are stateful
+objects. For example, if we create a filtering iterator, and advance
+the underlying iterator, then what the filtering iterator will return
+may change. Even more strikingly, we cannot pass the same iterator
+twice to a parallel iteration constructor -- the iterators must be
+disjoint in order to correctly generate the two sequences of elements
+to combine.
+
+Below, we give a specification of an iterator pattern. First, we 
+give the types of our collections and iterators. A collection is just
+a mutable linked list, consisting of pointers to list cells. (For
+simplicity, we only consider lists of natural numbers.) An iterator is
+an element of a recursive tree structure in the style of an ML
+datatype declaration. (In Java, we would have a class hierarchy for
+iterators.) If it is an iterator over a single collection, then it
+will be in the branch $\ctext{Coll }r$, where $r$ is a pointer to a
+linked list -- a finger into the middle of the collection. For filtering
+iterators, we use a constructor of the form $\ctext{Filter}(p, i)$,
+where $p$ is a predicate function and $i$ is the iterator whose
+elements we are selectively yielding. We give pairwise mapping
+iterators via a constructor $\ctext{Map2}(f, i_1, i_2)$, which
+enumerates elements of $i_1$ and $i_2$ in parallel, and applies the
+binary function $f$ to those pairs to produce the yielded elements.
+% % \vspace{-0.5em}
+{\small
+\begin{displaymath}
+\begin{array}{llcl}
+\mbox{Collection Type} & 
+A_c & = & \reftype{\listtype{\N}} \\
+\mbox{Iterator Type} &
+A_i & = & \ctext{Coll of }\reftype{A_c} \bnfalt
+          \ctext{Filter of }((\N \to \ctext{bool}) \times A_i) \bnfalt
+          \ctext{Map2 of }((\N \times \N \to \N) \times A_i \times A_i) 
+\\
+\end{array}
+\end{displaymath}
+\begin{tabbing}
+1 \qquad \= $\exists coll : A_c \times \seqsort{\N} \times \assert \To \assert.$ \\
+2 \> 
+$\exists iter : A_i \times \mathcal{P}^{fin}(A_c \times \seqsort{\N} \times \assert) \times \seqsort{\N} \To \assert.$ \\
+3 \> 
+$\exists \ctext{newcoll} : \unittype \to \monad{A_c}, \;\;
+         \ctext{size} : A_c \to \monad{\N}, \;\;
+         \ctext{add} : A_c \times \N \to \monad{\unittype}.$\\
+4 \> 
+$\exists \ctext{newiter} : A_c \to \monad{A_i}, \;\;
+          \ctext{filter} : (\N \to \ctext{bool}) \times A_i  \to \monad{A_i}.$ \\
+5 \> 
+$\exists$\=$ \ctext{map2} : (\N \times \N \to \N) \times A_i \times A_i \to \monad{A_i}, \;\;
+              \ctext{next} : A_i \to \monad{(\opttype{\N})}.$  \\[0.5em]
+
+6 \>
+\> $\spec{\emp}{\run{\ctext{newcoll()}}}{a:A_c}{\exists P.\; coll(a, \epsilon,P)}$ \\
+\>
+\> $\specand$ \\
+7 \>
+\> $\forall c, P, xs.\;$\=
+         $\setof{coll(c, xs, P)}
+          \run{\ctext{size}(c)}
+           \setof{a:\N.\; coll(c, xs, P) \land a = |xs|}$ \\
+\> 
+\> $\specand$ \\
+8 \> \> $\forall c, P, x, xs.\;$\=
+               $\setof{coll(c, xs, P)}
+                \;\run{\ctext{add}(c, x)}\;
+                \setof{a:1.\; \exists Q.\; coll(c, x\cdot xs, Q)}$ \\
+\>
+\> $\specand$ \\
+9 \>
+\> $\forall c, P, xs.\;$\=
+    $\setof{coll(c, xs, P)}
+     \run{\ctext{newiter}(c)}
+     \setof{a:A_i.\; coll(c, xs, P) * iter(a, \setof{(c, xs, P)}, xs)}$ \\
+\>
+\> $\specand$ \\
+10 \>
+\> $\forall p, i, S, xs.\;$\=
+         $\setof{iter(i, S, xs)}
+          \;\run{\ctext{filter}(p, i)}\;
+          \setof{a:A_i.\; iter(a, S, filter\; p\;xs)}$ \\
+ \> 
+\> $\specand$ \\
+11 \> 
+\> $\forall f, i, S,$\=$ xs, i', S', xs'.\;$ \= 
+     $\setof{iter(i, S, xs) * iter(i', S', xs') \land S \cap S' = \emptyset}$ \\
+12 \> \> \> \> $\run{\ctext{map2}(f, i, i')}$ \\
+13 \> \> \> \>$\setof{a:A_i.\; iter(a, S \cup S', map\;f\;(zip\;xs\;xs'))}$ \\
+\>
+\> $\specand$ \\
+14 \>
+\> $\forall i, S.\;$\=
+    $\setof{colls(S) * iter(i, S, \epsilon)}  
+      \run{\ctext{next}(i)}
+      \setof{a:\opttype{\N}.\; colls(S) * iter(i, S, \epsilon) \land a = \ctext{None}}$ \\
+\>
+\> $\specand$ \\
+15 \> \> $\forall i,$\=$ S, x, xs.\;$ \= 
+  $\setof{colls(S) * iter(i, S, x \cdot xs)}
+   \run{\ctext{next}(i)}
+   \setof{a:\opttype{\N}.\; 
+              colls(S) * iter(i, S, xs) \land a = (\ctext{Some}\;x)}$ 
+\\[0.5em]
+$colls(\emptyset) \qquad\qquad\qquad\;\;$ \=$\equiv\;$\= $\emp$ \\
+$colls(\setof{(c,xs,P)} \cup S)$ \> $\equiv$ \> $coll(c, xs, P) * colls(S)$ \\
+\end{tabbing}
+}
+
+% \vspace{-2em}
+In this specification, the predicate $coll(c, xs, P)$ (on line 1) is a
+three place predicate describing the state of a collection. The first
+argument $c$ names the collection object that owns this state in the
+heap. The second argument, $xs$, is the abstract sequence that the
+collection $c$ currently represents. As $c$ is mutated, $xs$ can
+change. The final argument, $P$, represents the \emph{abstract state}
+of the collection. We use this argument to track whether an operation
+that uses $c$ makes any destructive changes to it. Since the iterator
+protocol asks that we not call any destructive operations, this field
+lets us tell whether a function has made such a change, or not.
+%
+The predicate $iter(i, S, xs)$ (on line 2) is the predicate describing
+the state of an iterator. The first argument $i$ is the iterator
+constructor which owns this heap state. The finite set $S$ is a set of
+triples describing the \emph{support} of the iterator -- the triples
+$(c,xs,P)$ in this set describe all the collections the iterator will
+examine in its enumeration. The third argument, $xs$, is a sequence 
+corresponding to the elements that the iterator has yet to produce. 
+
+$\ctext{newcoll}$ (specified on line 6) creates a new,
+empty collection, unaliased with any other collection. 
+$\ctext{size}(c)$ (line 7) takes a
+collection $c$, and returns the number of elements in $c$. The
+abstract state $P$ of the $coll(c, xs, P)$ predicate is unchanged in
+the pre- and post-conditions, indicating that this function does not
+change the abstract state. $\ctext{add}(c, x)$ 
+(line 8) takes a collection $c$, and imperatively
+adds the element $x$ to the collection. The abstract state is
+existentially quantified in the postcondition, indicating that it can
+be modified by the call to $\ctext{add}$.
+%
+$\ctext{newiter}(c)$ (line 9) takes a collection $c$, and returns an
+iterator over it. The returned iterator predicate $iter(a,$
+$\setof{(c, xs, P)}, xs)$ states that $a$ is the iterator object,
+whose support is the collection $\setof{(c, xs, P)}$, and which will
+produce the elements $xs$ (the same as the elements of $c$).
+
+$\ctext{filter}(p, i)$ (line 10) takes a boolean function $p$ and an
+iterator $i$, and returns a new iterator which will enumerate only
+those elements which for which $p$ returns true. (We express this with
+a logical function $filter$ called on the sequence $xs$.) Note that
+$\ctext{filter}(p, i)$ consumes the original iterator state
+$iter(i, S, xs)$ -- the postcondition state only mentions the state
+associated with the return value of the the call to
+$\ctext{filter}$. This reflects the fact that the filtered iterator
+takes ownership of the underlying iterator, in order to prevent third
+parties from making calls to $\ctext{next}(i)$ and possibly changing
+the state of the filtered iterator.
+
+$\ctext{map2}(f, i_1, i_2)$ (lines 11-13) takes a binary function $f$,
+and two iterators $i_1$ and $i_2$. From an initial state $iter(i_1, S,
+xs) * iter(i_2, S', ys)$, a call to $\ctext{map2}$ will return a new
+iterator, whose support is the union of each argument's support, and
+whose supply of values is the result of pairing the elements of $i_1$
+and $i_2$ and applying $f$ to them. As with $\ctext{filter}$,
+$\ctext{map2}$ takes ownership of the state of its argument iterators
+and consumes them in the postcondition.
+
+$\ctext{next}(i)$ (lines 14-15) takes an iterator $i$ as an argument.
+In each precondition we ask for both an iterator predicate $iter(i, S,
+-)$, and the collections $colls(S)$. $colls(S)$ iterates over the set
+$S$, joining each $(c,xs,P)$ in $S$ into a large separated conjunction
+$coll(c_1, xs_1, P_1) * \ldots * coll(c_k, xs_k, P_k)$. This expresses
+the requirement that we need \emph{all} of the collections $i$ depends
+on, all in the correct abstract state.
+
+If the iterator is exhausted, $\ctext{next}(i)$ returns $\ctext{None}$
+(line 14). If the iterator still has elements (i.e., is in a state
+$iter(i, S, x\cdot xs)$), it returns the first element as
+$\ctext{Some}\;x$, and sets the state to $iter(i, S, xs)$ in the
+postcondition (line 15). We give two specifications purely for
+readability; it lets us avoid giving a cumbersome combined
+specification.
+%
+For space reasons, we cannot give the complete proof, so we give the
+implementation of this module and its predicates below:
+{\small
+\begin{tabbing}
+1\qquad \= $coll$\=$(c, xs, P) \equiv list(c, xs) \land P \land \mbox{exact}(P)$ \\[0.5em]
+2 \> $list(c, \epsilon)$ \qquad\= $\equiv$ \= $c \pointsto \ctext{Nil}$ \\
+3 \> $list(c, x\cdot xs)$ \> $\equiv$ \> 
+   $\exists c'.\; c \pointsto \ctext{Cons}(x, c') * list(c', xs)$ 
+\\[0.5em]
+4 \> $iter$\=$(\ctext{Map2}(f, i_1, i_2), S, xs)$\=$ \equiv$ \= 
+         $\exists$\=$xs_1, xs_2, S_1, S_2.$ \\
+\> \>\>\>\>$xs = (map\; f\; (zip\; xs_1\; xs_2)) \land (S = S_1 \uplus S_2) \;\land$\\
+\> \>\>\>\>$iter(i_1, S_1, xs_1) * iter(i_2, S_2, xs_2)$ \\
+5 \> $iter(\ctext{Filter}(p, i), S, xs) \equiv$ 
+   $\exists xs'.\;$\=$xs = filter\;p\;xs' \;\land\; iter(i, S, xs')$ \\
+6 \> $iter(\ctext{Coll}(l), \setof{(c, xs, P)}, zs) \equiv$ \= 
+ $\exists$\=$ c', ys.\; xs = ys \cdot zs \land l \pointsto c' * $ \\
+\> \> \> $(coll$\=$(c, xs, P) \wand\;$\\ 
+\> \> \> \> \!\!\!\!$[(coll(c, xs, P) \land (segment(c, c', ys) * list(c', zs)))]$
+\\[0.5em]
+7 \> $segment(c, c', \epsilon)$ \qquad\=$\equiv c = c' \land \emp$ \\
+8 \> $seg$\=$ment(c, c', x\cdot xs) \equiv \exists c''.\; c \pointsto \ctext{Cons}(x, c'') * segment(c'', c', xs)$
+\\[0.5em]
+
+9 \> $\ctext{newcoll}() \equiv \comp{\newref{\reftype{\listtype{\N}}}{\ctext{Nil}}}$ 
+\\[0.5em]
+10 \> $\ctext{size}(lst) \equiv$ \=  $[$\=$ \letv{cell}{\comp{!lst}}{}$ \\
+11 \> \> \> $\run{}\ctext{case}($\=$cell,$ \\
+12 \> \> \> \> $\ctext{Nil} \to \comp{0}, $ \\
+13 \> \> \> \> $\ctext{Cons}(h,t) \to \comp{\letv{n}{\ctext{size(t)}}{n + 1}})]$ 
+\\[0.5em]
+
+14 \> $\ctext{add}(c, x) \equiv$ \=
+          $[$\= $\letv{cell}{\comp{!c}}{}$ \\
+15 \> \> \> $\letv{r}{\comp{\newref{\reftype{\listtype{\N}}}{cell}}}{}$ \\
+16 \> \> \> $c := \ctext{Cons}(x, r)]$
+\\[0.5em]
+17 \> $\ctext{new}\ctext{iter}(c) \equiv 
+   \comp{\letv{r}{\comp{\newref{\reftype{\reftype{\listtype{\N}}}}{(c)}}}{\ctext{Coll}\;r}}$ 
+\\[0.5em]
+18 \> $\ctext{filter}(p, i) \equiv \comp{\ctext{Filter}(p, i)}$ 
+\\[0.5em]
+19 \> $\ctext{map2}(f, i_1, i_2) \equiv \comp{\ctext{Map2}(f, i_1, i_2)}$ 
+\\[0.5em]
+20 \> $\ctext{next}(\ctext{Coll}\;r) \equiv$ \=
+       $[$\=$\letv{list}{\comp{!r}}{}$ \\
+21 \>\>\>$\letv{cell}{\comp{!list}}{}$ \\
+22 \>\> \>$\run{}\ctext{case}(cell,$\=
+            $\ctext{Nil} \to \comp{\ctext{None}},$ \\
+23 \>\>\>\> $\ctext{Cons}(x, t) \to [$\=$\letv{dummy}{\comp{r := t}}{\ctext{Some}\;x}])]$ \\
+24 \> $\ctext{next}(\ctext{Filter}(p, i)) \equiv$ \= 
+        $[$\=$\letv{v}{\ctext{next}(i)}{}$ \\
+25 \>\>\>$\run{}\ctext{case}(v,$\=
+            $\ctext{None} \to \comp{\ctext{None}}$ \\
+26 \>\>\>\> $\ctext{Some}\;x \to \ctext{if}(p\;x,\comp{\ctext{Some}\; x},
+                                         \ctext{next}(\ctext{Filter}(p, i))))]$
+\\
+27 \> $\ctext{next}(\ctext{Map2}(f, i_1, i_2)) \equiv$ 
+$[$\=$\letv{v_1}{\ctext{next}\;i_1}{}$ \\
+28 \>\>$\letv{v_2}{\ctext{next}\;i_2}{}$ \\
+29 \>\>$\ctext{case}(v_1,$ \= 
+            $\ctext{None} \to \ctext{None},$ \\
+30 \>\>\> $\ctext{Some}\;x_1 \to \ctext{case}(v_2,$ \=
+              $\ctext{None} \to \ctext{None},$ \\
+31 \>\>\>\> $\ctext{Some}\;x_2 \to \ctext{Some}(f(x_1, x_2))))]$\\
+\end{tabbing}
+}
+% \vspace{-1.5em}
+The predicate $coll(c, xs, P)$ (line 1) is defined as the conjunction
+of a linked list predicate $list(c, xs)$ (lines 2-3) and an exact
+predicate $P$. An exact predicate is one that is true of exactly one
+heap, and the conjunction of $P$ with $list(c,xs)$ ensures that this
+linked list cannot be modified at all, without changing $P$.
+
+The inductive definition of $iter$ is on lines 4-6. The base case
+(line 6) is the most complex. It says that the iterator's pointer is a
+finger into the middle of the list, $c'$, and that the list segment
+representing what has already been seen plus the sublist representing
+what is to come, must be exactly the same heap as the collection
+itself. We express this requirement with the clause $coll(c, xs, P)
+\land (segment(c,c',ys) * list(c',zs))$, with the separating
+conjunction separating what has been seen from what is yet to come,
+and the ordinary conjunction demonstrating that this data is the same
+as the collection itself.  However, the iterator state does not own
+the collection; this clause will only hold if we have the collection
+state in addition to the iterator. We use the magic wand to say this:
+it means that when we supply the iterator with $coll(x, xs, P)$, then
+we we can view the state in this way.
+
+On line 5, the $\ctext{Filter}(p,i)$
+case says that $i$ must have some iterator state with the same support
+$S$, and a sequence of elements $xs'$ that yield $xs$ once
+filtered. We use a pure $filter$ at the assertion level to describe
+the effect on the iterator's logical sequence. On line 4, we specify
+$iter$ for the $\ctext{Map2}(f, i_1, i_2)$ case. We assert that the
+support $S$ must be divisible into two disjoint parts, one for $i_1$
+and one for $i_2$, and that there is iterator state for $i_1$ and
+$i_2$, and that the sequences $i_1$ and $i_2$ combine to yield the
+output sequence.
+
+The collection operations are mostly straightforward --
+$\ctext{newcoll}$ (line 9) allocates a new linked list, $\ctext{size}$
+(lines 10-13) recursively traverses the list to calculate the length,
+and $\ctext{add}$ (lines 14-16) adds a cons cell to the front of the
+list.  $\ctext{newiter}$ (lines 17) allocates a pointer to the front
+of the list, and then wraps that in the $\ctext{Coll}$
+constructor. For $\ctext{filter}$ (line 18) and $\ctext{map2}$ (line
+19), we just apply the constructor to the arguments and then return
+the result.
+
+$\ctext{next}$ (lines 20-31) recursively walks down the structure of
+the iterator tree, and combines the results from the leaves upwards.
+The base case is the $\ctext{Coll }r$ case (lines 20-23). The iterator
+pointer is doubly-dereferenced, and then the contents examined. If the
+end of the list has been reached and the contents are $\ctext{Nil}$,
+then $\ctext{None}$ is returned to indicate there are no more
+elements. Otherwise, the pointer $r$ is advanced, and the head
+returned as the observed value. The $\ctext{Filter(p,i)}$ case (lines
+24-26) will return $\ctext{None}$ if $i$ is exhausted, and if it is
+not, it will pull elements from $i$ until it finds one that satisfies
+$p$, calling itself recursively until it succeeds or $i$ is exhausted.
+Finally, in the $\ctext{Map2}(f, i_1, i_2)$ case (lines 27-31),
+$\ctext{next}$ will draw a value from both $i_1$ and $i_2$, and will
+return $\ctext{None}$ if either is exhausted, and otherwise it will
+return $f$ applied to the pair of values.
+%
+Below, we give an example use of this module in annotated program
+style: {\small
+\begin{tabbing}
+1 \qquad \= $\setof{\emp}$ \\
+2 \> $\letv{c_1}{\ctext{newcoll}()}{}$ \\
+3 \> $\setof{\exists P'_1.\; coll(c_1, \epsilon, P'_1)}$ \\
+4 \> $\setof{coll(c_1, \epsilon, P_1)}$ \\
+5 \> $\letv{()}{\ctext{add}(c_1, 4)}{}$ \\
+6 \> $\setof{\exists P'_2.\; coll(c_1, 4\cdot\epsilon, P'_2)}$ \\
+7 \> $\setof{coll(c_1, 4\cdot\epsilon, P_2)}$ \\
+8 \> $\letv{()}{\ctext{add}(c_1, 3)}{}$ \\
+9 \> $\letv{()}{\ctext{add}(c_1, 2)}{}$ \\
+10 \> $\setof{coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}$ \\
+11 \> $\letv{c_2}{\ctext{newcoll}()}{}$ \\
+12 \> $\letv{()}{\ctext{add}(c_2, 3)}{}$ \\
+13 \> $\letv{()}{\ctext{add}(c_2, 5)}{}$ \\
+14\> $\setof{coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}$ \\
+15\> $\letv{i_1}{\ctext{newiter}(c_1)}{}$ \\
+16\> $\{$\=$iter(i_1, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}, 2\cdot3\cdot4\cdot\epsilon) * 
+  coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
+17 \> $\letv{i'_1}{\ctext{filter}(even?, i_1)}{}$ \\
+18 \> $\{$\=$iter(i'_1, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}, 2\cdot4\cdot\epsilon) * 
+coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
+19 \> $\letv{i_2}{\ctext{newiter}(c_2)}{}$ \\
+20 \> $\{$\=$iter(i'_1, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}, 2\cdot4\cdot\epsilon) * 
+iter(i_2, \setof{(c_2, 5\cdot3\cdot\epsilon, Q_2)}, 5\cdot3\cdot\epsilon) *$ \\
+\> \> $coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
+21 \> $\letv{i}{\ctext{map2}(plus, i'_1, i_2)}{}$ \\
+22 \> $\{$\=$iter(i, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilon, Q_2)}, 7\cdot7\cdot\epsilon) * 
+coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
+23 \> $\letv{n}{\ctext{size}(c_2)}{}$ \\
+24 \> $\{$\=$n = 2 \;\land
+iter(i, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilon, Q_2)}, 7\cdot7\cdot\epsilon) * 
+coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
+
+25 \> $\letv{x}{\ctext{next}(i)}{}$ \\
+26 \> $\{$\= $n = 2 \land x = \ctext{Some }7 \;\land $\\
+\> \> $iter(i, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilon, Q_2)}, 7\cdot\epsilon) * coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
+27 \> $\ctext{add}(c_2, 17)$ \\
+28 \> $\{$\= $n = 2 \land x = \ctext{Some }7 \;\land $\\
+\> \> $iter(i, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilon, Q_2)}, 7\cdot\epsilon) * 
+(\exists Q_3.\; coll(c_2, 17\cdot5\cdot3\cdot\epsilon, Q_3)) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
+\end{tabbing}
+}
+% \vspace{-2em}
+In line 1 of this example, we begin in an empty heap. In line 2, we
+create a new collection $c_1$, which yields us the state $\exists
+P'_1.\; coll(c_1, \epsilon, P'_1)$, with an existentially quantified
+abstract state.
+%
+Because $P'_1$ is existentially quantified, we do not know what value
+it actually takes on. However, if we prove the rest of the program
+using a freshly-introduced variable $P_1$, then we know that the rest
+of the program will work for \emph{any} value of $P_1$, because free
+variables are implicitly universally quantified.  So it will work with
+whatever value $P'_1$ had. So we drop the quantifier on line 4, and
+try to prove this program with the universally-quantified
+$P_1$.\footnote{A useful analogy is the existential elimination rule
+  in the polymorphic lambda calculus: we prove that we can use an
+  existential by showing that our program is well-typed no matter what
+  the contents of the existential are.}
+
+This permits us to $\ctext{add}$ the element 4 to $c_1$ on line 5. Its
+specification puts the predicate $coll()$ on line 6 again into an
+existentially quantified state $P'_2$. So we again replace $P'_2$ with
+a fresh variable $P_2$ on line 7, and will elide these existential
+introductions and unpackings henceforth.
+%
+In lines 8-9, we add two more elements to $c_1$, and on lines 11-13,
+we create another collection $c_2$, and add $3$ and $5$ to it, as can
+be seen in the state predicate on line 14. On line 15, we create the
+iterator $i_1$ on the collection $c_1$. The $iter$ predicate on line
+16 names $i_1$ as its value, and lists $c_1$ in state $P_4$ as its
+support, and promises to enumerate the elements 2, 3, and 4.
+
+On line 17, $\ctext{filter}(even?, i_1)$ creates the new iterator
+$i'_1$. This iterator yields only the even elements of $i_1$, and so
+will only yield 2 and 4. On line 18, $i_1$'s iterator state has been
+consumed to make $i'_1$'s state. We can no longer call
+$\ctext{next}(i_1)$, since we do not have the resource invariant
+needed to prove anything about that call. Thus, we cannot write a
+program that would break $i'_1$'s representation invariant.
+
+On line 19, we create a third iterator $i_2$ enumerating the elements
+of $c_2$. The state on line 20 now has predicates for $i'_1$, $i_2$,
+$c_1$ and $c_2$. On line 21, $\ctext{map2}(plus, i'_1, i_2)$ creates a
+new iterator $i$, which produces the pairwise sum of the elements of
+$i'_1$ and $i_2$, and consumes the iterator states for $i'_1$ and
+$i_2$ to yield the state for the new iterator $i$. Note that the 
+invariant for $i$ does not make any mention of what it was constructed
+from, naming only the collections it needs as support. 
+%Furthermore, the support of $i$ is the union of the
+%supports of $i'_1$ and $i_2$ -- namely, the two collections $c_1$ and
+%$c_2$.
+
+On line 23, the $\ctext{size}$ call on $c_2$ illustrates that we can
+call non-destructive methods while iterators are active. The call to
+$\ctext{next}(i)$ on line 24 binds $\ctext{Some }7$ to $x$, and the
+the iterator's sequence argument (line 27) shrinks by one element. On
+line 28, we call $\ctext{add}(c_2, 17)$ the state of $c_2$ changes to
+$\exists Q_3.\; coll(c, 17\cdot 5 \cdot 3\cdot\epsilon, Q_3)$ (line
+27). So we can no longer call $\ctext{next}(i)$, since it needs $c_2$
+to be in the state $Q_2$.
+
+\textbf{Discussion.} This example shows a pleasant synergy between
+higher-order quantification and separation logic. We can give a
+relatively simple specification to the clients of the collection
+library, even though the internal invariant is quite subtle (as the
+use of the magic wand suggests). Higher-order logic also lets us
+freely define new data types, and so our specifications can take
+advantage of the pure, non-imperative nature of the mathematical
+world, as can be seen in the specifications of the $\ctext{filter}$
+and $\ctext{map2}$ functions -- we can use equational reasoning on
+purely functional lists in our specifications, even though our
+algorithms are imperative.
+% \vspace{-1em}
+\section{The Flyweight Pattern}
+% \vspace{-1em}
+The flyweight pattern is a style of cached object creation. Whenever a
+constructor method is called, it first consults a table to see if an
+object corresponding to those arguments has been created. If it has,
+then the preexisting object is returned.  Otherwise, it allocates a
+new object, and updates the table to ensure that future calls with the same
+arguments will return this object. Because objects are re-used, the
+flyweight pattern lets programmers use reference identity to deduce
+object equality. Since this re-use means that flyweights are
+pervasively aliased, they must be used in an immutable style to avoid
+surprising updates.
+%
+% This is an interesting design pattern to verify, for two reasons.
+% First, the constructor has a memo table private to it, which needs to
+% be hidden from clients. Second, this pattern makes pervasive use of
+% aliasing, and in particular allows programmers to reason about
+% equality by testing whether two objects alias or not.
+%
+Below, we specify a program that uses the flyweight pattern to create
+and access glyphs (i.e., refs of pairs of characters and fonts)
+of a particular font $f$.  {\small
+\begin{tabbing}
+Flyweight$(I : \assert,\;\;
+\ctext{newchar} : \chartp \to \monad{\ctext{glyph}},\;\; 
+\ctext{getdata} : \ctext{glyph} \to \monad{(\chartp \times \fonttp)},\;\;
+f:\fonttp) \equiv$ \\
+1 \qquad \=$\exists $\=$glyph : \ctext{glyph} \times \chartp \times \fonttp \To \assert.$ 
+\\[0.5em]
+
+2  \> \> $\forall c, S.\;$\=
+         $\setof{I \land chars(S)}
+          \run{\ctext{newchar}(c)}
+          \setof{a:\ctext{glyph}.\; 
+                 I \land chars(\setof{(a, (c,f))} \cup S)}$ \\
+  \> \!$\specand$ \\
+3 \> $\forall l, c, f, P.\;$\=
+   $\setof{glyph(l, c, f) \land P}
+    \run{\ctext{getdata}(l)}
+    \setof{a:\chartp \times \fonttp.\; glyph(l, c, f) \land P \land a = (c,f)}$
+\\
+  \> \!$\specand$ \\
+4 \> $\{\forall l, l', c, c'.\;$\=$I \land glyph(l,c,f) \land glyph(l',c',f')
+ \implies \left(l = l' \iff (c = c'\land f=f')\right)\}$ \\[0.5em]
+
+$chars(\emptyset)$ \qquad\qquad\qquad \;\;\= $\equiv$ \= $\top$ \\
+$chars(\setof{(l,(c,f))} \cup S)$ \> $\equiv$ \> $glyph(l,c,f) \land chars(S)$ \\
+\end{tabbing}
+}
+% \vspace{-1.5em}
+In the opening , we informally parameterize our specification over the
+predicate variable $I$, the function variable $\ctext{newchar}$, the
+function variable $\ctext{getdata}$, and the variable $f$ of $\fonttp$
+type. The reason will become clear once we see the factory function
+that creates flyweight constructors.
+%
+On line 1, we assert the existence of a predicate $glyph(l, c, f)$,
+which says that the glyph value $l$ is a glyph of character $c$ and
+font $f$. On line 2, we specify the $\ctext{newchar}$ procedure. Its
+precondition says the pre-state must be the private flyweight state
+$I$, and that this state overlaps with the character state for the
+glyph/data pairs in $S$. (The definition of $chars$ takes a set of
+glyph/data pairs and produces the conjunction of $glyph(l,c,f)$ for
+all the $(l,(c,f)) \in S$.)  Running $\ctext{newchar}(c)$ will yield a
+postcondition state in which $(a, (c,f))$ is added to the set $S$ --
+that is, the postcondition state is $I \land chars(S) \land
+glyph(a,c,f)$.
+
+On line 3, we specify the $\ctext{getdata}$ function. If the predicate
+$glyph(r, c, f)$ is in the precondition, then $\ctext{getdata}(r)$
+will return $(c, f)$.  To ensure the flyweight invariant that the
+glyph objects are read-only, we conjoin the pre- and post-conditions
+with an arbitrary predicate variable $P$. Since $P$ must be preserved
+for any instantiation, $\ctext{getdata}$ cannot make any changes to
+the underlying data.
+
+On lines 4, we give an axiom about the interaction of $I$ and
+$glyph(l,c,f)$, which says that if we know that $I \land glyph(l,c,f)
+\land glyph(l',c', f')$ holds, then $l = l'$ holds if and only $c =
+c'$ and $f = f'$. This axiom gives clients the ability to take
+advantage of the fact that we are caching object creation and conclude
+that two calls to $\ctext{newchar}$ with the same arguments will yield
+the same result.
+
+The specification of the flyweight factory looks like this:
+% \vspace{-0.5em}
+{\small
+\begin{tabbing}
+1 \qquad \= $\exists \ctext{make\_flyweight} :
+\fonttp \to \bigcirc\left(\left(\chartp \to \monad{\ctext{glyph}}\right) \times
+(\ctext{glyph} \to \monad{(\chartp \times \fonttp)})\right).$\\
+2 \> \;\;\= $\forall f.\;$\=$\setof{\emp}$
+  $\run{\ctext{make\_flyweight}(f)}$ 
+ $\setof{a.\; \exists I:\assert.\; I \land \validprop{\mbox{Flyweight}(I, \fst{a}, \snd{a}, f)}}$ \\
+\end{tabbing}
+}
+% \vspace{-1em}
+Here, we assert the existence of a function $\ctext{make\_flyweight}$,
+which takes a font $f$ as an input argument, and returns two functions
+to serve as the $\ctext{getchar}$ and $\ctext{getdata}$ functions of
+the flyweight. In the postcondition, we assert the existence of some
+private state $I$, which contains the table used to cache glyph
+creations. Below, we define
+$\ctext{make\_flyweight}$ and its predicates: {\small
+\begin{tabbing}
+1 \qquad \= $\ctext{m}\ctext{ake\_flyweight} \equiv$
+       $\lambda f:$\=$\fonttp.\;$\\
+2  \> \> $[$\=$\letv{t}{\ctext{newtable}()}{}$ \\
+3  \> \> \> $\ctext{letv }$\=$newchar =$ \\
+4  \> \> \> \> \!\!$[\lambda c.[$\=$\ctext{letv }x = \ctext{lookup}(t, c)\ctext{ in}$\\
+5  \> \> \>\>\> $\ctext{run }\ctext{case}(x,$\=
+$\ctext{None} \to [$\=$\ctext{letv } r = [\newref{\ctext{glyph}}(c,f)] \ctext{ in}$\\
+6  \> \> \>\>\>\>\> $\ctext{letv } \_ = \ctext{update}(t, c, r) \ctext{ in }r],$ \\
+7 \> \> \>\>\>\> $\ctext{Some }r \to [r])] \ctext{ in}$ \\
+8 \> \> \> $\ctext{letv }getdata = [\lambda r.\; [!r]] \ctext{ in}$ \\
+9 \> \> \> $(newchar, getdata)]$
+\\[0.5em]
+
+$glyph(r, c, f) \equiv r \pointsto (c,f) * \top$ \\[0.5em]
+
+$I \equiv table(t,mapping) * refs(mapping, \mbox{dom}(mapping))$ \\[0.5em]
+
+$refs(mapping, \emptyset) \qquad\qquad  $ \= $\equiv$\;\;\=$\emp$ \\
+$refs(mapping, \setof{c} \cup D)$ \> $\equiv$\> $mapping(c) \pointsto (c,f) * refs(f, D)$ \\
+ 
+\end{tabbing}
+}
+% \vspace{-2em}
+In this implementation we have assumed the existence of a hash table
+implementation with operations $\ctext{newtable}$, $\ctext{lookup}$,
+and $\ctext{update}$, whose specifications we omit for space
+reasons. The $\ctext{make\_flyweight}$ function definition takes a
+font argument $f$, and then in its body it creates a new table $t$. It
+then constructs two functions as closures which capture this state
+(and the argument $f$) and operate on it. In lines 4-7, we define
+$newchar$, which takes a character and checks to see (line 5) if it is
+already in the table. If it is not (lines 5-6), it allocates a new
+glyph reference, stores it in the table, and returns the
+reference. Otherwise (line 7), it returns the existing reference from
+the table.  On line 8, we define $getdata$, which dereferences its
+pointer argument and returns the result. This implementation does no
+writes, fulfilling the promise made in the specification. The
+definition of the invariant state $I$ describes the state of the table
+$t$ (and $mapping$), which are hidden from clients.
+
+\textbf{Discussion.} This example is interesting because of how the
+post-condition to $\ctext{make\_flyweight}$ nests the existential
+state $I$ with the validity assertion to specialize the flyweight spec
+to the \emph{dynamically} created table. Each created flyweight factory
+receives its own private state, and we can reuse specifications and
+proofs with no possibility that the wrong $\ctext{getdata}$ will be
+called on the wrong reference, even though they have compatible types.
+
+% It is also worth noting that our factory here does not correspond
+% precisely to the most general form of the factory pattern. While we
+% take an argument (the font $f$) and return a flyweight interface
+% specialized to $f$, we do not change the implementations of $newchar$
+% and $getdata$ based beyond closing over the newly allocated memo table
+% and $f$.
+
+
+% While this is technically possible, our language is simply-typed --
+% which means that we cannot readily change data representations, and
+% hence there is little reason to change the function
+% implementations. If we added polymorphism to our language, we would
+% be able to use existential quantification to more closely match
+% object-oriented style.
+% \vspace{-1em}
+\section{Subject-Observer}
+% \vspace{-1em}
+% The subject-observer pattern is one of the most characteristic
+% patterns of object-oriented programming, and is extensively used in
+% GUI toolkits. 
+The subject-observer pattern features a mutable data structure called
+the \emph{subject}, and a collection of data structures called
+\emph{observers} whose invariants depend on the state of the
+subject. Each observer registers a callback function with the subject
+to ensure it remains in sync with the subject. Then, whenever the
+subject changes state, it iterates over its list of callback
+functions, notifying each observer of its changed state. While
+conceptually simple, this is a lovely problem for verification, since
+every observer can have a different invariant from all of the others,
+and the implementation relies on maintaining lists of callback
+functions in the heap.  We give a specification for the
+subject-observer pattern below:
+% \vspace{-0.5em}
+{\small
+\begin{tabbing}
+1 \qquad \= $\exists sub : A_s \times \N \times \seqsort{((\N \To \assert) \times (\N \to \monad{1}))}.$ \\
+2 \> $\exists$\=$ \ctext{newsub} : \N \to \monad{A_s}, \;
+              \ctext{register} : A_s \times (\N \to \monad{1}) \to \monad{1},\;
+              \ctext{broadcast} : A_s \times \N \to \monad{1}.$ 
+\\[0.5em]
+3 \>$\forall n.\; \spec{\emp}{\run{\ctext{newsub}(n)}}{a:A_s}{sub(a, n, \epsilon)}$ \\
+\> $\specand$ \\
+4 \> $\forall f, O, s, n, os. $\=$(\forall i, k. \spec{O(i)}{\run{f(k)}}{a:1}{O(k)})$ \\
+5\> \>$\specimp$\=$\setof{sub(s, n, os)}
+\run{\ctext{register}(s, f)}
+\;\setof{a:1.\; sub(s, n, (O,f)\cdot os)}$ \\
+\> $\specand$ \\
+6 \> $\forall s,i,os,k.\; $\=
+     $\setof{sub(s, i, os) * obs(os)}
+      \run{\ctext{broadcast}}(s,k)
+      \setof{a:1.\; sub(s, k, os) * obs\_at(os, k)}$ 
+\\[0.5em]
+$obs(\epsilon) \;\qquad\qquad $\=$\equiv \emp$ \\
+$obs((O,f)\cdot os) $\>$\equiv (\exists i.\; O(i)) * obs(os)$ 
+\\[0.5em]
+$obs\_at(\epsilon, k) \;\qquad\qquad $\=$\equiv \emp$ \\
+$obs\_at((O,f)\cdot os, k) $\>$\equiv O(k) * obs\_at(os, k)$ 
+\\
+\end{tabbing}
+}
+% \vspace{-1.5em}
+On line 1 we assert the existence of a predicate $sub(s, n, os)$
+representing the subject $s$'s state. The field $n$ is the data the
+observers depend on, and the field $os$ is a sequence of callbacks
+paired their invariants. On line 2, we assert the existence of
+$\ctext{newsub}$, $\ctext{register}$ and $\ctext{broadcast}$, which
+create a new subject, register a callback, and broadcast a change,
+respectively.
+
+$\ctext{register}$'s specification on lines 4-5 is an implication over
+Hoare triples. It says that \emph{if} the function $f$ is a good
+observer callback, \emph{then} it can be safely registered with the
+subject. A good callback $f$ is one that takes an argument $k$ and
+sends the observer state to $O(k)$. If this condition is satisfied,
+then $\ctext{register}(s, f)$ will add the pair $(O,f)$ to the
+sequence of observers in the $sub$ predicate.
+%
+The precondition state of $\ctext{broadcast}(s,k)$ requires the
+subject state $sub(s,n,os)$, and all of the observer states
+$obs(os)$. The definition $obs(os)$ takes the list of observers and
+yields the separated conjunction of the observer states. After the
+call, the postcondition puts the $sub$ predicate and all of the
+observers in the same state $k$. The $obs\_at(os,k)$ function
+generates the separated conjunction of all the $O$ predicates, all in
+the same state $k$. The implementation follows:
+% % \vspace{-0.5em}
+{\small
+\begin{tabbing}
+1 \qquad \= $A_s \equiv \reftype{\N} \times \reftype{\listtype{(\N \to \monad{1})}}$
+\\[0.5em]
+2 \> $sub(s, n, os) \equiv$\=$ \fst{s} \pointsto n * 
+              list(\snd{s}, map\; \snd{} os) \land Good(os)$ 
+\\[0.5em]
+3 \> $Good(\epsilon) \!\qquad\qquad \equiv \top$ \\
+4 \> $Good((O,f)\cdot os) \equiv 
+\validprop{(\forall i,k.\; \spec{O(i)}{\run{f(k)}}{a:1}{O(k)})}
+      \land Good(os)$ 
+\\[0.5em]
+5 \> $\ctext{register}(s, f) \equiv$ \=
+         $[$\= $\letv{cell}{\comp{!(\snd{s})}}{}$ \\
+6 \> \> \> $\letv{r}{\comp{\newref{\reftype{\listtype{(\N \to \monad{1})}}}{cell}}}{}$ \\
+7 \> \> \> $\snd{s} := \ctext{Cons}(f, r)]$
+\\[0.5em]
+
+8  \> $\ctext{broad} \ctext{cast}(s, k) \equiv
+[$\=$\letv{dummy}{[\fst{s} := k]}{\ctext{loop}(k, \snd{s})}]$ \\
+
+
+9 \> $\ctext{loop}(k, list) \equiv $\=
+         $[$\=$\letv{cell}{[!list]}{}$ \\
+10 \>\>\> $\run{}\ctext{case}(cell,$\= 
+            $\ctext{Nil} \to [()],$ \\
+11 \>\>\>\> $\ctext{Cons}(f, tl) \to [$\=$\letv{dummy}{f(k)}{\run{\ctext{loop}(k,tl)}}])$ \\[0.5em]
+12 \> $\ctext{new}\ctext{sub}(n) \equiv$ \=
+          $[$\=$\letv{data}{\newref{\N}{n}}{}$ \\
+13 \> \> \> $\letv{callbacks}{\newref{\listtype{(\N \to \monad{1})}}{\ctext{Nil}}}{}$ \\
+14 \> \> \> $(data, callbacks)]$
+\end{tabbing}
+}
+% % \vspace{-0.5em}
+In line 1, we state concrete type of the subject $A_s$ is a pair of a
+pointer to a reference, and a pointer to a list of callback
+functions. (This is \emph{not} an existential quantifier.  Since our
+language is simply typed, we have no form of type abstraction and
+simply use $A_s$ as an abbreviation.)  On line 2, we define
+the subject predicate, $sub(s,n,os)$. The first two clauses of the
+predicate describe the physical layout of the subject, and assert that
+the first component of $s$ should point to $n$, and that the second
+component of $s$ should be a linked list containing the function
+pointers in $os$.
+% (The $list$ predicate is described in
+% Section 3, when we give the definition of the iterator predicates.)
+Then we require that $os$ be ``good''. $Good$-ness is defined on lines
+3 and 4, and says a sequence of predicates and functions is good when
+every $(O,f)$ pair in the sequence satisfies the same validity
+requirement the specification of $\ctext{register}$ demanded. Here, we
+we interleave assertions and specifications to constrain the behavior
+of code stored in the heap.
+
+Next, we give the implementations of $\ctext{register}$ and
+$\ctext{broadcast}$. $\ctext{register}$, on lines 5-7, adds its
+argument to the list of callbacks. Though the code is trivial, its
+correctness depends on the fact the $Good$ predicate holds for the
+extended sequence.  $\ctext{broadcast}$, on lines 8-11, updates the
+subject's data field (the first component), and then calls
+$\ctext{loop}$ (on lines 9-11) to invoke all the
+callbacks. $\ctext{loop}(k, \snd{s})$ just recurs over the list and
+calls each callback with argument $k$.  Below, we give a simple piece
+of client code using this interface.
+% \vspace{-0.5em}
+{\small
+\begin{tabbing}
+1 \qquad \= 
+$\setof{\emp}$ \\
+2 \> 
+$\letv{s}{\ctext{newsub}(0)}{}$ \\
+3 \> $\setof{sub(s, 0, \epsilon)}$ \\
+4 \> $\letv{d}{\newref{\N}{(0)}}{}$ \\
+5 \> $\letv{b}{\newref{\ctext{bool}}{(\ctext{true})}}{}$ \\
+6 \> $\setof{sub(s, 0, \epsilon) * d \pointsto 0 * b \pointsto \ctext{true}}$\\
+7 \> $\letv{()}{\ctext{register}(s, f)}{}$\\
+8 \> $\setof{sub(s, 0, (double, f)\cdot\epsilon) * double(0) * b \pointsto \ctext{true}}$ \\
+9 \> $\letv{()}{\ctext{register}(s, g)}{}$\\
+10 \> $\setof{sub(s, 0, (even, g)\cdot(double, f)\cdot\epsilon) * double(0) * even(0)}$ \\
+11 \> $\ctext{broadcast}(s, 5)$ \\
+12 \> $\setof{sub(s, 5, (even, g)\cdot(double, f)\cdot\epsilon) * double(5) * even(5)}$ \\
+13 \> $\setof{sub(s, 5, (even, g)\cdot(double, f)\cdot\epsilon) * d \pointsto 10 * b \pointsto \ctext{false}}$ 
+\\[0.5em]
+14 \> $f \qquad \qquad $\=$\equiv \lambda n:\N.\; [d := 2 \times n]$ \\
+15 \> $double(n)$ \> $\equiv d \pointsto (2 \times n)$ \\
+16 \> $g$ \> $\equiv \lambda x:\ctext{bool}.\; [b := even?(x)]$ \\
+17 \> $even(n)$ \> $\equiv b \pointsto even?(n)$ \\
+\end{tabbing}
+}
+% \vspace{-1em}
+We start in the empty heap, and create a new subject $s$ on line 2.
+On line 4, we create a new reference to $0$, and on line 5, we create
+a reference to $\ctext{true}$. So on line 6, the state consists of a
+subject state, and two references.  On line 7, we call
+$\ctext{register}$ on the function $f$ (defined on line 14), which
+sets $d$ to twice its argument. To the observer list in sub, we add
+$f$ and the predicate $double$ (defined on line 15), which asserts
+that indeed, $d$ points to two times the predicate argument. On line
+8, we call $\ctext{register}$ once more, this time with the function
+$g$ (defined on line 16) as its argument, which stores a boolean
+indicating whether its argument was even into the pointer $b$. Again,
+the state of $sub$ changes, and we equip $g$ with the $even$ predicate
+(defined on line 17) indicating that $b$ points to a boolean
+indicating whether the predicate argument was even or not. Since $d
+\pointsto 0$ and $b \pointsto \ctext{true}$ are the same as
+$double(0)$ and $even(0)$, so we can write them in this form on line
+10.  We can now invoke $\ctext{broadcast}(s, 5)$ on line 11, and
+correspondingly the states of all three components of the state shift
+in line 12.  In line 13, we expand $double$ and $even$ to see $d$
+points to 10 (twice 5), and $b$ points to $\ctext{false}$ (since 5
+is odd).
+
+\textbf{Discussion.} One nice feature of the proof of the
+subject-observer implementation is that the proofs are totally
+oblivious to the concrete implementations of the notification
+callbacks, or to any details of the observer invariants. Just as
+existential quantification hides the details of a module
+implementation from the clients, the universal quantification in the
+specification of $\ctext{register}$ and $\ctext{broadcast}$ hides all
+details of the client callbacks from the proof of the implementation
+-- since they are free variables, we are unable to make any
+assumptions about the code or predicates beyond the ones explicitly
+laid out in the spec. Another benefit of the passage to higher-order
+logic is the smooth treatment of observers with differing invariants;
+higher-order quantification lets us store and pass formulas around,
+making it easy to allow each callback to have a totally different
+invariant. 
+% \vspace{-1em}
+\section{Related Work}
+% \vspace{-0.5em}
+The proof system is a synthesis of O'Hearn and
+Reynolds's~\cite{sep-logic} work on separation logic, with Reynolds's
+system of specification logic~\cite{spec-logic} for Algol, which
+introduced the idea of turning Hoare triples into the atomic formulae
+of a program logic. Birkedal, Biering, and Torp-Smith~\cite{hosl}
+first extended separation logic to higher-order.
+
+Parkinson developed a version of separation logic for Java in his
+doctoral dissertation~\cite{parkinson-thesis}. His logic does not have
+a notion of implications over specifications, instead using behavioral
+subtyping to determine what specification dynamically dispatched
+method calls could have. Parkinson and Bierman have also introduced a
+notion of abstract predicate family~\cite{parkinson-bierman-05}
+related to the higher-order quantification of Birkedal \emph{et al}.
+
+Nanevski, Morisett and Birkedal have developed Hoare Type
+Theory~\cite{htt}, which is a sophisticated dependently-typed
+functional language that, like our system, uses a monadic discipline
+to control effects.  Unlike our work, HTT takes advantage of type
+dependency to directly integrate specifications into the types of
+computation terms. Nanevski, Ahmad, Morisett and
+Birkedal~\cite{abstract-htt} have proposed using the existential
+quantification of their type theory to hide data representations,
+giving examples such as a malloc/free style memory allocator.
+
+In addition to systems based on separation, there is also a line of
+research based on the concept of object invariants and ownership.  The
+Java modelling language (JML)~\cite{jml} and the Boogie
+methodology~\cite{boogie} are two of the most prominent systems based
+on this research stream. In Boogie, each object tracks its owner
+object with a ghost field, and the ownership discipline enforces that
+the heap have a tree structure. This allows the calculation of frame
+properties without explosions due to aliasing, even though the
+specification language remains ordinary first-order logic.
+
+In his dissertation, Parkinson gave as an example a simple iterator
+protocol, lacking the integration with composites we have exhibited.
+Subsequently, we formalized a similar account of
+iterators~\cite{iterator}, again lacking the integration with
+composites. Jacobs, Meijer, Piessens and
+Schulte~\cite{iterators-revisited} extend Boogie with new rules for
+the coroutine constructs C\# uses to define iterators. Their solution
+typifies the difficulties ownership-based approaches face with
+iterators, which arise from the fact that iterators must have access
+to the private state of a collection but may have differing
+lifetimes. This work builds on Barnett and Naumann's generalization of
+ownership to friendship~\cite{friends}, which allows object invariants
+to have some dependency on non-owned objects.
+
+The subject-observer pattern has been the focus of a great deal of
+effort, given its prominence in important applications. Simultaneously
+with our own initial formulation, Parkinson gave an example of
+verifying the subject-observer protocol~\cite{parkinson-so}. Recently,
+Parkinson and Distefano~\cite{jstar-parkinson-distefano} have
+implemented a tool to automatically verify these programs, and have
+demonstrated several examples including an automatic verification of a
+subject-observer pattern specified along these lines.
+
+The work of Barnett and Naumann is also capable of reasoning about the
+subject-observer pattern, but only if all of the possible observers
+are known at verification.  Leino and Schulte~\cite{boogie-sub-obs}
+made use of Liskov and Wing's concept of history invariants or
+monotonic predicates~\cite{liskov-wing} to give a more modular
+solution. More recently, Shaner, Naumann and Leavens~\cite{ShanerLN07}
+gave a ``grey-box'' treatment of the subject-observer pattern.
+Instead of tracking the specifications of the observers in the
+predicate, they give a model program that should approximates the
+behavior of any actual notification method.
+
+Pierik, Clarke and de Boer~\cite{creational-invariants} formalize another
+extension to the Boogie framework which they name \emph{creation
+  guards}, specifically to handle flyweights. They consider flyweights
+an instance of a case where object invariants can be invalidated by
+the allocation of new objects, and add guards to their specifications
+to control allocation to the permitted cases. 
+
+\textbf{Acknowledgments.} This work was supported in part by NSF grant
+CCF-0541021, NSF grant CCF-0546550, DARPA contract HR00110710019, and
+the United States Department of Defense.
+
+% \vspace{-1em}
+\bibliographystyle{abbrv}
+\bibliography{patterns}
+
+\end{document}

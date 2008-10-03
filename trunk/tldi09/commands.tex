@@ -1,0 +1,99 @@
+\usepackage{mathpartir}
+
+\newcommand{\ctext}[1]{\mbox{\textsf{{#1}}}}
+\newcommand{\unittype}{\mathbf{1}}
+\newcommand{\reftype}[1]{\ctext{ref }#1}
+\newcommand{\monad}[1]{\bigcirc{#1}}
+\newcommand{\opttype}[1]{\ctext{option }{#1}}
+\newcommand{\seqsort}[1]{\ctext{seq }{#1}}
+\newcommand{\listtype}[1]{\ctext{list }{#1}}
+
+\newcommand{\pair}[2]{\left<{#1},{#2}\right>}
+\newcommand{\fst}[1]{\ctext{fst } #1}
+\newcommand{\snd}[1]{\ctext{snd } #1}
+
+\newcommand{\inl}[1]{\ctext{inl }#1}
+\newcommand{\inr}[1]{\ctext{inr }#1}
+\newcommand{\Case}[5]{\ctext{case}(#1,\; {#2}.\; #3,\; {#4}.\; #5)}
+\newcommand{\listcase}[5]{\ctext{case}(#1,\;\ctext{Nil} \to {#2},\;
+                                       \ctext{Cons}({#3},{#4}) \to {#5})}
+\newcommand{\optcase}[4]{\ctext{case}(#1,\;
+                                      \ctext{None} \to {#2},\;
+                                      \ctext{Some}\;{#3} \to {#4})}
+\newcommand{\z}{\ctext{z}}
+\newcommand{\s}[1]{\ctext{s}(#1)}
+\newcommand{\iter}[4]{\ctext{prec}(#1, {#2}, #3.\; {#4})}
+\newcommand{\iterseq}[4]{\ctext{prec}_{\mathsf{seq}}(#1, {#2}, #3.\; {#4})}
+\newcommand{\comp}[1]{[#1]}
+\newcommand{\fun}[3]{\lambda #1:#2.\;#3}
+\newcommand{\unit}{()}
+\newcommand{\alt}{\;|\;}
+\newcommand{\letv}[3]{\ctext{letv }#1 = #2\ctext{ in }#3}
+\newcommand{\newref}[2]{\ctext{new}_{#1} #2}
+\newcommand{\run}[1]{\ctext{run }{#1}}
+\newcommand{\ok}{\ctext{ ok}}
+\newcommand{\FV}[1]{\mathrm{FV}({#1})}
+
+\newcommand{\fix}[2]{\ctext{fix}_{#1}\;{#2}}
+
+\newcommand{\statecfg}[2]{\left<{#1};\;{#2}\right>}
+\newcommand{\eval}[4]{\left<{#1};\;{#2}\right> \leadsto \left<{#3};\;{#4}\right>}
+\newcommand{\evalabort}[2]{\left<{#1};\;{#2}\right> \leadsto \mathbf{abort}}
+
+\newcommand{\domain}[1]{\mbox{dom}({#1})}
+\newcommand{\upset}[1]{\mathcal{P}^{\uparrow}({#1})}
+
+\newcommand{\pointsto}{\mapsto}
+\newcommand{\disj}{\vee}
+\renewcommand{\implies}{\supset}
+\newcommand{\wand}{-\!\!*}
+\newcommand{\emp}{\mathsf{emp}}
+\newcommand{\validprop}[1]{{#1}\ctext{ valid}}
+
+
+\newcommand{\setof}[1]{\{{#1}\}}
+
+\newcommand{\To}{\Rightarrow}
+
+\newcommand{\N}{\mathbb{N}}
+
+\newcommand{\assert}{\ctext{prop}}
+
+\newcommand{\bigstep}{\Downarrow}
+
+\newcommand{\bigeval}[4]{\left<{#1};\;{#2}\right> \bigstep \left<{#3};\;{#4}\right>}
+\newcommand{\bigevalabort}[2]{\left<{#1};\;{#2}\right> \bigstep \mathbf{abort}}
+
+\newcommand{\spec}[4]{\{{#1}\}{#2}\{{#3}.\;{#4}\}}
+\newcommand{\specX}[3]{\{{#1}\}{#2}\{{#3}\}}
+\newcommand{\mspec}[4]{\langle{#1}\rangle{#2}\langle{#3}.\;{#4}\rangle}
+\newcommand{\bnfalt}{\;\;|\;\;}
+
+\newcommand{\specor}{\ctext{ or }}
+\newcommand{\specand}{\ctext{ and }}
+\newcommand{\specimp}{\ctext{ implies }}
+\newcommand{\spectype}{\ctext{spec}}
+\newcommand{\valid}{\ctext{ valid}}
+\newcommand{\interp}[1]{[\![{#1}]\!]}
+
+\newcommand{\interpF}[1]{[\![{#1}]\!]_f}
+
+
+\newcommand{\entails}{\models}
+
+\newcommand{\judgeE}[3]{{#1} \vdash {#2} : {#3}}
+\newcommand{\judgeC}[3]{{#1} \vdash {#2} \div {#3}}
+\newcommand{\judgeP}[3]{{#1} \vdash {#2} : {#3}}
+\newcommand{\judgeS}[2]{{#1} \vdash {#2} : \spectype}
+\newcommand{\judgeSCtx}[2]{{#1} \vdash {#2} : \ctext{context}}
+
+\newcommand{\judgeEqP}[4]{{#1} \vdash {#2} \equiv {#3} : {#4}}
+
+\newcommand{\judgeEqE}[4]{{#1} \vdash {#2} \equiv {#3} : {#4}}
+\newcommand{\judgeEqC}[4]{{#1} \vdash {#2} \equiv {#3} \div {#4}}
+
+
+\newcommand{\entailsP}[3]{{#1} \rhd {#2} \vdash {#3}}
+\newcommand{\entailsS}[3]{{#1}; {#2} \vdash {#3} \ok}
+
+\newtheorem{prop}{Proposition}
