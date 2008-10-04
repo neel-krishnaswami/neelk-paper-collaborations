@@ -1,0 +1,634 @@
+\documentclass[a4paper,english]{article}
+
+\usepackage[utf8x]{inputenc}
+\usepackage{babel}
+\usepackage{amssymb,amsmath,amsthm,amsfonts}
+\usepackage{marginnote}
+
+\bibliographystyle{plain}
+
+\title{Verifying design patterns in Hoare Type Theory}
+\author{Kasper Svendsen, Alexandre Buisse, and Lars Birkedal}
+
+\newcommand{\N}[0]{\mathbb{N}}
+\newcommand{\VAL}[0]{Val}
+\newcommand{\TT}[0]{tt}
+\newcommand{\UNIT}[0]{unit}
+\newcommand{\STSEP}[0]{STsep}
+\newcommand{\HEAP}[0]{heap}
+\newcommand{\PROP}[0]{Prop}
+\newcommand{\HPROP}[0]{Prop}
+\newcommand{\TYPE}[0]{Type}
+\newcommand{\LIST}[0]{list}
+\newcommand{\SEQ}[0]{\mathbf{seq}}
+\newcommand{\MONAD}[0]{\bigcirc}
+\newcommand{\AND}[0]{and}
+\newcommand{\IMPLIES}[0]{implies}
+\newcommand{\REF}[0]{\mathbf{ref}}
+\newcommand{\MONO}[0]{\mathbf{mono}}
+\newcommand{\LOC}[0]{loc}
+\newcommand{\OPTION}[0]{option}
+\newcommand{\TRUE}[0]{True}
+\newcommand{\VALID}[0]{valid}
+\newcommand{\EMP}[0]{emp}
+\newcommand{\PFIN}[0]{\mathcal{P}^{fin}}
+
+\newcommand{\pname}[1]{\texttt{/* #1 */}}
+
+\reversemarginpar
+
+\begin{document}
+ 
+\maketitle
+
+\begin{abstract}
+In this technical report we document our experiments formally verifying three
+design patterns in Hoare Type Theory.
+\end{abstract}
+
+\section{Introduction}
+
+In \cite{patterns, subobj} Krishnaswami et al. defined a higher-order imperative
+language, Idealized ML, with an accompanying higher-order separation logic and
+used it to specify and informally verify three design patterns. In this
+technical report we describe our experiments translating these specifications
+into the language of Hoare Type Theory (HTT) and formally verifying the
+implementations in Ynot \cite{ynot-conf}, the Coq implementation of Hoare
+Type Theory.
+
+Idealized ML is a program logic with a separate type system and specification
+language, whereas specifications are integrated with types in HTT. Formalizing
+the examples thus requires a little translation. In the case of the
+Subject/observer pattern, the integrated types and specifications allows us to
+give a simpler specification, however, the current type system appears to be
+too weak to allow us to give an implementation of this simpler specification. 
+
+\section{Subject/observer pattern}
+
+The Subject/observer pattern is a well-known design pattern for object-oriented
+languages. An instance of this pattern consists of an object called the
+subject, and a number of objects called observers, which depend on the internal
+state of the subject. The subject provides a method for dynamically registering
+observers, by providing a callback method, to be called by the subject,
+whenever the subject's internal state changes.
+
+The following is a specification of the subject-observer pattern in Idealized
+ML, for the special case where the internal state of the subject is a natural
+number \cite{subobj}:
+\begin{align*}
+&\exists sub : \tau_s \times \N \times \SEQ\ ((\N \Rightarrow prop) \times (\N \rightarrow \MONAD 1)) \Rightarrow prop.\\
+&\exists newsub : \N \rightarrow \MONAD \tau_s.\\
+&\exists register : \tau_s \times (\N \rightarrow \MONAD 1) \rightarrow \MONAD
+1.\\
+&\exists broadcast : \tau_s \times \N \rightarrow \MONAD 1.\\
+&\forall n. \{ emp \}\ newsub(n)\ \{ a : \tau_s. sub(a, n, []) \}\\
+&\AND\\
+&\forall s, m, n. \{ sub(s, m, []) \}\ broadcast(s, n)\ \{ sub(s, n, []) \}\\
+&\AND\\
+&\forall O : \N \Rightarrow prop.\ \forall f : \N \rightarrow \MONAD 1.\\
+&\quad\quad(\forall m, n. \{ O(m) \}\ f(n)\ \{ a : 1. O(n) \}\\
+&\quad\IMPLIES\\
+&\quad\quad\forall s, n, os. \{ sub(s, n, os) \}\ register(s, f)\ \{ a : 1.\
+sub(s, n, (O, f)::os) \}\\
+&\quad\quad\AND\\
+&\quad\quad\quad(\forall s, m, n, os. \{ sub(s, m, os) * obs(os) \}\ broadcast(s, n)\
+\{ sub(s, n, os) * obs\_at(os, n) \}\\
+&\quad\quad\IMPLIES\\
+&\quad\quad\quad \{ sub(s, m, (O, f) :: os) * obs((O, f)::os) \}\\
+&\quad\quad\quad\quad broadcast(s, n)\\
+&\quad\quad\quad \{ sub(s, n, (O, f) :: os) * obs\_at((O, f)::os, n) \}))
+\end{align*}
+where
+\begin{align*}
+\tau_s &\equiv \REF\ \N \times \REF\ \LIST (\N \rightarrow \MONAD 1)\\
+obs([]) &\equiv emp\\
+obs((O, f)::os) &\equiv (\exists i. O(i)) * obs(os)\\
+obs\_at([], k) &\equiv emp\\
+obs\_at((O, f)::os, k) &\equiv O(k) * obs\_at(os, k)
+\end{align*}
+
+The specification asserts the existence of a representation predicate $sub(s,
+n, os)$, expressing that $s$ is a subject with internal state $n$. The list
+$os$ contains the notification computations currently registered with the
+subject, along with a predicate expressing how the state of the given observer
+depends on the state of the subject. The specification further asserts the
+existence of three computations: $newsub$, for creating a new subject,
+$register$, for registering a callback computation with the subject, and
+$broadcast$, for updating the internal state of the subject.
+
+Intuitively, if $os = [(O_1, f_1), ..., (O_n, f_n)]$ is the list of currently
+registered observers of the subject $s$, such that each notification
+computation $f_i$ updates observer $i$'s state in accordance with $O_i$, when
+called with the subject's new state, then we should be able to conclude that
+after running $broadcast(s, m)$ the heap should satisfy $sub(s, m, os) * O_1(m)
+* ...  * O_n(m)$. This intuitive specification translates very naturally into
+the above specification, using implication between specifications to express
+the condition that each notification computation $f_i$ should respect the
+accompanying predicate $O_i$ in $os$. 
+
+\subsection{HTT translation}
+
+In this section we discuss two possible translations of the Idealized ML
+specification into HTT. With the exception of implication between
+specifications most of the above specification translates directly into HTT.
+The first translation is very direct: implication between specifications is
+translated into arrow types in HTT. However, the resulting specification does
+not capture the Subject/observer pattern. The second translation is a more
+advanced translation, making use of HTT's more expressive types to quantify
+over lists of "proper" notification computations, to obtain a simpler
+specification.  
+
+\subsubsection{Logical variables}
+
+Idealized ML and HTT handle logical variables differently. In Idealized ML the
+post-condition is expressed only in terms of the heap at termination and
+logical variables are expressed by universally quantifying over variables whose
+scope extends to both the pre- and post-condition. In HTT, the post-condition
+is expressed in terms of both the initial and terminal heap, which allows us to
+express logical variables by existentially quantifying them in the
+pre-condition and universally quantifying them in the post-condition.
+
+We can thus translate an Idealized ML specification,
+$$\forall x : \tau.\ \{ P(x) \}\ comp\ \{ a : 1.\ Q(x) \}$$
+into the following HTT type:
+$$comp : \{ \lambda i : \HEAP.\ \exists x : \tau.\ P\ x\ i \}\ a : 1\
+\{ \lambda i : \HEAP.\ \lambda j : \HEAP.\ \forall x : \tau.\ P\ x\ i \rightarrow Q\ x\ j \}$$
+where $i$ is the initial heap and $j$ is the terminal heap. We will usually abbreviate this type as follows:
+$$comp : \{ i.\ \exists x.\ P\ x\ i \}\ a : 1\
+\{ i\ j.\ \forall x.\ P\ x\ i \rightarrow Q\ x\ j \}$$
+
+\subsubsection{Specification implication}
+
+In the Idealized ML specification, implication between specifications is used
+to "inductively" build up the specification of $broadcast$, to restrict the
+quantification of $os$ to lists of pairs, $(O, f)$, such that the notification
+computation, $f$, respects the predicate, $O$. 
+
+In HTT we can express implication between specifications using arrow types.
+Turning implications into arrow types, $register$ becomes a function that
+takes as argument a $broadcast$ function for broadcasting to a list of
+observers, $os$, a predicate, $O$, and a notification computation, $f$,
+respecting $O$, and returns a computation for broadcasting to $(O, f)::os$:
+\begin{align*}
+&\Pi a : \alpha.\ \Pi os : \LIST\ T.\ \Pi O : \N \rightarrow \HPROP.\\
+&\Pi f : (\Pi m : \N. \{ i.\ \exists k : \N.\ O\ k\ i\}\ a : 1\ \{ i\ j.\ \forall k : \N.\ O\ k\ i \rightarrow O\ m\ j\}).\\
+&\Pi broad : (\Pi n : \N.\ \{ i.\ \exists k.\ (sub\ (l, k, os) * obs\ os)\ i \}\\
+&\quad\quad\quad\quad\quad \ r : 1\\
+&\quad\quad\quad\quad\{ i\ j.\ \forall k.\ (sub\ (l, k, os) * obs\ os)\ i \rightarrow (sub\ (l, n, os) * obs\_at\ (os, n))\ j \}).\\
+&\quad\Pi n : \N.\ \{ i.\ \exists k.\ (sub\ (l, k, (O, f)::os) * obs\ (O, f)::os)\ i \}\\
+&\quad\quad \ r : 1\\
+&\quad\{ i\ j.\ \forall k.\ (sub\ (l, k, (O, f)::os) * obs\ ((O, f)::os))\ i\ \rightarrow\\
+&\quad\quad\quad\quad\quad\quad (sub\ (l, n, (O, f)::os) * obs\_at\ ((O, f)::os, n))\ j \}
+\end{align*}
+Since $O$ is free in the type of $f$ we take $T$ to be the following dependent
+sum type:
+\begin{align*}
+T &\equiv \Sigma O : \N \rightarrow \HPROP.\\
+&\quad\quad (\Pi m : \N.\ \{ i.\ \exists k : \N.\ O\ k\ i\}\ a : 1\ \{ i\ j.\ \forall k : \N.\ O\ k\ i \rightarrow O\ m\ j \})
+\end{align*}
+In the implementation of the Idealized ML specification, a list is maintained
+containing the currently registered notification computations; $register$ adds
+the notification computations it is called with to this list, and $broadcast$
+iterates through the list, calling each notification computation. 
+
+To give an implementation of the above HTT type, we do not need to maintain a
+list of registered notification computations, as $register$ can simply return a
+computation that runs the given $broadcast$ computation followed by the new
+notification computation. Thus, the $sub$ predicate does not need to take the
+list of registered notification computations as an argument and we obtain the
+following HTT type for the entire Idealized ML specification:
+\begin{align*}
+S_1 \equiv\ &\Sigma \alpha : \TYPE.\ \Sigma sub : \alpha \times \N \rightarrow \HPROP.\\
+&\quad \Pi n : \N. \{ i.\ emp\ i\}\ a : \alpha\ \{i\ j.\ emp\ i \rightarrow sub\ (a, n)\ j \}\ \times && \pname{newsub}\\
+&\quad \Pi a : \alpha.\ bspec(l, [])\ \times && \pname{broadcast}\\
+&\quad \Pi a : \alpha.\ \Pi os : \LIST\ T.\ \ Pi t : T.\ \Pi broad : bspec(l, os).\ bspec(l, t::os) && \pname{register}
+\end{align*}
+where
+\begin{align*}
+& bspec(l : \LOC, os : \LIST\ T) \equiv\\
+&\quad \Pi n : \N.\ \{ i.\ \exists k.\ (sub\ (l, k) * obs\ os)\ i \}\\
+&\quad\quad r : 1\\
+&\quad \{ i\ j.\ \forall k.\ (sub\ (l, k) * obs\ os)\ i \rightarrow (sub\ (l, n) * obs\_at\ (os, n))\ j \}
+\end{align*}
+
+This is clearly not a specification of the Subject/observer pattern, as the
+currently registered notification computations are no longer part of the
+subject's state, but have to be passed around manually between observers. 
+
+\subsubsection{Quantifying over notification computations}
+For the Idealized ML specification, we cannot replace the "inductive"
+specification for $broadcast$ with the simpler specification:
+\begin{align*}
+&\forall s, i, os, k.\\
+&\quad\{ sub(s, i, os) * obs(os) \}\ broadcast(s, k)\ \{ a : 1.\ sub(s, k, os)
+* obs\_at(os, k) \}
+\end{align*}
+as we cannot provide an implementation that satisfies this specification,
+because of the quantification of $os$. However, the above $T$ type exactly
+expresses that the notification computation has to respect the accompanying
+predicate. Hence, in HTT we can let $os$ quantify over $list\ T$:
+\begin{align*}
+&\Pi a : \alpha.\ \Pi m : \N.\\
+&\quad\{ i.\ \exists n : \N, os : list\ T.\ (sub\ (a, n, os) * obs\ os)\ i \}\\
+&\quad\quad r : 1\\
+&\quad \{ i\ j.\ \forall n : \N, os : list\ T.\ (sub\ (a, n, os) * obs\ os)\ i \rightarrow (sub\ (a, m, os) * obs\_at\ (os, k))\ j \} 
+\end{align*}
+We can thus express the Subject/observer pattern, where the currently
+registered notification computations are a part of the subject's state with the
+following HTT type:
+\begin{align*}
+S_2 \equiv\ &\Sigma \alpha : \TYPE.\ \Sigma sub : \alpha \times \N \times \LIST\ T
+\rightarrow \HPROP.\\
+&\quad \Pi n : \N.\ \{ i.\ emp\ i \} a : \alpha \{ i\ j.\ sub\ (a, n, [])\ j \}\ \times && \pname{newsub}\\
+&\quad \Pi a : \alpha.\ \Pi t : T. && \pname{register}\\
+&\quad\quad\{ i.\ \exists n : \N, os : list\ T. sub\ (a, n, os)\ i \}\\
+&\quad\quad\quad r : 1\\
+&\quad\quad \{ i\ j.\ \forall n : \N, os : list\ T.\ sub\ (a, n, os)\ i \rightarrow sub\ (a, n, t::os)\ j
+\}\ \times\\
+&\quad \Pi a : \alpha.\ \Pi m : \N. && \pname{broadcast}\\
+&\quad\quad\{ i.\ \exists n : \N, os : list\ T.\ (sub\ (a, n, os) * obs\ os)\ i \}\\
+&\quad\quad\quad r : 1\\
+&\quad\quad \{ i\ j.\ \forall n : \N, os : list\ T.\ (sub\ (a, n, os) * obs\ os)\ i\\
+&\quad\quad\quad\quad\quad \rightarrow (sub\ (a, m, os) * obs\_at\ (os, k))\ j \}
+\end{align*}
+This specification still differs slightly from the Idealized ML version in its
+handling of the $O$ predicate. In the Idealized ML version $register$ takes the
+notification computation as argument and the specification allows us to choose
+any $O$ predicate that the notification computation respects, when deriving the
+specification for $broadcast$. In the HTT version, the $O$ predicate has to be
+given as an argument along with the notification computation to $register$. 
+
+\subsection{Ynot implementation}
+
+In the version of HTT presented in \cite{htthol-conf}, dependent sums are
+predicative, i.e., for $\Sigma x : A. B$ to be a monotype, both $A$ and $B$
+have to be a monotypes. Since the type of heaps, $heap$, is defined as a subset
+of the type $\N \times \Sigma \alpha : \MONO. \alpha$ and $\MONO$ is not a
+monotype, it follows that the $T$ type defined above is not a monotype either
+and that values of type $T$ cannot be stored in the heap. 
+
+In the implementation given in \cite{patterns}, a list of registered
+notification computations is stored in the heap. Since types and specifications
+are separate in Idealized ML, the type of these computations can be very weak,
+$\N \rightarrow \MONAD 1$, because the specification language allows us to
+express that if these are proper notification computations then the broadcast
+computation will do a broadcast when performed. Since types and specifications
+are integrated in HTT, these notification computations have to be stored with a
+much stronger type, as the $broadcast$ computation must be able to infer from
+their type that they are proper notification computations when it retrieves
+them from the heap. Since values of type $T$ cannot be stored in the heap, it
+is unclear whether this is possible in the predicative version of HTT.
+
+Since Ynot is based on the predicative version of HTT \cite{htthol-conf}, the
+same holds for Ynot: trying to store a value of type $T$ in the heap causes a
+universe inconsistency error. 
+
+The impredicative version of HTT \cite{httmodel-conf} has an impredicative sum
+type, $\Sigma^T x : A. B$, which is a monotype if $B$ is. Hence, in the
+impredicative version of HTT, we can store values of type $T$, by using
+impredicative sums. We conjecture that the implementation in \cite{patterns}
+has the type $S_2$ in impredicative HTT. 
+
+For the other HTT specification of the functional Subject/observer pattern,
+$S_1$, we do not have to store the notification computations in the heap:
+$register$ simply returns a new broadcast computation, which runs the old
+broadcast computation followed by the given notification computation. We have
+formally verified that this gives an implementation of the type $S_1$ in Ynot.\\
+
+The Subject/observer pattern thus provides an example of a potential weakness
+in the predicative version of HTT and suggests that future work should include
+an implementation of impredicative HTT. 
+
+\section{Flyweight}
+
+The Flyweight pattern is a design pattern used for reducing memory consumption,
+by caching objects. A Flyweight for a given class consists of an object table
+and a method, $new$, for constructing objects of the given class. The $new$
+method checks the object table to see if any objects of the given class has
+already been constructed with the given parameters, in which case it returns
+the object in the table, and otherwise creates a new object and inserts it into
+the table. 
+
+Krishnaswami et al. give the following specification for a Flyweight factory
+for constructing Flyweights for caching pairs of characters and fonts. 
+\begin{align*}
+&\exists make\_flyweight:\\
+&\quad font \rightarrow \MONAD ((char \rightarrow \MONAD \REF\ (char \times font))\ \times (\REF\ (char \times font) \rightarrow \MONAD (char \times font))).\\
+&\quad\quad \forall f.\ \{ emp \}\ make\_flyweight(f)\ \{ a.\ \exists I : \PROP.\ I \land Flyweight(I, fst\ a, snd\ a, f)\ \VALID \}
+\end{align*}
+where
+\begin{align*}
+&Flyweight(I : \PROP, newchar : char \rightarrow \MONAD \REF\ (char \times font),\\
+&\quad\quad\quad\quad\quad getdata : \REF\ (char \times font) \rightarrow \MONAD(char \times font), f : font) \equiv\\
+&\quad\exists glyph : \REF\ char \times char \times font \rightarrow \PROP.\\
+&\quad\quad\forall c, S.\ \{ I \land chars(S) \}\ newchar(c)\ \{ a : \REF\ (char \times font).\ I \land chars(\{(a, (c, f))\} \cup S) \}\\
+&\quad\quad\AND\\
+&\quad\quad\forall l, c, f, P.\ \{ glyph(l, c, f) \land P \}\ getdata(l)\ \{ a : char \times font.\ glyph(l, c, f) \land P \land a = (c, f) \}\\
+&\quad\quad\AND\\
+&\quad\quad\{ \forall l, l', c, c'.\ I \land glyph(l, c, f) \land glyph(l', c', f') \rightarrow (l = l' \leftrightarrow (c = c' \land f = f')) \}
+\end{align*}
+and
+\begin{align*}
+chars(\emptyset) &\equiv \top\\
+chars(\{ (l, (c, f)) \} \cup S) &\equiv glyph(l, c, f) \land chars(S)
+\end{align*}
+
+Since Idealized ML is not an object oriented language and therefore cannot
+return a reference to an object, instead the $new$ computation just returns a
+reference to the character and font pair. The Flyweight further defines a
+$getdata$ computation, which returns the actual character and font for a given
+reference, to simulate an object method.
+
+\subsection{HTT translation}
+
+Besides Hoare triples, Idealized ML's specification language contains
+specifications of the form $\{ P \}$, for asserting that $P$ is true. In the
+above specification this is used to express that calling $getdata$ with the
+same character multiple times, produces the same reference. In HTT we can
+express that an arbitrary proposition $P$ is true by returning an element of
+the subset type, $\{ x : 1 \mid P \}$, where $x$ is not free in $P$. 
+
+The assertion language of Idealized ML also contains an expression for
+asserting that a given specification holds. In the above example this is used
+in the post-condition of $make\_flyweight$, to assert that the code returned
+implements a Flyweight. In HTT, we can express the same by simply giving a more
+precise type for the return value of the $make\_flyweight$ computation. 
+
+We have further generalized the specification, such that the computation can
+generate a Flyweight for simulated objects consisting of a value of an
+arbitrary monotype. The Flyweight factory computation therefore also has to
+take as an argument, a function, $\alpha_{eq}$, for deciding propositional
+equality between $\alpha$ values. 
+
+The rest of the specification can be translated almost directly into HTT,
+however, we have made a few changes, to simplify the formal verification of the
+implementation in Ynot. 
+\begin{itemize}
+\item In the specification of $newchar$, instead of using a set to associate
+arguments with objects, we have used a finite function (i.e., a total function
+from $\alpha$ to $\OPTION\ \LOC$).
+\item In the above specification the predicate $I$ has to specify the
+representation of both the object table and the simulated objects. We have
+split $I$ into two predicates, $table$ and $refs$, and changed the precondition
+of $newchar$ to the HTT equivalent of $table(...) * (refs(...) \land
+chars(S))$, to make it explicit that the object table and the simulated objects
+are in separate subheaps, to simplify verification.
+\end{itemize}
+The final HTT type of the Flyweight factor thus looks as follows:
+\marginnote{\pname{new}}[11.2em]\marginnote{\pname{get}}[20.2em]\begin{align*}
+&\Pi \alpha : \MONO.\ \Pi \alpha_{eq} : (\Pi x : \alpha.\ \Pi y : \alpha.\ \{ z : 1 \mid x = y \} + \{ z : 1 \mid x \neq y \}).\\
+\marginnote{test2}&\quad\{ i.\ emp\ i \}\\
+&\quad\quad r : \Sigma table : (\alpha \rightarrow \OPTION\ \LOC) \rightarrow \HEAP \rightarrow \PROP.\\
+&\quad\quad\quad \Sigma refs : (\alpha \rightarrow \OPTION\ \LOC) \rightarrow \HEAP \rightarrow \PROP.\\
+&\quad\quad\quad \Sigma objat : \LOC \rightarrow \alpha \rightarrow \HEAP \rightarrow \PROP.\\
+&\quad\quad\quad\Sigma prf_1 : \{ x : 1 \mid \forall h, l, l', a, a', f.\ objat\ l\ a\ h \land objat\ l'\ a'\ h \land refs\ f\ h \rightarrow (l = l' \leftrightarrow a = a') \}.\\
+&\quad\quad\quad\quad \Pi a : \alpha.\\
+&\quad\quad\quad\quad\quad \{ i.\ \exists f.\ (table\ f * (\lambda h.\ allobjat(\alpha, objat, f, h) \land refs\ f\ h))\ i \}\\
+&\quad\quad\quad\quad\quad\quad l : \LOC\\
+&\quad\quad\quad\quad\quad \{ i\ j.\ \forall f.\ (table\ f * (\lambda h.\ allobjat(\alpha, objat, f, h) \land refs\ f\ h))\ i \rightarrow\\
+&\quad\quad\quad\quad\quad\quad ((\forall l'.\ f\ a = Some\ l' \rightarrow l = l')\ \land\\
+&\quad\quad\quad\quad\quad\quad (table\ f[a \mapsto l] * (\lambda h.\ allobjat(\alpha, objat, f[a \mapsto l], h) \land refs\ f[a \mapsto l]\ h))\ j) \}\ \times\\
+&\quad\quad\quad\quad \Pi l : loc.\\
+&\quad\quad\quad\quad\quad \{ i.\ \exists a : \alpha,\ objat\ l\ a\ i \}\ r : \alpha\ \{ i\ j.\ \forall a : \alpha,\ objat\ l\ a\ i \rightarrow (i = j \land r = a) \}\\\
+&\quad \{ i\ j.\ ((fst\ r)\ []\ * (\lambda h.\ allobjat(\alpha, fst\ (snd\ (snd\ r)), [], h) \land (fst\ (snd\ r))\ []\ h))\ j \}
+\end{align*}
+where
+\begin{align*}
+allobjat(\alpha, objat, f, h) &\equiv \forall l : \LOC, o : \alpha.\ f\ o = Some\ l \rightarrow (objat\ l\ o * (\lambda h.\ \TRUE))\ h
+\end{align*}
+and $[] \equiv (\lambda x.\ None)$.
+
+\subsection{Ynot implementation}
+
+In the case of the Flyweight pattern, we were able to formally verify that the
+implementation given in \cite{patterns} has the above HTT type in Ynot. 
+
+The implementation given in \cite{patterns} assumes the existence of an
+implementation of a hash table data-structure with the following Idealized ML
+specification:
+\begin{align*}
+&\exists table : A_t \times (B \rightarrow^{fin} C) \rightarrow \PROP.\\
+&\exists newtable: 1 \rightarrow \MONAD\ A_t.\\
+&\exists update : A_t \times B \times C \rightarrow \MONAD\ 1.\\
+&\exists lookup : A_t \times B \rightarrow \MONAD(\OPTION\ C).\\
+&\quad \{ emp \}\ newtable()\ \{ a : A_t: table(a, [])\}\\
+&\quad\AND\\
+&\quad \forall t, f, b, c.\ \{ table(t, f) \}\ update(t, b, c)\ \{ a : 1.\ table(t, f[b \mapsto c]) \}\\
+&\quad\AND\\
+&\quad \forall t, b, f.\ \{ table(t, f) \}\ lookup(t, b)\ \{ a : option\ C.\ table(t, f)\ \land\\
+&\quad\quad\quad ((b \in dom(f) \land a = Some\ f(b)) \lor (b \not\in dom(f) \land a = None)) \}
+\end{align*}
+
+For the formalization in Ynot we found it necessary to use a hash table
+implementation with a slightly stronger specification: In particular,
+$f' = f[b \mapsto c]$ should satisfy that,
+\begin{align*}
+f'\ x = 
+\begin{cases}
+c & \text{if $b = x$}\\
+f\ x & \text{if $b \neq x$}
+\end{cases}
+\end{align*}
+where $b = x$ denotes propositional equality. To define such an $f'$, we need a
+function for deciding propositional equality on $B$ values. Similarly, to
+define the $update$ and $lookup$ computations, we need a computation or
+function for deciding propositional equality on $B$ values. We further had to
+extend the specification with two preciseness properties, $prf1$ and $prf2$ in
+the HTT type below, to make the proofs go through. At the moment it is unclear
+whether these preciseness properties were truly needed to prove that the
+Flyweight implementation had the expected HTT type or whether they are a
+consequence of the current Ynot implementation. Section \ref{logical-var}
+contains a discussion of the preciseness issues we encountered with the Ynot
+formalization.  
+\begin{align*}
+&\Pi \alpha : \MONO.\ \Pi \alpha_{eq} : (\Pi x : \alpha.\ \Pi y : \alpha.\ \{ z : 1 \mid x = y \} + \{ z : 1 \mid x \neq y \}).\\
+&\Sigma table : \LOC \rightarrow (\alpha \rightarrow \OPTION\ \LOC) \rightarrow \HEAP \rightarrow \PROP.\\
+&\Sigma prf_1 : \{ x : 1 \mid \forall l : \LOC,\ precise\ (\lambda h.\ \exists f : obj \rightarrow \OPTION\ \LOC,\ table\ l\ f\ h) \}.\\
+&\Sigma prf_2 : \{ x : 1 \mid \forall l, f, f', h.\ table\ l\ f\ h \land table\ l\ f'\ h \rightarrow f = f' \}.\\
+&\quad \{ i.\ emp\ i \}\ r : \LOC\ \{ i\ j.\ table\ r\ (\lambda x.\ None)\ j \}\ \times && \pname{newtable}\\
+&\quad\ \Pi t : \LOC.\ \Pi k : \alpha. && \pname{lookup}\\
+&\quad\quad \{ i.\ \exists f : (\alpha \rightarrow \OPTION\ \LOC).\ table\ t\ f\ i \}\\
+&\quad\quad\quad r : \OPTION\ \LOC\\
+&\quad\quad \{ i\ j.\ \forall f : (\alpha \rightarrow \OPTION\ \LOC).\ table\ t\ f\ i \rightarrow (i = j \land r = f\ k \}\ \times\\
+&\quad\ \Pi t : \LOC.\ \Pi k : \alpha.\ \Pi v : \LOC. && \pname{update}\\
+&\quad\quad \{ i.\ \exists f : (\alpha \rightarrow \OPTION\ \LOC).\ table\ t\ f\ i \}\\
+&\quad\quad\quad r : 1\\
+&\quad\quad \{ i\ j.\ \forall f : (\alpha \rightarrow \OPTION\ \LOC).\ table\ t\ f\ i \rightarrow table\ t\ f[k \mapsto Some\ v]\ j \}
+\end{align*}
+where
+\begin{align*}
+precise(P) &\equiv \forall h, h_1, m_1, h_2, m_2 : \HEAP.\ splits\ h\ h_1\ m_1 \rightarrow splits\ h\ h_2\ m_2 \rightarrow\\
+&\quad\quad\ \ P\ h_1 \rightarrow P\ h_2 \rightarrow (h_1 = h_2 \land m_1 = m_2)
+\end{align*}
+where $splits\ h\ h_1\ h_2$ iff $h_1$ and $h_2$ are disjoint and $h$ is the
+union of $h_1$ and $h_2$.
+
+\section{Iterators}
+
+The iterator pattern allows encapsulation of data when enumerating elements in
+a collection. Instead of manipulating the collection directly, one uses the
+\texttt{next} method of its attached \texttt{iterator} structure, which hides
+all the implementation details. If destructive operations are performed on the
+collection, the iterator will be considered to be in an invalid state. We will
+thus forbid such operations, but still allow non-destructive ones, such as
+querying for the size of the collection.
+
+In addition to the \texttt{newiter} method, which creates a brand new iterator
+from a collection, we provide two other constructions: \texttt{filter p i}
+whose \texttt{next} method only returns elements of \texttt{i} if they satisfy
+the predicate \texttt{p}, and \texttt{map2 f i1 i2}, which applies \texttt{f}
+to the couple formed by the elements returned by \texttt{i1} and \texttt{i2}.
+
+Here is a specification in Idealized ML, as found in Neelakantan and al.
+\begin{align*}
+& A_c = \REF\;\LIST\;\N.\\
+& A_i = Coll\; of\; \REF\;A_c\\
+& \quad\quad |\; Filter\;of\;((\N\rightarrow bool) \times A_i)\\
+& \quad\quad |\; Map2\;of\;((\N \times \N \rightarrow
+\N) \times A_i \times A_i).\\
+& \\
+& \exists\, coll : A_c \times \SEQ\; \N \times \PROP \Rightarrow \PROP.\\
+& \exists\, iter : A_i \times \PFIN(A_c \times \SEQ\;\N\times
+\PROP)\times \SEQ\;\N \Rightarrow \PROP.\\
+& \exists\, newcoll : \mathbf{1} \rightarrow \MONAD A_c.\\
+& \exists\, size : A_c \rightarrow \MONAD \N.\\
+& \exists\, add : A_c \times \N \rightarrow \MONAD \mathbf{1}.\\
+& \exists\, newiter : A_c \rightarrow \MONAD A_i.\\
+& \exists\, filter : (\N \rightarrow bool) \times A_i \rightarrow
+\MONAD A_i.\\
+& \exists\, map2 : (\N \times \N \rightarrow \N)
+\times A_i \times A_i \rightarrow \MONAD A_i.\\
+& \exists\, next : A_i \rightarrow \MONAD (\OPTION\; \N).\\
+& \\
+& \{\EMP\}\,newcoll()\,\{a : A_c.\exists\,P. coll(a,P,\epsilon)\}.\\
+& \AND\\
+& \forall\,c : A_c,\; xs : \SEQ\;\N,\; P : \PROP,\\
+&\quad\quad\quad \{coll(c,xs,P)\}\,size(c)\,\{a :
+\N, coll(c,xs,P) \wedge a = |xs|\}.\\
+& \AND\\
+& \forall\,c : A_c,\; x : \N,\; xs : \SEQ\;\N,\; P : \PROP,\\
+&\quad\quad\quad \{coll(c,xs,P)\}\,add(c,x)\,\{a : 1. \exists, Q.
+coll(c,x::xs,Q)\}.\\
+& \AND\\
+& \forall\,c : A_c,\; xs : \SEQ\;\N,\; P : \PROP,\\
+&\quad\quad\quad \{coll(c,xs,P)\}\,newiter(c)\,\{a : A_i. coll(c,xs,P) *
+iter (a, \{(c,xs,P)\},xs)\}.\\
+& \AND\\
+& \forall\,p : \N \rightarrow bool,\; i : A_i,\; S :
+\PFIN(A_c\times\SEQ\;\N\times \PROP),\;xs : \SEQ\;\N,\\
+&\quad\quad\quad \{iter(i,S,xs)\}\,filter(p,i)\,\{a : A_i.
+iter(a,S,filter\;p\;xs)\}.\\
+& \AND\\
+& \forall\,(f : \N \times \N \rightarrow \N),\; (i\,i' : A_i),\; (S\,S' :
+\PFIN(A_c\times\SEQ\;\N\times \PROP)),\;(xs\,xs' : \SEQ\;\N),\\
+&\quad\quad\quad \{iter(i,S,xs) * iter(i',S',xs') \wedge S \cap S' =
+\varnothing \}\,map2(f,i,i')\\
+&\quad\quad\quad\{a : A_i.iter(a, S\cup S', map\;f\;(zip\;xs\;xs'))\}.\\
+& \AND\\
+& \forall\, i : A_i,\; S : \PFIN(A_c\times\SEQ\;\N\times \PROP),\\
+&\quad\quad\quad \{colls(S) * iter(i,S,\epsilon)\}\,next(i)\,\{a :
+\OPTION\;\N. colls(S) * iter(i,S,\epsilon) \wedge a = None\}.\\
+& \AND\\
+& \forall\, i : A_i,\; S : \PFIN(A_c\times\SEQ\;\N\times
+\PROP),\;x:\N,\;xs:\SEQ\;\N,\\
+&\quad\quad\quad \{colls(S) * iter(i,S,x::xs)\}\,next(i)\,\{a :\OPTION\;\N.
+colls(S) * iter(i,S,xs) \wedge a = Some\;x\}.
+\end{align*}
+
+\subsection{HTT Translation}
+
+The translation of this specification in HTT is almost straightforward. Apart
+from the case of {\tt map2}, the only difference is that, as for the other
+patterns, we use the binary post-conditions style in our types. For instance, 
+we will write the specification of {\tt add} as
+\begin{align*}
+\forall c:Ac, x:nat, STsep & (fun\;i \Rightarrow \exists xs\;P,
+coll\;c\;xs\;P\;i) \mathbf{1}\\
+&(fun\;y\;i\;m\Rightarrow y = Val\;tt\wedge\\
+&\quad\quad\forall xs\;P,
+coll\;c\;xs\;P\;i\Rightarrow \exists Q, coll\;c\;(x::xs)\;Q\;m).
+\end{align*}
+
+One big issue arises, however, when we try to write the {\tt next} procedure
+corresponding to the case where our iterator is a {\tt map2}, as the binary
+postconditions leads to a situation where the proof would rely on the
+preciseness property of the predicate on the initial heap, which we don't seem
+to have enough hypothesis to prove.
+A detailed discussion of this problem can be found in section
+\ref{logical-var}.
+
+\bigskip
+
+We thus have a completely straightforward translation of the iterators in HTT,
+and an associated implementation in ynot, but only for the subset of the
+pattern which doesn't include the {\tt map2} construct.
+
+\section{Logical Variables and preciseness}\label{logical-var}
+
+As previously mentioned, in carrying out the formalization of the Flyweight
+implementation and the Iterators implementation in Ynot, we encountered some
+issues with preciseness. More specifically, that we often had to prove
+preciseness for a predicate to complete the proof, where the same proof could
+have been completed on paper in the impredicative version of HTT (which also
+uses unary post-conditions), without proving preciseness.
+
+To illustrate the problem, assume that we have an implementation, $add$, of the
+following HTT type:
+\begin{align*}
+\Pi l : \LOC.\ \{ i.\ \exists n.\ inv\ l\ n\ i \}\ r : 1\ \{ i\ j.\ \forall n.\ inv\ l\ n\ i \rightarrow inv\ l\ (n+1)\ j \}
+\end{align*}
+where $inv(l, n, i)$ holds iff $i$ is the singleton heap with $n$ stored at
+location $l$. Then we should clearly we able to prove that the computation,
+$$add_2 = \lambda l_1.\ \lambda l_2.\ add\ l_1; add\ l_2$$
+has the type,
+\begin{align*}
+T =\ &\Pi l_1 : \LOC.\ \Pi l_2 : \LOC.\\
+&\quad\{ i.\ \exists n_1, n_2.\ (inv\ l_1\ n_1 * inv\ l_2\ n_2)\ i \}\\
+&\quad\quad r : 1\\
+&\quad\{ i\ j.\ \forall n_1, n_2.\ (inv\ l_1\ n_1 * inv\ l_2\ n_2)\ i \rightarrow (inv\ l_1\ (n_1+1) * inv\ l_2\ (n_2+1))\ m \}
+\end{align*}
+without having to prove any preciseness properties about $inv$ (or unfolding
+the definition of $inv$). In the current version of Ynot, if we use the
+$nextvc$ tactic, which is an important part of the automation provided by Ynot
+for simplifying proof obligations, then we cannot prove that $add_2$ has the
+desired type, without a preciseness property about $inv$, such as: $$\forall l
+: \LOC.\ precise (\lambda h.\ \exists n : \N.\ inv\ l\ n\ h)$$ However, without
+the $nextvc$ tactic the proof goes through without having to prove preciseness
+and the same holds when doing a paper proof using the proof rules of the
+impredicative version of HTT.
+
+To prove that $add_2$ has the type $T$, using $nextvc$, we have to prove the
+precondition of $add\ l_1$ and $add\ l_2$ holds, under the assumption that we
+have a heap $i$ for which $(inv\ l_1\ n_1 * inv\ l_2\ n_2)$ holds. By the
+assumption about $i$, we know that $i$ can be split into two disjoint subheaps
+$i_1$ and $i_2$, for which $inv\ l_1\ n_1$ and $inv\ l_2\ n_2$ holds,
+respectively. $i_1$ can be used to prove the precondition of $add\ l_1$ and
+$i_2$ to prove the precondition of $add\ l_2$. Then we have to prove the
+post-condition in $T$,
+$$\forall n_1, n_2.\ (inv\ l_1\ n_1 * inv\ l_2\ n_2)\ i \rightarrow (inv\ l_1\ (n_1+1) * inv\ l_2\ (n_2+1))\ m$$
+under the assumption that the post-condition of $add\ l_1$ hold, instantiated
+with $i_1$ as initial heap and $m_1$ as final heap, and the post-condition of
+$add\ l_2$ instantiated with $i_2$ and $m_2$, where $m$ splits into the two
+disjoint subheaps $m_1$ and $m_2$. 
+
+Hence, we have to prove that $(inv\ l_1\ (n_1'+1) * inv\ l_2\ (n_2'+1))$ hold
+for $m$ under the further assumption that $(inv\ l_1\ n_1' * inv\ l_2\ n_2')$
+holds for $i$. Since the post-condition of $add\ l_1$ has already been
+instantiated with $i_1$ as initial heap, we need a preciseness property about
+the $inv$ predicate to be able to conclude that the subheap of $i$ for which
+$inv\ l_1\ n_1'$ holds is $i_1$, to be able to use the post-condition of $add\
+l_1$ with the new assumptions. The assumption that $inv\ l_1\ n_1$ holds for
+$i_1$ allows us to prove that $inv\ l_1\ (n_1+1)$ holds for $m_1$, but this is
+not very useful unless we know that $n_1 = n_1'$, which also requires a
+preciseness property about the $inv$ predicate, to prove. 
+
+It is unclear whether the preciseness problem encountered with the $map2$
+Iterator is a limitation of binary post-conditions in general or the current
+Ynot implementation, as we have been unable to finish the proof with and
+without $nextvc$ for $map2$ (without $nextvc$ the proof became too long for us
+to finish by hand). 
+
+\bibliography{refs}
+
+\end{document}
+%% vi: tw=80 ts=2 et
