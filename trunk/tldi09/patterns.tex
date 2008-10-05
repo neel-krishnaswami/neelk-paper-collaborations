@@ -1,33 +1,48 @@
-\documentclass{llncs}
+%-----------------------------------------------------------------------------
+%
+%               Template for LaTeX Class/Style File
+%
+% Name:         sigplanconf-template.tex
+% Purpose:      A template for sigplanconf.cls, which is a LaTeX 2e class
+%               file for SIGPLAN conference proceedings.
+%
+% Author:       Paul C. Anagnostopoulos
+%               Windfall Software
+%               978 371-2316
+%               paul@windfall.com
+%
+% Created:      15 February 2005
+%
+%-----------------------------------------------------------------------------
+
+
+\documentclass[preprint,natbib]{sigplanconf}
+
 \usepackage{amsmath}
 \usepackage{amssymb}
-% \usepackage[left=4.8cm,right=4.8cm]{geometry}
 \input{commands.tex}
 
-\newcommand{\chartp}{\ctext{char}}
-\newcommand{\fonttp}{\ctext{font}}
-
-% \renewcommand{\baselinestretch}{0.95}
-
 \begin{document}
-\pagestyle{plain}
+
+\conferenceinfo{TLDI '09}{Savannah, GA.} 
+\copyrightyear{2009} 
+\copyrightdata{[to be supplied]} 
+
+\titlebanner{banner above paper title}        % These are ignored unless
+\preprintfooter{short description of paper}   % 'preprint' option specified.
+
 \title{Design Patterns in Separation Logic}
+\subtitle{Subtitle Text, if any}
 
-\author{Neelakantan R. Krishnaswami\inst{1} \and Jonathan Aldrich\inst{1} 
-        \and Lars Birkedal\inst{2}}
-
-\institute{
-Carnegie Mellon University, Pittsburgh, USA
-\and
-IT University of Copenhagen, Copenhagen, Denmark
-}
-% %       \affaddr{Rued Langgaards Vej 7}\\
-% %       \affaddr{Copenhagen, Denmark}\\
-%        \email{birkedal@itu.dk}
-% }
+\authorinfo{Neelakantan R. Krishnaswami \and Jonathan Aldrich}
+           {Carnegie Mellon University}
+           {\{neelk,jonathan.aldrich\}@cs.cmu.edu}
+\authorinfo{Lars Birkedal}
+           {IT University of Copenhagen}
+           {birkedal@itu.dk}
 
 \maketitle
-% \vspace{-2em}
+
 \begin{abstract}
 Object-oriented programs are notable for making use of both
 higher-order abstractions and mutable, aliased state. Either feature
@@ -38,30 +53,16 @@ formally specify and verify programs that use several common design
 patterns in concert.
 \end{abstract}
 
-% \category{F.3}{Logics and Meanings of Programs}{Specifying and Verifying and Reasoning about Programs}
+\category{F.3}{Logics and Meanings of Programs}{Specifying and Verifying and Reasoning about Programs}
 %A category including the fourth, optional field follows...
-% \category{D.2.8}{Software Engineering}{Metrics}[complexity measures, performance measures]
+\category{D.2.8}{Software Engineering}{Metrics}[complexity measures, performance measures]
 
-% \terms{Separation Logic, Design Patterns, Formal Verification}
+\terms{Separation Logic, Design Patterns, Formal Verification}
+
+% \keywords
+% keyword1, keyword2
 
 \section{Introduction}
-% \vspace{-1em}
-% {\large \textbf{TODO: Fix line numbering}}
-
-% It is more difficult to reason about programs that use aliasing than
-% programs that do not use mutable shared data. Likewise, it is more
-% difficult to reason about programs that use higher order features than
-% first order programs. When both features are combined, we run into new
-% problems which are more complex than the sum of these
-% already-challenging parts.
-% 
-% Furthermore, higher-order imperative programs are commonly found in
-% practice. Object-oriented programs make heavy use of both shared
-% state, and objects themselves can be seen as a form of higher-order
-% state, via the closure-object correspondence. So beyond the inherent
-% technical interest in learning how to reason about higher-order
-% imperative programs, there are also great practical applications for
-% good answers to the question of how to verify such programs.
 
 The widespread use of object-oriented languages creates an opportunity
 for designers of formal verification systems, above and beyond a
@@ -107,7 +108,7 @@ give good specifications for and verify the following programs:
   way that supports a strong form of information hiding between the
   subject and the observers.
 \end{itemize}
-% \vspace{-2.5em}
+
 
 \begin{figure*}
 \renewcommand{\baselinestretch}{0.9}
@@ -133,9 +134,6 @@ give good specifications for and verify the following programs:
 \renewcommand{\baselinestretch}{0.95}
 \end{figure*}
 
-
-
-% \vspace{-2em}
 \section{Formal System}
 % \vspace{-1em}
 
@@ -527,7 +525,7 @@ implemented with single or double hashing.
 % \label{all-judgements}
 % \end{figure}
 % 
-% \vspace{-1em}
+
 \section{Iterators, Composites and Decorators}
 % % \vspace{-1em}
 % In this section, we show how to integrate the composite, decorator and
@@ -1429,12 +1427,31 @@ an instance of a case where object invariants can be invalidated by
 the allocation of new objects, and add guards to their specifications
 to control allocation to the permitted cases. 
 
-\textbf{Acknowledgments.} This work was supported in part by NSF grant
+
+
+% \appendix
+% \section{Appendix Title}
+
+This is the text of the appendix, if you need one.
+
+\acks
+
+This work was supported in part by NSF grant
 CCF-0541021, NSF grant CCF-0546550, DARPA contract HR00110710019, and
 the United States Department of Defense.
 
-% \vspace{-1em}
 \bibliographystyle{abbrv}
 \bibliography{patterns}
 
+
+% \bibliographystyle{plainnat}
+% 
+% \begin{thebibliography}{}
+% 
+% \bibitem{smith02}
+% Smith, P. Q. reference text
+% 
+% \end{thebibliography}
+
 \end{document}
+
