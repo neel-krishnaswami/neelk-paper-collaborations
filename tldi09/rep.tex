@@ -8,7 +8,7 @@
 \bibliographystyle{plain}
 
 \title{Verifying design patterns in Hoare Type Theory}
-\author{Kasper Svendsen, Alexandre Buisse, and Lars Birkedal}
+\author{Kasper Svendsen, Alexandre Buisse, Lars Birkedal, and Bastian Maubert}
 
 \newcommand{\N}[0]{\mathbb{N}}
 \newcommand{\VAL}[0]{Val}
@@ -29,7 +29,7 @@
 \newcommand{\LOC}[0]{loc}
 \newcommand{\OPTION}[0]{option}
 \newcommand{\TRUE}[0]{True}
-\newcommand{\VALID}[0]{valid}
+\newcommand{\VALID}[0]{\mathbf{valid}}
 \newcommand{\EMP}[0]{emp}
 \newcommand{\PFIN}[0]{\mathcal{P}^{fin}}
 
@@ -60,8 +60,8 @@ Idealized ML is a program logic with a separate type system and specification
 language, whereas specifications are integrated with types in HTT. Formalizing
 the examples thus requires a little translation. In the case of the
 Subject/observer pattern, the integrated types and specifications allows us to
-give a simpler specification, however, the current type system appears to be
-too weak to allow us to give an implementation of this simpler specification. 
+give a simple specification, however, the current type system appears to be
+too weak to allow us to give an implementation of this specification. 
 
 \section{Subject/observer pattern}
 
@@ -216,17 +216,30 @@ currently registered notification computations are no longer part of the
 subject's state, but have to be passed around manually between observers. 
 
 \subsubsection{Quantifying over notification computations}
-For the Idealized ML specification, we cannot replace the "inductive"
-specification for $broadcast$ with the simpler specification:
+
+In \cite{patterns}, Krishnaswami et al. give an alternative specification for
+the Subject/observer pattern, where the restriction to proper notification
+computations is moved into the $sub$ predicate. This results in a simpler
+specification for $broadcast$, as the specification no longer has to be built
+up "inductively", using implication between specifications:
 \begin{align*}
 &\forall s, i, os, k.\\
 &\quad\{ sub(s, i, os) * obs(os) \}\ broadcast(s, k)\ \{ a : 1.\ sub(s, k, os)
 * obs\_at(os, k) \}
 \end{align*}
-as we cannot provide an implementation that satisfies this specification,
-because of the quantification of $os$. However, the above $T$ type exactly
-expresses that the notification computation has to respect the accompanying
-predicate. Hence, in HTT we can let $os$ quantify over $list\ T$:
+Since $os$ is universally quantified, an implementation of the above specification could for instance take $sub(s, i, os) = notify(os) \land ...$, where
+\begin{align*}
+notify([]) &\equiv \TRUE\\
+notify((O, f)::l) &\equiv (\forall m, n.\ \{ O(m) \}\ f(n)\ \{ a : 1.\ O(n) \}\ \VALID) \land notify(l)
+\end{align*}
+to restrict attention to "proper" notification computations. 
+
+The above $notify$ predicate does not translate directly into HTT, as HTT does
+not have an assertion of the form $S\ \VALID$, to express that the
+specification $S$ holds. However, since the type $T$ defined above is the type
+of pairs of predicate and notification computations, such that the notification
+computation respects the accompanying predicate, we can simply let $os$
+quantify over $list\ T$:
 \begin{align*}
 &\Pi a : \alpha.\ \Pi m : \N.\\
 &\quad\{ i.\ \exists n : \N, os : list\ T.\ (sub\ (a, n, os) * obs\ os)\ i \}\\
@@ -374,10 +387,10 @@ of $newchar$ to the HTT equivalent of $table(...) * (refs(...) \land
 chars(S))$, to make it explicit that the object table and the simulated objects
 are in separate subheaps, to simplify verification.
 \end{itemize}
-The final HTT type of the Flyweight factor thus looks as follows:
+The final HTT type of the Flyweight factory thus looks as follows:
 \marginnote{\pname{new}}[11.2em]\marginnote{\pname{get}}[20.2em]\begin{align*}
 &\Pi \alpha : \MONO.\ \Pi \alpha_{eq} : (\Pi x : \alpha.\ \Pi y : \alpha.\ \{ z : 1 \mid x = y \} + \{ z : 1 \mid x \neq y \}).\\
-\marginnote{test2}&\quad\{ i.\ emp\ i \}\\
+&\quad\{ i.\ emp\ i \}\\
 &\quad\quad r : \Sigma table : (\alpha \rightarrow \OPTION\ \LOC) \rightarrow \HEAP \rightarrow \PROP.\\
 &\quad\quad\quad \Sigma refs : (\alpha \rightarrow \OPTION\ \LOC) \rightarrow \HEAP \rightarrow \PROP.\\
 &\quad\quad\quad \Sigma objat : \LOC \rightarrow \alpha \rightarrow \HEAP \rightarrow \PROP.\\
@@ -465,27 +478,28 @@ union of $h_1$ and $h_2$.
 
 \section{Iterators}
 
-The iterator pattern allows encapsulation of data when enumerating elements in
-a collection. Instead of manipulating the collection directly, one uses the
-\texttt{next} method of its attached \texttt{iterator} structure, which hides
-all the implementation details. If destructive operations are performed on the
-collection, the iterator will be considered to be in an invalid state. We will
+The Iterator pattern is a design pattern used to provide a uniform interface
+for enumerating elements in a collection. Instead of manipulating a collection
+directly, one uses an iterator, which provides a computation, $next$, which
+produces the next element in the collection. The instance of the Iterator
+pattern we consider further provides two ways of constructing new iterators
+from old ones: A filter iterator, $filter\ p\ i$, which returns the elements of
+the underlying iterator $i$ that satisfies the predicate $p$, and a map
+iterator, $map2\ f\ i_1\ i_2$, which applies the function $f$ to the elemenets
+of two underlying iterators $i_1$ and $i_2$. 
+
+If a destructive operation is performed on an underlying collection of an
+iterator, the iterator will be considered to be in an invalid state. We will
 thus forbid such operations, but still allow non-destructive ones, such as
 querying for the size of the collection.
 
-In addition to the \texttt{newiter} method, which creates a brand new iterator
-from a collection, we provide two other constructions: \texttt{filter p i}
-whose \texttt{next} method only returns elements of \texttt{i} if they satisfy
-the predicate \texttt{p}, and \texttt{map2 f i1 i2}, which applies \texttt{f}
-to the couple formed by the elements returned by \texttt{i1} and \texttt{i2}.
-
-Here is a specification in Idealized ML, as found in Neelakantan and al.
+Figure \ref{fig:iterators} contains the Idealized ML specification of the
+instance of the iterators pattern from \cite{patterns}. 
+\begin{figure}[p]
 \begin{align*}
 & A_c = \REF\;\LIST\;\N.\\
-& A_i = Coll\; of\; \REF\;A_c\\
-& \quad\quad |\; Filter\;of\;((\N\rightarrow bool) \times A_i)\\
-& \quad\quad |\; Map2\;of\;((\N \times \N \rightarrow
-\N) \times A_i \times A_i).\\
+& A_i = Coll\; of\; \REF\;A_c\; |\; Filter\;of\;((\N\rightarrow bool) \times
+A_i)\; |\; Map2\;of\;((\N \times \N \rightarrow \N) \times A_i \times A_i).\\
 & \\
 & \exists\, coll : A_c \times \SEQ\; \N \times \PROP \Rightarrow \PROP.\\
 & \exists\, iter : A_i \times \PFIN(A_c \times \SEQ\;\N\times
@@ -534,34 +548,26 @@ iter(a,S,filter\;p\;xs)\}.\\
 &\quad\quad\quad \{colls(S) * iter(i,S,x::xs)\}\,next(i)\,\{a :\OPTION\;\N.
 colls(S) * iter(i,S,xs) \wedge a = Some\;x\}.
 \end{align*}
+\caption{The Idealized ML specification given in \cite{patterns} of the Iterators pattern.}
+\label{fig:iterators}
+\end{figure}
 
-\subsection{HTT Translation}
+\subsection{HTT translation and Ynot implementation}
 
-The translation of this specification in HTT is almost straightforward. Apart
-from the case of {\tt map2}, the only difference is that, as for the other
-patterns, we use the binary post-conditions style in our types. For instance, 
-we will write the specification of {\tt add} as
-\begin{align*}
-\forall c:Ac, x:nat, STsep & (fun\;i \Rightarrow \exists xs\;P,
-coll\;c\;xs\;P\;i) \mathbf{1}\\
-&(fun\;y\;i\;m\Rightarrow y = Val\;tt\wedge\\
-&\quad\quad\forall xs\;P,
-coll\;c\;xs\;P\;i\Rightarrow \exists Q, coll\;c\;(x::xs)\;Q\;m).
-\end{align*}
+The translation of the this specification into HTT is straightforward, with
+some very minor modifications, such as letting $S$ be a list instead of a
+finite subset.\\
 
-One big issue arises, however, when we try to write the {\tt next} procedure
-corresponding to the case where our iterator is a {\tt map2}, as the binary
-postconditions leads to a situation where the proof would rely on the
-preciseness property of the predicate on the initial heap, which we don't seem
-to have enough hypothesis to prove.
-A detailed discussion of this problem can be found in section
-\ref{logical-var}.
-
-\bigskip
-
-We thus have a completely straightforward translation of the iterators in HTT,
-and an associated implementation in ynot, but only for the subset of the
-pattern which doesn't include the {\tt map2} construct.
+Similarly, the formal verification in Ynot of the implementation of the above
+specification given in \cite{patterns} is straightforward, with the exception
+of the $map2$ iterator. Since the $next$ computation has to perform two
+recursive calls to $next$ on two subheaps of the initial heap in the case of
+the $map2$ iterator, we have to prove some preciseness properties about $iter$
+predicate, to get the proof to go through. This is explained in greater detail
+in Section \ref{logical-var}. Without the $map2$ iterator, we have formally
+verified that the implementation given in \cite{patterns} has the expected HTT
+type, however, so far we have not been able to prove the required preciseness
+properties to finish the formal proof with the $map2$ iterator.  
 
 \section{Logical Variables and preciseness}\label{logical-var}
 
