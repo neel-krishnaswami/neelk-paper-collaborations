@@ -395,19 +395,19 @@ Hoare triple $\spec{p}{\run{cmd}}{a:A}{q}$.
                \bnfalt \assert 
 \\[0.5em]
 \mbox{Assertion} & 
-p & ::= & e \bnfalt x \bnfalt \fun{x}{\omega}{p} \bnfalt p\;q \bnfalt
-          \epsilon \bnfalt p \cdot ps \bnfalt 
-          \iter{p}{p_{\epsilon}}{(x,acc)}{p_\cdot} \\
-\mbox{Constructors}& &  |  & \top \bnfalt p \land q \bnfalt p \implies q 
-          \bnfalt \bot \bnfalt p \vee q \bnfalt
-          \emp \bnfalt p * q \bnfalt p \wand q \bnfalt e \pointsto e' \\
+p & ::= & e \bnfalt x \bnfalt \fun{x}{\omega}{p} \bnfalt p\;q \\
+\mbox{Constructors}& &  |  & \iter{p}{p_{\epsilon}}{(x,acc)}{p_\cdot} 
+                             \bnfalt \epsilon \bnfalt p \cdot ps \\ 
+& &  |  & \top \bnfalt p \land q \bnfalt p \implies q 
+          \bnfalt \bot \bnfalt p \vee q \\
+& &  |  &  \emp \bnfalt p * q \bnfalt p \wand q \bnfalt e \pointsto e' \\
 & &  |  & \forall x:\omega.\; p \bnfalt \exists x:\omega.\; p \bnfalt
           \validprop{S} 
 \\[0.5em]
 \mbox{Specifications} &
-S & ::= & \spec{p}{c}{a:A}{q} \bnfalt S \specand S' \bnfalt
-          S \specimp S' \bnfalt S \specor S' \\
-& &  |  & \forall x:\omega.\; S \bnfalt \exists x:\omega.\;S \bnfalt \setof{p}
+S & ::= & \spec{p}{c}{a:A}{q} \bnfalt \setof{p} \\
+& &  |  & S \specand S' \bnfalt S \specimp S' \bnfalt S \specor S' \\
+& &  |  & \forall x:\omega.\; S \bnfalt \exists x:\omega.\;S 
 \\
 \end{array}
 \end{displaymath}
@@ -593,10 +593,9 @@ binary function $f$ to those pairs to produce the yielded elements.
 \mbox{Collection Type} & 
 A_c & = & \reftype{\listtype{\N}} \\
 \mbox{Iterator Type} &
-A_i & = & \ctext{Coll of }\reftype{A_c} \bnfalt
-          \ctext{Filter of }((\N \to \ctext{bool}) \times A_i) \bnfalt
-          \ctext{Map2 of }((\N \times \N \to \N) \times A_i \times A_i) 
-\\
+A_i & = & \ctext{Coll of }\reftype{A_c} \\
+&   & | & \ctext{Filter of }((\N \to \ctext{bool}) \times A_i) \\
+&   & | & \ctext{Map2 of }((\N \times \N \to \N) \times A_i \times A_i) \\
 \end{array}
 \end{displaymath}
 \begin{tabbing}
@@ -633,16 +632,16 @@ $\exists$\=$ \ctext{map2} : (\N \times \N \to \N) \times A_i \times A_i \to \mon
 \> $\specand$ \\
 9 \>
 \> $\forall c, P, xs.\;$\=
-    $\setof{coll(c, xs, P)}
-     \run{\ctext{newiter}(c)}
-     \setof{a:A_i.\; coll(c, xs, P) * iter(a, \setof{(c, xs, P)}, xs)}$ \\
+      $\setof{coll(c, xs, P)}$ \\
+\>\>\>$\run{\ctext{newiter}(c)}$\\
+\>\>\>$\setof{a:A_i.\; coll(c, xs, P) * iter(a, \setof{(c, xs, P)}, xs)}$ \\
 \>
 \> $\specand$ \\
 10 \>
 \> $\forall p, i, S, xs.\;$\=
-         $\setof{iter(i, S, xs)}
-          \;\run{\ctext{filter}(p, i)}\;
-          \setof{a:A_i.\; iter(a, S, filter\; p\;xs)}$ \\
+         $\setof{iter(i, S, xs)}$ \\
+\>\>\>   $\run{\ctext{filter}(p, i)}$\\
+\>\>\>   $\setof{a:A_i.\; iter(a, S, filter\; p\;xs)}$ \\
  \> 
 \> $\specand$ \\
 11 \> 
@@ -654,15 +653,15 @@ $\exists$\=$ \ctext{map2} : (\N \times \N \to \N) \times A_i \times A_i \to \mon
 \> $\specand$ \\
 14 \>
 \> $\forall i, S.\;$\=
-    $\setof{colls(S) * iter(i, S, \epsilon)}  
-      \run{\ctext{next}(i)}
-      \setof{a:\opttype{\N}.\; colls(S) * iter(i, S, \epsilon) \land a = \ctext{None}}$ \\
+      $\setof{colls(S) * iter(i, S, \epsilon)}$\\  
+\>\>\>$\run{\ctext{next}(i)}$ \\
+\>\>\>$\setof{a:\opttype{\N}.\; colls(S) * iter(i, S, \epsilon) \land a = \ctext{None}}$ \\
 \>
 \> $\specand$ \\
 15 \> \> $\forall i,$\=$ S, x, xs.\;$ \= 
-  $\setof{colls(S) * iter(i, S, x \cdot xs)}
-   \run{\ctext{next}(i)}
-   \setof{a:\opttype{\N}.\; 
+      $\setof{colls(S) * iter(i, S, x \cdot xs)}$\\
+\>\>\>$\run{\ctext{next}(i)}$\\
+\>\>\>$\setof{a:\opttype{\N}.\; 
               colls(S) * iter(i, S, xs) \land a = (\ctext{Some}\;x)}$ 
 \\[0.5em]
 $colls(\emptyset) \qquad\qquad\qquad\;\;$ \=$\equiv\;$\= $\emp$ \\
@@ -754,16 +753,16 @@ implementation of this module and its predicates below:
 3 \> $list(c, x\cdot xs)$ \> $\equiv$ \> 
    $\exists c'.\; c \pointsto \ctext{Cons}(x, c') * list(c', xs)$ 
 \\[0.5em]
-4 \> $iter$\=$(\ctext{Map2}(f, i_1, i_2), S, xs)$\=$ \equiv$ \= 
-         $\exists$\=$xs_1, xs_2, S_1, S_2.$ \\
-\> \>\>\>\>$xs = (map\; f\; (zip\; xs_1\; xs_2)) \land (S = S_1 \uplus S_2) \;\land$\\
-\> \>\>\>\>$iter(i_1, S_1, xs_1) * iter(i_2, S_2, xs_2)$ \\
-5 \> $iter(\ctext{Filter}(p, i), S, xs) \equiv$ 
-   $\exists xs'.\;$\=$xs = filter\;p\;xs' \;\land\; iter(i, S, xs')$ \\
-6 \> $iter(\ctext{Coll}(l), \setof{(c, xs, P)}, zs) \equiv$ \= 
- $\exists$\=$ c', ys.\; xs = ys \cdot zs \land l \pointsto c' * $ \\
-\> \> \> $(coll$\=$(c, xs, P) \wand\;$\\ 
-\> \> \> \> \!\!\!\!$[(coll(c, xs, P) \land (segment(c, c', ys) * list(c', zs)))]$
+4 \> $iter$\=$(\ctext{Map2}(f, i_1, i_2), S, xs)$\=$ \equiv$ \= \\ 
+\> \>         $\exists$\=$xs_1, xs_2, S_1, S_2.$ \\
+\> \>\>$xs = (map\; f\; (zip\; xs_1\; xs_2)) \land (S = S_1 \uplus S_2) \;\land$\\
+\> \>\>$iter(i_1, S_1, xs_1) * iter(i_2, S_2, xs_2)$ \\
+5 \> $iter$\=$(\ctext{Filter}(p, i), S, xs) \equiv$ \\
+\> \>\>      $\exists xs'.\;$\=$xs = filter\;p\;xs' \;\land\; iter(i, S, xs')$ \\
+6 \> $iter$\=$(\ctext{Coll}(l), \setof{(c, xs, P)}, zs) \equiv$ \= \\
+\> \> $\exists$\=$ c', ys.\; xs = ys \cdot zs \land l \pointsto c' * $ \\
+\> \> $(coll$\=$(c, xs, P) \wand\;$\\ 
+\> \> \> \!\!\!\!$[(coll(c, xs, P) \land (segment(c, c', ys) * list(c', zs)))]$
 \\[0.5em]
 7 \> $segment(c, c', \epsilon)$ \qquad\=$\equiv c = c' \land \emp$ \\
 8 \> $seg$\=$ment(c, c', x\cdot xs) \equiv \exists c''.\; c \pointsto \ctext{Cons}(x, c'') * segment(c'', c', xs)$
@@ -793,23 +792,26 @@ implementation of this module and its predicates below:
        $[$\=$\letv{list}{\comp{!r}}{}$ \\
 21 \>\>\>$\letv{cell}{\comp{!list}}{}$ \\
 22 \>\> \>$\run{}\ctext{case}(cell,$\=
-            $\ctext{Nil} \to \comp{\ctext{None}},$ \\
-23 \>\>\>\> $\ctext{Cons}(x, t) \to [$\=$\letv{dummy}{\comp{r := t}}{\ctext{Some}\;x}])]$ \\
+            $\ctext{Nil} \to $\=$\comp{\ctext{None}},$ \\
+23 \>\>\>\> $\ctext{Cons}(x, t) \to $\\
+   \>\>\>\>                   \> $[$\=$\letv{dummy}{\comp{r := t}}{}$ \\
+   \>\>\>\>                   \>    \>${\ctext{Some}\;x}])]$ \\
 24 \> $\ctext{next}(\ctext{Filter}(p, i)) \equiv$ \= 
         $[$\=$\letv{v}{\ctext{next}(i)}{}$ \\
 25 \>\>\>$\run{}\ctext{case}(v,$\=
             $\ctext{None} \to \comp{\ctext{None}}$ \\
-26 \>\>\>\> $\ctext{Some}\;x \to \ctext{if}(p\;x,\comp{\ctext{Some}\; x},
-                                         \ctext{next}(\ctext{Filter}(p, i))))]$
+26 \>\>\>\> $\ctext{Some}$\=$\;x \to $ \\
+   \>\>\>\> \>$\ctext{if}(p\;x,$\=$\comp{\ctext{Some}\; x},$ \\
+   \>\>\>\> \>\>                                   $\ctext{next}(\ctext{Filter}(p, i))))]$
 \\
-27 \> $\ctext{next}(\ctext{Map2}(f, i_1, i_2)) \equiv$ 
-$[$\=$\letv{v_1}{\ctext{next}\;i_1}{}$ \\
-28 \>\>$\letv{v_2}{\ctext{next}\;i_2}{}$ \\
-29 \>\>$\ctext{case}(v_1,$ \= 
+27 \> $\ctext{next}$\=$(\ctext{Map2}(f, i_1, i_2)) \equiv$ \\
+   \>\>$[$\=$\letv{v_1}{\ctext{next}\;i_1}{}$ \\
+28 \>\>\>$\letv{v_2}{\ctext{next}\;i_2}{}$ \\
+29 \>\>\>$\ctext{case}(v_1,$ \= 
             $\ctext{None} \to \ctext{None},$ \\
-30 \>\>\> $\ctext{Some}\;x_1 \to \ctext{case}(v_2,$ \=
+30 \>\>\>\> $\ctext{Some}\;x_1 \to \ctext{case}(v_2,$ \=
               $\ctext{None} \to \ctext{None},$ \\
-31 \>\>\>\> $\ctext{Some}\;x_2 \to \ctext{Some}(f(x_1, x_2))))]$\\
+31 \>\>\>\>\> $\ctext{Some}\;x_2 \to \ctext{Some}(f(x_1, x_2))))]$\\
 \end{tabbing}
 }
 % \vspace{-1.5em}
@@ -889,30 +891,32 @@ style: {\small
 13 \> $\letv{()}{\ctext{add}(c_2, 5)}{}$ \\
 14\> $\setof{coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}$ \\
 15\> $\letv{i_1}{\ctext{newiter}(c_1)}{}$ \\
-16\> $\{$\=$iter(i_1, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}, 2\cdot3\cdot4\cdot\epsilon) * 
-  coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
+16\> $\{$\=$iter(i_1, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}, 2\cdot3\cdot4\cdot\epsilon)$
+\\ 
+  \>\>$*\; coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
 17 \> $\letv{i'_1}{\ctext{filter}(even?, i_1)}{}$ \\
-18 \> $\{$\=$iter(i'_1, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}, 2\cdot4\cdot\epsilon) * 
-coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
+18 \> $\{$\=$iter(i'_1, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}, 2\cdot4\cdot\epsilon)$ \\
+   \>\>$*\; coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$\\
 19 \> $\letv{i_2}{\ctext{newiter}(c_2)}{}$ \\
-20 \> $\{$\=$iter(i'_1, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}, 2\cdot4\cdot\epsilon) * 
-iter(i_2, \setof{(c_2, 5\cdot3\cdot\epsilon, Q_2)}, 5\cdot3\cdot\epsilon) *$ \\
-\> \> $coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
+20 \> $\{$\=$iter(i'_1, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}, 2\cdot4\cdot\epsilon)$\\
+  \>\>$*\;iter(i_2, \setof{(c_2, 5\cdot3\cdot\epsilon, Q_2)}, 5\cdot3\cdot\epsilon)$ \\
+  \>\>$*\;coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
 21 \> $\letv{i}{\ctext{map2}(plus, i'_1, i_2)}{}$ \\
-22 \> $\{$\=$iter(i, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilon, Q_2)}, 7\cdot7\cdot\epsilon) * 
-coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
+22 \> $\{$\=$iter(i, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilon, Q_2)}, 7\cdot7\cdot\epsilon)$ \\
+\> \> $*\; coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
 23 \> $\letv{n}{\ctext{size}(c_2)}{}$ \\
 24 \> $\{$\=$n = 2 \;\land
-iter(i, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilon, Q_2)}, 7\cdot7\cdot\epsilon) * 
-coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
+iter(i, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilon, Q_2)}, 7\cdot7\cdot\epsilon)$\\
+\>\>$*\;coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
 
 25 \> $\letv{x}{\ctext{next}(i)}{}$ \\
 26 \> $\{$\= $n = 2 \land x = \ctext{Some }7 \;\land $\\
-\> \> $iter(i, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilon, Q_2)}, 7\cdot\epsilon) * coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
+\> \> $iter(i, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilon, Q_2)}, 7\cdot\epsilon)$ \\
+\> \> $*\; coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
 27 \> $\ctext{add}(c_2, 17)$ \\
 28 \> $\{$\= $n = 2 \land x = \ctext{Some }7 \;\land $\\
-\> \> $iter(i, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilon, Q_2)}, 7\cdot\epsilon) * 
-(\exists Q_3.\; coll(c_2, 17\cdot5\cdot3\cdot\epsilon, Q_3)) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
+\> \> $iter(i, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilon, Q_2)}, 7\cdot\epsilon)$ \\ 
+\> \> $* \; (\exists Q_3.\; coll(c_2, 17\cdot5\cdot3\cdot\epsilon, Q_3)) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
 \end{tabbing}
 }
 % \vspace{-2em}
