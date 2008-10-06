@@ -13,6 +13,12 @@ the earlier sections into Hoare Type Theory (HTT) and verifying them in the
 Ynot implementation of HTT. More details can be found in the 
 technical report~\cite{svendsen08}.
 
+These experiments serve to (1) increase our confidence in the earlier given
+specifications and implementations and their associated paper proofs; (2)
+provide a starting point for a comparison of the specification logic of the
+present paper and the Ynot type theory; (3) exercise the Ynot
+implementation.
+
 Ynot is an axiomatic extension to the Coq proof assistant, that supports
 writing, reasoning about, and extracting higher-order, dependently-typed
 programs with side-effects~\cite{nanevski08}.  Coq already includes a
@@ -181,33 +187,38 @@ We can thus express the subject-observer pattern with the following HTT type:
 &\quad\quad\quad r : 1\\
 &\quad\quad \{ i\ j.\ \forall n : \N, os : list\ T.\ (sub\ (a, n, os) * obs\ os)\ i\\
 &\quad\quad\quad\quad\quad \rightarrow (sub\ (a, m, os) * obs\_at\ (os, k))\ j \}
-\end{align*}}
-In the Idealized ML implementation of the subject-observer, the registered
-callback functions are stored in the heap. Since types and specifications are
-separate in Idealized ML, the type of these computations can be very weak,
-i.e., $\N \rightarrow \monad 1$, because the specification language allows us
-to express that if these are "good" callback functions then the broadcast
-computation will do a broadcast when performed. In HTT there is no separate
-specification language, so these callback functions have to be stored with a
-much stronger type, so that it is possible to infer from their type that they
-are "good" callback functions when they are retrieved from the heap.  
+\end{align*}} In the Idealized ML implementation of the subject-observer,
+the registered callback functions are stored in the heap. Since types and
+specifications are separate in Idealized ML, the type of these computations
+can be very weak, i.e., $\N \rightarrow \monad 1$, because the
+specification language allows us to express that if these are "good"
+callback functions then the broadcast computation will do a broadcast when
+performed. In HTT there is no separate specification language, so these
+callback functions have to be stored with a much stronger type, so that it
+is possible to infer from their type that they are "good" callback
+functions when they are retrieved from the heap.\footnote{In the technical
+  report~\cite{svendsen08} we discuss an alternative translation into HTT
+  based on the idea that implications between specifications in Idealized
+  ML should be translated into function types in HTT, but that leads to
+  an implementation that does not capture subject-observer pattern because
+  it essentially results in a functional implementation.}
 
 Ynot is based on the predicative version of HTT\cite{nanevski06separation} in
 which dependent sums are predicative, i.e., for $\Sigma x : A. B$ to be a
 monotype, both $A$ and $B$ have to be monotypes. Since the type of heaps in Ynot is defined as a subset of the type $\N \times \Sigma \alpha : \MONO.
 \alpha$ and $\MONO$ is not a monotype, it follows that the $T$ type above is not a monotype either and that values of type $T$ cannot be stored in
 the heap. It is thus unclear whether it is possible to give an implementation
-of the above type in Ynot.
+of the above type in Ynot; the obvious attempt leads to a universe
+inconsistency error in Coq, reflecting the predicativity issues just
+discussed. 
 
 The impredicative version of HTT \cite{petersen08} has an impredicative sum
 type, $\Sigma^T x : A. B$, which is a monotype if $B$ is. Hence, in the
 impredicative version of HTT, we can store values of type $T$, by using
-impredicative sums. We conjecture that the implementation has the above 
+impredicative sums. We conjecture that the implementation derived from
+translating the Idealized ML implementation has the above 
 type in impredicative HTT.
 
-%%\footnote{In the technical report we further show that the HTT translation of
-%%the alternative Idealized ML specification of the subject-observer pattern in
-%%\cite{svendsen08} does not capture subject-observer pattern.}
 
 
 %%% Local Variables: 
