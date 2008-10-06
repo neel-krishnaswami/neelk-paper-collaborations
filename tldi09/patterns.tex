@@ -1012,29 +1012,31 @@ surprising updates.
 %
 Below, we specify a program that uses the flyweight pattern to create
 and access glyphs (i.e., refs of pairs of characters and fonts)
-of a particular font $f$.  {\small
+of a particular font $f$.  
+{\small
 \begin{tabbing}
-Flyweight$(I : \assert,\;\;
-\ctext{newchar} : \chartp \to \monad{\ctext{glyph}},\;\; 
-\ctext{getdata} : \ctext{glyph} \to \monad{(\chartp \times \fonttp)},\;\;
-f:\fonttp) \equiv$ \\
+Flyweight$($\=$I : \assert,\;\; $\\
+\> $\ctext{newchar} : \chartp \to \monad{\ctext{glyph}},$ \\
+\> $\ctext{getdata} : \ctext{glyph} \to \monad{(\chartp \times \fonttp)},$ \\
+\> $f:\fonttp) \equiv$ \\
 1 \qquad \=$\exists $\=$glyph : \ctext{glyph} \times \chartp \times \fonttp \To \assert.$ 
 \\[0.5em]
 
 2  \> \> $\forall c, S.\;$\=
-         $\setof{I \land chars(S)}
-          \run{\ctext{newchar}(c)}
-          \setof{a:\ctext{glyph}.\; 
+         $\{I \land chars(S)\}$ \\
+   \>\>\>$\run{\ctext{newchar}(c)}$ \\
+   \>\>\>$\setof{a:\ctext{glyph}.\; 
                  I \land chars(\setof{(a, (c,f))} \cup S)}$ \\
   \> \!$\specand$ \\
 3 \> $\forall l, c, f, P.\;$\=
-   $\setof{glyph(l, c, f) \land P}
-    \run{\ctext{getdata}(l)}
-    \setof{a:\chartp \times \fonttp.\; glyph(l, c, f) \land P \land a = (c,f)}$
+     $\setof{glyph(l, c, f) \land P}$ \\
+\>\> $\run{\ctext{getdata}(l)}$ \\
+\>\> $\setof{a:\chartp \times \fonttp.\; glyph(l, c, f) \land P \land a = (c,f)}$
 \\
   \> \!$\specand$ \\
 4 \> $\{\forall l, l', c, c'.\;$\=$I \land glyph(l,c,f) \land glyph(l',c',f')
- \implies \left(l = l' \iff (c = c'\land f=f')\right)\}$ \\[0.5em]
+ \implies $ \\
+\>\>  $\;\;\;\left(l = l' \iff (c = c'\land f=f')\right)\}$ \\[0.5em]
 
 $chars(\emptyset)$ \qquad\qquad\qquad \;\;\= $\equiv$ \= $\top$ \\
 $chars(\setof{(l,(c,f))} \cup S)$ \> $\equiv$ \> $glyph(l,c,f) \land chars(S)$ \\
@@ -1080,11 +1082,11 @@ The specification of the flyweight factory looks like this:
 {\small
 \begin{tabbing}
 1 \qquad \= $\exists \ctext{make\_flyweight} :
-\fonttp \to \bigcirc\left(\left(\chartp \to \monad{\ctext{glyph}}\right) \times
-(\ctext{glyph} \to \monad{(\chartp \times \fonttp)})\right).$\\
-2 \> \;\;\= $\forall f.\;$\=$\setof{\emp}$
-  $\run{\ctext{make\_flyweight}(f)}$ 
- $\setof{a.\; \exists I:\assert.\; I \land \validprop{\mbox{Flyweight}(I, \fst{a}, \snd{a}, f)}}$ \\
+\fonttp \to \bigcirc($\=$(\chartp \to \monad{\ctext{glyph}}) \times$ \\
+\> \> $(\ctext{glyph} \to \monad{(\chartp \times \fonttp)})).$\\
+2 \> \;\;\= $\forall f.\;$\=$\setof{\emp}$ \\
+  \>\> \> $\run{\ctext{make\_flyweight}(f)}$ \\
+  \>\> \> $\setof{a.\; \exists I:\assert.\; I \land \validprop{\mbox{Flyweight}(I, \fst{a}, \snd{a}, f)}}$ \\
 \end{tabbing}
 }
 % \vspace{-1em}
@@ -1096,8 +1098,8 @@ private state $I$, which contains the table used to cache glyph
 creations. Below, we define
 $\ctext{make\_flyweight}$ and its predicates: {\small
 \begin{tabbing}
-1 \qquad \= $\ctext{m}\ctext{ake\_flyweight} \equiv$
-       $\lambda f:$\=$\fonttp.\;$\\
+1 \qquad \= $\ctext{m}$\=$\ctext{ake\_flyweight} \equiv$ \\
+   \> \>     $\lambda f:$\=$\fonttp.\;$\\
 2  \> \> $[$\=$\letv{t}{\ctext{newtable}()}{}$ \\
 3  \> \> \> $\ctext{letv }$\=$newchar =$ \\
 4  \> \> \> \> \!\!$[\lambda c.[$\=$\ctext{letv }x = \ctext{lookup}(t, c)\ctext{ in}$\\
