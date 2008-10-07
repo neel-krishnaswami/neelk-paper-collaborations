@@ -1133,9 +1133,9 @@ $newchar$, which takes a character and checks to see (line 5) if it is
 already in the table. If it is not (lines 5-6), it allocates a new
 glyph reference, stores it in the table, and returns the
 reference. Otherwise (line 7), it returns the existing reference from
-the table.  On line 8, we define $getdata$, which dereferences its
-pointer argument and returns the result. This implementation does no
-writes, fulfilling the promise made in the specification. The
+the table.  On lines 8, we define $getdata$, which dereferences
+its pointer argument and returns the result. This implementation does
+no writes, fulfilling the promise made in the specification. The
 definition of the invariant state $I$ describes the state of the table
 $t$ (and $mapping$), which are hidden from clients.
 
@@ -1183,21 +1183,20 @@ subject-observer pattern below:
 {\small
 \begin{tabbing}
 1 \qquad \= $\exists sub : A_s \times \N \times \seqsort{((\N \To \assert) \times (\N \to \monad{1}))}.$ \\
-2 \> $\exists$\=$ \ctext{newsub} : \N \to \monad{A_s}, \;
-              \ctext{register} : A_s \times (\N \to \monad{1}) \to \monad{1},\;
-              \ctext{broadcast} : A_s \times \N \to \monad{1}.$ 
+2 \> $\exists \ctext{newsub} : \N \to \monad{A_s},$ \\ \;
+3 \> $\exists \ctext{register} : A_s \times (\N \to \monad{1}) \to \monad{1},$ \\
+4 \> $\exists \ctext{broadcast} : A_s \times \N \to \monad{1}.$ \\
 \\[0.5em]
-3 \>$\forall n.\; \spec{\emp}{\run{\ctext{newsub}(n)}}{a:A_s}{sub(a, n, \epsilon)}$ \\
+5 \>$\forall n.\; \spec{\emp}{\run{\ctext{newsub}(n)}}{a:A_s}{sub(a, n, \epsilon)}$ \\
 \> $\specand$ \\
-4 \> $\forall f, O, s, n, os. $\=$(\forall i, k. \spec{O(i)}{\run{f(k)}}{a:1}{O(k)})$ \\
-5\> \>$\specimp$\=$\setof{sub(s, n, os)}
-\run{\ctext{register}(s, f)}
-\;\setof{a:1.\; sub(s, n, (O,f)\cdot os)}$ \\
+6 \> $\forall f, O, s, n, os. $\=$(\forall i, k. \spec{O(i)}{\run{f(k)}}{a:1}{O(k)})$ \\
+7\> \>$\specimp$\=$\setof{sub(s, n, os)}$ \\
+8\> \>          \>$\run{\ctext{register}(s, f)}$ \\
+9 \> \>          \>$\setof{a:1.\; sub(s, n, (O,f)\cdot os)}$ \\
 \> $\specand$ \\
-6 \> $\forall s,i,os,k.\; $\=
-     $\setof{sub(s, i, os) * obs(os)}
-      \run{\ctext{broadcast}}(s,k)
-      \setof{a:1.\; sub(s, k, os) * obs\_at(os, k)}$ 
+10 \> $\forall s,i,os,k.\; $\=$\setof{sub(s, i, os) * obs(os)}$ \\
+  \>                       \>$\run{\ctext{broadcast}}(s,k)$ \\
+  \>                       \>$\setof{a:1.\; sub(s, k, os) * obs\_at(os, k)}$ 
 \\[0.5em]
 $obs(\epsilon) \;\qquad\qquad $\=$\equiv \emp$ \\
 $obs((O,f)\cdot os) $\>$\equiv (\exists i.\; O(i)) * obs(os)$ 
@@ -1211,12 +1210,12 @@ $obs\_at((O,f)\cdot os, k) $\>$\equiv O(k) * obs\_at(os, k)$
 On line 1 we assert the existence of a predicate $sub(s, n, os)$
 representing the subject $s$'s state. The field $n$ is the data the
 observers depend on, and the field $os$ is a sequence of callbacks
-paired their invariants. On line 2, we assert the existence of
+paired their invariants. On lines 2-4, we assert the existence of
 $\ctext{newsub}$, $\ctext{register}$ and $\ctext{broadcast}$, which
 create a new subject, register a callback, and broadcast a change,
 respectively.
 
-$\ctext{register}$'s specification on lines 4-5 is an implication over
+$\ctext{register}$'s specification on lines 6-9 is an implication over
 Hoare triples. It says that \emph{if} the function $f$ is a good
 observer callback, \emph{then} it can be safely registered with the
 subject. A good callback $f$ is one that takes an argument $k$ and
@@ -1231,8 +1230,9 @@ yields the separated conjunction of the observer states. After the
 call, the postcondition puts the $sub$ predicate and all of the
 observers in the same state $k$. The $obs\_at(os,k)$ function
 generates the separated conjunction of all the $O$ predicates, all in
-the same state $k$. The implementation follows:
-% % \vspace{-0.5em}
+the same state $k$. 
+
+The implementation follows:
 {\small
 \begin{tabbing}
 1 \qquad \= $A_s \equiv \reftype{\N} \times \reftype{\listtype{(\N \to \monad{1})}}$
@@ -1241,9 +1241,9 @@ the same state $k$. The implementation follows:
               list(\snd{s}, map\; \snd{} os) \land Good(os)$ 
 \\[0.5em]
 3 \> $Good(\epsilon) \!\qquad\qquad \equiv \top$ \\
-4 \> $Good((O,f)\cdot os) \equiv 
-\validprop{(\forall i,k.\; \spec{O(i)}{\run{f(k)}}{a:1}{O(k)})}
-      \land Good(os)$ 
+4 \> $Good((O,f)\cdot os) \equiv\; $\=
+   $\validprop{(\forall i,k.\; \spec{O(i)}{\run{f(k)}}{a:1}{O(k)})}$ \\
+  \> \>      $\land Good(os)$ 
 \\[0.5em]
 5 \> $\ctext{register}(s, f) \equiv$ \=
          $[$\= $\letv{cell}{\comp{!(\snd{s})}}{}$ \\
@@ -1251,22 +1251,23 @@ the same state $k$. The implementation follows:
 7 \> \> \> $\snd{s} := \ctext{Cons}(f, r)]$
 \\[0.5em]
 
-8  \> $\ctext{broad} \ctext{cast}(s, k) \equiv
-[$\=$\letv{dummy}{[\fst{s} := k]}{\ctext{loop}(k, \snd{s})}]$ \\
+8  \> $\ctext{broad}$\=$\ctext{cast}(s, k) \equiv$ \\
+9  \>  \> $[$\=$\letv{dummy}{[\fst{s} := k]}{\ctext{loop}(k, \snd{s})}]$ \\
 
 
-9 \> $\ctext{loop}(k, list) \equiv $\=
-         $[$\=$\letv{cell}{[!list]}{}$ \\
-10 \>\>\> $\run{}\ctext{case}(cell,$\= 
+10 \> $\ctext{loop}$\=$(k, list) \equiv $\\
+   \>         \>$[$\=$\letv{cell}{[!list]}{}$ \\
+11 \>\>\> $\run{}\ctext{case}(cell,$\= 
             $\ctext{Nil} \to [()],$ \\
-11 \>\>\>\> $\ctext{Cons}(f, tl) \to [$\=$\letv{dummy}{f(k)}{\run{\ctext{loop}(k,tl)}}])$ \\[0.5em]
-12 \> $\ctext{new}\ctext{sub}(n) \equiv$ \=
+12 \>\>\>\> $\ctext{Cons}(f, tl) \to [$\=$\letv{dummy}{f(k)}{}$ \\
+13  \>\>\>\> \> $\run{\ctext{loop}(k,tl)}])$ \\[0.5em]
+14 \> $\ctext{new}\ctext{sub}(n) \equiv$ \=
           $[$\=$\letv{data}{\newref{\N}{n}}{}$ \\
-13 \> \> \> $\letv{callbacks}{\newref{\listtype{(\N \to \monad{1})}}{\ctext{Nil}}}{}$ \\
-14 \> \> \> $(data, callbacks)]$
+15 \> \> \> $\letv{callbacks}{\newref{\listtype{(\N \to \monad{1})}}{\ctext{Nil}}}{}$ \\
+16 \> \> \> $(data, callbacks)]$
 \end{tabbing}
 }
-% % \vspace{-0.5em}
+
 In line 1, we state concrete type of the subject $A_s$ is a pair of a
 pointer to a reference, and a pointer to a list of callback
 functions. (This is \emph{not} an existential quantifier.  Since our
@@ -1277,8 +1278,8 @@ predicate describe the physical layout of the subject, and assert that
 the first component of $s$ should point to $n$, and that the second
 component of $s$ should be a linked list containing the function
 pointers in $os$.
-% (The $list$ predicate is described in
-% Section 3, when we give the definition of the iterator predicates.)
+(The $list$ predicate is described in
+Section 3, when we give the definition of the iterator predicates.)
 Then we require that $os$ be ``good''. $Good$-ness is defined on lines
 3 and 4, and says a sequence of predicates and functions is good when
 every $(O,f)$ pair in the sequence satisfies the same validity
@@ -1290,9 +1291,9 @@ Next, we give the implementations of $\ctext{register}$ and
 $\ctext{broadcast}$. $\ctext{register}$, on lines 5-7, adds its
 argument to the list of callbacks. Though the code is trivial, its
 correctness depends on the fact the $Good$ predicate holds for the
-extended sequence.  $\ctext{broadcast}$, on lines 8-11, updates the
+extended sequence.  $\ctext{broadcast}$, on lines 8-9, updates the
 subject's data field (the first component), and then calls
-$\ctext{loop}$ (on lines 9-11) to invoke all the
+$\ctext{loop}$ (on lines 10-13) to invoke all the
 callbacks. $\ctext{loop}(k, \snd{s})$ just recurs over the list and
 calls each callback with argument $k$.  Below, we give a simple piece
 of client code using this interface.
