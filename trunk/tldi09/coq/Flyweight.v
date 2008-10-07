@@ -20,7 +20,9 @@ Open Local Scope stsep_scope.
 
 Section Flyweight.
 
+(* The simulated objects consists of a value of the following type. *)
 Variable obj : Set.
+(* We need an equality decision procedure for the table implementation *)
 Variable obj_eq : forall x y : obj, {x = y} + {x <> y}.
 
 Definition T := (loc * obj)%type.
@@ -31,6 +33,7 @@ decide equality.
 apply loc_eq.
 Qed.
 
+(* The finite table computations *)
 Definition update := update obj_eq.
 Definition lookup := lookup obj_eq.
 Definition newtable := newtable obj.
@@ -41,6 +44,7 @@ Definition allobjat (objat : loc -> obj -> hprop) (f : obj -> option loc) (h : h
   forall (l : loc) (o : obj),
     f o = Some l -> (objat l o # (fun _ => True)) h. 
 
+(* Define the refs and objat predicate of our implementation. *)
 Definition refs (f : obj -> option loc) (h : heap) : Prop :=
   (forall k : obj, forall v : loc, f k = Some v -> 
      (v --> k # nopre) h) /\
@@ -52,6 +56,7 @@ Definition refs (f : obj -> option loc) (h : heap) : Prop :=
 Definition objat (r : loc) (x : obj) (h : heap) :=
   ((r --> x) # nopre) h.
 
+(* The flyweight provides referencial transparency for the simulated objects. *)
 Lemma objat_lemma : 
   forall (h : heap) (l l' : loc) (o o' : obj) (f : obj -> option loc),
       (objat l o h /\ objat l' o' h /\ refs f h) -> (l = l' <-> o = o').
@@ -84,6 +89,7 @@ inversion H15.
 trivial.
 Qed.
 
+(* Lemma to extend allobjat with a simulated object. *)
 Lemma extend_allobjat : 
   forall (f : obj -> option loc) (o : obj) (l : loc) 
          (h1 h2 : heap) (pf : disjoint(h1::h2::nil)),
@@ -142,6 +148,7 @@ rewrite H in H0.
 inversion H0.
 Qed.
 
+(* Lemma to extend refs with a new simulated object. *)
 Lemma extend_refs :
   forall (f : obj -> option loc) (o : obj) 
          (l : loc) (h1 h2 : heap) (pf : disjoint(h1::h2::nil)),
@@ -219,6 +226,7 @@ trivial.
 contradiction n; trivial.
 Qed.
 
+(* Part of the new computation (if the simulated object is not already in the table) *)
 Program Definition Fnewcharinner' (hash : loc) (o : obj) :
   STsep (fun i => exists f : (obj -> option loc),
            (table hash f # (fun h => allobjat objat f h /\ refs f h)) i /\
@@ -357,6 +365,11 @@ trivial.
 trivial.
 Qed.
 
+(* First we define a functional version of the flyweight, which takes as argument a location to a flyweight,
+   then we define a computation that creates a new flyweight and returns all the relevant flyweight operations
+   instantiated with the location to the newly created flyweight, to obtain a flyweight factory. *)
+
+(* Part of the new computation (if the simulated object already exists in the flyweight) *)
 Program Definition Fnewcharinner'' (hash : loc) (o : obj) (l : loc) :
   STsep (fun i => exists f : (obj -> option loc),
            (table hash f # (fun h => allobjat objat f h /\ refs f h)) i /\
@@ -396,6 +409,7 @@ exists h3; exists h4.
 intuition.
 Qed.
 
+(* The new computation *)
 Program Definition Fnewchar (hash : loc) (o : obj) :
   STsep (fun i => exists f : (obj -> option loc),
           (table hash f # (fun h => allobjat objat f h /\ refs f h)) i) loc
@@ -562,6 +576,7 @@ destruct H7 as [ H9 [ H10 H11 ] ].
 inversion H11.
 Defined.
 
+(* Return a new flyweight. *)
 Program Definition Fnew : 
   STsep emp loc 
     (fun y i m => exists l : loc, y = Val l /\
@@ -610,6 +625,7 @@ unfold empty in H.
 inversion H.
 Defined.
 
+(* Lookup the value of a simulated object in the flyweight. *)
 Program Definition Fgetdata (l : loc) : 
   STsep (fun i => exists o : obj,  objat l o i) obj
             (fun y i m => forall o : obj, objat l o i -> (i = m /\ y = Val o)) :=
@@ -628,6 +644,7 @@ apply H4.
 apply H7.
 Defined.
 
+(* A type for the functional flyweight. *)
 Record Flyweight : Type :=
   FlyweightCon {
     FlyTable : loc -> (obj -> option loc) -> heap -> Prop;
@@ -657,12 +674,14 @@ Record Flyweight : Type :=
          allobjat FlyObjAt (fun _ => None) h /\ FlyRefs (fun _ => None) h)) m)
  }.
 
+(* An implementation of the functional flyweight type. *)
 Program Definition FlyweightImpl : Flyweight :=
    FlyweightCon (objat_lemma)
                 (Fnewchar)
                 (Fgetdata)
                 (Fnew).
 
+(* A type for a non-functional flyweight. *)
 Record Flyweight2 : Type :=
   FlyweightCon2 {
     FlyTable2 : (obj -> option loc) -> heap -> Prop;
@@ -688,6 +707,7 @@ Record Flyweight2 : Type :=
                (i = m /\ y = Val o))
  }.
 
+(* A flyweight factory. *)
 Program Definition makeFlyweight :
   STsep emp Flyweight2 (fun y i m => exists f : Flyweight2,
      y = Val f /\ (FlyTable2 f (fun _ => None) # (fun h : heap =>
