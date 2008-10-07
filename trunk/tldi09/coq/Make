@@ -1,0 +1,21 @@
+stdlib/Permut.v
+stdlib/Multiset.v
+stdlib/Permutation.v
+stdlib/Sorting.v
+stdlib/SetoidList.v
+ETactics.v
+UsefulMisc.v
+Assumptions.v
+BasicTactics.v
+MemModel.v
+HeapProp.v
+Exn.v
+ST.v
+DisjointUnion.v
+Separation.v
+STsep.v
+Precise.v
+
+COQC = $(COQBIN)coqc
+COQLIBS = $(COQLIBS) -I stdlib
+COQFLAGS = "-q $(OPT) $(COQLIBS) $(OTHERFLAGS) $(COQ_XML)"
