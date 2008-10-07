@@ -33,11 +33,11 @@
 \copyrightyear{2009} 
 \copyrightdata{[to be supplied]} 
 
-\titlebanner{banner above paper title}        % These are ignored unless
-\preprintfooter{short description of paper}   % 'preprint' option specified.
+\titlebanner{Draft Copy}        % These are ignored unless
+% \preprintfooter{short description of paper}   % 'preprint' option specified.
 
 \title{Design Patterns in Separation Logic}
-\subtitle{Subtitle Text, if any}
+% \subtitle{Subtitle Text, if any}
 
 \authorinfo{Neelakantan R. Krishnaswami \and Jonathan Aldrich}
            {Carnegie Mellon University}
@@ -93,9 +93,10 @@ modules order to meet our proof obligations. Third, we have the
 confidence that these programs, though small, actually reflect
 realistic patterns of usage.
 
-In this paper, we describe a core higher-order imperative language and
-a specification language based on separation logic for it. Then, we
-give good specifications for and verify the following programs:
+In this paper, we describe Idealized ML, a core higher-order
+imperative language, and a specification language based on separation
+logic for it. Then, we give good specifications for and verify the
+following programs:
 
 \begin{itemize}
 \item We prove a collection and iterator implementation, which builds
@@ -113,6 +114,12 @@ give good specifications for and verify the following programs:
   way that supports a strong form of information hiding between the
   subject and the observers.
 \end{itemize}
+
+Finally, we give machine-verified proofs of the correctness of the
+iterator and flyweight patterns in the Ynot extension of Coq, and
+compare them with the paper proofs. We also see that proper treatment
+of the subject-observer pattern seems to call for the use of an
+impredicative type theory.
 
 
 \begin{figure*}
@@ -143,8 +150,8 @@ give good specifications for and verify the following programs:
 % \vspace{-1em}
 
 The formal system we present has three layers. First, we have a core
-programming language, a simply-typed functional language which
-isolates all side effects inside a monadic
+programming language we call Idealized ML. This is a simply-typed
+functional language which isolates all side effects inside a monadic
 type~\cite{pfenning-davies}. The side effects include nontermination
 and the allocation, access, and modification of general references
 (including pointers to closures).  Then, we give an assertion language
@@ -153,16 +160,15 @@ state of a heap. Separation logic allows us to give a clean treatment
 of issues related to specifying and controlling aliasing, and
 higher-order predicates allow us to abstract over the heap. This
 enables us to enforce encapsulation by hiding the exact layout of a
-module's heap data structures.  Finally, we give a specification logic
-to describe the effects of programs. We begin with Hoare triples
-$\spec{P}{c}{a:A}{Q}$, which assert that if the heap is in a state
-described by the assertion $P$, then executing the command $c$ will
-result in a postcondition state $Q$ (with the return value of the
-command bound to $a$). We then build a first-order logic of
-specifications, with Hoare triples as the atomic propositions.
+module's heap data structures.  Finally, we have a specification logic
+to describe the effects of programs, which is a first-order logic
+whose atomic propositions are Hoare triples $\spec{P}{c}{a:A}{Q}$,
+which assert that if the heap is in a state described by the assertion
+$P$, then executing the command $c$ will result in a postcondition
+state $Q$ (with the return value of the command bound to $a$).
+specifications.
 
-% % \vspace{-2em}
-% % \vspace{-3em}
+
 \textbf{Programming Language.} The core programming language we have
 formalized is an extension of the simply-typed lambda calculus with a
 monadic type constructor to represent side-effecting computations.
@@ -587,7 +593,7 @@ elements we are selectively yielding. We give pairwise mapping
 iterators via a constructor $\ctext{Map2}(f, i_1, i_2)$, which
 enumerates elements of $i_1$ and $i_2$ in parallel, and applies the
 binary function $f$ to those pairs to produce the yielded elements.
-% % \vspace{-0.5em}
+
 {\small
 \begin{displaymath}
 \begin{array}{llcl}
@@ -648,8 +654,8 @@ $\exists$\=$ \ctext{map2} : (\N \times \N \to \N) \times A_i \times A_i \to \mon
 11 \> 
 \> $\forall f, i, S,$\=$ xs, i', S', xs'.\;$ \= 
      $\setof{iter(i, S, xs) * iter(i', S', xs') \land S \cap S' = \emptyset}$ \\
-12 \> \> \> \> $\run{\ctext{map2}(f, i, i')}$ \\
-13 \> \> \> \>$\setof{a:A_i.\; iter(a, S \cup S', map\;f\;(zip\;xs\;xs'))}$ \\
+12 \> \> \> $\run{\ctext{map2}(f, i, i')}$ \\
+13 \> \> \> $\setof{a:A_i.\; iter(a, S \cup S', map\;f\;(zip\;xs\;xs'))}$ \\
 \>
 \> $\specand$ \\
 14 \>
@@ -670,7 +676,7 @@ $colls(\setof{(c,xs,P)} \cup S)$ \> $\equiv$ \> $coll(c, xs, P) * colls(S)$ \\
 \end{tabbing}
 }
 
-% \vspace{-2em}
+
 In this specification, the predicate $coll(c, xs, P)$ (on line 1) is a
 three place predicate describing the state of a collection. The first
 argument $c$ names the collection object that owns this state in the
@@ -681,7 +687,7 @@ of the collection. We use this argument to track whether an operation
 that uses $c$ makes any destructive changes to it. Since the iterator
 protocol asks that we not call any destructive operations, this field
 lets us tell whether a function has made such a change, or not.
-%
+
 The predicate $iter(i, S, xs)$ (on line 2) is the predicate describing
 the state of an iterator. The first argument $i$ is the iterator
 constructor which owns this heap state. The finite set $S$ is a set of
@@ -701,7 +707,7 @@ change the abstract state. $\ctext{add}(c, x)$
 adds the element $x$ to the collection. The abstract state is
 existentially quantified in the postcondition, indicating that it can
 be modified by the call to $\ctext{add}$.
-%
+
 $\ctext{newiter}(c)$ (line 9) takes a collection $c$, and returns an
 iterator over it. The returned iterator predicate $iter(a,$
 $\setof{(c, xs, P)}, xs)$ states that $a$ is the iterator object,
@@ -744,7 +750,7 @@ $\ctext{Some}\;x$, and sets the state to $iter(i, S, xs)$ in the
 postcondition (line 15). We give two specifications purely for
 readability; it lets us avoid giving a cumbersome combined
 specification.
-%
+
 For space reasons, we cannot give the complete proof, so we give the
 implementation of this module and its predicates below:
 {\small
@@ -815,7 +821,7 @@ implementation of this module and its predicates below:
 31 \>\>\>\>\> $\ctext{Some}\;x_2 \to \ctext{Some}(f(x_1, x_2))))]$\\
 \end{tabbing}
 }
-% \vspace{-1.5em}
+
 The predicate $coll(c, xs, P)$ (line 1) is defined as the conjunction
 of a linked list predicate $list(c, xs)$ (lines 2-3) and an exact
 predicate $P$. An exact predicate is one that is true of exactly one
@@ -873,7 +879,7 @@ Finally, in the $\ctext{Map2}(f, i_1, i_2)$ case (lines 27-31),
 $\ctext{next}$ will draw a value from both $i_1$ and $i_2$, and will
 return $\ctext{None}$ if either is exhausted, and otherwise it will
 return $f$ applied to the pair of values.
-%
+
 Below, we give an example use of this module in annotated program
 style: {\small
 \begin{tabbing}
@@ -920,12 +926,12 @@ iter(i, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilo
 \> \> $* \; (\exists Q_3.\; coll(c_2, 17\cdot5\cdot3\cdot\epsilon, Q_3)) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
 \end{tabbing}
 }
-% \vspace{-2em}
+
 In line 1 of this example, we begin in an empty heap. In line 2, we
 create a new collection $c_1$, which yields us the state $\exists
 P'_1.\; coll(c_1, \epsilon, P'_1)$, with an existentially quantified
 abstract state.
-%
+
 Because $P'_1$ is existentially quantified, we do not know what value
 it actually takes on. However, if we prove the rest of the program
 using a freshly-introduced variable $P_1$, then we know that the rest
@@ -943,7 +949,7 @@ specification puts the predicate $coll()$ on line 6 again into an
 existentially quantified state $P'_2$. So we again replace $P'_2$ with
 a fresh variable $P_2$ on line 7, and will elide these existential
 introductions and unpackings henceforth.
-%
+
 In lines 8-9, we add two more elements to $c_1$, and on lines 11-13,
 we create another collection $c_2$, and add $3$ and $5$ to it, as can
 be seen in the state predicate on line 14. On line 15, we create the
@@ -991,9 +997,9 @@ world, as can be seen in the specifications of the $\ctext{filter}$
 and $\ctext{map2}$ functions -- we can use equational reasoning on
 purely functional lists in our specifications, even though our
 algorithms are imperative.
-% \vspace{-1em}
+
 \section{The Flyweight Pattern}
-% \vspace{-1em}
+
 The flyweight pattern is a style of cached object creation. Whenever a
 constructor method is called, it first consults a table to see if an
 object corresponding to those arguments has been created. If it has,
@@ -1004,16 +1010,17 @@ flyweight pattern lets programmers use reference identity to deduce
 object equality. Since this re-use means that flyweights are
 pervasively aliased, they must be used in an immutable style to avoid
 surprising updates.
-%
+
 % This is an interesting design pattern to verify, for two reasons.
 % First, the constructor has a memo table private to it, which needs to
 % be hidden from clients. Second, this pattern makes pervasive use of
 % aliasing, and in particular allows programmers to reason about
 % equality by testing whether two objects alias or not.
-%
+
 Below, we specify a program that uses the flyweight pattern to create
 and access glyphs (i.e., refs of pairs of characters and fonts)
 of a particular font $f$.  
+
 {\small
 \begin{tabbing}
 Flyweight$($\=$I : \assert,\;\; $\\
@@ -1043,13 +1050,13 @@ $chars(\emptyset)$ \qquad\qquad\qquad \;\;\= $\equiv$ \= $\top$ \\
 $chars(\setof{(l,(c,f))} \cup S)$ \> $\equiv$ \> $glyph(l,c,f) \land chars(S)$ \\
 \end{tabbing}
 }
-% \vspace{-1.5em}
+
 In the opening , we informally parameterize our specification over the
 predicate variable $I$, the function variable $\ctext{newchar}$, the
 function variable $\ctext{getdata}$, and the variable $f$ of $\fonttp$
 type. The reason will become clear once we see the factory function
 that creates flyweight constructors.
-%
+
 On line 1, we assert the existence of a predicate $glyph(l, c, f)$,
 which says that the glyph value $l$ is a glyph of character $c$ and
 font $f$. On line 2, we specify the $\ctext{newchar}$ procedure. Its
@@ -1079,7 +1086,7 @@ that two calls to $\ctext{newchar}$ with the same arguments will yield
 the same result.
 
 The specification of the flyweight factory looks like this:
-% \vspace{-0.5em}
+
 {\small
 \begin{tabbing}
 1 \qquad \= $\exists \ctext{make\_flyweight} :
@@ -1090,7 +1097,7 @@ The specification of the flyweight factory looks like this:
   \>\> \> $\setof{a.\; \exists I:\assert.\; I \land \validprop{\mbox{Flyweight}(I, \fst{a}, \snd{a}, f)}}$ \\
 \end{tabbing}
 }
-% \vspace{-1em}
+
 Here, we assert the existence of a function $\ctext{make\_flyweight}$,
 which takes a font $f$ as an input argument, and returns two functions
 to serve as the $\ctext{getchar}$ and $\ctext{getdata}$ functions of
@@ -1121,7 +1128,7 @@ $refs(mapping, \setof{c} \cup D)$ \> $\equiv$\> $mapping(c) \pointsto (c,f) * re
  
 \end{tabbing}
 }
-% \vspace{-2em}
+
 In this implementation we have assumed the existence of a hash table
 implementation with operations $\ctext{newtable}$, $\ctext{lookup}$,
 and $\ctext{update}$, whose specifications we omit for space
@@ -1163,11 +1170,10 @@ called on the wrong reference, even though they have compatible types.
 % object-oriented style.
 % \vspace{-1em}
 \section{Subject-Observer}
-% \vspace{-1em}
-% The subject-observer pattern is one of the most characteristic
-% patterns of object-oriented programming, and is extensively used in
-% GUI toolkits. 
-The subject-observer pattern features a mutable data structure called
+
+The subject-observer pattern is one of the most characteristic
+patterns of object-oriented programming, and is extensively used in
+GUI toolkits. This pattern features a mutable data structure called
 the \emph{subject}, and a collection of data structures called
 \emph{observers} whose invariants depend on the state of the
 subject. Each observer registers a callback function with the subject
@@ -1381,15 +1387,15 @@ method calls could have. Parkinson and Bierman have also introduced a
 notion of abstract predicate family~\cite{parkinson-bierman-05}
 related to the higher-order quantification of Birkedal \emph{et al}.
 
-Nanevski, Morisett and Birkedal have developed Hoare Type
-Theory~\cite{htt}, which is a sophisticated dependently-typed
-functional language that, like our system, uses a monadic discipline
-to control effects.  Unlike our work, HTT takes advantage of type
-dependency to directly integrate specifications into the types of
-computation terms. Nanevski, Ahmad, Morisett and
-Birkedal~\cite{abstract-htt} have proposed using the existential
-quantification of their type theory to hide data representations,
-giving examples such as a malloc/free style memory allocator.
+% Nanevski, Morisett and Birkedal have developed Hoare Type
+% Theory~\cite{htt}, which is a sophisticated dependently-typed
+% functional language that, like our system, uses a monadic discipline
+% to control effects.  Unlike our work, HTT takes advantage of type
+% dependency to directly integrate specifications into the types of
+% computation terms. Nanevski, Ahmad, Morisett and
+% Birkedal~\cite{abstract-htt} have proposed using the existential
+% quantification of their type theory to hide data representations,
+% giving examples such as a malloc/free style memory allocator.
 
 In addition to systems based on separation, there is also a line of
 research based on the concept of object invariants and ownership.  The
@@ -1447,7 +1453,7 @@ to control allocation to the permitted cases.
 % \appendix
 % \section{Appendix Title}
 
-This is the text of the appendix, if you need one.
+% This is the text of the appendix, if you need one.
 
 \acks
 

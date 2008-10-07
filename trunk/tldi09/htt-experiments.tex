@@ -30,19 +30,20 @@ Ynot form a small trusted computing base which has been formally justified
 in previous work on Hoare Type Theory (HTT)~\cite{nanevski06separation,
   nanevski07esop, petersen08}.
 
-As in the specification logic described in the earlier sections, Ynot also
-makes use a monads, to ensure a monadic separation of effects and pure Coq.
-In Ynot specifications are types and one of the types is the monadic type
-of computations $\{ P \} x:\tau \{ Q \}$; if a computation has this type
-and it is run in a heap $i$ satisfying $P$ and it terminates, then it will
-produce a value $x$ of type $\tau$ and result in a new heap $j$ such that
-the predicate $Q(i,j)$ holds. Loosely speaking, we may thus think of Ynot
-as a type theory corresponding to the specification logic presented earlier
-(XXX SHOULD USE A NAME - IDEALIZED ML ?)  under a Curry-Howard style
-correspondence.  Following this intuition, we have experimented with
-translating the earlier described design pattern specifications and
-implementations into Ynot and formally verified them in Ynot.
-We now describe the translations and the lessons learned.
+As in the specification logic described in the earlier sections, Ynot
+also makes use a monads, to ensure a monadic separation of effects and
+pure Coq.  In Ynot specifications are types and one of the types is
+the monadic type of computations $\{ P \} x:\tau \{ Q \}$; if a
+computation has this type and it is run in a heap $i$ satisfying $P$
+and it terminates, then it will produce a value $x$ of type $\tau$ and
+result in a new heap $j$ such that the predicate $Q(i,j)$
+holds. Loosely speaking, we may thus think of Ynot as a type theory
+corresponding to the specification logic for Idealized ML presented
+earlier under a Curry-Howard style correspondence.  Following this
+intuition, we have experimented with translating the earlier described
+design pattern specifications and implementations into Ynot and
+formally verified them in Ynot.  We now describe the translations and
+the lessons learned.
 
 Note first, however, that in Ynot post-conditions are expressed in terms of
 both the initial and the final heap. This is an alternative to the use of
