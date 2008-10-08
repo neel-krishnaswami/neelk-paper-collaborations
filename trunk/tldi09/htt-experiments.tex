@@ -52,14 +52,14 @@ whose scope extends to both the pre- and post-condition.  We can thus
 translate an Idealized ML specification,
 {\small\begin{align*}
 \forall x : \tau.\ \{ P(x) \}\ comp\ \{ a : 1.\ Q(x) \}
-\end{align*}}
+\end{align*}}%
 into the following Ynot type
 {\small\begin{align*}
 &\{ \lambda i : \HEAP.\ \exists x : \tau.\ P\ x\ i \}\\
 &\quad a : 1\\
 &\{ \lambda i : \HEAP.\ \lambda j : \HEAP.\ \forall x : \tau.\ P\ x\ i
 \rightarrow Q\ x\ j \}
-\end{align*}}
+\end{align*}}%
 where $i$ is the initial heap and $j$ is the terminal heap. We will usually
 abbreviate this type as follows: 
 {\small\begin{align*}
@@ -71,7 +71,7 @@ abbreviate this type as follows:
 
 Besides Hoare triples, Idealized ML's specification language contains
 specifications of the form $\{ P \}$, for asserting that $P$ is true. In the
-above specification this is used to express that calling $getdata$ with the
+flyweight specification this is used to express that calling $getdata$ with the
 same character multiple times, produces the same reference. In HTT we can
 express that a proposition $P$ is true by returning an element of
 the subset type, $\{ x : 1 \mid P \}$, where $x$ is not free in $P$. 
@@ -83,25 +83,23 @@ code returned implements a Flyweight. In HTT, we can express the same by
 simply giving a more precise type for the return value of the
 $make\_flyweight$ computation.
 
-In the Ynot implementation, we 
-have generalized the specification, such that the computation can
-generate a Flyweight for simulated objects consisting of a value of an
-arbitrary monotype. The Flyweight factory computation therefore also has to
-take as an argument, a function, $\alpha_{eq}$, for deciding 
-equality between $\alpha$ values. 
+In the Ynot implementation, we have generalized the specification, such that
+the computation can generate a flyweight for values of an arbitrary monotype.
+The flyweight factory computation therefore also has to take as an argument, a
+function, $\alpha_{eq}$, for deciding equality between $\alpha$ values. 
 
 The rest of the specification can be translated almost directly into HTT,
 however, we have made a few changes, to simplify the formal verification of the
 implementation in Ynot. 
 \begin{itemize}
 \item In the specification of $newchar$, instead of using a set to associate
-arguments with objects, we have used a finite function (i.e., a total function
-from $\alpha$ to $\opttype\ \LOC$).
+arguments with objects, we have used a partial function (i.e., a total
+function from $\alpha$ to $\opttype\ \LOC$).
 \item In the above specification the predicate $I$ has to specify the
-representation of both the object table and the simulated objects. We have
+representation of both the object table and the objects. We have
 split $I$ into two predicates, $table$ and $refs$, and changed the precondition
 of $newchar$ to the HTT equivalent of $table(...) * (refs(...) \land
-chars(S))$, to make it explicit that the object table and the simulated objects
+chars(S))$, to make it explicit that the object table and the objects
 are in separate subheaps, to simplify verification.
 \end{itemize}
 The final HTT type of the Flyweight factory thus looks as follows:
