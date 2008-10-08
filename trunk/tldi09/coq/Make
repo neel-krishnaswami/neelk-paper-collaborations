@@ -15,6 +15,12 @@ DisjointUnion.v
 Separation.v
 STsep.v
 Precise.v
+Tactics.v
+Table.v
+MiscLemmas.v
+Flyweight.v
+IteratorsSpec.v
+Iterators.v
 
 COQC = $(COQBIN)coqc
 COQLIBS = $(COQLIBS) -I stdlib

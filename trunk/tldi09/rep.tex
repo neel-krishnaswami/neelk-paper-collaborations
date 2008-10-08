@@ -181,12 +181,12 @@ takes as argument a $broadcast$ function for broadcasting to a list of
 observers, $os$, a predicate, $O$, and a notification computation, $f$,
 respecting $O$, and returns a computation for broadcasting to $(O, f)::os$:
 \begin{align*}
-&\Pi a : \alpha.\ \Pi os : \LIST\ T.\ \Pi O : \N \rightarrow \HPROP.\\
+&\Pi l : \LOC.\ \Pi os : \LIST\ T.\ \Pi O : \N \rightarrow \HPROP.\\
 &\Pi f : (\Pi m : \N. \{ i.\ \exists k : \N.\ O\ k\ i\}\ a : 1\ \{ i\ j.\ \forall k : \N.\ O\ k\ i \rightarrow O\ m\ j\}).\\
 &\Pi broad : (\Pi n : \N.\ \{ i.\ \exists k.\ (sub\ (l, k, os) * obs\ os)\ i \}\\
 &\quad\quad\quad\quad\quad \ r : 1\\
 &\quad\quad\quad\quad\{ i\ j.\ \forall k.\ (sub\ (l, k, os) * obs\ os)\ i \rightarrow (sub\ (l, n, os) * obs\_at\ (os, n))\ j \}).\\
-&\quad\Pi n : \N.\ \{ i.\ \exists k.\ (sub\ (l, k, (O, f)::os) * obs\ (O, f)::os)\ i \}\\
+&\quad\Pi n : \N.\ \{ i.\ \exists k.\ (sub\ (l, k, (O, f)::os) * obs\ ((O, f)::os))\ i \}\\
 &\quad\quad \ r : 1\\
 &\quad\{ i\ j.\ \forall k.\ (sub\ (l, k, (O, f)::os) * obs\ ((O, f)::os))\ i\ \rightarrow\\
 &\quad\quad\quad\quad\quad\quad (sub\ (l, n, (O, f)::os) * obs\_at\ ((O, f)::os, n))\ j \}
@@ -211,8 +211,8 @@ following HTT type for the entire Idealized ML specification:
 \begin{align*}
 S_1 \equiv\ &\Sigma \alpha : \TYPE.\ \Sigma sub : \alpha \times \N \rightarrow \HPROP.\\
 &\quad \Pi n : \N. \{ i.\ emp\ i\}\ a : \alpha\ \{i\ j.\ emp\ i \rightarrow sub\ (a, n)\ j \}\ \times && \pname{newsub}\\
-&\quad \Pi a : \alpha.\ bspec(l, [])\ \times && \pname{broadcast}\\
-&\quad \Pi a : \alpha.\ \Pi os : \LIST\ T.\ \ Pi t : T.\ \Pi broad : bspec(l, os).\ bspec(l, t::os) && \pname{register}
+&\quad \Pi l : \LOC.\ bspec(l, [])\ \times && \pname{broadcast}\\
+&\quad \Pi l : \LOC.\ \Pi os : \LIST\ T.\ \ Pi t : T.\ \Pi broad : bspec(l, os).\ bspec(l, t::os) && \pname{register}
 \end{align*}
 where
 \begin{align*}
@@ -243,7 +243,7 @@ Since $os$ is universally quantified, an implementation of the above specificati
 notify([]) &\equiv \TRUE\\
 notify((O, f)::l) &\equiv (\forall m, n.\ \{ O(m) \}\ f(n)\ \{ a : 1.\ O(n) \}\ \VALID) \land notify(l)
 \end{align*}
-to restrict attention to "proper" notification computations. 
+to restrict the quantification to "proper" notification computations. 
 
 The above $notify$ predicate does not translate directly into HTT, as HTT does
 not have an assertion of the form $S\ \VALID$, to express that the
@@ -273,7 +273,7 @@ S_2 \equiv\ &\Sigma \alpha : \TYPE.\ \Sigma sub : \alpha \times \N \times \LIST\
 &\quad\quad\{ i.\ \exists n : \N, os : list\ T.\ (sub\ (a, n, os) * obs\ os)\ i \}\\
 &\quad\quad\quad r : 1\\
 &\quad\quad \{ i\ j.\ \forall n : \N, os : list\ T.\ (sub\ (a, n, os) * obs\ os)\ i\\
-&\quad\quad\quad\quad\quad \rightarrow (sub\ (a, m, os) * obs\_at\ (os, k))\ j \}
+&\quad\quad\quad\quad\quad \rightarrow (sub\ (a, m, os) * obs\_at\ (os, m))\ j \}
 \end{align*}
 This specification still differs slightly from the Idealized ML version in its
 handling of the $O$ predicate. In the Idealized ML version $register$ takes the
@@ -358,10 +358,10 @@ chars(\{ (l, (c, f)) \} \cup S) &\equiv glyph(l, c, f) \land chars(S)
 \end{align*}
 
 Since Idealized ML is not an object oriented language and therefore cannot
-return a reference to an object, instead the $new$ computation just returns a
-reference to the character and font pair. The Flyweight further defines a
-$getdata$ computation, which returns the actual character and font for a given
-reference, to simulate an object method.
+return a reference to an object, the $new$ computation just returns a reference
+to the character and font pair. The Flyweight further defines a $getdata$
+computation, which returns the actual character and font for a given reference,
+to simulate an object method.
 
 \subsection{HTT translation}
 
@@ -389,7 +389,7 @@ however, we have made a few changes, to simplify the formal verification of the
 implementation in Ynot. 
 \begin{itemize}
 \item In the specification of $newchar$, instead of using a set to associate
-arguments with objects, we have used a finite function (i.e., a total function
+arguments with objects, we have used a partial function (i.e., a total function
 from $\alpha$ to $\OPTION\ \LOC$).
 \item In the above specification the predicate $I$ has to specify the
 representation of both the object table and the simulated objects. We have
@@ -399,20 +399,20 @@ chars(S))$, to make it explicit that the object table and the simulated objects
 are in separate subheaps, to simplify verification.
 \end{itemize}
 The final HTT type of the Flyweight factory thus looks as follows:
-\marginnote{\pname{new}}[11.2em]\marginnote{\pname{get}}[20.2em]\begin{align*}
+\begin{align*}
 &\Pi \alpha : \MONO.\ \Pi \alpha_{eq} : (\Pi x : \alpha.\ \Pi y : \alpha.\ \{ z : 1 \mid x = y \} + \{ z : 1 \mid x \neq y \}).\\
 &\quad\{ i.\ emp\ i \}\\
 &\quad\quad r : \Sigma table : (\alpha \rightarrow \OPTION\ \LOC) \rightarrow \HEAP \rightarrow \PROP.\\
 &\quad\quad\quad \Sigma refs : (\alpha \rightarrow \OPTION\ \LOC) \rightarrow \HEAP \rightarrow \PROP.\\
 &\quad\quad\quad \Sigma objat : \LOC \rightarrow \alpha \rightarrow \HEAP \rightarrow \PROP.\\
 &\quad\quad\quad\Sigma prf_1 : \{ x : 1 \mid \forall h, l, l', a, a', f.\ objat\ l\ a\ h \land objat\ l'\ a'\ h \land refs\ f\ h \rightarrow (l = l' \leftrightarrow a = a') \}.\\
-&\quad\quad\quad\quad \Pi a : \alpha.\\
+&\quad\quad\quad\quad \Pi a : \alpha. && \pname{new}\\
 &\quad\quad\quad\quad\quad \{ i.\ \exists f.\ (table\ f * (\lambda h.\ allobjat(\alpha, objat, f, h) \land refs\ f\ h))\ i \}\\
 &\quad\quad\quad\quad\quad\quad l : \LOC\\
 &\quad\quad\quad\quad\quad \{ i\ j.\ \forall f.\ (table\ f * (\lambda h.\ allobjat(\alpha, objat, f, h) \land refs\ f\ h))\ i \rightarrow\\
 &\quad\quad\quad\quad\quad\quad ((\forall l'.\ f\ a = Some\ l' \rightarrow l = l')\ \land\\
 &\quad\quad\quad\quad\quad\quad (table\ f[a \mapsto l] * (\lambda h.\ allobjat(\alpha, objat, f[a \mapsto l], h) \land refs\ f[a \mapsto l]\ h))\ j) \}\ \times\\
-&\quad\quad\quad\quad \Pi l : loc.\\
+&\quad\quad\quad\quad \Pi l : loc. && \pname{get}\\
 &\quad\quad\quad\quad\quad \{ i.\ \exists a : \alpha,\ objat\ l\ a\ i \}\ r : \alpha\ \{ i\ j.\ \forall a : \alpha,\ objat\ l\ a\ i \rightarrow (i = j \land r = a) \}\\\
 &\quad \{ i\ j.\ ((fst\ r)\ []\ * (\lambda h.\ allobjat(\alpha, fst\ (snd\ (snd\ r)), [], h) \land (fst\ (snd\ r))\ []\ h))\ j \}
 \end{align*}
@@ -428,7 +428,7 @@ In the case of the Flyweight pattern, we were able to formally verify that the
 implementation given in \cite{patterns} has the above HTT type in Ynot. 
 
 The implementation given in \cite{patterns} assumes the existence of an
-implementation of a hash table data-structure with the following Idealized ML
+implementation of a table data-structure with the following Idealized ML
 specification:
 \begin{align*}
 &\exists table : A_t \times (B \rightarrow^{fin} C) \rightarrow \PROP.\\
@@ -443,7 +443,7 @@ specification:
 &\quad\quad\quad ((b \in dom(f) \land a = Some\ f(b)) \lor (b \not\in dom(f) \land a = None)) \}
 \end{align*}
 
-For the formalization in Ynot we found it necessary to use a hash table
+For the formalization in Ynot we found it necessary to use a table
 implementation with a slightly stronger specification: In particular,
 $f' = f[b \mapsto c]$ should satisfy that,
 \begin{align*}
@@ -494,9 +494,9 @@ for enumerating elements in a collection. Instead of manipulating a collection
 directly, one uses an iterator, which provides a computation, $next$, which
 produces the next element in the collection. The instance of the Iterator
 pattern we consider further provides two ways of constructing new iterators
-from old ones: A filter iterator, $filter\ p\ i$, which returns the elements of
+from old ones: A filter iterator, $Filter\ p\ i$, which returns the elements of
 the underlying iterator $i$ that satisfies the predicate $p$, and a map
-iterator, $map2\ f\ i_1\ i_2$, which applies the function $f$ to the elemenets
+iterator, $Map2\ f\ i_1\ i_2$, which applies the function $f$ to the elemenets
 of two underlying iterators $i_1$ and $i_2$. 
 
 If a destructive operation is performed on an underlying collection of an
@@ -571,14 +571,14 @@ finite subset.\\
 
 Similarly, the formal verification in Ynot of the implementation of the above
 specification given in \cite{patterns} is straightforward, with the exception
-of the $map2$ iterator. Since the $next$ computation has to perform two
+of the $Map2$ iterator. Since the $next$ computation has to perform two
 recursive calls to $next$ on two subheaps of the initial heap in the case of
-the $map2$ iterator, we have to prove some preciseness properties about $iter$
+the $Map2$ iterator, we have to prove some preciseness properties about $iter$
 predicate, to get the proof to go through. This is explained in greater detail
-in Section \ref{logical-var}. Without the $map2$ iterator, we have formally
+in Section \ref{logical-var}. Without the $Map2$ iterator, we have formally
 verified that the implementation given in \cite{patterns} has the expected HTT
 type, however, so far we have not been able to prove the required preciseness
-properties to finish the formal proof with the $map2$ iterator.  
+properties to finish the formal proof with the $Map2$ iterator.  
 
 \section{Logical Variables and preciseness}\label{logical-var}
 
@@ -628,7 +628,7 @@ with $i_1$ as initial heap and $m_1$ as final heap, and the post-condition of
 $add\ l_2$ instantiated with $i_2$ and $m_2$, where $m$ splits into the two
 disjoint subheaps $m_1$ and $m_2$. 
 
-Hence, we have to prove that $(inv\ l_1\ (n_1'+1) * inv\ l_2\ (n_2'+1))$ hold
+Hence, we have to prove that $(inv\ l_1\ (n_1'+1) * inv\ l_2\ (n_2'+1))$ holds
 for $m$ under the further assumption that $(inv\ l_1\ n_1' * inv\ l_2\ n_2')$
 holds for $i$. Since the post-condition of $add\ l_1$ has already been
 instantiated with $i_1$ as initial heap, we need a preciseness property about
@@ -639,10 +639,10 @@ $i_1$ allows us to prove that $inv\ l_1\ (n_1+1)$ holds for $m_1$, but this is
 not very useful unless we know that $n_1 = n_1'$, which also requires a
 preciseness property about the $inv$ predicate, to prove. 
 
-It is unclear whether the preciseness problem encountered with the $map2$
+It is unclear whether the preciseness problem encountered with the $Map2$
 Iterator is a limitation of binary post-conditions in general or the current
 Ynot implementation, as we have been unable to finish the proof with and
-without $nextvc$ for $map2$ (without $nextvc$ the proof became too long for us
+without $nextvc$ for $Map2$ (without $nextvc$ the proof became too long for us
 to finish by hand). 
 
 \section*{Acknowledgements}

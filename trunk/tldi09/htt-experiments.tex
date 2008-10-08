@@ -185,7 +185,7 @@ We can thus express the subject-observer pattern with the following HTT type:
 &\quad\quad\{ i.\ \exists n : \N, os : list\ T.\ (sub\ (a, n, os) * obs\ os)\ i \}\\
 &\quad\quad\quad r : 1\\
 &\quad\quad \{ i\ j.\ \forall n : \N, os : list\ T.\ (sub\ (a, n, os) * obs\ os)\ i\\
-&\quad\quad\quad\quad\quad \rightarrow (sub\ (a, m, os) * obs\_at\ (os, k))\ j \}
+&\quad\quad\quad\quad\quad \rightarrow (sub\ (a, m, os) * obs\_at\ (os, m))\ j \}
 \end{align*}} In the Idealized ML implementation of the subject-observer,
 the registered callback functions are stored in the heap. Since types and
 specifications are separate in Idealized ML, the type of these computations

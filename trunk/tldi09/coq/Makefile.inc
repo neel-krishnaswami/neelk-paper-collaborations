@@ -93,7 +93,13 @@ VFILES=stdlib/Permut.v\
   DisjointUnion.v\
   Separation.v\
   STsep.v\
-  Precise.v
+  Precise.v\
+  Tactics.v\
+  Table.v\
+  MiscLemmas.v\
+  Flyweight.v\
+  IteratorsSpec.v\
+  Iterators.v
 VOFILES=$(VFILES:.v=.vo)
 VIFILES=$(VFILES:.v=.vi)
 GFILES=$(VFILES:.v=.g)
@@ -116,7 +122,13 @@ all: stdlib/Permut.vo\
   DisjointUnion.vo\
   Separation.vo\
   STsep.vo\
-  Precise.vo
+  Precise.vo\
+  Tactics.vo\
+  Table.vo\
+  MiscLemmas.vo\
+  Flyweight.vo\
+  IteratorsSpec.vo\
+  Iterators.vo
 
 spec: $(VIFILES)
 

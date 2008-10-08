@@ -1,0 +1,7 @@
+CONTENTS:
+---------
+These files contains the formally verified implementations of the flyweight 
+and iterator design pattern. The proofs have been tested with Coq version
+8.1pl3.
+
+To compile the proofs, run make.
