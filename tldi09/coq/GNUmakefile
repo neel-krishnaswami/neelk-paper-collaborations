@@ -7,12 +7,6 @@ Makefile.inc : Make
 
 .depend: Makefile.inc
 
-realclean: archclean
-	rm -f Makefile.inc .depend *.vo *.html ynot.tgz
-
-doc: $(ALLV)
-	coqdoc -toc $(ALLV)
-
 .PHONY: tarball
 tarball:
-	tar czvf ynot.tgz GNUmakefile Makefile.inc .depend Make $(ALLV)
+	tar czvf ynot.tgz GNUmakefile Makefile.inc .depend Make README $(ALLV)
