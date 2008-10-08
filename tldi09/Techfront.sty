@@ -1,0 +1,129 @@
+%%%%%%%%%%%%%%%%%%%%%%%%% Techfront.sty %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% You should put \usepackage{Techfront} after all other \usepackage{.}  
+%%
+%% After \begin{document} write
+%%       \makefront       and optionally
+%%       \maketitle
+%%
+%%
+%% the \makefront command takes five arguments:
+%% \Ttitle - the main title. Note: linebreaks should have the form \\
+%% \Tsubtitle  - the subtitle (may be empty). Linebreaks as above. 
+%% \Tauthors - a list of authors. Separate authors with \\
+%% \Tyear - the year
+%% \Tmonth - the month (in letters)
+%% \Ttrnumber: The number of the technical report  
+%% \TISBNno: The ISBN number
+
+%% %% The following comment added by Noah Torp-Smith, Nov. 22nd, 2001,
+%% %% it is just an explanation of the above:
+%% %% When you use the package, you should have something like the following
+%% %% in the preamble of your document:
+%% 
+%% \Tmonth{June}
+%% \Tyear{2001}
+%% 
+%% \Ttrnumber{6}                           %% Get this from Birgitte Olsen
+%% \TISBNno{8765 4322}                     %% ditto
+%% 
+%% \Tauthors{John Doe \\ Lisa Wilson}
+%% \Ttitle{A Nice Result in the Academic World}
+%% \Tsubtitle{A Technical Report at the ITU}
+%% 
+%%
+%% %% Furthermore, you should have the file ITlogo.eps (if you use
+%% %% latex), or ITlogo.pdf (if you use pfdlatex) available.
+%% %% If you, for example, want to change \author (for \maketitle), do so 
+%% %% after \uspackage{TechFront}.
+%% 
+%% %% End of Noah's addendum
+ 
+ 
+\usepackage[latin1]{inputenc}
+\usepackage{times}          %% This sets the font in all of the document
+\usepackage{a4}
+\usepackage{graphicx}
+\usepackage{fullpage}
+
+
+
+\def\@month{}
+\def\Tmonth#1{\def\@month{#1 }}
+
+\def\@year{}
+\def\Tyear#1{\def\@year{#1}}
+
+\def\@trnumber{}
+\def\Ttrnumber#1{\def\@trnumber{#1}}
+
+\def\@ISBNno{}
+\def\TISBNno#1{\def\@ISBNno{#1}}
+
+\def\@subtitle{}
+\def\Tsubtitle#1{\def\@subtitle{#1}}
+
+\def\@authors{}
+\def\Tauthors#1{\def\@authors{#1}}
+
+\def\@Ttitle{}
+\def\Ttitle#1{\def\@Ttitle{#1}}
+
+\newcommand{\ISSN}      {ISSN 1600--6100}
+\newcommand{\ISBN}      {ISBN \@ISBNno}
+\newcommand{\ITUnr}     {TR-\@year-\@trnumber}
+
+\title{\@Ttitle \\ \large{\@subtitle}}
+\author{\@authors}
+\date{} 
+
+
+
+\newcommand{\makefront}{
+  \thispagestyle{empty}
+  \hfill\includegraphics{ITlogo}
+  \bf \large
+  \begin{flushleft}
+    \vspace*{3cm}
+    {\huge \bf \parbox{\linewidth}{\@Ttitle}}\\[1em]
+    {\Large \bf \parbox{\linewidth}{\@subtitle}}\\
+    \vspace*{3cm}
+    \@authors
+  \end{flushleft}
+  \vfill
+  %
+  IT University Technical Report Series
+  \hfill \ITUnr \vspace{-0.5em} \\
+  \rule{\linewidth}{0.75mm}\\
+  \ISSN \hfill \@month \@year
+  \newpage
+  \thispagestyle{empty}
+  \begin{tabular*}{\linewidth}{ll}
+    Copyright \copyright\ \@year, \quad
+    & \parbox[t]{\linewidth}{\@authors}\vspace{1.0em}\\
+    & IT University of Copenhagen\\
+    & All rights reserved.\\[1.5em]
+    & Reproduction of all or part of this work \\
+    & is permitted for educational or research use \\
+    & on condition that this copyright notice is\\
+    & included in any copy.\\[4em]
+
+    & \ISSN\\[1.5em]
+    & \ISBN\\[4em]
+    
+    \multicolumn{2}{l}{Copies may be obtained by contacting:}\\[0.5em]
+    & IT University of Copenhagen\\
+    & Rued Langgaards Vej 7\\
+    & DK-2300 Copenhagen S\\
+    & Denmark \\[0.5em]
+    & \begin{tabular}[t]{@{}ll}
+      Telephone: & +45 72 18 50 00 \\
+      Telefax:   & +45 72 18 50 01 \\
+      Web        & \texttt{www.itu.dk}
+    \end{tabular}
+  \end{tabular*}
+  \normalsize \rm
+  \setcounter{page}{0}
+  \clearpage
+}
+

@@ -1,14 +1,15 @@
 \documentclass[a4paper,english]{article}
 
-\usepackage[utf8x]{inputenc}
+%\usepackage[utf8x]{inputenc}
 \usepackage{babel}
 \usepackage{amssymb,amsmath,amsthm,amsfonts}
 \usepackage{marginnote}
+\usepackage{Techfront}
 
 \bibliographystyle{plain}
 
 \title{Verifying design patterns in Hoare Type Theory}
-\author{Kasper Svendsen, Alexandre Buisse, Lars Birkedal, and Bastian Maubert}
+\author{Kasper Svendsen, Alexandre Buisse and Lars Birkedal}
 
 \newcommand{\N}[0]{\mathbb{N}}
 \newcommand{\VAL}[0]{Val}
@@ -37,14 +38,30 @@
 
 \reversemarginpar
 
+\Ttitle{Verifying design patterns in Hoare Type Theory}
+\Tauthors{Kasper Svendsen, Alexandre Buisse and Lars Birkedal}
+
+\Tmonth{October}
+\Tyear{2008}
+
+\Ttrnumber{112}
+\TISBNno{97887794918861}
+
 \begin{document}
- 
+
+\makefront 
 \maketitle
 
 \begin{abstract}
 In this technical report we document our experiments formally verifying three
 design patterns in Hoare Type Theory.
 \end{abstract}
+
+\section*{Acknowledgements}
+
+We thank Bastien Maubert for his assistance with conducting some of the
+experiments in Ynot during his time as an intern at the IT University of
+Copenhagen.
 
 \section{Introduction}
 
