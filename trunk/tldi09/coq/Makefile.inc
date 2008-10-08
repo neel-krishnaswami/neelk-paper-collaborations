@@ -99,7 +99,8 @@ VFILES=stdlib/Permut.v\
   MiscLemmas.v\
   Flyweight.v\
   IteratorsSpec.v\
-  Iterators.v
+  Iterators.v\
+  Subject.v
 VOFILES=$(VFILES:.v=.vo)
 VIFILES=$(VFILES:.v=.vi)
 GFILES=$(VFILES:.v=.g)
@@ -128,7 +129,8 @@ all: stdlib/Permut.vo\
   MiscLemmas.vo\
   Flyweight.vo\
   IteratorsSpec.vo\
-  Iterators.vo
+  Iterators.vo\
+  Subject.vo
 
 spec: $(VIFILES)
 

@@ -183,8 +183,6 @@ Record SubObj : Type :=
 
 Definition SubImpl : SubObj := SubObjCon new broadcast register.
 
-Print bspec.
-
 Section Example.
 
 Variable c : loc.
@@ -272,3 +270,5 @@ intros.
 destruct H2 as [ l [ H2 H3 ] ].
 inversion H2.
 Qed.
+
+End Example.
