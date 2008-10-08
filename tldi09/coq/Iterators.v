@@ -1,3 +1,4 @@
+(* Ynot imports *)
 Require Import DisjointUnion.
 Require Import List.
 Require Import MemModel.
@@ -7,7 +8,9 @@ Require Import STsep.
 Require Import Assumptions.
 Require Import Precise.
 Require Import Coq.Lists.ListSet.
+(* Extra tactics *)
 Require Import Tactics.
+(* Misc lemmas and definitions about the iterator *)
 Require Import IteratorsSpec.
 
 Set Implicit Arguments.
@@ -16,6 +19,7 @@ Unset Strict Implicit.
 Open Local Scope stsep_scope.
 Open Local Scope hprop_scope.
 
+(* Create a new collection. *)
 Program Definition Inewcoll : 
     STsep emp Ac 
     (fun y i m => exists P, exists v : Ac, Val v = y /\ Icoll v nil P m) :=
@@ -36,6 +40,7 @@ trivial.
 eapply exact_pred_exact.
 Defined.
 
+(* Return the size of a collection. *)
 Program Definition Isize (c : Ac) (xs : list nat) (P : hprop) :
     STsep (fun i => Icoll c xs P i) nat 
 	  (fun y i m => i = m /\ exists n : nat, Icoll c xs P m /\ y = Val n /\ length xs = n) :=
@@ -208,6 +213,7 @@ rewrites_once.
 eauto.
 Defined.
 
+(* Add an element to a collection. *)
 Program Definition Iadd (c : Ac) (x : nat) :
     STsep (fun i => exists xs, exists P, Icoll c xs P i) unit
           (fun y i m => y = Val tt /\ forall xs P, Icoll c xs P i
@@ -334,7 +340,7 @@ unfold exact_pred; trivial.
 eapply exact_pred_exact.
 Defined.
 
-
+(* Return a new coll iterator. *)
 Program Definition Inewiter (c : Ac) :
     STsep (fun i => exists xs, exists P, Icoll c xs P i) Ai
           (fun y i m => exists a:Ai, Val a = y /\ forall xs P, Icoll c xs P i ->
@@ -388,6 +394,7 @@ destruct H5.
 assumption.
 Qed.
 
+(* Return a filter iterator. *)
 Program Definition Ifilter (p : nat -> bool) (it : Ai) :
   STsep 
     (fun i => exists S, exists xs, Iiter it S xs i) Ai
@@ -419,6 +426,8 @@ Definition next_coll_nil_post (r : Ac) : post (option nat) :=
       ((r --> lst) # (lst --> cell) # nopre) i /\ seqopt(cell) = None) ->
      (y = Val (opt_hd xs) /\ ((colls S) # (Iiter (Coll r) S (tail xs))) m).
 
+(* The next computation for the coll iterator, in the case where
+   the collection is empty. *)
 Program Definition next_coll_nil (r : Ac) : 
   STsep (next_coll_nil_pre r)
         (option nat)
@@ -472,6 +481,8 @@ Definition next_coll_cons_post (r : Ac) (v : (nat * loc)%type) : post (option na
       ((r --> lst) # (lst --> cell) # nopre) i /\ seqopt(cell) = Some v) ->
      (y = Val (opt_hd xs) /\ ((colls S) # (Iiter (Coll r) S (tail xs))) m).
 
+(* The next computation for the coll iterator, in the case where
+   the collection is non-empty. *)
 Program Definition next_coll_cons (r : Ac) (v : (nat * loc)%type) : 
   STsep (next_coll_cons_pre r v)
         (option nat)
@@ -610,6 +621,7 @@ eapply Isegment_lemma; eauto.
 exists pf0; trivial.
 Defined.
 
+(* Put together the next computation for the coll iterator. *)
 Program Definition next_coll (next : next_type) (r : Ac)  :
     STsep (fun i => exists S, exists xs, ((colls S) # (Iiter (Coll r) S xs)) i)
 	  (option nat)
@@ -706,6 +718,8 @@ Definition p2 (x : nat) (p : nat -> bool) (it : Ai) :=
     (false = p x -> (exists S, exists xs, exists xs',
       (colls S # Iiter it S (tail xs')) i /\ xs = filter p (tail xs')))).
 
+(* The next computation for the filter iterator, for the
+   case where the underlying iterator is empty. *)
 Program Definition next_filter_none (v : option nat) (p : nat -> bool) (it : Ai) :
   STsep (fun i => exists S, exists xs, exists xs',
     xs = filter p xs' /\ (colls S # Iiter it S (tail xs')) i /\
@@ -772,6 +786,9 @@ simpl tail.
 trivial.
 Qed.
 
+(* The next computation for the filter iterator, for the
+   case where the underlying iterator is non-empty and the
+   given predicate is true for its next element. *)
 Program Definition next_filter_some_true (v : option nat) (x : nat) (p : nat -> bool) (it : Ai) :
   STsep (fun i => exists S, exists xs, exists xs',
     xs = filter p xs' /\ (colls S # Iiter it S (tail xs')) i /\
@@ -817,6 +834,9 @@ rewrite H8 in H7.
 inversion H7.
 Defined.
 
+(* The next computation for the filter iterator, for the
+   case where the underlying iterator is non-empty and the
+   given predicate is false for its next element. *)
 Program Definition next_filter_some_false (next : next_type) (v : option nat) (x : nat) (p : nat -> bool) (it : Ai) :
   STsep (fun i => exists S, exists xs, exists xs',
     (colls S # Iiter it S (tail xs')) i /\ xs = filter p xs' /\
@@ -869,6 +889,8 @@ destruct H13.
 split; assumption.
 Defined.
 
+(* The next computation for the filter iterator, for the
+   case where the underlying iterator is not empty. *)
 Program Definition next_filter_some (next : next_type) (v : option nat) (x : nat) (p : nat -> bool) (it : Ai) :
   STsep (fun i => exists S, exists xs, exists xs',
     xs = filter p xs' /\ (colls S # Iiter it S (tail xs')) i /\
@@ -935,37 +957,6 @@ generalize(L3 S xs xs' H0); clear L3; intros L3.
 intuition.
 rewrite H2 in H0.
 inversion H0.
-Defined.
-
-Program Definition next_filter' (next : next_type) (p : nat -> bool) (it : Ai) :
-  STsep
-    (fun i => exists S, exists xs, exists xs', 
-      xs = filter p xs' /\ (colls S # Iiter it S xs') i)
-    (option nat)
-    (fun y i m => forall S xs xs',
-      (xs = filter p xs' /\ (colls S # Iiter it S xs') i) ->
-        (y = Val (opt_hd xs') /\ (colls S # Iiter it S (tail xs')) m /\
-           xs = filter p xs')) 
-  := sdo(next it).
-Next Obligation.
-destruct H3 as [ i1 [ i2 [ H4 [ H5 H6 ] ] ] ].
-exists empty.
-split.
-exists i; exists empty.
-intuition.
-remove_empty; apply splits_refl.
-exists H; exists H1.
-exists i1; exists i2; intuition.
-intros.
-destruct H2.
-destruct H0 as [ j1 [ j2 [ J1 [ j3 [ j4 [ J2 [ J3 J4 ] ] ] ] ] ] ].
-destruct J4 as [ J5 J6 ].
-unfold this in J5, J6.
-rewrite <- J5 in *; rewrite <- J6 in *.
-clear J5 J6 j2 j4.
-splits_rewrite.
-generalize(J3 S xs' H3); clear J3; intros J3.
-intuition.
 Defined.
 
 Lemma star_unit_left : forall (P : hprop) (h : heap),
@@ -1128,7 +1119,7 @@ unfold empty in H.
 inversion H.
 Qed.
 
-
+(* Put together the next computation for the filter iterator *)
 Program Definition next_filter (next : next_type) (p : nat -> bool) (it : Ai) :
   STsep
     (fun i => exists S, exists xs, 
@@ -1231,164 +1222,16 @@ generalize(L7 S xs xs'' H8); clear H8; intros H8.
 intuition.
 Defined.
 
-Definition opt_pair (A : Type) (v : (option A) * (option A)) :=
-  match v with
-  | (Some v1, Some v2) => Some (v1, v2)
-  | _ => None
-  end.
-
-Program Definition next_map_none (v1 v2 : option nat) (f : nat * nat -> nat) (it1 it2 : Ai) :
-  STsep (fun i => exists S, exists S1, exists S2, exists xs, exists xs1, exists xs2,
-    xs = map f (zip xs1 xs2) /\ S = S1 ++ S2 /\ disjoint_lists S1 S2 /\
-    (colls S # Iiter it1 S1 (tail xs1) # Iiter it2 S2 (tail xs2)) i /\
-    v1 = opt_hd xs1 /\ v2 = opt_hd xs2 /\ opt_pair (v1, v2) = None)
+(* Put the next computation together a take its fixpoint. *)
+Program Definition next' (next : next_type) (it : Ai)  :
+  STsep 
+    (fun i => exists S, exists xs, (colls S # Iiter it S xs) i)
     (option nat)
-    (fun y i m => forall S S1 S2 xs xs1 xs2,
-      (xs = map f (zip xs1 xs2) /\ S = S1 ++ S2 /\ disjoint_lists S1 S2 /\
-      (colls S # Iiter it1 S1 (tail xs1) # Iiter it2 S2 (tail xs2)) i /\
-      v1 = opt_hd xs1 /\ v2 = opt_hd xs2 /\ opt_pair (v1, v2) = None)
-    -> ((colls S # Iiter (Map2 f it1 it2) S (tail xs)) m /\
-         y = Val (opt_hd xs))) :=
-  sdo(sret None).
-Next Obligation.
-nextvc.
-destruct H2 as [ i1 [ i2 [ I1 [ I2 I3 ] ] ] ].
-destruct I2 as [ i3 [ i4 [ I4 [ I5 I6 ] ] ] ].
-splits_rewrite_in I4 I1; clear I1 I4.
-splits_join_in H2 (0::1::1::nil).
-case_eq (opt_hd xs1); intros.
-rewrite H12 in H9.
-case_eq (opt_hd xs2); intros.
-rewrite H13 in H9.
-inversion H9.
-clear H9.
-case_eq xs2; intros; rewrite_clear.
-clear H13.
-rewrite zip_right_nil.
-simpl map.
-simpl tail.
-simpl tail in H2.
-exists i3; exists (union (i4::i2::nil) pf0).
-intuition.
-apply splits_commute; assumption.
-exists (tail xs1); exists (nil (A := nat)); exists S1; exists S2.
-intuition.
-rewrite zip_right_nil.
-simpl map; trivial.
-exists i4; exists i2; intuition.
-exists pf0; trivial.
-unfold opt_hd in H13.
-inversion H13.
-case_eq xs1; intros; rewrite_clear.
-clear H12 H9.
-simpl zip; simpl map; simpl tail.
-apply splits_commute in H10.
-exists i3; exists (union (i4::i2::nil) pf0); intuition.
-exists (nil (A := nat)); exists (tail xs2); exists S1; exists S2.
-intuition.
-exists i4; exists i2; intuition.
-exists pf0; trivial.
-unfold opt_hd in H12; inversion H12.
-case_eq xs1; intros; rewrite_clear.
-case_eq xs2; intros; rewrite_clear.
-simpl zip; simpl map; simpl opt_hd.
-trivial.
-simpl zip; simpl map; simpl opt_hd.
-trivial.
-simpl in H9.
-case_eq xs2; intros; rewrite_clear.
-rewrite zip_right_nil.
-simpl map; simpl opt_hd; trivial.
-simpl in H9; inversion H9.
-Defined.
+    (fun y i m => forall S xs, (colls S # Iiter it S xs) i ->
+      (y = Val (opt_hd xs) /\ (colls S # Iiter it S (tail xs)) m)) :=
+    match it with 
+    | Coll r => next_coll next r 
+    | Filter p it => next_filter next p it 
+    end.
 
-Program Definition next_map_some (v1 v2 : option nat) (n : nat * nat) (f : nat * nat -> nat) (it1 it2 : Ai) :
-  STsep (fun i => exists S, exists S1, exists S2, exists xs, exists xs1, exists xs2,
-    xs = map f (zip xs1 xs2) /\ S = S1 ++ S2 /\ disjoint_lists S1 S2 /\
-    (colls S # Iiter it1 S1 (tail xs1) # Iiter it2 S2 (tail xs2)) i /\
-    v1 = opt_hd xs1 /\ v2 = opt_hd xs2 /\ opt_pair (v1, v2) = Some n)
-    (option nat)
-    (fun y i m => forall S S1 S2 xs xs1 xs2,
-      (xs = map f (zip xs1 xs2) /\ S = S1 ++ S2 /\ disjoint_lists S1 S2 /\
-      (colls S # Iiter it1 S1 (tail xs1) # Iiter it2 S2 (tail xs2)) i /\
-      v1 = opt_hd xs1 /\ v2 = opt_hd xs2 /\ opt_pair (v1, v2) = Some n)
-    -> ((colls S # Iiter (Map2 f it1 it2) S (tail xs)) m /\
-         y = Val (opt_hd xs))) :=
-  sdo(sret (Some (f n))).
-Next Obligation.
-nextvc.
-case_eq xs1; intros; rewrite_clear.
-simpl in H9.
-inversion H9.
-simpl in H9.
-case_eq xs2; intros; rewrite_clear.
-simpl in H9.
-inversion H9.
-simpl in H9.
-inversion H9.
-rewrite_clear; clear H9.
-simpl zip.
-simpl map.
-simpl tail.
-destruct H2 as [ i1 [ i2 [ I1 [ I2 I3 ] ] ] ].
-destruct I2 as [ i3 [ i4 [ I4 [ I5 I6 ] ] ] ].
-splits_rewrite_in I4 I1; clear I1 I4.
-splits_join_in H2 (0::1::1::nil).
-apply splits_commute in H9.
-exists i3; exists (union (i4::i2::nil) pf0); intuition.
-simpl tail in I6, I3.
-exists l; exists l0; exists S1; exists S2.
-intuition.
-exists i4; exists i2; intuition.
-exists pf0; trivial.
-case_eq xs1; intros; rewrite_clear.
-simpl in H9.
-inversion H9.
-simpl in H9.
-case_eq xs2; intros; rewrite_clear.
-simpl in H9.
-inversion H9.
-simpl in H9.
-inversion H9.
-rewrite_clear.
-simpl zip.
-simpl map.
-simpl opt_hd.
-trivial.
-Defined.
-
-
-Lemma colls_lemma2 : forall (S1 S2 : list iterT) (h h1 h2 : heap),
-  splits h (h1::h2::nil) -> colls S1 h1 -> colls S2 h2 -> colls (S1 ++ S2) h.
-intros S1.
-elim S1.
-intros.
-unfold colls in H0.
-splits_rewrite.
-simpl.
-assumption.
-intros.
-case_eq a; intros; rewrite_clear.
-case_eq p; intros; rewrite_clear.
-unfold colls in H1; fold colls in H1.
-simpl.
-destruct H1 as [ h3 [ h4 [ H3 [ H4 H5 ] ] ] ].
-splits_rewrite_in H3 H0; clear H3 H0.
-splits_join_in H1 (0::1::1::nil).
-assert(colls (l ++ S2) (union (h4::h2::nil) pf0)).
-eapply H.
-instantiate (1 := h2).
-instantiate (1 := h4).
-exists pf0; trivial.
-assumption.
-assumption.
-exists h3; exists (union (h4::h2::nil) pf0).
-intuition.
-apply splits_commute; assumption.
-Qed.
-
-Program Definition next2 (next : next_type) (S : list iterT) (it : Ac) : next_type := 
-  match it with
-   | Coll l => sdo (next_coll next l)
-   | Filter p i => sdo (next_filter next p i)
-  end.
+Definition next := sfix next'.

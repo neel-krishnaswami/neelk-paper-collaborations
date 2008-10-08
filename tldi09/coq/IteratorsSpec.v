@@ -29,8 +29,7 @@ Definition Ac := loc%type.
 (* Iterator *)
 Inductive Ai : Type :=
     | Coll   : loc -> Ai
-    | Filter : (nat -> bool) -> Ai -> Ai
-(*    | Map2   : (nat * nat -> nat) -> Ai -> Ai -> Ai. *)
+    | Filter : (nat -> bool) -> Ai -> Ai.
 
 Definition iterT := (Ac * list nat * hprop)%type.
 
@@ -218,9 +217,6 @@ Fixpoint Iiter (it : Ai) (S : list iterT) (xs : list nat) {struct it} : hprop :=
 				    right type. *) False
 	end
 	| Filter p i => exists xs', xs = filter p xs' /\ Iiter i S xs' h
-	| Map2 f i1 i2 => exists xs1, exists xs2, exists S1, exists S2,
-	    xs = map f (zip xs1 xs2) /\ disjoint_lists S1 S2 /\ S = S1 ++ S2 /\
-	    ((Iiter i1 S1 xs1) # (Iiter i2 S2 xs2)) h
     end.
 
 Ltac splits_full_nopre := 
@@ -862,13 +858,6 @@ intros.
 simpl in H.
 destruct H as [ xs' [ H1 H2 ] ].
 eapply IHit; eauto.
-intros.
-simpl in H.
-destruct H as [ xs1 [ xs2 [ S1 [ S2 [ H1 [ H2 [ H3 H4 ] ] ] ] ] ] ].
-destruct H4 as [ h1 [ h2 [ H5 [ H6 H7 ] ] ] ].
-destruct (lsts_lemma H3) as [ H8 H9 ].
-rewrite_clear.
-eapply IHit1; eauto.
 Qed.
 
 Lemma lst_lemma2 : forall (A : Type) (x : A) (l1 l2 l3 : list A),
