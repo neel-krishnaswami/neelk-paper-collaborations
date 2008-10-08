@@ -30,23 +30,9 @@ Definition Ac := loc%type.
 Inductive Ai : Type :=
     | Coll   : loc -> Ai
     | Filter : (nat -> bool) -> Ai -> Ai
-    | Map2   : (nat * nat -> nat) -> Ai -> Ai -> Ai.
+(*    | Map2   : (nat * nat -> nat) -> Ai -> Ai -> Ai. *)
 
 Definition iterT := (Ac * list nat * hprop)%type.
-
-(*
-Record Iterator : Type :=
-    IteratorCon {
-	coll : iterT -> Prop;
-	iter : Ai -> set iterT -> Seq -> Prop; (* list iterT actually is powerset of iterT *)
-	newcoll : STsep 
-		    emp 
-		    Ac 
-		    (fun y i m => exists n : nat, exists v : Ac, 
-			Val v = y /\ coll (v, nil, n))
-	(* ... *)
-    }.
-*)
 
 Inductive Seq_pred (c : Ac) (xs : list nat) (h : heap) : Prop :=
     | Seq_nil  : xs = nil /\ (c --> Nil) h -> Seq_pred c xs h
@@ -910,77 +896,3 @@ inversion H.
 right.
 exists l2; trivial.
 Qed.
-
-v v v v v v v
-(*
-*************
-(*xs
-^ ^ ^ ^ ^ ^ ^
-Lemma colls_map_lemma :
-  forall (S S1 S2 S1' S2' : list iterT) (f : nat * nat -> nat)
-         (it1 it2 : Ai) (xs1 xs2 xs1' xs2' : list nat) (h : heap),
-    disjoint_lists S1 S2 -> disjoint_lists S1' S2' ->
-    S = S1 ++ S2 -> S = S1' ++ S2' ->
-    (colls S # Iiter it1 S1 xs1 # Iiter it2 S2 xs2) h ->
-    (colls S # Iiter it1 S1' xs1' # Iiter it2 S2' xs2) h ->
-      (S1 = S1' /\ S2 = S2').
-intros.
-generalize h S S1 S1' xs1 xs2 xs1' xs2' H H0 H1 H2 H3 H4.
-clear h S S1 S1' xs1 xs2 xs1' xs2' H H0 H1 H2 H3 H4.
-induction it1.
-intros.
-destruct H3 as [ h1 [ h2 [ H5 [ H6 H7 ] ] ] ].
-destruct H6 as [ h3 [ h4 [ H8 [ H9 H10 ] ] ] ].
-destruct H4 as [ j1 [ j2 [ H11 [ H12 H13 ] ] ] ].
-destruct H12 as [ j3 [ j4 [ H14 [ H15 H16 ] ] ] ].
-case_eq S1; intros; rewrite_clear.
-simpl in H10; contra.
-case_eq S1'; intros; rewrite_clear.
-simpl in H16; contra.
-simpl app in H2.
-inversion H2.
-rewrite_clear.
-case_eq l0; intros; rewrite_clear.
-case_eq l1; intros; rewrite_clear.
-simpl in H4.
-intuition.
-case_eq i0; intros; rewrite_clear.
-case_eq p; intros; rewrite_clear.
-simpl in H16; contra.
-case_eq i0; intros; rewrite_clear.
-case_eq p; intros; rewrite_clear.
-simpl in H10; contra.
-intros.
-destruct H3 as [ h1 [ h2 [ H5 [ H6 H7 ] ] ] ].
-destruct H6 as [ h3 [ h4 [ H8 [ H9 H10 ] ] ] ].
-destruct H4 as [ j1 [ j2 [ H11 [ H12 H13 ] ] ] ].
-destruct H12 as [ j3 [ j4 [ H14 [ H15 H16 ] ] ] ].
-simpl in H10, H16.
-destruct H10 as [ xs' [ H17 H18 ] ].
-destruct H16 as [ xs'' [ H19 H20 ] ].
-eapply IHit1; eauto.
-instantiate (1 := h).
-instantiate (1 := xs2).
-instantiate (1 := xs').
-exists h1; exists h2; intuition.
-exists h3; exists h4; intuition.
-instantiate (1 := xs'').
-exists j1; exists j2; intuition.
-exists j3; exists j4; intuition.
-intros.
-destruct H3 as [ h1 [ h2 [ H5 [ H6 H7 ] ] ] ].
-destruct H6 as [ h3 [ h4 [ H8 [ H9 H10 ] ] ] ].
-destruct H4 as [ j1 [ j2 [ H11 [ H12 H13 ] ] ] ].
-destruct H12 as [ j3 [ j4 [ H14 [ H15 H16 ] ] ] ].
-simpl in H10, H16.
-destruct H10 as [ xs3 [ xs4 [ S3 [ S4 [ H17 [ H18 [ H19 H20 ] ] ] ] ] ] ].
-destruct H16 as [ xs5 [ xs6 [ S5 [ S6 [ H21 [ H22 [ H23 H24 ] ] ] ] ] ] ].
-rewrite H19 in H1.
-rewrite H23 in H2.
-rewrite app_ass in H1, H2.
-clear H21 H17.
-rewrite_clear.
-
-
-*)
-*)
