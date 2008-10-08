@@ -69,10 +69,13 @@ Type Theory.
 
 Idealized ML is a program logic with a separate type system and specification
 language, whereas specifications are integrated with types in HTT. Formalizing
-the examples thus requires a little translation. In the case of the
+the examples thus requires a small translation. In the case of the
 Subject/observer pattern, the integrated types and specifications allows us to
 give a simple specification, however, the current type system appears to be
-too weak to allow us to give an implementation of this specification. 
+too weak to allow us to give an implementation of this specification.
+
+The Coq proof scripts can be downloaded at
+\texttt{http://www.itu.dk/people/kasv/patterns.tgz}.
 
 \section{Subject/observer pattern}
 
@@ -255,7 +258,7 @@ quantify over $list\ T$:
 &\Pi a : \alpha.\ \Pi m : \N.\\
 &\quad\{ i.\ \exists n : \N, os : list\ T.\ (sub\ (a, n, os) * obs\ os)\ i \}\\
 &\quad\quad r : 1\\
-&\quad \{ i\ j.\ \forall n : \N, os : list\ T.\ (sub\ (a, n, os) * obs\ os)\ i \rightarrow (sub\ (a, m, os) * obs\_at\ (os, k))\ j \} 
+&\quad \{ i\ j.\ \forall n : \N, os : list\ T.\ (sub\ (a, n, os) * obs\ os)\ i \rightarrow (sub\ (a, m, os) * obs\_at\ (os, m))\ j \} 
 \end{align*}
 We can thus express the Subject/observer pattern, where the currently
 registered notification computations are a part of the subject's state with the
