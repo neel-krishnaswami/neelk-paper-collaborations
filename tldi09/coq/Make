@@ -21,6 +21,7 @@ MiscLemmas.v
 Flyweight.v
 IteratorsSpec.v
 Iterators.v
+IteratorsExamples.v
 Subject.v
 
 COQC = $(COQBIN)coqc

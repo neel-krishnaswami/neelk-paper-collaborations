@@ -100,6 +100,7 @@ VFILES=stdlib/Permut.v\
   Flyweight.v\
   IteratorsSpec.v\
   Iterators.v\
+  IteratorsExamples.v\
   Subject.v
 VOFILES=$(VFILES:.v=.vo)
 VIFILES=$(VFILES:.v=.vi)
@@ -130,6 +131,7 @@ all: stdlib/Permut.vo\
   Flyweight.vo\
   IteratorsSpec.vo\
   Iterators.vo\
+  IteratorsExamples.vo\
   Subject.vo
 
 spec: $(VIFILES)
