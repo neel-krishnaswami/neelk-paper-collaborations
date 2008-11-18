@@ -8,16 +8,14 @@ Require Import Assumptions.
 Require Import Precise.
 Require Import Coq.Lists.ListSet.
 Require Import Tactics.
+Require Import Iterators.
+Require Import IteratorsSpec.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
 
 Open Local Scope stsep_scope.
 Open Local Scope hprop_scope.
-
-Require Import Iterators.
-Require Import IteratorsSpec.
-
 
 Program Definition Test1 :
     STsep emp Ac (fun y i m => exists P1, exists c1 : Ac, Val c1 = y /\

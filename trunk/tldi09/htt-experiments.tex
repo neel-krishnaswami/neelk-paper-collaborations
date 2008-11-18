@@ -165,7 +165,7 @@ specifications are types, we can express the type of pairs of $(O, f)$ such
 that $f$ is a good call function with respect to the predicate $O$ with the
 following type: 
 {\small\begin{align*}
-T &\equiv \Sigma O : \N \rightarrow \HPROP.\\
+T &\equiv \Sigma O : \N \rightarrow \HEAP \rightarrow \PROP.\\
 &\quad\quad (\Pi m : \N.\ \{ i.\ \exists k : \N.\ O\ k\ i\}\ a : 1\ \{ i\ j.\ \forall k : \N.\ O\ k\ i \rightarrow O\ m\ j \})
 \end{align*}}
 Hence, we can restrict the quantification of $os$ in the specification of
@@ -174,7 +174,7 @@ We can thus express the subject-observer pattern with the following HTT type:
 {\small
 \begin{align*}
 &\Sigma \alpha : \TYPE.\ \Sigma sub : \alpha \times \N \times \listtype T
-\rightarrow \HPROP.\\
+\rightarrow \HEAP \rightarrow \PROP.\\
 &\quad \Pi n : \N.\ \{ i.\ emp\ i \} a : \alpha \{ i\ j.\ sub\ (a, n, [])\ j \}\ \times\\
 &\quad \Pi a : \alpha.\ \Pi t : T.\\
 &\quad\quad\{ i.\ \exists n : \N, os : list\ T. sub\ (a, n, os)\ i \}\\
