@@ -89,7 +89,7 @@ intended to structure and modularize programs means that we can use
 them to evaluate whether the proofs in a program logic respect the
 conceptual structure of the program -- we can check to see if we need
 to propagate conceptually irrelevant information out of program
-modules order to meet our proof obligations. Third, we have the
+modules in order to meet our proof obligations. Third, we have the
 confidence that these programs, though small, actually reflect
 realistic patterns of usage.
 
@@ -578,21 +578,70 @@ twice to a parallel iteration constructor -- the iterators must be
 disjoint in order to correctly generate the two sequences of elements
 to combine.
 
-Below, we give a specification of an iterator pattern. First, we 
-give the types of our collections and iterators. A collection is just
-a mutable linked list, consisting of pointers to list cells. (For
-simplicity, we only consider lists of natural numbers.) An iterator is
-an element of a recursive tree structure in the style of an ML
-datatype declaration. (In Java, we would have a class hierarchy for
-iterators.) If it is an iterator over a single collection, then it
-will be in the branch $\ctext{Coll }r$, where $r$ is a pointer to a
-linked list -- a finger into the middle of the collection. For filtering
-iterators, we use a constructor of the form $\ctext{Filter}(p, i)$,
-where $p$ is a predicate function and $i$ is the iterator whose
-elements we are selectively yielding. We give pairwise mapping
-iterators via a constructor $\ctext{Map2}(f, i_1, i_2)$, which
-enumerates elements of $i_1$ and $i_2$ in parallel, and applies the
-binary function $f$ to those pairs to produce the yielded elements.
+Below, we give a specification of an iterator pattern. We'll begin 
+by describing the interface informally, in English, and then move on 
+to giving formal specifications and explaining them. 
+
+The interface consists of two types, one for collections, and one for
+iterators. The operations the collection type supports are 1) creating
+new mutable collections, 2) adding new elements to an existing
+collection, and 3) querying a collection for its size. Adding new
+elements to a collection is a detructive operation which modifies the
+existing collection, whereas getting a collections size does not
+modify the collection.
+
+The interface that the iterator type supports are 1) creating a new
+iterator on a collection, 2) destructively getting the next element
+from an iterator (returning an error value if the iterator is
+exhausted), and 3) operations to produce new iterators from old. The
+iterator transformations we support are 1) a filter operation, which
+takes an iterator along with a boolean predicate, and returns an
+iterator which enumerates the elements satisfying the predicate, and
+2) a parallel map operation, which takes two iterators and a
+two-argument function, and returns an iterator which returns the
+result of enumerating the elements of the two iterators in parallel,
+and applying the function to each pair of elements. 
+
+The aliasing protocol that our iterator protocol will satisfy is
+essentially the same as the one the Java standard libraries specify in
+their documentation.
+
+\begin{itemize}
+\item Any number of iterators can be created from a given collection.
+  Each of these iterators has the collection as its underlying state.
+
+\item An iterator constructed from other iterators has underlying 
+  state consisting of its arguments, as well as their backing states. 
+
+\item An iterator is valid as long as none of its underlying state has
+  been destructively modified from the time of the iterator's creation. An
+  iterators underlying state consists of any collections it depends
+  on, as well as any iterators it was constructed from.
+
+\item It is legal to call functions on an iterator only when it 
+  is in a valid state. Performing a destructive operation on any 
+  part of an iterator's underlying state invalidates it. For example,
+  adding an element to a collection in an iterator's underlying state
+  will invalidate it, as will trying to get elements from any other 
+  iterators in its underlying state. 
+\end{itemize}
+
+
+Now, we will describe the specification in detail. The type of
+collections is just the type of mutable linked lists, consisting of
+pointers to list cells. (For simplicity, we only consider lists of
+natural numbers.) An iterator is an element of a recursive tree
+structure in the style of an ML datatype declaration. (In Java, we
+would have a class hierarchy for iterators.) If it is an iterator over
+a single collection, then it will be in the branch $\ctext{Coll }r$,
+where $r$ is a pointer to a linked list -- a finger into the middle of
+the collection. For filtering iterators, we use a constructor of the
+form $\ctext{Filter}(p, i)$, where $p$ is a boolean predicate function
+and $i$ is the iterator whose elements we are selectively yielding. We
+give pairwise mapping iterators via a constructor $\ctext{Map2}(f,
+i_1, i_2)$, which enumerates elements of $i_1$ and $i_2$ in parallel,
+and applies the binary function $f$ to those pairs to produce the
+yielded elements.
 
 {\small
 \begin{displaymath}
@@ -617,8 +666,8 @@ $\exists \ctext{newcoll} : \unittype \to \monad{A_c}, \;\;
 $\exists \ctext{newiter} : A_c \to \monad{A_i}, \;\;
           \ctext{filter} : (\N \to \ctext{bool}) \times A_i  \to \monad{A_i}.$ \\
 5 \> 
-$\exists$\=$ \ctext{map2} : (\N \times \N \to \N) \times A_i \times A_i \to \monad{A_i}, \;\;
-              \ctext{next} : A_i \to \monad{(\opttype{\N})}.$  \\[0.5em]
+$\exists$\=$ \ctext{map2} : (\N \times \N \to \N) \times A_i \times A_i \to \monad{A_i}.$\\
+  \>$\exists$\=$\ctext{next} : A_i \to \monad{(\opttype{\N})}.$  \\[0.5em]
 
 6 \>
 \> $\spec{\emp}{\run{\ctext{newcoll()}}}{a:A_c}{\exists P.\; coll(a, \epsilon,P)}$ \\
@@ -626,15 +675,15 @@ $\exists$\=$ \ctext{map2} : (\N \times \N \to \N) \times A_i \times A_i \to \mon
 \> $\specand$ \\
 7 \>
 \> $\forall c, P, xs.\;$\=
-         $\setof{coll(c, xs, P)}
-          \run{\ctext{size}(c)}
-           \setof{a:\N.\; coll(c, xs, P) \land a = |xs|}$ \\
+         $\setof{coll(c, xs, P)}$\\
+\>\> \>  $\run{\ctext{size}(c)}$ \\
+\>\> \>  $\setof{a:\N.\; coll(c, xs, P) \land a = |xs|}$ \\
 \> 
 \> $\specand$ \\
 8 \> \> $\forall c, P, x, xs.\;$\=
-               $\setof{coll(c, xs, P)}
-                \;\run{\ctext{add}(c, x)}\;
-                \setof{a:1.\; \exists Q.\; coll(c, x\cdot xs, Q)}$ \\
+               $\setof{coll(c, xs, P)}$ \\
+\>\>\>         $\run{\ctext{add}(c, x)}$\\
+\>\>\>         $\setof{a:1.\; \exists Q.\; coll(c, x\cdot xs, Q)}$ \\
 \>
 \> $\specand$ \\
 9 \>
@@ -651,8 +700,9 @@ $\exists$\=$ \ctext{map2} : (\N \times \N \to \N) \times A_i \times A_i \to \mon
 \>\>\>   $\setof{a:A_i.\; iter(a, S, filter\; p\;xs)}$ \\
  \> 
 \> $\specand$ \\
-11 \> 
-\> $\forall f, i, S,$\=$ xs, i', S', xs'.\;$ \= 
+ \> 
+\> $\forall f, i, S,$\=$ xs, i', S', xs'.\;$ \\
+11 \> \> \> 
      $\setof{iter(i, S, xs) * iter(i', S', xs') \land S \cap S' = \emptyset}$ \\
 12 \> \> \> $\run{\ctext{map2}(f, i, i')}$ \\
 13 \> \> \> $\setof{a:A_i.\; iter(a, S \cup S', map\;f\;(zip\;xs\;xs'))}$ \\
@@ -686,27 +736,33 @@ change. The final argument, $P$, represents the \emph{abstract state}
 of the collection. We use this argument to track whether an operation
 that uses $c$ makes any destructive changes to it. Since the iterator
 protocol asks that we not call any destructive operations, this field
-lets us tell whether a function has made such a change, or not.
+lets us track whether a function has made such a change, or not, without
+actually revealing the internal state of the collection to a client. 
 
 The predicate $iter(i, S, xs)$ (on line 2) is the predicate describing
 the state of an iterator. The first argument $i$ is the iterator
 constructor which owns this heap state. The finite set $S$ is a set of
 triples describing the \emph{support} of the iterator -- the triples
 $(c,xs,P)$ in this set describe all the collections the iterator will
-examine in its enumeration. The third argument, $xs$, is a sequence 
-corresponding to the elements that the iterator has yet to produce. 
+examine in its enumeration. That is, the collections in the support
+are the collections that are in $i$'s underlying state. (We track the
+iterators in an underlying state by another mechanism, which we will
+describe subsequently.) The third argument, $xs$, is a sequence
+corresponding to the elements that the iterator has yet to produce.
 
-$\ctext{newcoll}$ (specified on line 6) creates a new,
-empty collection, unaliased with any other collection. 
-$\ctext{size}(c)$ (line 7) takes a
+$\ctext{newcoll}$ (specified on line 6) creates a new, empty
+collection, unaliased with any other collection. The postcondition
+specifies that the collection is empty, and that it begin in some
+arbitrary abstract state. $\ctext{size}(c)$ (line 7) takes a
 collection $c$, and returns the number of elements in $c$. The
 abstract state $P$ of the $coll(c, xs, P)$ predicate is unchanged in
 the pre- and post-conditions, indicating that this function does not
-change the abstract state. $\ctext{add}(c, x)$ 
-(line 8) takes a collection $c$, and imperatively
-adds the element $x$ to the collection. The abstract state is
-existentially quantified in the postcondition, indicating that it can
-be modified by the call to $\ctext{add}$.
+change the abstract state. $\ctext{add}(c, x)$ (line 8) takes a
+collection $c$, and imperatively adds the element $x$ to the
+collection. The abstract state is existentially quantified in the
+postcondition, indicating that it can be modified by the call to
+$\ctext{add}$. This ensures that clients cannot assume that the 
+abstract state is the same before and after a call to $\ctext{add}$. 
 
 $\ctext{newiter}(c)$ (line 9) takes a collection $c$, and returns an
 iterator over it. The returned iterator predicate $iter(a,$
@@ -718,13 +774,21 @@ $\ctext{filter}(p, i)$ (line 10) takes a boolean function $p$ and an
 iterator $i$, and returns a new iterator which will enumerate only
 those elements which for which $p$ returns true. (We express this with
 a logical function $filter$ called on the sequence $xs$.) Note that
-$\ctext{filter}(p, i)$ consumes the original iterator state
-$iter(i, S, xs)$ -- the postcondition state only mentions the state
-associated with the return value of the the call to
-$\ctext{filter}$. This reflects the fact that the filtered iterator
-takes ownership of the underlying iterator, in order to prevent third
-parties from making calls to $\ctext{next}(i)$ and possibly changing
-the state of the filtered iterator.
+$\ctext{filter}(p, i)$ consumes the original iterator state $iter(i,
+S, xs)$ -- the postcondition state only mentions the state associated
+with the return value of the the call to $\ctext{filter}$. This
+reflects the fact that the filtered iterator takes ownership of the
+underlying iterator, in order to prevent third parties from making
+calls to $\ctext{next}(i)$ and possibly changing the state of the
+filtered iterator. 
+
+This is also why the support only needs to track the collections in
+each iterator's underlying state. When we take ownership of the
+argument's iterator state, we prevent third parties from being able to
+call functions on the argument after creating the new iterator. This
+takes advantage of the resource-conscious nature of separation logic:
+a specification must have access to its footprint, and so we can hide
+state inside a predicate to control which operations are allowed.  
 
 $\ctext{map2}(f, i_1, i_2)$ (lines 11-13) takes a binary function $f$,
 and two iterators $i_1$ and $i_2$. From an initial state $iter(i_1, S,
@@ -755,11 +819,11 @@ For space reasons, we cannot give the complete proof, so we give the
 implementation of this module and its predicates below:
 {\small
 \begin{tabbing}
-1\qquad \= $coll$\=$(c, xs, P) \equiv list(c, xs) \land P \land \mbox{exact}(P)$ \\[0.5em]
-2 \> $list(c, \epsilon)$ \qquad\= $\equiv$ \= $c \pointsto \ctext{Nil}$ \\
-3 \> $list(c, x\cdot xs)$ \> $\equiv$ \> 
+1 \qquad \= $list(c, \epsilon)$ \qquad\= $\equiv$ \= $c \pointsto \ctext{Nil}$ \\
+2 \> $list(c, x\cdot xs)$ \> $\equiv$ \> 
    $\exists c'.\; c \pointsto \ctext{Cons}(x, c') * list(c', xs)$ 
 \\[0.5em]
+3\qquad \= $coll$\=$(c, xs, P) \equiv list(c, xs) \land P \land \mbox{exact}(P)$ \\[0.5em]
 4 \> $iter$\=$(\ctext{Map2}(f, i_1, i_2), S, xs)$\=$ \equiv$ \= \\ 
 \> \>         $\exists$\=$xs_1, xs_2, S_1, S_2.$ \\
 \> \>\>$xs = (map\; f\; (zip\; xs_1\; xs_2)) \land (S = S_1 \uplus S_2) \;\land$\\
@@ -822,37 +886,74 @@ implementation of this module and its predicates below:
 \end{tabbing}
 }
 
-The predicate $coll(c, xs, P)$ (line 1) is defined as the conjunction
-of a linked list predicate $list(c, xs)$ (lines 2-3) and an exact
-predicate $P$. An exact predicate is one that is true of exactly one
-heap, and the conjunction of $P$ with $list(c,xs)$ ensures that this
-linked list cannot be modified at all, without changing $P$.
+The inductive predicate $list(c, xs)$ is defined on lines 1-2. It says
+that $c$ is an empty list if it is a pointer to the value
+$\ctext{Nil}$, and that is a non-empty list if $c$ points to
+$\ctext{Cons}(x, c')$, where $x$ is the first element of the sequence
+and $c'$ disjointly represents the tail of the list.
+
+The predicate $coll(c, xs, P)$ (line 3) is defined as the conjunction
+of a linked list predicate $list(c, xs)$ and an exact predicate
+$P$. An exact predicate is one that is true of exactly one heap, and
+the conjunction of $P$ with $list(c,xs)$ ensures that this linked list
+cannot be modified at all, without changing $P$. This is a relatively
+common idiom when verifying programs whose invariants depend on a
+notion of destructive update. It is necessary because the predicate
+$list(c, xs)$ can be maintained even when $c$ is modified. Concretely,
+suppose that $xs$ is nonempty. Then any modification of $c$ which
+changes $c$'s tail to some different physical list representing the
+same tail sequence will still satisfy the predicate $list(c, xs)$.
+However, if a predicate is known to be exact, then there is exactly
+one heap it can be, and so no other heaps can satisfy it. 
 
 The inductive definition of $iter$ is on lines 4-6. The base case
-(line 6) is the most complex. It says that the iterator's pointer is a
-finger into the middle of the list, $c'$, and that the list segment
-representing what has already been seen plus the sublist representing
-what is to come, must be exactly the same heap as the collection
-itself. We express this requirement with the clause $coll(c, xs, P)
-\land (segment(c,c',ys) * list(c',zs))$, with the separating
-conjunction separating what has been seen from what is yet to come,
-and the ordinary conjunction demonstrating that this data is the same
-as the collection itself.  However, the iterator state does not own
-the collection; this clause will only hold if we have the collection
-state in addition to the iterator. We use the magic wand to say this:
-it means that when we supply the iterator with $coll(x, xs, P)$, then
-we we can view the state in this way.
+(line 6) is the most complex. In essence, it says that the iterator's
+pointer is a finger into the middle of the list, $c'$.  
 
-On line 5, the $\ctext{Filter}(p,i)$
-case says that $i$ must have some iterator state with the same support
-$S$, and a sequence of elements $xs'$ that yield $xs$ once
-filtered. We use a pure $filter$ at the assertion level to describe
-the effect on the iterator's logical sequence. On line 4, we specify
-$iter$ for the $\ctext{Map2}(f, i_1, i_2)$ case. We assert that the
-support $S$ must be divisible into two disjoint parts, one for $i_1$
-and one for $i_2$, and that there is iterator state for $i_1$ and
-$i_2$, and that the sequences $i_1$ and $i_2$ combine to yield the
-output sequence.
+We express this requirement with the clause $coll(c, xs, P) \land
+(segment(c,c',ys) * list(c',zs))$, which says that heap associated
+with the collection can be viewed in two ways, both as the collection
+itself, and as a partial list segment representing what has already
+been seen, together with the remainder of the list beginning at $c'$.
+%
+However, the iterator state does not own the collection; this clause
+will only hold if we have the collection state in addition to the
+iterator. We use the magic wand to say this: it means that when we
+supply the iterator with $coll(x, xs, P)$, then we can view the
+state in this way.
+So as a whole, the predicate $iter(\ctext{Coll}(l), \setof{(c,xs,P)},
+zs)$ can be read as ``the iterator is a pointer $l$ to some $c'$, such
+that if we are given the collection state $coll(c, xs, P)$, then $c'$
+is a pointer into the middle of the list, with $zs$ as the remaining
+elements''. 
+
+The reason we go to this effort is to simplify the specification and
+proof of client programs -- we could eliminate the use of the magic
+wand in the base case if iterators owned their collections, but this
+would complicate verifying programs that use multiple iterators over
+the same collection, or which want to call pure methods on the
+underlying collection. In those cases, the alternative would require
+us to explicitly transfer ownership in the proofs of client programs,
+which is quite cumbersome, and forces clients to reason using the 
+magic wand. The current approach isolates that reasoning within the 
+proof of the implementation. 
+
+On line 5, the $\ctext{Filter}(p,i)$ case says that $i$ must have some
+iterator state with the same support $S$, and a sequence of elements
+$xs'$ that yield $xs$ once filtered. We use the logical function
+$filter$, defined at the assertion level, to describe the effect on
+the iterator's logical sequence.  On line 4, we specify $iter$ for the
+$\ctext{Map2}(f, i_1, i_2)$ case. We assert that the support $S$ must
+be divisible into two disjoint parts, one for $i_1$ and one for $i_2$,
+and that there is iterator state for $i_1$ and $i_2$, and that the
+sequences $i_1$ and $i_2$ combine to yield the output sequence.
+
+In both of these cases, we define the behavior of the imperative
+linked list in terms of purely functional sequences. This is a very
+common strategy in many verification efforts, but here we see that we
+can use it in a local way -- in the base case, we are forced to
+consider issues of aliasing and ownership, but in the inductive cases
+we can largely avoid that effort.
 
 The collection operations are mostly straightforward --
 $\ctext{newcoll}$ (line 9) allocates a new linked list, $\ctext{size}$
@@ -998,33 +1099,45 @@ and $\ctext{map2}$ functions -- we can use equational reasoning on
 purely functional lists in our specifications, even though our
 algorithms are imperative.
 
-\section{The Flyweight Pattern}
+\section{The Flyweight and Factory Patterns}
 
 The flyweight pattern is a style of cached object creation. Whenever a
 constructor method is called, it first consults a table to see if an
 object corresponding to those arguments has been created. If it has,
 then the preexisting object is returned.  Otherwise, it allocates a
-new object, and updates the table to ensure that future calls with the same
-arguments will return this object. Because objects are re-used, the
-flyweight pattern lets programmers use reference identity to deduce
-object equality. Since this re-use means that flyweights are
-pervasively aliased, they must be used in an immutable style to avoid
-surprising updates.
+new object, and updates the table to ensure that future calls with the
+same arguments will return this object. Because objects are re-used,
+they become pervasively aliased, and must be used in an immutable
+style to avoid surprising updates. (Functional programmers call this
+style of value creation ``hash-consing''.)
 
-% This is an interesting design pattern to verify, for two reasons.
-% First, the constructor has a memo table private to it, which needs to
-% be hidden from clients. Second, this pattern makes pervasive use of
-% aliasing, and in particular allows programmers to reason about
-% equality by testing whether two objects alias or not.
+This is an interesting design pattern to verify, for two reasons.
+First, the constructor has a memo table to cache the result of
+constructor calls, which needs to be hidden from clients. Second, this
+pattern makes pervasive use of aliasing, in a programmer-visible
+way. In particular, programmers can test two references for identity
+in order to establish whether two values are equal or not. This allows
+constant-time equality testing, and is a common reason for using this
+pattern. Therefore, our specification has to be able to justify this
+reasoning.
 
 Below, we specify a program that uses the flyweight pattern to create
-and access glyphs (i.e., refs of pairs of characters and fonts)
-of a particular font $f$.  
+and access glyphs (i.e., refs of pairs of characters and fonts) of a
+particular font $f$. We have a function $\ctext{newglyph}$ to create
+new glyphs, which does the caching described above, using a predicate
+variable $I$ to refer to the table invariant; and a function
+$\ctext{getdata}$ to get the character and font information from a
+glyph.
+
+Furthemore, these functions will be created by a call to another
+function, $\ctext{make\_flyweight}$, which receives a font as an
+argument and will return appropriate $\ctext{newglyph}$ and
+$\ctext{getdata}$ functions. 
 
 {\small
 \begin{tabbing}
 Flyweight$($\=$I : \assert,\;\; $\\
-\> $\ctext{newchar} : \chartp \to \monad{\ctext{glyph}},$ \\
+\> $\ctext{newglyph} : \chartp \to \monad{\ctext{glyph}},$ \\
 \> $\ctext{getdata} : \ctext{glyph} \to \monad{(\chartp \times \fonttp)},$ \\
 \> $f:\fonttp) \equiv$ \\
 1 \qquad \=$\exists $\=$glyph : \ctext{glyph} \times \chartp \times \fonttp \To \assert.$ 
@@ -1032,7 +1145,7 @@ Flyweight$($\=$I : \assert,\;\; $\\
 
 2  \> \> $\forall c, S.\;$\=
          $\{I \land chars(S)\}$ \\
-   \>\>\>$\run{\ctext{newchar}(c)}$ \\
+   \>\>\>$\run{\ctext{newglyph}(c)}$ \\
    \>\>\>$\setof{a:\ctext{glyph}.\; 
                  I \land chars(\setof{(a, (c,f))} \cup S)}$ \\
   \> \!$\specand$ \\
@@ -1052,38 +1165,60 @@ $chars(\setof{(l,(c,f))} \cup S)$ \> $\equiv$ \> $glyph(l,c,f) \land chars(S)$ \
 }
 
 In the opening , we informally parameterize our specification over the
-predicate variable $I$, the function variable $\ctext{newchar}$, the
+predicate variable $I$, the function variable $\ctext{newglyph}$, the
 function variable $\ctext{getdata}$, and the variable $f$ of $\fonttp$
-type. The reason will become clear once we see the factory function
-that creates flyweight constructors.
+type. The reason we do this instead of existentially quantifying over
+them will become clear shortly, once we see the factory function that
+creates flyweight constructors.
 
-On line 1, we assert the existence of a predicate $glyph(l, c, f)$,
-which says that the glyph value $l$ is a glyph of character $c$ and
-font $f$. On line 2, we specify the $\ctext{newchar}$ procedure. Its
+On line 1, we assert the existence of a three-place predicate
+$glyph(l, c, f)$, which is read as saying the glyph value $l$ is a
+glyph of character $c$ and font $f$. 
+
+On line 2, we specify the $\ctext{newglyph}$ procedure. Its
 precondition says the pre-state must be the private flyweight state
 $I$, and that this state overlaps with the character state for the
-glyph/data pairs in $S$. (The definition of $chars$ takes a set of
+glyph/data pairs in $S$. The definition of $chars$ takes a set of
 glyph/data pairs and produces the conjunction of $glyph(l,c,f)$ for
-all the $(l,(c,f)) \in S$.)  Running $\ctext{newchar}(c)$ will yield a
+all the $(l,(c,f)) \in S$. Running $\ctext{newglyph}(c)$ will yield a
 postcondition state in which $(a, (c,f))$ is added to the set $S$ --
 that is, the postcondition state is $I \land chars(S) \land
 glyph(a,c,f)$.
 
+The intuition for this specification is that $I$ represents the
+private state of the memo table. We use an ordinary conjunction
+instead of the separating conjunction in the definition of $chars$ to
+say that the different glyphs may alias with each other, and with the
+private state $I$. In other words, even though the $\ctext{newglyph}$
+function returns a new glyph value, the ownership of the state
+associated with that value is not transferred -- it remains with the
+constructor. All the client can know is that some glyph state exists
+for the value it created, and that the glyph state is owned by the
+constructor.
+
 On line 3, we specify the $\ctext{getdata}$ function. If the predicate
 $glyph(r, c, f)$ is in the precondition, then $\ctext{getdata}(r)$
-will return $(c, f)$.  To ensure the flyweight invariant that the
+will return $(c, f)$.  To enforce the flyweight invariant that the
 glyph objects are read-only, we conjoin the pre- and post-conditions
 with an arbitrary predicate variable $P$. Since $P$ must be preserved
-for any instantiation, $\ctext{getdata}$ cannot make any changes to
-the underlying data.
+for any instantiation, we know that $\ctext{getdata}$ cannot make any
+changes to the underlying data. (It might be possible to internalize
+this style of argument into the logic via some sort of relational
+parametricity proof. However, we have not yet done so.)
 
-On lines 4, we give an axiom about the interaction of $I$ and
+Finally, on lines 4, we give an axiom about the interaction of $I$ and
 $glyph(l,c,f)$, which says that if we know that $I \land glyph(l,c,f)
 \land glyph(l',c', f')$ holds, then $l = l'$ holds if and only $c =
 c'$ and $f = f'$. This axiom gives clients the ability to take
 advantage of the fact that we are caching object creation and conclude
-that two calls to $\ctext{newchar}$ with the same arguments will yield
-the same result.
+that two calls to $\ctext{newglyph}$ with the same arguments will
+yield the same result. 
+
+Requiring an axiom of separation hold of the abstract predicates is
+how we state reasoning principles about aliasing as part of the
+interface of a module. When we verify the implementation, we will need
+to give concrete definitions of $I$ and $glyph$, and show that the
+formula is actually a tautology of separation logic.
 
 The specification of the flyweight factory looks like this:
 
@@ -1103,20 +1238,33 @@ which takes a font $f$ as an input argument, and returns two functions
 to serve as the $\ctext{getchar}$ and $\ctext{getdata}$ functions of
 the flyweight. In the postcondition, we assert the existence of some
 private state $I$, which contains the table used to cache glyph
-creations. Below, we define
-$\ctext{make\_flyweight}$ and its predicates: {\small
+creations. 
+
+This pattern commonly arises when encoding aggressively
+object-oriented designs in a higher-order style --- we call a
+function, which creates a hidden state, and returns other procedures
+which are the only way to access that state. This style of
+specification resembles the existential encodings of objects into type
+theory. The difference is that instead of making the fields of an
+object an existentially quantified \emph{value}~\cite{pierce-turner}, we
+make use of existentially-quantified \emph{state}.
+
+Below, we define $\ctext{make\_flyweight}$ and its predicates:
+
+
+{\small
 \begin{tabbing}
 1 \qquad \= $\ctext{m}$\=$\ctext{ake\_flyweight} \equiv$ \\
    \> \>     $\lambda f:$\=$\fonttp.\;$\\
 2  \> \> $[$\=$\letv{t}{\ctext{newtable}()}{}$ \\
-3  \> \> \> $\ctext{letv }$\=$newchar =$ \\
+3  \> \> \> $\ctext{letv }$\=$newglyph =$ \\
 4  \> \> \> \> \!\!$[\lambda c.[$\=$\ctext{letv }x = \ctext{lookup}(t, c)\ctext{ in}$\\
 5  \> \> \>\>\> $\ctext{run }\ctext{case}(x,$\=
 $\ctext{None} \to [$\=$\ctext{letv } r = [\newref{\ctext{glyph}}(c,f)] \ctext{ in}$\\
 6  \> \> \>\>\>\>\> $\ctext{letv } \_ = \ctext{update}(t, c, r) \ctext{ in }r],$ \\
 7 \> \> \>\>\>\> $\ctext{Some }r \to [r])] \ctext{ in}$ \\
 8 \> \> \> $\ctext{letv }getdata = [\lambda r.\; [!r]] \ctext{ in}$ \\
-9 \> \> \> $(newchar, getdata)]$
+9 \> \> \> $(newglyph, getdata)]$
 \\[0.5em]
 
 $glyph(r, c, f) \equiv r \pointsto (c,f) * \top$ \\[0.5em]
@@ -1136,7 +1284,7 @@ reasons. The $\ctext{make\_flyweight}$ function definition takes a
 font argument $f$, and then in its body it creates a new table $t$. It
 then constructs two functions as closures which capture this state
 (and the argument $f$) and operate on it. In lines 4-7, we define
-$newchar$, which takes a character and checks to see (line 5) if it is
+$newglyph$, which takes a character and checks to see (line 5) if it is
 already in the table. If it is not (lines 5-6), it allocates a new
 glyph reference, stores it in the table, and returns the
 reference. Otherwise (line 7), it returns the existing reference from
@@ -1146,13 +1294,13 @@ no writes, fulfilling the promise made in the specification. The
 definition of the invariant state $I$ describes the state of the table
 $t$ (and $mapping$), which are hidden from clients.
 
-\textbf{Discussion.} This example is interesting because of how the
-post-condition to $\ctext{make\_flyweight}$ nests the existential
-state $I$ with the validity assertion to specialize the flyweight spec
-to the \emph{dynamically} created table. Each created flyweight factory
-receives its own private state, and we can reuse specifications and
-proofs with no possibility that the wrong $\ctext{getdata}$ will be
-called on the wrong reference, even though they have compatible types.
+Observe how the post-condition to $\ctext{make\_flyweight}$ nests the
+existential state $I$ with the validity assertion to specialize the
+flyweight spec to the \emph{dynamically} created table. Each created
+flyweight factory receives its own private state, and we can reuse
+specifications and proofs with no possibility that the wrong
+$\ctext{getdata}$ will be called on the wrong reference, even though
+they have compatible types.
 
 % It is also worth noting that our factory here does not correspond
 % precisely to the most general form of the factory pattern. While we
@@ -1183,13 +1331,25 @@ functions, notifying each observer of its changed state. While
 conceptually simple, this is a lovely problem for verification, since
 every observer can have a different invariant from all of the others,
 and the implementation relies on maintaining lists of callback
-functions in the heap.  We give a specification for the
-subject-observer pattern below:
-% \vspace{-0.5em}
+functions in the heap.  
+
+In our example, we will model this pattern with one type of subjects,
+and three functions. A subject is simply a pair, consisting of a
+pointer to a number, the subject state; and a list of observer
+actions, which are imperative procedures to be called with the new
+value of the subject whenever it changes. There is a function
+$\ctext{newsub}$ to create new subjects; a function
+$\ctext{register}$, which attaches observer actions to the subject;
+and finally a function $\ctext{broadcast}$, which updates a subject
+and notifies all of its observers of the change. 
+
+
+We give a specification for the subject-observer pattern below:
+%
 {\small
 \begin{tabbing}
 1 \qquad \= $\exists sub : A_s \times \N \times \seqsort{((\N \To \assert) \times (\N \to \monad{1}))}.$ \\
-2 \> $\exists \ctext{newsub} : \N \to \monad{A_s},$ \\ \;
+2 \> $\exists \ctext{newsub} : \N \to \monad{A_s},$ \\ 
 3 \> $\exists \ctext{register} : A_s \times (\N \to \monad{1}) \to \monad{1},$ \\
 4 \> $\exists \ctext{broadcast} : A_s \times \N \to \monad{1}.$ \\
 \\[0.5em]
@@ -1212,31 +1372,43 @@ $obs\_at((O,f)\cdot os, k) $\>$\equiv O(k) * obs\_at(os, k)$
 \\
 \end{tabbing}
 }
-% \vspace{-1.5em}
-On line 1 we assert the existence of a predicate $sub(s, n, os)$
-representing the subject $s$'s state. The field $n$ is the data the
-observers depend on, and the field $os$ is a sequence of callbacks
-paired their invariants. On lines 2-4, we assert the existence of
-$\ctext{newsub}$, $\ctext{register}$ and $\ctext{broadcast}$, which
-create a new subject, register a callback, and broadcast a change,
-respectively.
-
-$\ctext{register}$'s specification on lines 6-9 is an implication over
-Hoare triples. It says that \emph{if} the function $f$ is a good
-observer callback, \emph{then} it can be safely registered with the
-subject. A good callback $f$ is one that takes an argument $k$ and
-sends the observer state to $O(k)$. If this condition is satisfied,
-then $\ctext{register}(s, f)$ will add the pair $(O,f)$ to the
-sequence of observers in the $sub$ predicate.
 %
-The precondition state of $\ctext{broadcast}(s,k)$ requires the
-subject state $sub(s,n,os)$, and all of the observer states
-$obs(os)$. The definition $obs(os)$ takes the list of observers and
-yields the separated conjunction of the observer states. After the
-call, the postcondition puts the $sub$ predicate and all of the
-observers in the same state $k$. The $obs\_at(os,k)$ function
-generates the separated conjunction of all the $O$ predicates, all in
-the same state $k$. 
+On line 1 we assert the existence of a three-place predicate $sub(s,
+n, os)$. The first argument is the subject $s$'s whose state this
+predicate represents. The second argument $n$ is the data the
+observers depend on, and the field $os$ is a sequence of callbacks
+paired their invariants. That is, $os$ is a sequence of pairs,
+consisting of the observer functions which act on a state, along with
+the predicate describing what that state should be.
+
+On lines 2-4, we assert the existence of $\ctext{newsub}$,
+$\ctext{register}$ and $\ctext{broadcast}$, which create a new
+subject, register a callback, and broadcast a change, respectively.
+
+$\ctext{register}$ is a higher order function, which takes a subject
+and an observer action its two arguments. The observer action is a
+function of type $\N \to \monad{1}$, which can be read as saying it
+takes the new value of the subject and performs a side-effect. Because
+$\ctext{register}$ depends on code, its specification must say how
+this observer action should behave. $\ctext{register}$'s specification
+on lines 6-9 accomplishes this via an implication over Hoare
+triples. It says that \emph{if} the function $f$ is a good observer
+callback, \emph{then} it can be safely registered with the
+subject. Here, a ``good callback'' $f$ is one that takes an argument
+$k$ and sends an observer state to $O(k)$. If this condition is
+satisfied, then $\ctext{register}(s, f)$ will add the pair $(O,f)$ to
+the sequence of observers in the $sub$ predicate.
+
+$\ctext{broadcast}$ updates a subject and all its interested
+observers.  The precondition state of $\ctext{broadcast}(s,k)$
+requires the subject state $sub(s,n,os)$, and all of the observer
+states $obs(os)$. The definition $obs(os)$ takes the list of observers
+and yields the separated conjunction of the observer states. So when
+$\ctext{broadcast}$ is invoked, it can modify the subject and any of
+its observers. Then, after the call, the postcondition puts the $sub$
+predicate and all of the observers in the same state $k$. The
+$obs\_at(os,k)$ function generates the separated conjunction of all
+the $O$ predicates, all in the same state $k$.
 
 The implementation follows:
 {\small
@@ -1278,32 +1450,41 @@ In line 1, we state concrete type of the subject $A_s$ is a pair of a
 pointer to a reference, and a pointer to a list of callback
 functions. (This is \emph{not} an existential quantifier.  Since our
 language is simply typed, we have no form of type abstraction and
-simply use $A_s$ as an abbreviation.)  On line 2, we define
-the subject predicate, $sub(s,n,os)$. The first two clauses of the
-predicate describe the physical layout of the subject, and assert that
-the first component of $s$ should point to $n$, and that the second
-component of $s$ should be a linked list containing the function
-pointers in $os$.
-(The $list$ predicate is described in
+simply use $A_s$ as an abbreviation.)  On line 2, we define the
+three-place subject predicate, $sub(s,n,os)$. The first two subclauses
+of the predicate's body describe the physical layout of the subject,
+and assert that the first component of $s$ should point to $n$, and
+that the second component of $s$ should be a linked list containing
+the function pointers in $os$. (The $list$ predicate is described in
 Section 3, when we give the definition of the iterator predicates.)
-Then we require that $os$ be ``good''. $Good$-ness is defined on lines
+
+Then we require that $os$ be ``Good''. $Good$-ness is defined on lines
 3 and 4, and says a sequence of predicates and functions is good when
 every $(O,f)$ pair in the sequence satisfies the same validity
-requirement the specification of $\ctext{register}$ demanded. Here, we
-we interleave assertions and specifications to constrain the behavior
-of code stored in the heap.
+requirement the specification of $\ctext{register}$ demanded -- that
+is, that each observer function $f$ update $O$ properly.  Note that we
+interleave assertions and specifications to constrain the behavior of
+code stored in the heap.
 
 Next, we give the implementations of $\ctext{register}$ and
 $\ctext{broadcast}$. $\ctext{register}$, on lines 5-7, adds its
 argument to the list of callbacks. Though the code is trivial, its
 correctness depends on the fact the $Good$ predicate holds for the
-extended sequence.  $\ctext{broadcast}$, on lines 8-9, updates the
-subject's data field (the first component), and then calls
-$\ctext{loop}$ (on lines 10-13) to invoke all the
-callbacks. $\ctext{loop}(k, \snd{s})$ just recurs over the list and
-calls each callback with argument $k$.  Below, we give a simple piece
-of client code using this interface.
-% \vspace{-0.5em}
+extended sequence --- we use the fact that the argument $f$ updates 
+$O$ properly to establish that the extended list remains $Good$. 
+
+$\ctext{broadcast}$, on lines 8-9, updates the subject's data field
+(the first component), and then calls $\ctext{loop}$ (on lines 10-13)
+to invoke all the callbacks. $\ctext{loop}(k, \snd{s})$ just recurs
+over the list and calls each callback with argument $k$. The
+correctness of this function also relies on the $Good$ predicate --
+each time we call one of the functions in the observer list, we use
+the hypothesis of its behavior given in $Good(os)$ to be able to make
+progress in the proof.
+
+
+Below, we give a simple piece of client code using this interface.
+
 {\small
 \begin{tabbing}
 1 \qquad \= 
@@ -1366,7 +1547,7 @@ logic is the smooth treatment of observers with differing invariants;
 higher-order quantification lets us store and pass formulas around,
 making it easy to allow each callback to have a totally different
 invariant. 
-% \vspace{-1em}
+
 
 \input{htt-experiments}
 
