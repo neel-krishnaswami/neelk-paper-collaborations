@@ -195,10 +195,10 @@ arithmetic in assertions makes it much easier to write
 specifications. So we restrict which types can contain side-effects,
 and thereby satisfy both requirements.
 %
-The pure terms of the language are typed with the typing judgement
+The pure terms of the language are typed with the typing judgment
 $\judgeE{\Gamma}{e}{A}$, given in Figure~\ref{lang-typing}, and which
 can be read as ``In variable context $\Gamma$, the pure expression $e$
-has type $A$.'' Computations are typed with the judgement
+has type $A$.'' Computations are typed with the judgment
 $\judgeC{\Gamma}{c}{A}$ (also in Figure~\ref{lang-typing}), which can
 be read as ``In the context $\Gamma$, the computation $c$ is
 well-typed at type $A$ .''
@@ -586,7 +586,7 @@ The interface consists of two types, one for collections, and one for
 iterators. The operations the collection type supports are 1) creating
 new mutable collections, 2) adding new elements to an existing
 collection, and 3) querying a collection for its size. Adding new
-elements to a collection is a detructive operation which modifies the
+elements to a collection is a destructive operation which modifies the
 existing collection, whereas getting a collections size does not
 modify the collection.
 
@@ -1129,7 +1129,7 @@ variable $I$ to refer to the table invariant; and a function
 $\ctext{getdata}$ to get the character and font information from a
 glyph.
 
-Furthemore, these functions will be created by a call to another
+Furthermore, these functions will be created by a call to another
 function, $\ctext{make\_flyweight}$, which receives a font as an
 argument and will return appropriate $\ctext{newglyph}$ and
 $\ctext{getdata}$ functions. 
@@ -1164,7 +1164,7 @@ $chars(\setof{(l,(c,f))} \cup S)$ \> $\equiv$ \> $glyph(l,c,f) \land chars(S)$ \
 \end{tabbing}
 }
 
-In the opening , we informally parameterize our specification over the
+In the opening , we informally parametrize our specification over the
 predicate variable $I$, the function variable $\ctext{newglyph}$, the
 function variable $\ctext{getdata}$, and the variable $f$ of $\fonttp$
 type. The reason we do this instead of existentially quantifying over
@@ -1556,7 +1556,7 @@ invariant.
 The proof system is a synthesis of O'Hearn and
 Reynolds's~\cite{sep-logic} work on separation logic, with Reynolds's
 system of specification logic~\cite{spec-logic} for Algol, which
-introduced the idea of turning Hoare triples into the atomic formulae
+introduced the idea of turning Hoare triples into the atomic formulas
 of a program logic. Birkedal, Biering, and Torp-Smith~\cite{hosl}
 first extended separation logic to higher-order.
 
@@ -1580,7 +1580,7 @@ related to the higher-order quantification of Birkedal \emph{et al}.
 
 In addition to systems based on separation, there is also a line of
 research based on the concept of object invariants and ownership.  The
-Java modelling language (JML)~\cite{jml} and the Boogie
+Java modeling language (JML)~\cite{jml} and the Boogie
 methodology~\cite{boogie} are two of the most prominent systems based
 on this research stream. In Boogie, each object tracks its owner
 object with a ghost field, and the ownership discipline enforces that
@@ -1617,7 +1617,7 @@ are known at verification.  Leino and Schulte~\cite{boogie-sub-obs}
 made use of Liskov and Wing's concept of history invariants or
 monotonic predicates~\cite{liskov-wing} to give a more modular
 solution. More recently, Shaner, Naumann and Leavens~\cite{ShanerLN07}
-gave a ``grey-box'' treatment of the subject-observer pattern.
+gave a ``gray-box'' treatment of the subject-observer pattern.
 Instead of tracking the specifications of the observers in the
 predicate, they give a model program that should approximates the
 behavior of any actual notification method.
