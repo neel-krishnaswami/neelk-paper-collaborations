@@ -1,0 +1,195 @@
+\documentclass{article}
+\usepackage{mathpartir}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\input{defs.tex}
+
+\begin{document}
+
+\section{Type Structure}
+
+In this section, I will describe the type structure of the 
+programming language I will use for this thesis. The language is a
+pure, total, predicatively polymorphic programming language (with
+quantification over higher kinds), augmented with a monadic type
+constructor that permits nontermination, higher-order state, and
+continuations. 
+
+\todo{Add support for polynomial data types}
+
+\begin{displaymath}
+  \begin{array}{lcll}
+    \mbox{Kinds} & 
+      \kappa & ::= & \star \bnfalt \kappa \to \kappa 
+    \\[1em]
+    \mbox{Monotypes} & 
+      \tau & ::= & 
+         \unittype \bnfalt 
+         \tau \times \tau \bnfalt 
+         \tau \to \tau \bnfalt 
+         \tau + \tau \bnfalt
+         \N \bnfalt 
+         \reftype{A} \bnfalt
+         \monad{\tau} \bnfalt \\
+     &&& \alpha \bnfalt
+         \tau\;\tau \bnfalt 
+         \fun{\alpha}{\kappa}{\tau} 
+    \\[1em]
+    \mbox{Polytypes} & 
+      A & ::= & 
+         \unittype \bnfalt 
+         A \times B \bnfalt 
+         A + B \bnfalt
+         A \to B \bnfalt 
+         \N \bnfalt 
+         \reftype{A} \bnfalt
+         \monad{A} \\
+    &&&  \alpha \bnfalt
+         \tau\;\tau \bnfalt \\
+    &&&  \forall \alpha:\kappa.\; A \bnfalt 
+         \exists \alpha:\kappa.\; A \\[1em]
+    \mbox{Type Contexts} & 
+      \Theta & ::= & \cdot \bnfalt \Theta, \alpha:\kappa \\
+  \end{array}
+\end{displaymath}
+
+The basic kind structure of the language is given with the kinds
+$\kappa$. The The kind $\star$ is the kind of monotypes, which are
+written with the letter $\tau$. These are the unit type $\unittype$,
+pair types $\tau \times \sigma$, sums $\tau + \sigma$, function space
+$\tau \to \sigma$, natural numbers $\N$, computation types $\monad{\tau}$, 
+and finally (ML-style) references $\reftype{A}$. Also, within open types
+we may also use type variables $\alpha$ to refer to types, and we can
+also define lambda-abstractions and applications to inhabit the higher
+kinds of this language. 
+
+The type $\reftype{A}$ is not merely a pointer to a value of
+monomorphic type; instead, it also permits storing a pointer to a
+value of polymorphic types $A$. The intuition justifying our
+liberality is that a reference to a value of polymorphic type is
+itself merely a location, so it is permissible to treat pointers as
+monomorphic objects. Indeed, the denotational semantics of 
+references will be built upon precisely this intuition. 
+
+The polytypes $A$ themselves extend the monotypes with universal
+quantification $\forall \alpha:\kappa.\;A$ as well as existential
+types $\exists \alpha:\kappa.\;A$. Each of the simple type
+constructors -- sums, products, functions, computations -- also may
+contain polymorphic types as subexpressions within it. Though it may
+not look like it at first glance, this is actually only a fairly modest
+generalization of the type schemes of ML. Because the universal and
+existential quantifiers range over the kinds $\kappa$, it is
+impossible to instantiate them with a polytype, thereby limiting us to
+predicative polymorphism. 
+
+The kinding judgements $\judgeWK{\tau}{\kappa}$ and
+$\judgeWK{A}{\bigstar}$ determine whether a monotype or polytype
+(respectively). Notice that we use two judgements, because we do not
+give polytypes their own first-class kind $\bigstar$ -- this means
+that we can syntactically enforce the restriction that the context
+$\Theta$, which is a collection of type variables and their kinds, 
+can only range over kinds which can contain only monotypes. 
+
+First, we give the rules for the monotypes. 
+
+\begin{mathpar}
+\inferrule*[right=KUnit]
+          { }
+          {\judgeWK{\unittype}{\star}}
+\and
+\inferrule*[right=KNat]
+          { }
+          {\judgeWK{\N}{\star}}
+\and
+\inferrule*[right=KProd]
+          {\judgeWK{\tau}{\star} \\
+           \judgeWK{\sigma}{\star}}
+          {\judgeWK{\tau \times \sigma}{\star}}
+\and
+\inferrule*[right=KSum]
+          {\judgeWK{\tau}{\star} \\
+           \judgeWK{\sigma}{\star}}
+          {\judgeWK{\tau + \sigma}{\star}}
+\and
+\inferrule*[right=KArrow]
+          {\judgeWK{\tau}{\star} \\
+           \judgeWK{\sigma}{\star}}
+          {\judgeWK{\tau \to \sigma}{\star}}
+\and
+\inferrule*[right=KComp]
+          {\judgeWK{\tau}{\star}}
+          {\judgeWK{\monad{\tau}}{\star}}
+\and
+\inferrule*[right=KRef]
+          {\judgeWK{A}{\bigstar}}
+          {\judgeWK{\reftype{A}}{\star}}
+\\
+\inferrule*[right=KHyp]
+          { \alpha:\kappa \in \Theta }
+          { \judgeWK{\alpha}{\kappa} }
+\and
+\inferrule*[right=KApp]
+          { \judgeWK{\tau}{\kappa' \to \kappa} \\
+            \judgeWK{\tau'}{\kappa'} }
+          { \judgeWK{\tau\;\tau'}{\kappa} }
+\and
+\inferrule*[right=KLam]
+          { \judgeWK[\Theta, \alpha:\kappa']{\tau}{\kappa} }
+          { \judgeWK{\fun{\alpha}{\kappa'}{\tau}}{\kappa' \to \kappa} }
+\end{mathpar}
+
+Next, we can give the rules for polytypes. 
+
+\begin{mathpar}
+\inferrule*[right=KUnit]
+          { }
+          {\judgeWK{\unittype}{\bigstar}}
+\and
+\inferrule*[right=KNat]
+          { }
+          {\judgeWK{\N}{\bigstar}}
+\and
+\inferrule*[right=KProd]
+          {\judgeWK{\tau}{\bigstar} \\
+           \judgeWK{\sigma}{\bigstar}}
+          {\judgeWK{\tau \times \sigma}{\bigstar}}
+\and
+\inferrule*[right=KSum]
+          {\judgeWK{\tau}{\bigstar} \\
+           \judgeWK{\sigma}{\bigstar}}
+          {\judgeWK{\tau + \sigma}{\bigstar}}
+\and
+\inferrule*[right=KArrow]
+          {\judgeWK{\tau}{\bigstar} \\
+           \judgeWK{\sigma}{\bigstar}}
+          {\judgeWK{\tau \to \sigma}{\bigstar}}
+\and
+\inferrule*[right=KComp]
+          {\judgeWK{A}{\bigstar}}
+          {\judgeWK{\monad{A}}{\bigstar}}
+\and
+\inferrule*[right=KRef]
+          {\judgeWK{A}{\bigstar}}
+          {\judgeWK{\reftype{A}}{\bigstar}}
+\\
+\inferrule*[right=KHyp]
+          { \alpha:\star \in \Theta }
+          { \judgeWK{\alpha}{\bigstar} }
+\and
+\inferrule*[right=KApp]
+          { \judgeWK{\tau}{\kappa' \to \star} \\
+            \judgeWK{\tau'}{\kappa'} }
+          { \judgeWK{\tau\;\tau'}{\bigstar} }
+\\
+\inferrule*[right=KForall]
+           { \judgeWK[\Theta, \alpha:\kappa]{A}{\bigstar} }
+           { \judgeWK{\forall \alpha:\kappa.\;A}{\bigstar} }
+\and
+\inferrule*[right=KExists]
+           { \judgeWK[\Theta, \alpha:\kappa]{A}{\bigstar} }
+           { \judgeWK{\exists \alpha:\kappa.\;A}{\bigstar} }
+\end{mathpar}
+
+
+\end{document}
