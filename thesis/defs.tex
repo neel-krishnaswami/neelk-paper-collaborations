@@ -2,6 +2,7 @@
 \newcommand{\unittype}{\mathbf{1}}
 \newcommand{\reftype}[1]{\ctext{ref }#1}
 \newcommand{\monad}[1]{\bigcirc{#1}}
+\newcommand{\cont}[1]{\ctext{cont}\;{#1}}
 \newcommand{\opttype}[1]{\ctext{option }{#1}}
 \newcommand{\seqsort}[1]{\ctext{seq }{#1}}
 \newcommand{\listtype}[1]{\ctext{list }{#1}}
@@ -10,6 +11,7 @@
 \newcommand{\fst}[1]{\ctext{fst } #1}
 \newcommand{\snd}[1]{\ctext{snd } #1}
 
+\newcommand{\inj}[1]{\iota_{#1}}
 \newcommand{\inl}[1]{\ctext{inl }#1}
 \newcommand{\inr}[1]{\ctext{inr }#1}
 \newcommand{\Case}[5]{\ctext{case}(#1,\; {#2}.\; #3,\; {#4}.\; #5)}
@@ -20,14 +22,17 @@
                                       \ctext{Some}\;{#3} \to {#4})}
 \newcommand{\z}{\ctext{z}}
 \newcommand{\s}[1]{\ctext{s}(#1)}
-\newcommand{\iter}[4]{\ctext{prec}(#1, {#2}, #3.\; {#4})}
+\newcommand{\iter}[4]{\ctext{prec}(#1, \z \to {#2}, \s{#3} \to {#4})}
 \newcommand{\iterseq}[4]{\ctext{prec}_{\mathsf{seq}}(#1, {#2}, #3.\; {#4})}
 \newcommand{\comp}[1]{[#1]}
 \newcommand{\fun}[3]{\lambda #1:#2.\;#3}
-\newcommand{\unit}{()}
+\newcommand{\Fun}[3]{\Lambda #1:#2.\;#3}
+\newcommand{\unit}{\left<\right>}
+\newcommand{\pack}[2]{\ctext{pack}({#1}, {#2})}
+\newcommand{\unpack}[4]{\ctext{unpack}({#1}, {#2}) = {#3} \;\ctext{in}\;{#4}}
 \newcommand{\alt}{\;|\;}
 \newcommand{\letv}[3]{\ctext{letv }#1 = #2\ctext{ in }#3}
-\newcommand{\newref}[2]{\ctext{new}_{#1} #2}
+\newcommand{\newref}[2]{\ctext{new}_{#1}(#2)}
 \newcommand{\run}[1]{\ctext{run }{#1}}
 \newcommand{\ok}{\ctext{ ok}}
 \newcommand{\FV}[1]{\mathrm{FV}({#1})}
@@ -76,12 +81,16 @@
 \newcommand{\interp}[1]{[\![{#1}]\!]}
 
 \newcommand{\interpF}[1]{[\![{#1}]\!]_f}
+\newcommand{\interpmono}[1]{\interp{#1}^{\mathrm{m}}}
+
 \newcommand{\entails}{\models}
 
-\newcommand{\judgeE}[3]{{#1} \vdash {#2} : {#3}}
-\newcommand{\judgeC}[3]{{#1} \vdash {#2} \div {#3}}
+\newcommand{\judgeE}[4][\Theta]{{#1};\;{#2} \vdash {#3} : {#4}}
+\newcommand{\judgeC}[4][\Theta]{{#1};\;{#2} \vdash {#3} \div {#4}}
+
 \newcommand{\judgeP}[3]{{#1} \vdash {#2} : {#3}}
 \newcommand{\judgeS}[2]{{#1} \vdash {#2} : \spectype}
+
 \newcommand{\judgeSCtx}[2]{{#1} \vdash {#2} : \ctext{context}}
 
 \newcommand{\judgeEqP}[4]{{#1} \vdash {#2} \equiv {#3} : {#4}}
@@ -90,6 +99,7 @@
 \newcommand{\judgeEqC}[4]{{#1} \vdash {#2} \equiv {#3} \div {#4}}
 
 \newcommand{\judgeWK}[3][\Theta]{{#1} \vdash {#2} : {#3}}
+\newcommand{\judgeKeq}[4][\Theta]{{#1} \vdash {#2} \equiv {#3} : {#4}}
 
 \newcommand{\entailsP}[3]{{#1} \rhd {#2} \vdash {#3}}
 \newcommand{\entailsS}[3]{{#1}; {#2} \vdash {#3} \ok}
@@ -106,3 +116,4 @@
 \newcommand{\TYPE}{Type}
 
 \newtheorem{prop}{Proposition}
+\newtheorem{lemma}{Lemma}
