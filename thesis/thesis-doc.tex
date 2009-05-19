@@ -583,7 +583,7 @@ use preserves local continuity.
 \end{enumerate}
 \end{lemma}
  
-\textbf{Proof.}
+\begin{proof}
 
 \begin{enumerate}
 \item Suppose $F$ and $G$ are locally continuous. Now, we define 
@@ -821,9 +821,12 @@ $(\sqcup_i [h^x_i]) \circ \inj{x} =
 and that $[\sqcup_i h^x_i] \circ \inj{x} = \sqcup_i h^x_i$, 
 and that the mediating morphism is unique.
 \end{enumerate}
+\end{proof}
 
 Now that we know that the basic operations we use in our
-interpretation are 
+interpretation are locally continuous, we can show that our 
+interpretation function gives rise to a locally continuous
+functor. 
 
 \begin{lemma}{Functoriality of $\interpmono{-}$ and $\interp{-}$}
   \begin{enumerate}
@@ -836,7 +839,8 @@ interpretation are
   \end{enumerate}
 \end{lemma}
 
-\textbf{Proof.} The proof of the first case follows by structural
+\begin{proof}
+ The proof of the first case follows by structural
 induction on the canonical derivations of monotypes. This is then used
 as a lemma in the proof of the second case, which is done via a
 structural induction on the canonical derivations of polytypes. This
@@ -845,21 +849,169 @@ functor, because we can work from the inside out, using the fact that
 set-indexed sums and products of locally-continuous functors are
 themselves locally continuous. Finally, since $\mathcal{K}$ is just 
 $H \to K_O$, we know it is locally continuous also. 
+\end{proof}
 
+\ \\\noindent 
 Observe that $\mathcal{K}$, applied to any arguments, yields a pointed
-domain, since the Sierpinski domain is pointed, and a function space
-into a pointed domain is itself pointed. Hence our functor $K$ is also
-a functor into $CPO_\bot$, the category of complete \emph{pointed}
-partial orders and continuous functions. Now, we can apply Pitts's
-theorem to solve the recursive domain equation $K = \mathcal{K}(K,
-K)$.
+domain, since the Sierpinski domain is pointed, and a continuous
+function space into a pointed domain is itself pointed. Hence our
+functor $K$ is also a functor into $CPO_\bot$, the category of
+complete \emph{pointed} partial orders and continuous functions. Now,
+we can apply Pitts's theorem to solve the recursive domain equation $K
+= \mathcal{K}(K, K)$.
 
-\begin{prop}{Pitts's Theorem}
-Any locally-continuous functor $F : CPO_\bot \times CPO^{op}_\bot \to CPO_\bot$ has 
-a solution to the equation $X = F(X)$. 
+\begin{prop}{(Pitts's Theorem)}
+Any locally-continuous functor $F : CPO_\bot \times CPO^{op}_\bot \to
+CPO_\bot$ has a solution to the equation $X = F(X)$. Moreover, there
+is also a \emph{minimal} isomorphism solving this equation. 
 \end{prop}
 
-\todo{Work out necessary strictness conditions}
+\textbf{Proof.} The existence of a solution follows from Scott's 
+inverse limit construction, together with Smyth and Plotkin's 
+characterization of such solution. We give the details below. 
+
+First, recall that an \emph{embedding} $e : C \to D$ between pointed
+cpos is a continuous function such that there exists a function $p : D
+\to C$ (called a \emph{projection}) with the properties that $e \circ
+p = id_D$ and $p \circ e \sqsubseteq id_C$. Furthermore, any such
+projection is unique.
+
+\begin{lemma}{(Uniqueness of Projections)}
+  If $e : C \to D$ is an embedding with projections $p, p' : D \to C$, then
+$p = p'$. 
+\end{lemma}
+
+\begin{proof}
+Suppose $p \not= p'$. Then, there is a $d \in D$ such
+that $p(d) \not= p'(d)$. However, since $p$ and $p'$ are projections,
+we have that $e \circ p = e \circ p' = id$. Therefore, we know that $e(p(d)) =
+d = e(p'(d))$, which is a contradiction. 
+\end{proof}
+
+\ \\
+\noindent Now, consider the empty one-point domain $\emptyset_\bot =
+\setof{\bot}$, and the sequence of domains $X_i$, defined inductively
+by $X_0 = \emptyset_\bot$ and $X_{i+1} = F(X_i, X_i)$. Next, 
+we will define embeddings and projections $e_i : X_i \to X_{i+1}$ 
+and $p_i : X_{i+1} \to X_i$ as follows: 
+
+\begin{displaymath}
+  \begin{array}{llcl}
+    e_0     & : X_0 \to X_1 & = &\lambda x.\; \bot \\
+    e_{i+1} & : X_{i+1} \to X_{i+2} & = & F(e_i, p_i) \\[0.5em]
+    p_0 &  : X_1 \to X_0 & = & \lambda x.\; \bot \\
+    p_{i+1} & : X_{i+2} \to X_{i+1} & = & F(p_i, e_i) \\[0.5em]
+  \end{array}
+\end{displaymath}
+
+\begin{lemma}{(Embeddings and Projections)} Each $e_i$, $p_i$ form
+an embedding/projection pair between $X_i$ and $X_{i+1}$. 
+\end{lemma}
+
+\begin{proof}
+This proof follows by induction on $i$. 
+\begin{itemize}
+\item Case $i=0$: Obviously $e_0 \circ p_0 = id$, since $X_0 = \setof{\bot}$.  
+  Likewise, since $p_0(e_0(x)) = \bot$, and $\bot \sqsubseteq x$, it follows that
+  $p_0 \circ e_0 \sqsubseteq id$. 
+
+\item Case $i=n+1$: 
+
+  First, we'll show that $e_i \circ p_i$ is the identity: 
+
+  \begin{displaymath}
+    \begin{array}{lcll}
+      e_i \circ p_i & = & e_{n+1} \circ p_{n+1}            & \mbox{Def.}\\ 
+                    & = & F(e_n, p_n) \circ F(p_n, e_n)   & \mbox{Def.}\\ 
+                    & = & F(e_n \circ p_n, e_n \circ p_n) & \mbox{Functor property}\\ 
+                    & = & F(id, id)                       & \mbox{Ind. hyp.}\\  
+                    & = & id                              & \mbox{Functor property} \\
+    \end{array}
+  \end{displaymath}
+
+  \noindent Now, we'll show that $p_i \circ e_i \sqsubseteq id$: 
+
+  \begin{displaymath}
+    \begin{array}{lcll}
+      p_i \circ e_i & = & p_{n+1} \circ e_{n+1}            & \mbox{Def.}\\ 
+                    & = & F(p_n, e_n) \circ F(e_n, p_n)   & \mbox{Def.}\\ 
+                    & = & F(p_n \circ e_n, p_n \circ e_n) & \mbox{Functor property}\\ 
+    \end{array}
+  \end{displaymath}
+
+  \noindent By induction, we know that $p_n \circ e_n \sqsubseteq id$, and
+  because locally continuous functors are also monotone, we know that 
+  $F(p_n \circ e_n, p_n \circ e_n) \sqsubseteq F(id, id)$. 
+\end{itemize}
+\end{proof}
+
+\ \\
+
+\noindent Now, we'll define the domain $X$ to be the domain with the underlying set:
+\begin{displaymath}
+X \equiv \left\{ x \in (\Pi n:\N.\; X_n) \;|\; \forall m:\N.\; x_m = p_m(x_{m+1}) \right\}
+\end{displaymath}
+with the ordering being the usual component-wise ordering. To be in
+$CPO_\bot$, it needs a least element, which is just $\lambda
+n:\N.\;\bot$.  This set $X$ is the limit of the chain of domains
+$X_i$, and so we will need to give embeddings and projections between
+it and each $X_i$. To do so, we'll define:
+
+\begin{displaymath}
+  \hat{e}_n : X_n \to X \equiv 
+    \lambda x:X_n.\; \lambda m:\N.\; 
+       \left\{ 
+          \begin{array}{ll}
+            p_{m,n}(x) & \mbox{if } m < n \\
+            x         & \mbox{if } m = n \\
+            e_{n,m}(x) & \mbox{if } m > n \\
+          \end{array}
+       \right.
+\end{displaymath}
+
+We define $e_{i,j}$ to be the composition $e_{j-1} \circ e_{j-2} \circ \ldots \circ e_i$,
+which will have the type $X_i \to X_j$. Likewise, we define $p_{i,j}$ to be the 
+composition $p_i \circ \ldots \circ p_{j-1}$, which will have the type $X_j \to X_i$. 
+
+\noindent The projection $\hat{p}_n : X \to X_n$ is much simpler. It's just
+
+\begin{displaymath}
+  \hat{p}_n : X \to X_n \equiv \lambda x:X.\; x_n
+\end{displaymath}
+
+Now, we'll verify that these do form an embedding-projection pair. 
+
+\begin{proof}
+  \begin{itemize}
+  \item First, we'll show that $\hat{p}_n \circ \hat{e}_n = id$. 
+
+    \begin{displaymath}
+      \begin{array}{lcl}
+        \hat{p}_n \circ \hat{e}_n & = & \lambda x:X_n.\; (\hat{p}_n \circ \hat{e}_n)\;x \\
+                                  & = & \lambda x:X_n.\; \hat{p}_n(\hat{e}_n \;x) \\
+                                  & = & \lambda x:X_n.\; (\hat{e}_n\;x)\;n \\
+                                  & = & \lambda x:X_n.\; x \\
+                                  & = & id \\
+      \end{array}
+    \end{displaymath}
+
+  \item Now, we'll show that $\hat{e}_n \circ \hat{p}_n \sqsubseteq id$. 
+    
+    \begin{displaymath}
+      \begin{array}{lcl}
+        \hat{e}_n \circ \hat{p}_n & = & \lambda x:X.\; (\hat{e}_n \circ \hat{p}_n) \; x \\
+                                  & = & \lambda x:X.\; \hat{e}_n (\hat{p}_n \; x) \\ 
+                                  & = & \lambda x:X.\; \hat{e}_n (x_n) \\ 
+      \end{array}
+    \end{displaymath}
+
+    Now, when applied to an argument $x \in X$, it's clear that the
+    result element is component-wise equal to $x$ for the components
+    less than or equal to $n$, and less than that for components
+    bigger than $n$, which makes the result smaller than $x$.
+  \end{itemize}
+\end{proof}
+
 
 \section{The Programming Language}
 
