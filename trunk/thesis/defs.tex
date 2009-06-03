@@ -37,7 +37,7 @@
 \newcommand{\ok}{\ctext{ ok}}
 \newcommand{\FV}[1]{\mathrm{FV}({#1})}
 
-\newcommand{\fix}[2]{\ctext{fix}_{#1}\;{#2}}
+\newcommand{\fix}[2]{\ctext{fix}\;{#1}.\;{#2}}
 
 \newcommand{\statecfg}[2]{\left<{#1};\;{#2}\right>}
 \newcommand{\eval}[4]{\left<{#1};\;{#2}\right> \leadsto \left<{#3};\;{#4}\right>}
@@ -78,7 +78,10 @@
 \newcommand{\specimp}{\ctext{ implies }}
 \newcommand{\spectype}{\ctext{spec}}
 \newcommand{\valid}{\ctext{ valid}}
+
 \newcommand{\interp}[1]{[\![{#1}]\!]}
+\newcommand{\interpE}[1]{\interp{#1}^e}
+\newcommand{\interpC}[1]{\interp{#1}^c}
 
 \newcommand{\interpF}[1]{[\![{#1}]\!]_f}
 \newcommand{\interpmono}[1]{\interp{#1}^{\mathrm{m}}}
@@ -87,6 +90,8 @@
 
 \newcommand{\judgeE}[4][\Theta]{{#1};\;{#2} \vdash {#3} : {#4}}
 \newcommand{\judgeC}[4][\Theta]{{#1};\;{#2} \vdash {#3} \div {#4}}
+\newcommand{\judgeEq}[5][\Theta]{{#1};\;{#2} \vdash {#3} \equiv {#4} : {#5}}
+
 
 \newcommand{\judgeP}[3]{{#1} \vdash {#2} : {#3}}
 \newcommand{\judgeS}[2]{{#1} \vdash {#2} : \spectype}
