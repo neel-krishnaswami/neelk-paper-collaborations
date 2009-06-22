@@ -22,8 +22,8 @@
                                       \ctext{Some}\;{#3} \to {#4})}
 \newcommand{\z}{\ctext{z}}
 \newcommand{\s}[1]{\ctext{s}(#1)}
-\newcommand{\iter}[4]{\ctext{prec}(#1, \z \to {#2}, \s{#3} \to {#4})}
-\newcommand{\iterseq}[4]{\ctext{prec}_{\mathsf{seq}}(#1, {#2}, #3.\; {#4})}
+\newcommand{\iter}[4]{\ctext{iter}(#1, {#2}, {#3}.\; {#4})}
+\newcommand{\iterseq}[4]{\ctext{iter}_{\mathsf{seq}}(#1, {#2}, #3.\; {#4})}
 \newcommand{\comp}[1]{[#1]}
 \newcommand{\fun}[3]{\lambda #1:#2.\;#3}
 \newcommand{\Fun}[3]{\Lambda #1:#2.\;#3}
@@ -91,6 +91,18 @@
 \newcommand{\judgeE}[4][\Theta]{{#1};\;{#2} \vdash {#3} : {#4}}
 \newcommand{\judgeC}[4][\Theta]{{#1};\;{#2} \vdash {#3} \div {#4}}
 \newcommand{\judgeEq}[5][\Theta]{{#1};\;{#2} \vdash {#3} \equiv {#4} : {#5}}
+\newcommand{\judgeEqC}[5][\Theta]{{#1};{#2} \vdash {#3} \equiv {#4} \div {#5}}
+
+
+%% semantic operations
+
+\newcommand{\semfun}[2]{\lambda #1.\;#2}
+\newcommand{\sempair}[2]{\left({#1}, {#2}\right)}
+
+
+\newcommand{\paircat}[2]{\left<{#1};{#2}\right>}
+\newcommand{\sumcat}[2]{\left[{#1};{#2}\right]}
+\newcommand{\abscat}[1]{\lambda({#1})}
 
 
 \newcommand{\judgeP}[3]{{#1} \vdash {#2} : {#3}}
@@ -100,8 +112,6 @@
 
 \newcommand{\judgeEqP}[4]{{#1} \vdash {#2} \equiv {#3} : {#4}}
 
-\newcommand{\judgeEqE}[4]{{#1} \vdash {#2} \equiv {#3} : {#4}}
-\newcommand{\judgeEqC}[4]{{#1} \vdash {#2} \equiv {#3} \div {#4}}
 
 \newcommand{\judgeWK}[3][\Theta]{{#1} \vdash {#2} : {#3}}
 \newcommand{\judgeKeq}[4][\Theta]{{#1} \vdash {#2} \equiv {#3} : {#4}}
@@ -123,4 +133,11 @@
 \newtheorem{prop}{Proposition}
 \newtheorem{lemma}{Lemma}
 
-\newenvironment{proof}{\noindent\textbf{Proof.}}{$\Box$}
+\newenvironment{proof}{\noindent\textbf{Proof.}}{\noindent$\Box$}
+
+\newenvironment{eqnproof}{\begin{displaymath}\begin{array}{lcll}}
+                         {\end{array}\end{displaymath}}
+
+\newcommand{\eline}[3][]{{#1} & = & {#2} & \mbox{{#3}} \\}
+\newcommand{\eclaim}[3][]{{#1} &  & {#2} & \mbox{{#3}} \\}
+\newcommand{\efact}[2]{{#1} & & & \mbox{#2} \\}

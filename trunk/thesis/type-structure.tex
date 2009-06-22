@@ -1,0 +1,2713 @@
+\chapter{Type Structure}
+
+\section{Syntax of Types and Kinds}
+
+In this section, I will describe the type structure of the 
+programming language I will use for this thesis. The language is a
+pure, total, predicatively polymorphic programming language (with
+quantification over higher kinds), augmented with a monadic type
+constructor that permits nontermination, higher-order state, and
+continuations. Its syntax is given in figure~\ref{lang-type-syntax}. 
+
+
+\begin{figure}[h]
+\todo{Add support for polynomial data types}
+
+\begin{displaymath}
+  \begin{array}{lcll}
+    \mbox{Kinds} & 
+      \kappa & ::= & \star \bnfalt \kappa \to \kappa 
+    \\[1em]
+    \mbox{Monotypes} & 
+      \tau & ::= & 
+         \unittype \bnfalt 
+         \tau \times \tau \bnfalt 
+         \tau \to \tau \bnfalt 
+         \tau + \tau \bnfalt
+         \N \bnfalt \\
+     &&& \reftype{A} \bnfalt
+         \monad{\tau} \bnfalt 
+         \cont{\tau} \\
+     &&& \alpha \bnfalt
+         \tau\;\tau \bnfalt 
+         \fun{\alpha}{\kappa}{\tau} 
+    \\[1em]
+    \mbox{Polytypes} & 
+      A & ::= & 
+         \unittype \bnfalt 
+         A \times B \bnfalt 
+         A + B \bnfalt
+         A \to B \bnfalt 
+         \N \bnfalt  \\
+    &&&  \reftype{A} \bnfalt
+         \monad{A} \bnfalt 
+         \cont{A} \\
+    &&&  \alpha \bnfalt
+         \tau\;\tau \bnfalt \\
+    &&&  \forall \alpha:\kappa.\; A \bnfalt 
+         \exists \alpha:\kappa.\; A \\[1em]
+    \mbox{Type Contexts} & 
+      \Theta & ::= & \cdot \bnfalt \Theta, \alpha:\kappa \\
+  \end{array}
+\end{displaymath}
+\caption{Syntax of the Core Programming Language}
+\label{lang-type-syntax}
+\end{figure}
+
+The basic kind structure of the language is given with the kinds
+$\kappa$. The The kind $\star$ is the kind of monotypes, which are
+written with the letter $\tau$. These are the unit type $\unittype$,
+pair types $\tau \times \sigma$, sums $\tau + \sigma$, function space
+$\tau \to \sigma$, natural numbers $\N$, computation types
+$\monad{\tau}$, continuation types $\cont{\tau}$ and finally
+(ML-style) references $\reftype{A}$. Also, within open types we may
+also use type variables $\alpha$ to refer to types, and we can also
+define lambda-abstractions and applications to inhabit the higher
+kinds of this language.
+
+The type $\reftype{A}$ is not merely a pointer to a value of
+monomorphic type; instead, it also permits storing a pointer to a
+value of polymorphic types $A$. The intuition justifying this
+liberality is that a reference to a value of polymorphic type is
+itself merely a location, so it is permissible to treat a reference to
+a value of polymorphic type as a monomorphic value. Indeed, the
+denotational semantics of references will rely upon this intuition.
+
+The polytypes $A$ themselves extend the monotypes with universal
+quantification $\forall \alpha:\kappa.\;A$ as well as existential
+types $\exists \alpha:\kappa.\;A$. Each of the simple type
+constructors -- sums, products, functions, computations -- also may
+contain polymorphic types as subexpressions within it. Though it may
+not look like it at first glance, this is actually only a fairly
+modest generalization of the type schemes of ML. Because the universal
+and existential quantifiers range over the kinds $\kappa$, it is
+impossible to instantiate them with a polytype, thereby limiting us to
+predicative polymorphism.
+
+The kinding judgements $\judgeWK{\tau}{\kappa}$ and
+$\judgeWK{A}{\bigstar}$ determine whether a monotype or polytype
+(respectively). Notice that we use two judgements, because we do not
+give polytypes their own first-class kind $\bigstar$ -- this means
+that we can syntactically enforce the restriction that the context
+$\Theta$, which is a collection of type variables and their kinds, 
+can only range over kinds which can contain only monotypes. 
+
+We give the kinding rules for the monotypes in
+figure~\ref{monotype-kinding}, and the kinding rules for polytypes
+in figure~\ref{polytype-kinding}. 
+
+
+\begin{figure}[h]
+\begin{mathpar}
+\inferrule*[right=KUnit]
+          { }
+          {\judgeWK{\unittype}{\star}}
+\and
+\inferrule*[right=KNat]
+          { }
+          {\judgeWK{\N}{\star}}
+\and
+\inferrule*[right=KProd]
+          {\judgeWK{\tau}{\star} \\
+           \judgeWK{\sigma}{\star}}
+          {\judgeWK{\tau \times \sigma}{\star}}
+\and
+\inferrule*[right=KSum]
+          {\judgeWK{\tau}{\star} \\
+           \judgeWK{\sigma}{\star}}
+          {\judgeWK{\tau + \sigma}{\star}}
+\and
+\inferrule*[right=KArrow]
+          {\judgeWK{\tau}{\star} \\
+           \judgeWK{\sigma}{\star}}
+          {\judgeWK{\tau \to \sigma}{\star}}
+\and
+\inferrule*[right=KComp]
+          {\judgeWK{\tau}{\star}}
+          {\judgeWK{\monad{\tau}}{\star}}
+\and
+\inferrule*[right=KCont]
+          {\judgeWK{\tau}{\star}}
+          {\judgeWK{\cont{\tau}}{\star}}
+\and
+\inferrule*[right=KRef]
+          {\judgeWK{A}{\bigstar}}
+          {\judgeWK{\reftype{A}}{\star}}
+\\
+\inferrule*[right=KHyp]
+          { \alpha:\kappa \in \Theta }
+          { \judgeWK{\alpha}{\kappa} }
+\and
+\inferrule*[right=KApp]
+          { \judgeWK{\tau}{\kappa' \to \kappa} \\
+            \judgeWK{\tau'}{\kappa'} }
+          { \judgeWK{\tau\;\tau'}{\kappa} }
+\and
+\inferrule*[right=KLam]
+          { \judgeWK[\Theta, \alpha:\kappa']{\tau}{\kappa} }
+          { \judgeWK{\fun{\alpha}{\kappa'}{\tau}}{\kappa' \to \kappa} }
+\end{mathpar}
+\caption{Kinding Rules for Monotypes}
+\label{monotype-kinding}
+\end{figure}
+
+\begin{figure}[h]
+\begin{mathpar}
+\inferrule*[right=KUnit]
+          { }
+          {\judgeWK{\unittype}{\bigstar}}
+\and
+\inferrule*[right=KNat]
+          { }
+          {\judgeWK{\N}{\bigstar}}
+\and
+\inferrule*[right=KProd]
+          {\judgeWK{\tau}{\bigstar} \\
+           \judgeWK{\sigma}{\bigstar}}
+          {\judgeWK{\tau \times \sigma}{\bigstar}}
+\and
+\inferrule*[right=KSum]
+          {\judgeWK{\tau}{\bigstar} \\
+           \judgeWK{\sigma}{\bigstar}}
+          {\judgeWK{\tau + \sigma}{\bigstar}}
+\and
+\inferrule*[right=KArrow]
+          {\judgeWK{\tau}{\bigstar} \\
+           \judgeWK{\sigma}{\bigstar}}
+          {\judgeWK{\tau \to \sigma}{\bigstar}}
+\and
+\inferrule*[right=KComp]
+          {\judgeWK{A}{\bigstar}}
+          {\judgeWK{\monad{A}}{\bigstar}}
+\and
+\inferrule*[right=KCont]
+          {\judgeWK{A}{\bigstar}}
+          {\judgeWK{\cont{A}}{\bigstar}}
+\and
+\inferrule*[right=KRef]
+          {\judgeWK{A}{\bigstar}}
+          {\judgeWK{\reftype{A}}{\bigstar}}
+\\
+\inferrule*[right=KHyp]
+          { \alpha:\star \in \Theta }
+          { \judgeWK{\alpha}{\bigstar} }
+\and
+\inferrule*[right=KApp]
+          { \judgeWK{\tau}{\kappa' \to \star} \\
+            \judgeWK{\tau'}{\kappa'} }
+          { \judgeWK{\tau\;\tau'}{\bigstar} }
+\\
+\inferrule*[right=KForall]
+           { \judgeWK[\Theta, \alpha:\kappa]{A}{\bigstar} }
+           { \judgeWK{\forall \alpha:\kappa.\;A}{\bigstar} }
+\and
+\inferrule*[right=KExists]
+           { \judgeWK[\Theta, \alpha:\kappa]{A}{\bigstar} }
+           { \judgeWK{\exists \alpha:\kappa.\;A}{\bigstar} }
+\end{mathpar}
+\caption{Kinding Rules for Polytypes}
+\label{polytype-kinding}
+\end{figure}
+
+
+Types also support a pair of equality judgements
+$\judgeKeq{\tau}{\tau'}{\kappa}$ and $\judgeKeq{A}{B}{\bigstar}$.  The
+equality judgement for monotypes implements the $\beta$- and
+$\eta$-equality principles of the lambda calculus, along with
+congruence rules for all of the type constructors of our language.
+The only rules we have for the equality judgement for polytypes are
+simple congruence rules, plus a recursive call back to the other
+equality judgement whenever we need to compare monotyped terms.
+
+Because types and kinds form an instance of the simply typed lambda
+calculus, we know that there is a unique $\beta$-normal, $\eta$-long
+form for each well-kinded type expression, both for the monotypes and
+the polytypes. This means that when we quotient the set of well-kinded
+terms by the equality judgement, we know that each equivalence class
+contains a single long normal term, which we can take as the canonical
+representative of that class.
+
+
+\begin{figure}
+\begin{mathpar}
+\inferrule[]
+          { }
+          {\judgeKeq{1}{1}{\star}}
+\and
+\inferrule[]
+          { }
+          {\judgeKeq{\N}{\N}{\star}}
+\and
+\inferrule[]
+          {\judgeKeq{\tau}{\tau'}{\star} \\
+           \judgeKeq{\sigma}{\sigma'}{\star}}
+          {\judgeKeq{\tau \times \sigma}{\tau' \times \sigma'}{\star}}
+\and
+\inferrule[]
+          {\judgeKeq{\tau}{\tau'}{\star} \\
+           \judgeKeq{\sigma}{\sigma'}{\star}}
+          {\judgeKeq{\tau \times \sigma}{\tau' + \sigma'}{\star}}
+\and
+\inferrule[]
+          {\judgeKeq{\tau}{\tau'}{\star} \\
+           \judgeKeq{\sigma}{\sigma'}{\star}}
+          {\judgeKeq{\tau \times \sigma}{\tau' \to \sigma'}{\star}}
+\and
+\inferrule[]
+          { \judgeKeq{\tau}{\tau'}{\star} }
+          { \judgeKeq{\monad{\tau}}{\monad{\tau'}}{\star} }
+\and
+\inferrule[]
+          { \judgeKeq{\tau}{\tau'}{\star} }
+          { \judgeKeq{\cont{\tau}}{\cont{\tau'}}{\star} }
+\and
+\inferrule[]
+          { \judgeKeq{A}{A'}{\bigstar} }
+          { \judgeKeq{\reftype{A}}{\reftype{A'}}{\star} }
+\and
+\inferrule[]
+          { \alpha:\kappa \in \Theta }
+          { \judgeKeq{\alpha}{\alpha}{\kappa} }
+\and
+\inferrule[]
+          { \judgeKeq{\tau}{\sigma}{\kappa' \to \kappa} \\
+            \judgeKeq{\tau'}{\sigma'}{\kappa'}}
+          { \judgeKeq{\tau \; \tau'}{\sigma \; \sigma'}{\kappa} }
+\and
+\inferrule[]
+          { \judgeWK{(\fun{\alpha}{\kappa'}{\tau})\;\tau'}{\kappa} }
+          { \judgeKeq{(\fun{\alpha}{\kappa'}{\tau})\;\tau'}
+                     {[\tau'/\alpha]\tau}
+                     {\kappa} }
+\and
+\inferrule[]
+          { \judgeKeq[\Theta, \alpha:\kappa']
+                     {\tau\;\alpha}{\sigma\;\alpha}{\kappa} }
+          { \judgeKeq{\tau}{\sigma}{\kappa' \to \kappa} }
+\end{mathpar}
+\caption{Equality Rules for Monotypes}
+\label{monotype-equality}
+\end{figure}
+
+
+\begin{figure}
+\begin{mathpar}
+\inferrule[]
+          { }
+          {\judgeKeq{1}{1}{\bigstar}}
+\and
+\inferrule[]
+          { }
+          {\judgeKeq{\N}{\N}{\bigstar}}
+\and
+\inferrule[]
+          {\judgeKeq{A}{A'}{\bigstar} \\
+           \judgeKeq{B}{B'}{\bigstar}}
+          {\judgeKeq{A \times B}{A' \times B'}{\bigstar}}
+\and
+\inferrule[]
+          {\judgeKeq{A}{A'}{\bigstar} \\
+           \judgeKeq{B}{B'}{\bigstar}}
+          {\judgeKeq{A \times B}{A' + B'}{\bigstar}}
+\and
+\inferrule[]
+          {\judgeKeq{A}{A'}{\bigstar} \\
+           \judgeKeq{B}{B'}{\bigstar}}
+          {\judgeKeq{A \times B}{A' \to B'}{\bigstar}}
+\and
+\inferrule[]
+          { \judgeKeq{A}{A'}{\bigstar} }
+          { \judgeKeq{\monad{A}}{\monad{A'}}{\bigstar} }
+\and
+\inferrule[]
+          { \judgeKeq{A}{A'}{\bigstar} }
+          { \judgeKeq{\cont{A}}{\cont{A'}}{\bigstar} }
+\and
+\inferrule[]
+          { \judgeKeq{A}{A'}{\bigstar} }
+          { \judgeKeq{\reftype{A}}{\reftype{A'}}{\bigstar} }
+\and
+\inferrule[]
+          { \alpha:\kappa \in \Theta }
+          { \judgeKeq{\alpha}{\alpha}{\kappa} }
+\and
+\inferrule[]
+          { \judgeKeq{\tau \; \sigma}{\tau' \; \sigma'}{\star} }
+          { \judgeKeq{\tau \; \sigma}{\tau' \; \sigma'}{\bigstar} }
+\and
+\inferrule[]
+          { \judgeKeq{\Theta, \alpha:\kappa}{A}{B}{\bigstar} }
+          { \judgeKeq{\forall \alpha:\kappa.\;A}
+                     {\forall \alpha:\kappa.\;B}
+                     {\bigstar} }
+\and
+\inferrule[]
+          { \judgeKeq{\Theta, \alpha:\kappa}{A}{B}{\bigstar} }
+          { \judgeKeq{\exists \alpha:\kappa.\;A}
+                     {\exists \alpha:\kappa.\;B}
+                     {\bigstar} }
+\end{mathpar}
+\caption{Equality Rules for Polytypes}
+\label{polytype-equality}
+\end{figure}
+
+\section{Semantics of Types}
+
+Now, we want to give a semantics for these types, which we will then
+use to interpret terms of our programming language. Repeating the
+design criteria mentioned earlier, we need to obey the two principles
+below:
+
+\begin{itemize}
+\item Our interpretation of types should make all non-monadic types 
+  pure. 
+\item In particular, I want to treat even nontermination as a side
+  effect, in addition to the more-obvious effects of control and state. 
+\end{itemize}
+
+The purpose of this choice is twofold. First, it will give us a rich
+subset of the language which is total and pure, which will be convenient
+when writing assertions about programs -- we will be able to use any pure 
+function directly in an assertion, without having to worry about any 
+side effects it might have. Second, purity means that we will get a 
+very rich equality theory for the language -- both the $\beta$ \emph{and}
+$\eta$ laws will hold for all of the types of the programming language,
+which will facilitate equational reasoning about the pure part of the 
+programming language. 
+
+Because we count nontermination as an effect, our denotational
+semantics is in CPO, the category of complete partial orders and
+continuous functions between them. In particular, we do not demand
+that all domains have least elements -- that is, we only require that
+the objects of this category be \emph{predomains}, rather than
+domains. As a result, we can we can model pure types as predomains
+lacking a bottom element.
+
+In figure~\ref{interp-monotypes}, we give an interpretation of the
+closed, canonical monotypes (i.e., monotypes of kind $\star$, with no
+free occurrences of type variables within them, and no $beta$-redexes
+within them).  This semantics is additionally parameterized with two
+arguments $K^+$ and $K^-$, whose purpose I will explain shortly.
+
+\begin{figure}
+\begin{displaymath}
+\interpmono{-} : \mbox{Monotype} \to CPO_\bot \times CPO^{op}_\bot \to CPO   
+\end{displaymath}
+\begin{displaymath}
+\begin{array}{lcl}
+Loc(A) & = & \N \times \setof{A} \\
+Loc    & = & \bigcup \setof{X \;|\; \exists A.\; (\judgeWK[\cdot]{A}{\bigstar}) \;\land\;X = Loc(A)} \\[1em]
+
+\interpmono{\judgeWK[\cdot]{\unittype}{\star}}(K_+, K_-) & = & \setof{*} \\
+
+\interpmono{\judgeWK[\cdot]{\N}{\star}}(K_+, K_-) & = &  \N \\
+
+\interpmono{\judgeWK[\cdot]{\tau \times \sigma}{\star}}(K_+, K_-) & = & 
+  \interpmono{\judgeWK[\cdot]{\tau}{\star}}(K_+, K_-) \times 
+  \interpmono{\judgeWK[\cdot]{\sigma}{\star}}(K_+, K_-) \\
+
+\interpmono{\judgeWK[\cdot]{\tau + \sigma}{\star}}(K_+, K_-) & = & 
+  \interpmono{\judgeWK[\cdot]{\tau}{\star}}(K_+, K_-) + 
+  \interpmono{\judgeWK[\cdot]{\sigma}{\star}}(K_+, K_-) \\
+
+
+\interpmono{\judgeWK[\cdot]{\tau \to \sigma}{\star}}(K_+, K_-) & = & 
+  \interpmono{\judgeWK[\cdot]{\tau}{\star}}(K_-, K_+) \to
+  \interpmono{\judgeWK[\cdot]{\sigma}{\star}}(K_+, K_-) \\
+
+\interpmono{\judgeWK[\cdot]{\reftype{A}}{\star}}(K_+, K_-) & = & Loc(A) \\
+
+\interpmono{\judgeWK[\cdot]{\cont{\tau}}{\star}}(K_+, K_-) & = & 
+    \interpmono{\judgeWK[\cdot]{\tau}{\star}}(K_-,K_+) \to K_+ \\
+
+\interpmono{\judgeWK[\cdot]{\monad{\tau}}{\star}}(K_+, K_-) & = & 
+   (\interpmono{\judgeWK[\cdot]{\tau}{\star}}(K_+, K_-) \to K_-) \to K_+ \\[1em]
+\end{array}
+\end{displaymath}
+\caption{Locally Continuous Functor Interpreting Monotypes}
+\label{interp-monotypes}
+\end{figure}
+Before explaining the clauses in detail, I will explain why this
+defines a function at all. First, because we are considering closed
+terms of kind $\star$, the normalization theorem tells us that any
+such term will normalize to one of the cases listed above. In
+particular, we will never bottom out at a variable, because the
+context is closed. We will never bottom out at a lambda, because we
+are considering only the kind $\star$, and we will never bottom out an
+application, because there will be room for further beta-reduction in
+this case, and by hypothesis we are only considering the normal forms.
+
+This means we cover all of the possibilities in this definition, and
+furthermore we know it is well-founed, because all of the recursive
+calls to $\interpmono{-}$ are always on immediate subterms of the
+type.
+
+Most of the clauses of this definition should be relatively
+straightforward --- the main mystery is that we have parameterized this
+interpretation by two arguments $K_+$ and $K_-$, which I will explain
+when we reach the continuation and monadic type constructors. 
+We interpret the unit type as the one-element, discretely ordered
+predomain, the natural number type as the natural numbers with a
+discrete order, pairs as the categorical products of $CPO$, sums as
+coproducts, and functions via the exponentials of $CPO$.
+
+Reference types $\reftype{A}$ are interpreted as pairs consisting of
+natural numbers and the syntactic object $A$. The intuition is that
+references are just numbers, together with a type tag saying what
+type of value the reference will point to. It's important that we do 
+\emph{not} interpret the type tag $A$ in this definition --- a ref cell
+is a number plus the purely syntactic object $A$, acting as a label. 
+To do otherwise would make our definition circular. 
+
+The first time we use $K$ is when we interpret the type $\cont{\tau}$.
+Now, the $K_+$ and $K_-$ arguments are revealed as the positive and
+negative occurences of the ``answer type'' of a continuation. That is,
+we interpret $\cont{\tau}$ as the function space
+$\interpmono{\tau}(K_-, K_+) \to K_+$.  Notice that the positive and
+negative occurences trade places on the recursive call, because it
+occurs on the left-hand-side of a function space. Likewise, the
+monadic type $\monad{\tau}$ is interpreted as a sort of
+double-negation: $(\interpmono{\tau}(K_+, K_-) \to K_-) \to K_+$.
+
+However, a careful reader will have noticed that so far our
+definitions do not mention state at all. What will ultimately happen
+is that we will interpret continuations as functions from heaps to the
+two-point Sierpinski lattice $O = \setof{\top, \bot}$. However, since
+heaps can contain references to values of polymorphic type, and since
+we have not yet defined how the semantics of polymorphic types work, we
+have carefully parameterized our functorial semantics of monotypes so
+that we do not needed to mention them explicitly. 
+
+To fix this gap, we will give an interpretation of polymorphic types
+as an indexed function from a context of closed monokinded type
+constructors to a a CPO.  As before, we parameterize by the
+continuation arguments.
+
+\begin{displaymath}
+\begin{array}{lcl}\interp{\judgeWK{A}{\bigstar}} &\in& \mathrm{Type Context} \to (CPO_\bot \times CPO^{op}_\bot) \to CPO 
+\\[1em]
+\interp{\judgeWK{\alpha}{\bigstar}}\;\eta\;(K_+,K_-) & = & 
+    \interpmono{\judgeWK[\cdot]{\eta(\alpha)}{\star}}(K_+, K_-) 
+\\
+\interp{\judgeWK{\tau\;\tau'}{\bigstar}}\;\eta\;(K_+,K_-) & = & 
+    \interpmono{\judgeWK[\cdot]{\eta(\tau)\;\eta(\tau')}{\star}}(K_+, K_-) 
+\\
+\interp{\judgeWK{\forall \alpha:\kappa.\;A}{\bigstar}}\;\eta\;(K_+,K_-) & = & 
+    \Pi \tau:\kappa.\; 
+        \interp{\judgeWK[\Theta, \alpha:\kappa]{A}{\bigstar}}\;(\eta,\tau)\;(K_+,K_-) 
+\\
+\interp{\judgeWK{\exists \alpha:\kappa.\;A}{\bigstar}}\;\eta\;(K_+,K_-) & = & 
+    \Sigma \tau:\kappa.\; 
+        \interp{\judgeWK[\Theta, \alpha:\kappa]{A}{\bigstar}}\;(\eta,\tau)\;(K_+,K_-) 
+\\
+\interp{\judgeWK{A \times B}{\bigstar}}\;\eta\;(K_+,K_-) & = & 
+   \interp{\judgeWK{A}{\bigstar}}\;\eta\;(K_+,K_-) \times
+   \interp{\judgeWK{B}{\bigstar}}\;\eta\;(K_+,K_-) 
+\\
+\interp{\judgeWK{A + B}{\bigstar}}\;\eta\;(K_+,K_-) & = & 
+   \interp{\judgeWK{A}{\bigstar}}\;\eta\;(K_+,K_-) +
+   \interp{\judgeWK{B}{\bigstar}}\;\eta\;(K_+,K_-) 
+\\
+\interp{\judgeWK{A \to B}{\bigstar}}\;\eta\;(K_+,K_-) & = & 
+   \interp{\judgeWK{A}{\bigstar}}\;\eta\;(K_-,K_+) \to
+   \interp{\judgeWK{B}{\bigstar}}\;\eta\;(K_+,K_-) 
+\\
+\interp{\judgeWK{\unittype}{\bigstar}}\;\eta\;(K_+, K_-) & = & \setof{*} 
+\\
+
+\interp{\judgeWK{\N}{\bigstar}}\;\eta\;(K_+, K_-) & = &  \N 
+\\
+\interp{\judgeWK{\cont{A}}{\bigstar}}\;\eta\;(K_+,K_-) & = & 
+   \interp{\judgeWK{A}{\bigstar}}\;\eta\;(K_-,K_+) \to K_+
+\\
+\interp{\judgeWK{\monad{A}}{\bigstar}}\;\eta\;(K_+,K_-) & = & 
+   (\interp{\judgeWK{A}{\bigstar}}\;\eta\;(K_+,K_-) \to K_-) \to K_+
+\\
+\interp{\judgeWK{\reftype{A}}{\star}}\;\eta\;(K_+, K_-) & = & Loc(A) 
+\\
+\end{array}
+\end{displaymath}
+
+Here, a $\mbox{TypeContext}$ is a tuple of the interpretations of
+each kind in the environment $\Theta$, which are just the closed 
+canonical forms of that kind. (So $\star$ are just the closed 
+monotypes, $\star \to \star$ the closed lambda-terms of that kind,
+and so on.)
+
+This definition is also well-founded, since it is defined by a
+structural recursion over the canonical forms of the kinding
+derivation of $\judgeWK{A}{\bigstar}$. 
+
+Whenever we reach a variable or application case, we can apply the
+substitution and invoke the intepretation function for the
+monotypes. Universal types $\forall \alpha:\kappa.\;A$ are interpreted
+as set-indexed predomains or dependent functions from the set of
+closed objects of the kind $\kappa$ into predodmains. Existential
+types $\exists \tau:\kappa.\;A$ are interpreted as pairs or dependent
+sums: we pair a syntactic monotype with the predomain interpreting the
+second component.
+
+The remaining cases essentially repeat the clauses of the definitions
+for monotypes, to allow for the possibility that there may be
+sub-components of pairs/sums/functions/etc that contain universal or
+existential types.
+
+Now we are finally in a position to define the recursive domain equation we 
+would like to solve:
+
+\begin{displaymath}
+\begin{array}{lcl}
+H(K_+,K_-) & = & \Sigma L \subseteq^{fin} Loc.\; 
+                    \left(\Pi (l,A) \in L.\; 
+                             \interp{\judgeWK[\cdot]{A}{\bigstar}}(\cdot)\;(K_+,K_-) 
+                    \right)\\
+
+\mathcal{K}(K_+,K_-) & = & H(K_-,K_+) \to O \\    
+\end{array}
+\end{displaymath}
+
+We use $H$ to define what heaps mean. A heap is a pair whose first
+component is a finite set of allocated locations, together with a map
+that takes each location in the set of allocated location and returns 
+a value of the appropriate type. 
+
+The answer type $\mathcal{K}$ is itself a function type, which takes a
+heap and returns an element of the Sierpinski lattice $O$. So if we
+can solve the equation $K = \mathcal{K}(K, K)$, then we can plug $K$
+into all our other definitions to interpret all of the types in our
+language.
+
+Filling this in, we can understand how continuations of type
+$\cont{\tau}$ work: they receive a value of type $\tau$ and a heap,
+and then either loop or terminate. The monadic type $\monad{\tau}$ now
+can be seen as the state-and-continuation monad, which combines the
+effects of the continuation monad and the state monad via a domain 
+which looks a bit like $(\tau \to H \to O) \to H \to O$. 
+
+
+To show that this equation actually has a solution, it suffices to 
+show that $F$ is a locally-continuous functor. We'll prove this by 
+induction over $\interp{-}$ and $\interpmono{-}$, and then at each
+case appeal to a series of lemmas showing that each construction we
+use preserves local continuity. 
+
+\section{Local Continuity and Pitts's Theorem}
+
+\subsection{Local Continuity}
+
+A functor $F : CPO_\bot \times CPO^{op}_\bot \to CPO$ is \emph{locally
+  continuous} if it preserves the order structure on its arguments.
+That is, it must be monotone --- if $f \sqsubseteq f'$ and $g
+\sqsubseteq g'$, then $F(f, g) \sqsubseteq F(f', g')$ --- and it
+must also preserve limits --- given a pair of chains $f_i, g_i$, 
+$\bigsqcup_i F(f_i, g_i) = F(\bigsqcup_i f_i, \bigsqcup_i g_i)$. 
+
+Now, we'll show that the functors we used earlier are all locally 
+continuous. 
+
+\begin{lemma}{Local Continuity}
+\begin{enumerate}
+\item If $F,G : CPO_\bot \times CPO^{op}_\bot \to CPO$ are locally continuous,
+      then $F \times G$ is locally continuous.  
+\item If $F,G : CPO_\bot \times CPO^{op}_\bot \to CPO$ are locally continuous,
+      then $F + G$ is locally continuous.  
+\item If $F,G : CPO_\bot \times CPO^{op}_\bot \to CPO$ are locally continuous,
+      then $F \to G$ is locally continuous.  
+\item The constant functor $K_C$ is locally continuous. 
+\item If X is a set, and $F(x) : CPO_\bot \times CPO^{op}_\bot \to CPO$ is an
+      $X$-indexed family of locally continuous functors, then 
+      $\Pi x:X.\;F(x)$ is a locally continuous functor. 
+\item If X is a set, and $F(x) : CPO_\bot \times CPO^{op}_\bot \to CPO$ is an
+      $X$-indexed family of locally continuous functors, then 
+      $\Sigma x:X.\;F(x)$ is a locally continuous functor. 
+\end{enumerate}
+\end{lemma}
+ 
+\begin{proof}
+
+\begin{enumerate}
+\item Suppose $F$ and $G$ are locally continuous. Now, we define 
+$F \times G$ to be the functor which takes $(A,B)$ to $F(A,B) \times G(A,B)$
+on the object part, and which takes $(f,g)$ to $F(f,g) \times G(f,g)$ on
+the arrow part.
+
+Next, suppose that we have a chain of functions $\left<f_i\right> : A \to B$ and
+$\left<g_i\right> : X \to Y$. Now, we calculate:
+
+\begin{displaymath}
+\begin{array}{lcl}
+  \sqcup_i (F \times G (f_i,g_i)) 
+   & = & \sqcup_i (F(f_i,g_i) \times G(f_i,g_i)) \\
+   & = & \sqcup_i \left<F(f_i,g_i) \circ \pi_1; 
+                        G(f_i,g_i) \circ \pi_2\right>\\
+   & = & \left<\sqcup_i (F(f_i,g_i) \circ \pi_1);
+               \sqcup_i (G(f_i,g_i) \circ \pi_2)\right> \;\;\;\;(*)\\
+   & = & \left<\sqcup_i F(f_i,g_i) \circ \sqcup_i \pi_1;
+               \sqcup_i G(f_i,g_i) \circ \sqcup_i \pi_2\right>\\
+   & = & \left<\sqcup_i F(f_i,g_i) \circ \pi_1);
+               \sqcup_i G(f_i,g_i) \circ \pi_2)\right>\\
+   & = & (\sqcup_i F(f_i,g_i)) \times (\sqcup_i G(f_i,g_i))\\
+\end{array}
+\end{displaymath}
+
+The interesting step is marked with (*); it is justified by the fact
+that we know that $\pi_j \circ (\sqcup_i \left<h^1_i;h^2_i\right>) = 
+\sqcup_i (\pi_j \circ \left<h^1_i;h^2_i\right>) = 
+\sqcup_i h^j_i$,
+and that $\pi_j \circ \left<\sqcup_i h^1_i; \sqcup_i h^2_i\right> = \sqcup_i h^j_i$,
+and that the mediating morphism is unique. 
+
+
+\item Suppose $F$ and $G$ are locally continuous. Now, we define 
+$F + G$ to be the functor which takes $(A,B)$ to $F(A,B) + G(A,B)$
+on the object part, and which takes $(f,g)$ to $F(f,g) + G(f,g)$ on
+the arrow part.
+
+Next, suppose that we have a chain of functions $\left<f_i\right> : C \to A$ and
+$\left<g_i\right> : B \to D$. Now, we calculate:
+
+\begin{displaymath}
+\begin{array}{lcl}
+  \sqcup_i (F + G (f_i,g_i)) 
+   & = & \sqcup_i (F(f_i,g_i) + G(f_i,g_i)) \\
+   & = & \sqcup_i \left[\inl \circ F(f_i,g_i); 
+                        \inr \circ G(f_i,g_i)\right]\\
+   & = & \left[\inl \circ \sqcup_i (F(f_i,g_i));
+               \inr \circ \sqcup_i (G(f_i,g_i))\right] \;\;\;\;(*)\\
+   & = & \left[\sqcup_i \inl \circ F(f_i,g_i);
+               \sqcup_i \inr \circ G(f_i,g_i) \right]\\
+   & = & \left[\inl \circ \sqcup_i F(f_i,g_i));
+               \inr \circ \sqcup_i G(f_i,g_i))\right]\\
+   & = & (\sqcup_i F(f_i,g_i)) + (\sqcup_i G(f_i,g_i))\\
+\end{array}
+\end{displaymath}
+
+The interesting step is marked with (*); it is justified by the fact
+that we know that $(\sqcup_i \left[h^1_i;h^2_i\right]) \circ
+\mathsf{in}_j = 
+\sqcup_i (\left[h^1_i;h^2_i\right] \circ \mathsf{in}_j) = 
+\sqcup_i h^j_i$, and that $\left<\sqcup_i h^1_i; \sqcup_i
+h^2_i\right> \circ \mathsf{in}_j = \sqcup_i h^j_i$, and that the mediating
+morphism is unique.
+
+\item Suppose $F$ and $G$ are locally continuous. Now, we define 
+$F \to G$ to be the functor which takes $(A,B)$ to $F(B,A) \to G(A,B)$
+on the object part, and which takes $(f,g)$ to $F(g,f) \to G(f,g)$ on
+the arrow part.
+ 
+Next, suppose that we have a chain of functions $\left<f_i\right> : A \to C$ 
+and $\left<g_i\right> : D \to B$. Now, we calculate:
+ 
+\begin{displaymath}
+\begin{array}{lcl}
+\sqcup_i [F \to G](f_i,g_i) & = & F(g_i,f_i) \to G(f_i,g_i) \\
+& = & 
+  \sqcup_i \lambda h.\; [G(f_i,g_i) \circ h \circ F(g_i, f_i)] \\
+& = & 
+  \lambda h.\; \sqcup_i [G(f_i,g_i) \circ h \circ F(g_i, f_i)]  \\
+& = & 
+  \lambda h.\; [(\sqcup_i G(f_i,g_i)) \circ h \circ (\sqcup_i F(g_i, f_i))] \\
+& = & 
+  \lambda h.\; [G(\sqcup_i f_i, \sqcup_ig_i) \circ h \circ 
+                F(\sqcup_i g_i, \sqcup_i f_i)] \\
+\end{array}
+\end{displaymath}
+
+% The interesting step is at (*). 
+
+
+
+% F(g : D -> B, f : A -> C) : F(D,C) -> F(B,A)
+% G(f : A -> C, g : D -> B) : G(A,B) -> G(C,D)
+% 
+% F(g,f) : F(D,C) -> F(B,A)
+% G(f,g) : G(A,B) -> G(C,D)
+% 
+% F(g,f) -> G(f,g) : (F(B,A) -> G(A,B)) -> F(D,C) -> G(C,D)
+%                  = \lambda h. G(f,g) \circ h \circ F(g,f)
+% 
+
+
+
+
+
+\item The constant functor is locally continuous because it maps all 
+morphisms to the identity morphism, and hence trivially preserves 
+limits. 
+
+\item Suppose $X$ is a set, and $F(x)$ is an $X$-indexed family of
+locally continuous functors. We define $\Pi x:X.\; F(x)$ as
+following. 
+
+First, given objects $(A,B)$, we define the object part of this as the
+dependent function space $\Pi x:X.\; F(x)(A,B)$, with elements $u
+\sqsubseteq v$ if and only if for all $x \in X$, $u(x)
+\sqsubseteq_{F(x)(A,B)} v(x)$. 
+
+It's worth noting that this object is a true product over $X$. Given
+$\Pi x:X.\; F(x)(A,B)$, we can define the $x$-th projection as $\pi_x
+= \lambda f.\; f(x)$. Then, it's clear that given a family of 
+morphisms $f_x : Y \to F(x)(A,B)$, we can define a function 
+$\left<f_x\right> : Y \to \Pi x:X.\;F(x)(A,B) = \lambda y.\; \lambda x.\; f_x(y)$, 
+which means that for all $x$, and that $\pi_x \circ \left<f_x\right> = f_x$. 
+
+We show uniqueness by supposing that that there is some $g$ such
+that $\pi_x \circ g = f_x$. Then, we know that 
+$g = \lambda x.\; pi_x \circ g$, which means that $g = \lambda x.\; f_x$,
+which is exactly $\left<f_x\right>$. 
+
+
+Next, given morphisms $f \in A \to C$ and $g \in D \to B$, we define
+$[\Pi x:X.\; F(x)](f,g) \in [\Pi x:X.\; F(x)](A,B) \to [\Pi x:X.\; F(x)](C,D)$
+as:
+  
+\begin{displaymath}
+  [\Pi x:X.\; F(x)](f,g) = \lambda x.\; F(x)(f,g)
+\end{displaymath}
+
+Clearly, this preserves identities and composition, and is hence a
+functor. 
+
+Now, suppose that $(f,g) \sqsubseteq (f',g')$, and that $x$ is an
+arbitrary element of $X$. Then $[\Pi x:X.\; F(x)](f,g) = F(x)(f,g)$
+and $[\Pi x:X.\; F(x)](f',g') = F(x)(f',g')$. Since $F(x)$ is a
+locally continuous functor, we know that $F(x)(f,g) \sqsubseteq
+F(x)(f',g')$, and so $[\Pi x:X.\; F(x)]$ preserves ordering.
+
+Now, suppose that $(f_i,g_i)$ form a chain. So, we know that 
+
+\begin{displaymath}
+\begin{array}{lcl}
+\sqcup_i ([\Pi x:X.\; F(x)](f_i,g_i)) & = & 
+  \sqcup_i (\lambda x:X.\; (F(x) (f_i, g_i))) \\
+& = & 
+  \lambda x:X.\; (\sqcup_i (F(x) (f_i, g_i))) \;\;\;\;(*) \\
+& = & 
+  \lambda x:X.\; (F(x) (\sqcup_i (f_i, g_i))) \\
+& = & 
+[\Pi x:X.\; F(x)] (\sqcup_i (f_i,g_i)) \\
+\end{array}
+\end{displaymath}
+
+The interesting step is (*); it is justified by the fact
+that we know that $\pi_x \circ \sqcup_i \left<h^x_i\right> =  
+\sqcup_i (\pi_x \circ_i \left<h^x_i\right>) = 
+\sqcup_i h^x_i$, 
+and that $\pi_x \circ \left<\sqcup_i h^x_i\right> 
+          = \sqcup_i h^x_i$, 
+and that the mediating morphism is unique.
+
+As a result, we can conclude that this functor is locally 
+continuous.
+
+\item Suppose $X$ is a set, and $F(x)$ is an $X$-indexed family
+of locally continuous functors. We define the functor $\Sigma x:X.\;
+F(x)$ as following.
+
+First, given objects $(A,B)$, we define the object part of the functor
+as yielding the dependent sum $\Sigma x:X.\; F(x)(A,B)$. Ordering is
+given pairwise, equipping the set $X$ with the trivial ordering. 
+That is $(x,o) \sqsubseteq (x', o')$ if and only if $x = x'$ and 
+$o \sqsubseteq_{F(x)(A,B)} o'$. 
+
+It's worth noting that this is a true coproduct over $X$. Given
+$\Sigma x:X.\; F(x)(A,B)$, we can define the injections $\inj{x} \in
+F(x)(A,B) \to \Sigma x:X.\; F(x)(A,B)$ as $\lambda v. (x,v)$. 
+Next, suppose we have a family of functions $f_x : F(x)(A,B) \to Y$. 
+We can define a function $[f_x] \in (\Sigma x:X.\; F(x)(A,B)) \to Y$ as
+$\lambda (x,v).\; (f_x\;v)$. It's clear that $[f_x]\circ \inj{i} = f_i$. 
+
+Finally, we can establish uniqueness as follows. Suppose that there 
+is a $g$ such that $g \circ \inj{i} = f_i$. Next, we know that 
+$g = \lambda (x,v).\;g (x, v) = \lambda (x,v).\;(g\circ\inj{x})(v)$,
+which is clearly $\lambda (x,v).\; (f_x\;v)$, which is just $[f_x]$
+
+
+Next, given morphisms $f \in A \to C$ and $g \in D \to B$, we define
+$[\Sigma x:X.\; F(x)](f,g) \in [\Pi x:X.\; F(x)](A,B) \to [\Sigma x:X.\; F(x)](C,D)$
+as:
+
+\begin{displaymath}
+  [\Sigma x:X.\; F(x)](f,g) = \lambda (x, v).\; (x, F(x)(f,g)(v))
+\end{displaymath}
+
+This clearly preserves identities and composition, and hence defines
+a functor. 
+
+Now, suppose that $(f,g) \sqsubseteq (f',g')$ and that $(x,v)$ is
+an element of $\Sigma x:X.\; F(x)(A,B)$. Then we have that
+$[\Sigma x:X.\;F(x)](f,g)](x,v) = (x,F(x)(f,g)(v))$ and that
+$[\Sigma x:X.\;F(x)](f',g')](x,v) = (x,F(x)(f',g')(v))$. So we
+know that $x=x$, and by the local continuity of $F(x)$, we know
+that $F(x)(f,g)(v) \sqsubseteq F(x)(f',g')(v)$. So this functor
+preserves ordering. 
+
+Finally, suppose $(f_i, g_i)$ form a chain. 
+
+\begin{displaymath}
+\begin{array}{lcl}
+\sqcup_i [\Sigma x:X.\;F(x)](f_i,g_i) 
+& = & \sqcup_i \lambda (x,v).\; (F(x)(f_i,g_i)(v)) \\
+& = & \lambda (x,v). \sqcup_i (F(x)(f_i,g_i)(v)) \;\;\;\; (*) \\
+& = & \lambda (x,v).\; F(x)(\sqcup_i f_i, \sqcup_i g_i))(v) \\
+& = & [\Sigma x:X.\;F(x)](\sqcup_i f_i, \sqcup_i g_i) \\
+\end{array}
+\end{displaymath}
+
+The interesting step is (*); it is justified by the fact
+that we know that 
+$(\sqcup_i [h^x_i]) \circ \inj{x} =  
+\sqcup_i ([h^x_i] \circ \inj{x}) =  \sqcup_i h^x_i$, 
+and that $[\sqcup_i h^x_i] \circ \inj{x} = \sqcup_i h^x_i$, 
+and that the mediating morphism is unique.
+\end{enumerate}
+\end{proof}
+
+\subsection{Pitts's Theorem and the Inverse Limit Construction}
+
+Once we have a locally continuous functor, we'd like to find a
+solution to the fixed point equation it defines. 
+
+\begin{prop}{(Pitts's Theorem)}
+Any locally-continuous functor $F : CPO_\bot \times CPO^{op}_\bot \to
+CPO_\bot$ has a solution to the equation $X \cong F(X)$. Moreover, there
+is also a \emph{minimal} isomorphism solving this equation. 
+\end{prop}
+
+The existence of a solution follows from Scott's inverse limit
+construction, together with Smyth and Plotkin's characterization of
+such solution. We give the details in the sequel, in which we will
+always take $F$ to be a locally-continuous functor of the type
+mentioned above.
+
+\subsubsection{Embeddings and Projections}
+
+First, recall that an \emph{embedding} $e : C \to D$ between pointed
+cpos is a continuous function such that there exists a function $p : D
+\to C$ (called a \emph{projection}) with the properties that $p \circ
+e = id_C$ and $e \circ p \sqsubseteq id_D$. 
+
+Now, we'll introduce the category $CPO_\bot^{O}$, which is the
+category whose objects are the pointed domains, and whose morphisms
+from $D$ to $E$ are the embedding-projection pairs. The identity
+morphism from domain $D$ to $D$ is the pair $\left<id, id\right>$, and
+the composition operation on $\left<e, p\right>$ and $\left<e',
+p'\right>$ is $\left<e' \circ e, p \circ p'\right>$. To verify that
+this is indeed a category, we check that:
+
+
+\begin{itemize}
+\item The identity $\left<id, id\right> : D \to D$ is an 
+embedding-projection pair because $id \circ id = id$ and 
+$id \sqsubseteq id$. 
+
+\item The composition $\left<e, p\right> \circ \left<e',
+p'\right>$ is an embedding-projection pair because it 
+is defined to be equal to $\left<e \circ e', p' \circ p\right>$, 
+and we have that embedding followed by projection is:
+
+\begin{displaymath}
+  \begin{array}{lcl}
+    (p' \circ p) \circ (e \circ e') 
+       & = & p' \circ (p \circ e) \circ e' \\ 
+       & = & p' \circ id \circ e' \\ 
+       & = & p' \circ e' \\
+       & = & id \\                 
+  \end{array}
+\end{displaymath}
+
+and likewise we have for a projection followed by an embedding:
+
+\begin{displaymath}
+  \begin{array}{lcll}
+    (e \circ e')  \circ (p' \circ p) 
+       & = & e \circ (e' \circ p') \circ p \\
+       & \sqsubseteq & e \circ id \circ p \\ 
+       & \sqsubseteq & e \circ p \\
+       & \sqsubseteq & id \\                 
+  \end{array}
+\end{displaymath}
+
+\item Finally, it's clear that composition is associative and has
+  identities as units because it inherits these properties from the
+  underlying composition operations.
+\end{itemize}
+
+
+Now, consider the empty one-point domain $\emptyset_\bot =
+\setof{\bot}$, and the sequence of domains $X_i$, defined inductively
+by $X_0 = \emptyset_\bot$ and $X_{i+1} = F(X_i, X_i)$. Next, 
+we will define embeddings and projections $e_i : X_i \to X_{i+1}$ 
+and $p_i : X_{i+1} \to X_i$ as follows: 
+
+\begin{displaymath}
+  \begin{array}{llcl}
+    e_0     & : X_0 \to X_1 & = &\lambda x.\; \bot \\
+    e_{i+1} & : X_{i+1} \to X_{i+2} & = & F(e_i, p_i) \\[0.5em]
+    p_0 &  : X_1 \to X_0 & = & \lambda x.\; \bot \\
+    p_{i+1} & : X_{i+2} \to X_{i+1} & = & F(p_i, e_i) \\[0.5em]
+  \end{array}
+\end{displaymath}
+
+\begin{lemma}{(Embeddings and Projections)} Each $\left<e_i, p_i\right>$ forms
+an arrow from $X_i$ to $X_{i+1}$ in $CPO_\bot^O$.
+\end{lemma}
+
+\begin{proof}
+This proof proceeds by induction on $i$. 
+\begin{itemize}
+\item Case $i=0$: Obviously $e_0 \circ p_0 = id$, since $X_0 = \setof{\bot}$.  
+  Likewise, since $p_0(e_0(x)) = \bot$, and $\bot \sqsubseteq x$, it follows that
+  $p_0 \circ e_0 \sqsubseteq id$. 
+
+\item Case $i=n+1$: 
+
+  First, we'll show that $e_i \circ p_i$ is the identity: 
+
+  \begin{displaymath}
+    \begin{array}{lcll}
+      e_i \circ p_i & = & e_{n+1} \circ p_{n+1}            & \mbox{Def.}\\ 
+                    & = & F(e_n, p_n) \circ F(p_n, e_n)   & \mbox{Def.}\\ 
+                    & = & F(e_n \circ p_n, e_n \circ p_n) & \mbox{Functor property}\\ 
+                    & = & F(id, id)                       & \mbox{Ind. hyp.}\\  
+                    & = & id                              & \mbox{Functor property} \\
+    \end{array}
+  \end{displaymath}
+
+  \noindent Now, we'll show that $p_i \circ e_i \sqsubseteq id$: 
+
+  \begin{displaymath}
+    \begin{array}{lcll}
+      p_i \circ e_i & = & p_{n+1} \circ e_{n+1}            & \mbox{Def.}\\ 
+                    & = & F(p_n, e_n) \circ F(e_n, p_n)   & \mbox{Def.}\\ 
+                    & = & F(p_n \circ e_n, p_n \circ e_n) & \mbox{Functor property}\\ 
+    \end{array}
+  \end{displaymath}
+
+  \noindent By induction, we know that $p_n \circ e_n \sqsubseteq id$, and
+  because locally continuous functors are also monotone, we know that 
+  $F(p_n \circ e_n, p_n \circ e_n) \sqsubseteq F(id, id) \equiv id$.
+\end{itemize}
+\end{proof}
+
+\ \\
+
+\subsubsection{Construction of the Domain}
+
+Now, we'll define the domain $X$ to be the domain with the underlying set:
+\begin{displaymath}
+X \equiv \left\{ x \in (\Pi n:\N.\; X_n) \;|\; \forall m:\N.\; x_m = p_m(x_{m+1}) \right\}
+\end{displaymath}
+with the ordering being the usual component-wise ordering. (As a
+notational convenience, we will write $x_n$ to indicate the $n$-th
+component of $x$, or $x(n)$.)  To be in $CPO_\bot$, it needs a least
+element, which is just $\lambda n:\N.\;\bot$.  
+
+We claim that this pointed CPO $X$ is the colimit of the chain of
+domains $X_i$ in $CPO_\bot^O$. To prove it, we must proceed in two
+stages.
+
+\begin{lemma}{($X$ is a cocone)} $X$ is a cocone of the
+diagram $X_0 \longrightarrow X_1 \longrightarrow \ldots$. 
+\end{lemma}
+
+
+\begin{proof}
+To show this, we must give morphisms $\left<\hat{e}_i,
+\hat{p}_i\right> : X_i \to X$. To do so, we'll define:
+
+\begin{displaymath}
+  \hat{e}_n : X_n \to X \equiv 
+    \lambda x:X_n.\; \lambda m:\N.\; 
+       \left\{ 
+          \begin{array}{ll}
+            p_{m,n}(x) & \mbox{if } m < n \\
+            x         & \mbox{if } m = n \\
+            e_{n,m}(x) & \mbox{if } m > n \\
+          \end{array}
+       \right.
+\end{displaymath}
+
+We define $e_{i,j}$ to be the composition $e_{j-1} \circ e_{j-2} \circ \ldots \circ e_i$,
+which will have the type $X_i \to X_j$. Likewise, we define $p_{i,j}$ to be the 
+composition $p_i \circ \ldots \circ p_{j-1}$, which will have the type $X_j \to X_i$. 
+
+\noindent The projection $\hat{p}_n : X \to X_n$ is much simpler. It's just
+
+\begin{displaymath}
+  \hat{p}_n : X \to X_n \equiv \lambda x:X.\; x_n
+\end{displaymath}
+
+Now, we'll verify that these do form an embedding-projection pair. 
+
+  \begin{itemize}
+  \item First, we'll show that $\hat{p}_n \circ \hat{e}_n = id$. 
+
+    \begin{displaymath}
+      \begin{array}{lcl}
+        \hat{p}_n \circ \hat{e}_n & = & \lambda x:X_n.\; (\hat{p}_n \circ \hat{e}_n)\;x \\
+                                  & = & \lambda x:X_n.\; \hat{p}_n(\hat{e}_n \;x) \\
+                                  & = & \lambda x:X_n.\; (\hat{e}_n\;x)\;n \\
+                                  & = & \lambda x:X_n.\; x \\
+                                  & = & id \\
+      \end{array}
+    \end{displaymath}
+
+  \item Now, we'll show that $\hat{e}_n \circ \hat{p}_n \sqsubseteq id$. 
+    
+    \begin{displaymath}
+      \begin{array}{lcl}
+        \hat{e}_n \circ \hat{p}_n & = & \lambda x:X.\; (\hat{e}_n \circ \hat{p}_n) \; x \\
+                                  & = & \lambda x:X.\; \hat{e}_n (\hat{p}_n \; x) \\ 
+                                  & = & \lambda x:X.\; \hat{e}_n (x_n) \\ 
+      \end{array}
+    \end{displaymath}
+
+    Now, when applied to an argument $x \in X$, it's clear that the
+    result element is component-wise equal to $x$ for the components
+    less than or equal to $n$, and less than that for components
+    bigger than $n$, which makes the result smaller than $x$.
+  \end{itemize}
+This establishes that there are morphisms $\left<\hat{e}_i,
+\hat{p}_i\right> : X_i \to X$. Now, we need 1) to show that the 
+equation $\left<\hat{e}_i, \hat{p}_i\right> : X_i \to X = 
+\left<\hat{e}_{i+1}, \hat{p}_{i+1}\right> \circ \left<e_i, p_i\right>$ 
+holds, and 2) that $\bigsqcup_i \hat{e}_i \circ \hat{p}_i = id$, 
+which will establish that the diagram commutes appropriately. 
+
+Expanding the definition of composition, we want to show that 
+$\left<\hat{e}_i, \hat{p}_i\right> = \left<\hat{e}_{i+1} \circ e_i,
+                                          p_i \circ \hat{p}_{i+1} \right>$.
+So, we have that
+\begin{displaymath}
+  \begin{array}{lcl}
+    \hat{e}_{i+1} \circ e_i
+      & = &     
+      \lambda x:X_i.\; \lambda m:\N.\; 
+       \left\{ 
+          \begin{array}{ll}
+            p_{m,{i+1}}(e_i\;x) & \mbox{if } m < i+1 \\
+            e_i\;x         & \mbox{if } m = i+1 \\
+            e_{{i+1},m}(e_i\;x) & \mbox{if } m > i+1 \\
+          \end{array}
+       \right. 
+   \\[1em]
+      & = &     
+      \lambda x:X_i.\; \lambda m:\N.\; 
+       \left\{ 
+          \begin{array}{ll}
+            p_{m,i}(p_i(e_i\;x)) & \mbox{if } m < i+1 \\
+            e_{i, i+1}\;x         & \mbox{if } m = i+1 \\
+            e_{{i+1},m}(e_i\;x) & \mbox{if } m > i+1 \\
+          \end{array}
+       \right. 
+   \\[1em]
+     & = & 
+      \lambda x:X_i.\; \lambda m:\N.\; 
+       \left\{ 
+          \begin{array}{ll}
+            p_{m,i}(x) & \mbox{if } m < i+1 \\
+            e_{i,m}(e_i\;x) & \mbox{if } m > i \\
+          \end{array}
+       \right. 
+   \\[1em]
+     & = & 
+      \lambda x:X_i.\; \lambda m:\N.\; 
+       \left\{ 
+          \begin{array}{ll}
+            p_{m,i}(x) & \mbox{if } m < i \\
+            x             & \mbox{if } m = i \\
+            e_{i,m}(e_i\;x) & \mbox{if } m > i \\
+          \end{array}
+       \right. 
+   \\[1em]
+     & = & \hat{e}_i \\
+  \end{array}
+\end{displaymath}
+
+\noindent In the other direction, we show that 
+\begin{displaymath}
+  \begin{array}{lcl}
+    p_i \circ \hat{p}_{i+1} & = & \lambda x:X.\; p_i(x_{i+1}) \\ 
+                           & = & \lambda x:X.\; x_i \\
+                           & = & \hat{p}_i \\
+  \end{array}
+\end{displaymath}
+The second step follows from the definition of $X$. 
+
+Now, we need to show that $\bigsqcup_i \hat{e}_i \circ \hat{p}_i = id$. 
+
+\begin{displaymath}
+  \begin{array}{lcl}
+    \bigsqcup_i \hat{e}_i \circ \hat{p}_i 
+       & = & 
+       \bigsqcup_i \lambda x:X.\; \hat{e}_i(\hat{p}_i \;x)
+    \\
+       & = & 
+       \bigsqcup_i \lambda x:X.\; \hat{e}_i(x_i)
+    \\
+       & = & 
+       \bigsqcup_i \lambda x:X.\; \hat{e}_i(x_i)
+    \\
+       & = & 
+       \bigsqcup_i \lambda x:X.\;\lambda m:\N.\; 
+          \left\{ 
+          \begin{array}{ll}
+            p_{m,i}(x_i) & \mbox{if } m < i \\
+            x_i         & \mbox{if } m = i \\
+            e_{i,m}(x_i) & \mbox{if } m > i \\
+          \end{array}
+       \right.
+    \\
+       & = & 
+       \bigsqcup_i \lambda x:X.\;\lambda m:\N.\; 
+          \left\{ 
+          \begin{array}{ll}
+            x_m         & \mbox{if } m \leq i \\
+            e_{i,m}(x_i) & \mbox{if } m > i \\
+          \end{array}
+       \right.
+    \\
+       & = & 
+       \bigsqcup_i \lambda x:X.\;\lambda m:\N.\; 
+          \left\{ 
+          \begin{array}{ll}
+            x_m         & \mbox{if } m \leq i \\
+            e_{i,m}(p_{i,m}\;x_m) & \mbox{if } m > i \mbox{ (*)}\\
+          \end{array}
+       \right.
+    \\
+       & = & 
+       \lambda x:X.\;\lambda m:\N.\; x_m
+    \\
+       & = & 
+       id
+  \end{array}
+\end{displaymath}
+
+In (*), we use the definition of $X$ to see that the components greater than
+$i$ are smaller than $x$'s component at that index. So the limit is the 
+identity.
+
+
+\end{proof}
+
+To show that $X$ is the colimit of this diagram, we need to show there
+is a unique map from it to any other cocone. 
+
+\begin{lemma}{(Universality of $X$)} 
+Suppose that there is a $Y$ with morphisms $\left<f_n, q_n\right> : X_n
+\to Y$ and $q_n : Y \to X_n$, forming a cocone over $X_0 \longrightarrow
+X_1 \longrightarrow \ldots$. Then, there is a unique 
+$\left<h_e,h_p\right> : X \to Y$ such that for all $n$, 
+$\left<f_n,q_n\right> = \left<h_e,h_p\right> \circ \left<\hat{e}_n, \hat{p}_n\right>$.
+\end{lemma}
+
+\begin{proof}
+To show this, we need to explicitly construct $h_e$ and $h_p$, and show
+that they form an embedding-projection pair. We'll define $h_e : X \to Y = 
+\bigsqcup_i f_i \circ \hat{p}_i$, and define 
+$h_p : Y \to X = \lambda y:Y.\; \lambda i:\N.\; q_i\; y$.
+
+Before we can proceed any further, we need to establish that $h_e$
+actually defines a function --- that is, we have to establish that
+$f_i \circ \hat{p}_i$ is a chain in $i$. So, assume we have some
+arbitrary $i$, and some arbitrary $x : X$.
+
+\begin{enumerate}
+\item Now, by the properties of embedding-projection pairs, we know
+$e_i(p_i\;x_{i+1}) \sqsubseteq x_{i+1}$, 
+\item By the continuity of $f_{i+1}$, 
+this means $f_{i+1}(e_i(p_i\;x_{i+1})) \sqsubseteq f_{i+1}(x_{i+1})$. 
+\item By the fact that $Y$ is a cocone, this
+means $f_i(p_i\;x_{i+1})
+\sqsubseteq f_{i+1}(x_{i+1})$. 
+\item By the
+definition of $X$, this means $f_i(p_i\;x_{i+1}) 
+\sqsubseteq f_{i+1}(x_{i+1})$. 
+\item By the definition of $\hat{p}$, this is 
+the same as showing $f_i(x_i) \sqsubseteq f_{i+1}(x_{i+1})$. 
+\item By the definition of $\hat{p}$, this is the same as 
+   $f_i(\hat{p}_i\;x) \sqsubseteq f_{i+1}(\hat{p}_{i+1}\;x)$. 
+\item Since continuity for functions is pointwise, we have 
+shown $f_i \circ \hat{p}_i \sqsubseteq f_{i+1} \circ \hat{p}_{i+1}$. 
+\end{enumerate}
+
+Next, let's establish that $h_e$ and $h_p$ form an embedding-projection
+pair. To show that $h_e \circ h_p = id$, we use equational reasoning:
+
+\begin{displaymath}
+  \begin{array}{lcl}
+    h_e \circ h_p  
+     & = & 
+      (\bigsqcup_i f_i \circ \hat{p}_i) \circ (\lambda y:Y.\; \lambda i:\N.\; (q_i\; y)) 
+\\
+      & = & 
+      \bigsqcup_i (f_i \circ \hat{p}_i \circ (\lambda y:Y.\; \lambda i:\N.\; (q_i\; y)) 
+\\      
+      & = & 
+      \bigsqcup_i \lambda y:Y.\;(f_i \circ \hat{p}_i \circ (\lambda y:Y.\; \lambda i:\N.\; (q_i\; y))\;y 
+\\
+      & = & 
+      \bigsqcup_i (\lambda y:Y.\;f_i(\hat{p}_i\;(\lambda i:\N.\; (q_i\; y))))
+\\
+      & = & 
+      \bigsqcup_i (\lambda y:Y.\;f_i(q_i\; y))
+\\
+      & = & 
+      \bigsqcup_i \lambda y:Y.\;y
+\\
+      & = & 
+      \lambda y:Y.\;y
+\\
+  \end{array}
+\end{displaymath}
+
+In other direction, we need to show $h_p \circ h_e \sqsubseteq id$.
+
+\begin{displaymath}
+  \begin{array}{lcl}
+    h_p \circ h_e
+     & = &  
+      (\lambda y:Y.\; \lambda j:\N.\; (q_j\; y)) \circ (\bigsqcup_i f_i \circ \hat{p}_i)
+\\
+     & = &  
+      \bigsqcup_i ((\lambda y:Y.\; \lambda j:\N.\; (q_j\; y)) \circ f_i \circ \hat{p}_i)
+\\
+     & = &  
+      \lambda x:X.\; \bigsqcup_i ((\lambda y:Y.\; \lambda j:\N.\; (q_j\; y)) \circ f_i \circ \hat{p}_i))\;x
+\\
+     & = &  
+      \lambda x:X.\; \bigsqcup_i ((\lambda y:Y.\; \lambda j:\N.\; (q_j\; y))\;(f_i\;(\hat{p}_i\;x)))
+\\   
+     & = &  
+      \lambda x:X.\; \bigsqcup_i (\lambda j:\N.\; (q_j\; (f_i\;(\hat{p}_i\;x))))
+\\   
+     & = &  
+      \lambda x:X.\; \lambda j:\N.\; \bigsqcup_i ((q_j\; (f_i\;(\hat{p}_i\;x))))
+  \end{array}
+\end{displaymath}
+
+To finish this calculation, consider an arbitrary $x:X$ and $j:\N$. Now, consider
+the tail of the chain, where $i > j$. Now, since we know that $q_k = p_k \circ q_{k+1}$, 
+it follows that:
+
+\begin{displaymath}
+  \begin{array}{lcl}
+   q_j\; (f_i\;(\hat{p}_i\;x))
+     & = & p_{j,i}(q_i\; (f_i\;(\hat{p}_i\;x))) \\
+     & \sqsubseteq & p_{j,i}(\hat{p}_i\;x) \\
+     & \sqsubseteq & \hat{p}_j\;x \\
+     & \sqsubseteq & x_j \\
+  \end{array}
+\end{displaymath}
+
+Which means that the limit of the chain has to be less than 
+$\lambda x:X.\;\lambda j:\N.\;x_j$ -- which means that it is less
+than the identity.
+
+
+So we have established that $\left<h_e,h_p\right>$ is a morphism
+between $X$ and $Y$. Next, let's see whether it commutes:
+$\left<f_n,q_n\right> = \left<h_e,h_p\right> \circ \left<\hat{e}_n,
+\hat{p}_n\right>$. Unfolding the definition of composition, we 
+get two proof obligations. First, 
+
+\begin{displaymath}
+\begin{array}{lcl}
+   h_e \circ \hat{e}_n 
+   & = & 
+     (\bigsqcup_i f_i \circ \hat{p}_i) \circ \hat{e}_n 
+\\
+   & = & 
+     \bigsqcup_i (f_i \circ \hat{p}_i \circ \hat{e}_n)
+\\
+   & = & 
+     \lambda x:X_n.\; \bigsqcup_i (f_i (\hat{p}_i \; (\hat{e}_n\;x)))
+\\
+   & = & 
+     \lambda x:X_n.\; \bigsqcup_i (f_i (\hat{e}_n\;x\;i))
+\\
+   & = & 
+     \lambda x:X_n.\; \bigsqcup_i f_i 
+       (\left\{ 
+          \begin{array}{ll}
+            p_{i,n}(x) & \mbox{if } i < n \\
+            x         & \mbox{if } i = n \\
+            e_{n,i}(x) & \mbox{if } i > n \\
+          \end{array}
+       \right.)
+\end{array}
+\end{displaymath}
+
+To find the limit of this chain, consider any $i > n$. Because $f_{k+1} \circ e_k = f_k$, 
+we can see that $f_i(e_{n,i}\;x) = f_n\;x$, which means that the limit is $f_n\;x$, and
+hence $h_e \circ \hat{e}_n = f_n$. 
+
+Next, consider $\hat{p}_n \circ h_p$: 
+
+\begin{displaymath}
+\begin{array}{lcl}
+   \hat{p}_n \circ h_p
+   & = & 
+     \hat{p}_n \circ (\lambda y:Y.\;\lambda i:\N.\;(q_i\;y))
+\\
+   & = & 
+     \lambda y:Y.\; \hat{p}_n (\lambda i:\N.\;(q_i\;y))
+\\
+   & = & 
+     \lambda y:Y.\; (q_n\;y)
+\\
+   & = & 
+     q_n 
+\\
+\end{array}
+\end{displaymath}
+
+At this point, we have established that $X$ is a weak colimit --
+there's a morphism from it to any other cone, but we still have yet to
+show that it is a unique morphism. So, suppose that we have some 
+other mediating morphism $\left<h'_e, h'_p\right> : X \to Y$. 
+
+For the embedding $h'_e$, we proceed as follows:
+
+\begin{enumerate}
+\item Now, 
+it must be the case that $\left<h'_e, h'_p\right> \circ \left<\hat{e}_n, \hat{p}_n\right> = 
+\left<f_n, q_n\right>$. 
+
+\item So $h'_e \circ \hat{e}_n = f_n$. 
+
+\item Composing both sides with $\hat{p}_n$, we get 
+   $h'_e \circ \hat{e}_n \circ \hat{p}_n = f_n \circ \hat{p}_n$. 
+
+\item Taking limits of chains on both sides, we get $h'_e \circ \bigsqcup_n \hat{e}_n \circ{p}_n = \bigsqcup_n f_n \circ \hat{p}_n$
+
+\item Simplifying, we get $h'_e = h_e$.
+\end{enumerate}
+
+For the projection $h'_p$, we have
+
+\begin{enumerate}
+\item We have $\hat{p}_n \circ h'_p = q_n$. 
+\item Composing on both sides with $\hat{e}_n$, we have $\hat{e}_n \circ \hat{p}_n \circ h'_p = \hat{e}_n \circ q_n$. 
+\item Taking limits on both sides, we have $h'_p = \bigsqcup_n \hat{e}_n \circ q_n$. 
+\item Simplifying the limit expression, we get $h'_p = \lambda y:Y.\;\lambda n:\N.\; q_n(y)$. 
+\item So $h'_p = h_p$. 
+\end{enumerate}
+
+\end{proof}
+
+
+\subsubsection{Showing $X$ is a Solution to $F(X, X) \cong X$}
+
+\begin{lemma}{(X is a fixed point)} The equation $F(X, X) \cong X$
+is valid.
+\end{lemma}
+\begin{proof}
+First, note that applying $F$ to each of the $X_i$ and $\left<e_i,
+p_i\right>$ yields $X_{i+1}$ and $\left<e_{i+1}, p_{i+1}\right>$.  In
+other words, applying $F$ to our old diagram gives us the same thing
+as before, only with the first element chopped off.
+
+Therefore, $X$ is still a colimit for this diagram, because if we
+replicate the colimit construction for this diagram, we can establish
+an isomorphism between the ``new'' construction and $X$, since the
+leading elements of the infinite product are determined by the
+requirement that $x_i = p_i(x_{i+1})$.
+
+Since $F$ is a locally continuous functor, it preserves colimits of
+chains $\bot \longrightarrow F(\bot) \longrightarrow \ldots$, so $F(X,
+X)$ is itself a colimiting object. 
+
+Since colimits are unique up to isomorphism, it follows that $F(X, X)
+\cong X$. 
+
+\end{proof}
+
+
+\section{The Programming Language}
+
+We have given the semantics of types in domain-theoretic terms. Now,
+we'll give the syntax and typing of the programming language. Then,
+we'll use the domain-theoretic semantics just given in order to first
+give a denotational semantics for the programming language, and
+second, to give an interesting equality theory for it. The syntax of 
+terms is given in figure~\ref{lang-syntax}. 
+
+
+\begin{figure}
+\begin{displaymath}
+  \begin{array}{llcl}
+    \mbox{Pure expressions} & 
+     e & ::= & 
+         \unit \bnfalt
+         \pair{e}{e'} \bnfalt
+         \fst{e} \bnfalt
+         \snd{e} \bnfalt 
+\\
+     &&& \inl{e} \bnfalt
+         \inr{e} \bnfalt
+         \Case{e_0}{x_1}{e_1}{x_2}{e_2} \bnfalt
+\\
+     &&& \z \bnfalt 
+         \s{e} \bnfalt 
+         \iter{e}{e_0}{x}{e_1}
+\\ 
+     &&& x \bnfalt \fun{x}{A}{e} \bnfalt e\;e' \bnfalt
+\\ 
+     &&& \Fun{\alpha}{\kappa}{e} \bnfalt e\;\tau \bnfalt
+\\ 
+     &&& \pack{\tau}{e} \bnfalt \unpack{\alpha}{x}{e}{e'} \bnfalt
+\\
+     &&& \comp{c} \bnfalt \fix{x:D}{e}
+\\[1em]
+  \mbox{Computations} & 
+    c & ::= & e \bnfalt \letv{x}{e}{c} \bnfalt
+              \newref{A}{e} \bnfalt !e \bnfalt e := e'
+\\[1em]
+  \mbox{Contexts} & 
+    \Gamma & ::= & \cdot \bnfalt \Gamma, x:A 
+\\[1em]
+  \mbox{Pointed Types} & 
+     D & ::= & \monad{A} \bnfalt A \to D \bnfalt \forall \alpha:\kappa.\; D \bnfalt D \times D 
+\\[1em] 
+  \end{array}
+\end{displaymath}
+\caption{Syntax of the Programming Language}
+\label{lang-syntax}
+\end{figure}
+
+
+\begin{figure}
+\begin{mathpar}
+\inferrule*[right=EUnit]
+          { }
+          {\judgeE{\Gamma}{\unit}{\unittype}}
+\\
+\inferrule*[right=EPair]
+          {\judgeE{\Gamma}{e_1}{A} \\ 
+           \judgeE{\Gamma}{e_2}{B}}
+          {\judgeE{\Gamma}{\pair{e_1}{e_2}}{A \times B}}
+\and
+\inferrule*[right=EFst]
+          {\judgeE{\Gamma}{e}{A \times B}}
+          {\judgeE{\Gamma}{\fst{e}}{A}}
+\and
+\inferrule*[right=ESnd]
+          {\judgeE{\Gamma}{e}{A \times B}}
+          {\judgeE{\Gamma}{\snd{e}}{B}}
+\\
+\inferrule*[right=EInl]
+          {\judgeE{\Gamma}{e}{A}}
+          {\judgeE{\Gamma}{\inl{e}}{A + B}}
+\and
+\inferrule*[right=EInr]
+          {\judgeE{\Gamma}{e}{B}}
+          {\judgeE{\Gamma}{\inr{e}}{A + B}}
+\and
+\inferrule*[right=ECase]
+          {\judgeE{\Gamma}{e}{A+B} \\
+           \judgeE{\Gamma, x:A}{e_1}{C} \\
+           \judgeE{\Gamma, y:B}{e_2}{C}}
+          {\judgeE{\Gamma}{\Case{e}{x}{e_1}{y}{e_2}}{C}}
+\\
+\inferrule*[right=EZero]
+          { }
+          {\judgeE{\Gamma}{\z}{\N}}
+\and
+\inferrule*[right=ESucc]
+          {\judgeE{\Gamma}{e}{\N}}
+          {\judgeE{\Gamma}{\s{e}}{\N}}
+\and
+\inferrule*[right=EIter]
+          {\judgeE{\Gamma}{e}{\N} \\ 
+           \judgeE{\Gamma}{e_0}{A} \\
+           \judgeE{\Gamma,x:A}{e_1}{A}}
+          {\judgeE{\Gamma}{\iter{e}{e_0}{x}{e_1}}{A}}
+\end{mathpar}
+\begin{mathpar}
+\inferrule*[right=EVar]
+          { x:A \in \Gamma }
+          {\judgeE{\Gamma}{x}{A}}
+\and
+\inferrule*[right=ELam]
+          {\judgeE{\Gamma, x:A}{e}{B}}
+          {\judgeE{\Gamma}{\fun{x}{A}{e}}{A \to B}}
+\and
+\inferrule*[right=EApp]
+          {\judgeE{\Gamma}{e}{A \to B} \\
+           \judgeE{\Gamma}{e'}{A} }
+          {\judgeE{\Gamma}{e\;e'}{B}}
+\\
+\inferrule*[right=ETLam]
+          {\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e}{A}}
+          {\judgeE{\Gamma}{(\Fun{\alpha}{\kappa}{e})}{(\forall \alpha:\kappa.\;A)}}
+\and
+\inferrule*[right=ETapp]
+          {\judgeE{\Gamma}{e}{\forall \alpha:\kappa.\;A} \\
+           \judgeWK{\tau}{\kappa}}
+          {\judgeE{\Gamma}{e\;\tau}{[\tau/\alpha]A}}
+\\
+\inferrule*[right=EPack]
+          {\judgeE{\Gamma}{\tau}{\kappa} \\ 
+           \judgeWK[\Theta, \alpha:\kappa]{A}{\bigstar} \\
+           \judgeE{\Gamma}{e}{[\tau/\alpha]A}}
+          {\judgeE{\Gamma}{\pack{\tau}{e}}{\exists \alpha:\kappa.\; A}}
+\and
+\inferrule*[right=EUnpack]
+          {\judgeE{\Gamma}{e}{\exists \alpha:\kappa.\;A} \\
+           \judgeE[\Theta, \alpha:\kappa]{\Gamma, x:A}{e'}{B} \\
+           \judgeWK{B}{\bigstar}}
+          {\judgeE{\Gamma}{\unpack{\alpha}{x}{e}{e'}}{B}}
+\\
+\inferrule*[right=EMonad]
+          {\judgeC{\Gamma}{c}{A}}
+          {\judgeE{\Gamma}{\comp{c}}{\monad{A}}}
+\and
+\inferrule*[right=EFix]
+          {\judgeE{\Gamma, x:D}{e}{D}}
+          {\judgeE{\Gamma}{\fix{x:D}{e}}{D}}
+\and
+\inferrule*[right=EKeq]
+          {\judgeE{\Gamma}{e}{A} \\
+           \judgeKeq{A}{B}{\bigstar}}
+          {\judgeE{\Gamma}{e}{B}}
+
+\end{mathpar}
+\caption{Typing of the Pure Expressions}
+\label{lang-typing-pure}
+\end{figure}
+
+The pure terms of the language include the unit value $\unit$; pairs
+$\pair{e}{e'}$ and projections $\fst{e}$ and $\snd{e}$; injections
+into sum types $\inl{e}$ and $\inr{e}$, and a case form
+$\Case{e}{x}{e'}{y}{e''}$; zero $\z$, successor $\s{e}$, and primitive
+iteration $\iter{e}{e_0}{x}{e_1}$; lambda abstractions $\fun{x}{A}{e}$
+and applications $e\;e'$; type abstraction $\Fun{\alpha}{\kappa}{e}$
+and type application $e\;\tau$; and existential packing
+$\pack{\tau}{e}$ and unpacking $\unpack{\alpha}{x}{e}{e'}$. Suspended
+monadic computations $\comp{c}$ are terms of the type $\monad{A}$.
+
+Finally, we have a term-level fixed point operator, $\fix{x:D}{e}$. It
+is not defined over all types; it is only permitted to use this over
+\emph{well-pointed} types. That is, fixed points are only defined over
+types whose interpretations are domains with least elements. This
+ensures that the semantic fixed point operation is well-defined, and
+hence we can give a semantics of fixed points at this type. The typing
+rules for all of these forms are given in figure~\ref{lang-typing-pure}. 
+
+\todo{However, I'm not entirely happy with the \emph{operational}
+interpretation of the fixed point construct. Each term
+$\fix{x:D}{e}$ is really a \emph{value}, which means that the
+introduction forms for $D$ isn't just the ordinary intro forms
+for each type -- we have an extra constant for each type. This will 
+make the equational theory and operational semantics all go a bit funny.}
+
+I give the computation forms of the language in
+figure~\ref{lang-typing-monadic}. 
+
+
+\begin{figure}
+\begin{mathpar}
+\inferrule*[right=CReturn]
+          {\judgeE{\Gamma}{e}{A}}
+          {\judgeC{\Gamma}{e}{A}}
+\and
+\inferrule*[right=CLet]
+          {\judgeE{\Gamma}{e}{\monad{A}} \\
+           \judgeC{\Gamma, x:A}{c}{B}}
+          {\judgeE{\Gamma}{\letv{x}{e}{c}}{B}}
+\and
+\inferrule*[right=CGet]
+          {\judgeE{\Gamma}{e}{\reftype{A}}}
+          {\judgeC{\Gamma}{!e}{A}}
+\and
+\inferrule*[right=CSet]
+          {\judgeE{\Gamma}{e}{\reftype{A}} \\
+           \judgeE{\Gamma}{e'}{A}}
+          {\judgeE{\Gamma}{e := e'}{\unittype}}
+\and
+\inferrule*[right=CNew]
+          {\judgeE{\Gamma}{e}{A}}
+          {\judgeC{\Gamma}{\newref{A}{e}}{\reftype{A}}}
+\end{mathpar}
+\caption{Typing of Monadic Expressions}
+\label{lang-typing-monadic}
+\end{figure}
+
+\section{Denotational Semantics}
+
+Now that we know that the basic operations we use in our
+interpretation are locally continuous, we can show that our 
+interpretation function gives rise to a locally continuous
+functor. 
+
+\begin{lemma}{Functoriality of $\interpmono{-}$ and $\interp{-}$}
+  \begin{enumerate}
+  \item For all canonical derivations $\judgeWK[\cdot]{\tau}{\star}$, 
+    $\interpmono{\judgeWK[\cdot]{\tau}{\star}}$ is locally continuous. 
+  \item For all canonical derivations $\judgeWK[\cdot]{A}{\bigstar}$, 
+    $\interp{\judgeWK[\cdot]{A}{\bigstar}}$ is locally continuous. 
+  \item $H$ is a locally continuous functor
+  \item $\mathcal{K}$ is a locally continuous functor. 
+  \end{enumerate}
+\end{lemma}
+
+\begin{proof}
+ The proof of the first case follows by structural
+induction on the canonical derivations of monotypes. This is then used
+as a lemma in the proof of the second case, which is done via a
+structural induction on the canonical derivations of polytypes. This
+then lets us prove the third case, that $H$ is a locally-continuous
+functor, because we can work from the inside out, using the fact that
+set-indexed sums and products of locally-continuous functors are
+themselves locally continuous. Finally, since $\mathcal{K}$ is just 
+$H \to K_O$, we know it is locally continuous also. 
+\end{proof}
+
+\ \\\noindent 
+Observe that $\mathcal{K}$, applied to any arguments, yields a pointed
+domain, since the Sierpinski domain is pointed, and a continuous
+function space into a pointed domain is itself pointed. Hence our
+functor $K$ is also a functor into $CPO_\bot$, the category of
+complete \emph{pointed} partial orders and continuous functions. Now,
+we can apply Pitts's theorem to solve the recursive domain equation $K
+\cong \mathcal{K}(K, K)$.
+
+
+Now, we give the semantics of the expression and command languages,
+with functions $\interpE{\judgeE{\Gamma}{e}{A}}$ and
+$\interpC{\judgeE{\Gamma}{c}{A}}$. Since we have two contexts, we will
+need two environments, one a type environment (as before, a tuple of
+closed type expressions), and the other, a value environment
+(consisting of a tuple of values of the appropriate type). In other
+words, the interpretation of a term is a type-indexed family of
+morphisms in $CPO$.
+
+We give the interpetation of contexts in
+Figure~\ref{lang-context-interp}. In this definition, we take the
+usual liberties in not explicitly giving the isomorphisms necessary to
+implement structural rules like Exchange. There are two
+mutually-recursive interpretation functions, $\interpE{\Gamma}{e}{A}$
+and $\interpC{\Gamma}{c}{A}$, which interpret pure expressions and
+computations, whose definitions are given in
+figure~\ref{lang-pure-interp} and figure~\ref{lang-monadic-interp},
+respectively.
+
+Most of the base type constructors are interpreted in terms of the
+underlying categorical constructions: pair types are categorical
+products, sums are categorical sums, functions are exponentials, and
+natural numbers are interpreted as a natural numbers object. This
+means that we can give semantics for these types in terms of the 
+
+
+\begin{lemma}{(Computations form a Monad)} 
+The functor $T(A) = (A \to K) \to K$ forms a monad in CPO. 
+\end{lemma}
+
+\begin{proof}
+We need to give a unit (a family of arrows $\eta_A : A \to T(A)$) and a lift
+operations (given $f : A \to T(B)$, we need to give $f^* : T(A) \to T(B)$, 
+such that the following equations hold:
+\begin{enumerate}
+\item $\eta_A^* = id_{T(A)}$
+\item $f^* \circ \eta_A = f$ 
+\item $f^* \circ g^* = (f^* \circ g)^*$
+\end{enumerate}
+(Technically, these conditions are the conditions for a Kleisli
+triple, which is equivalent to a monad.)  We can now define $\eta_A$
+and $f^*$ in terms of the internal language of CPO as follows:
+
+\begin{displaymath}
+  \begin{array}{lcl}
+    \eta_A(a) & = & \lambda k.\; k\;a \\
+    f^*       & = & \lambda a' : (A \to K) \to K. \lambda k_b : (B \to K).\;
+                         a' (\lambda a.\; f\;a\;k_b)
+  \end{array}
+\end{displaymath}
+
+\begin{enumerate}
+\item The proof of the first equation is as follows: 
+  \begin{displaymath}
+    \begin{array}{lcl}
+      \eta_A^* 
+        & = & \lambda a'.\;\lambda k_{A}.\; 
+                 a'(\lambda a.\; \eta_A\;a\;k_{A}) \\ 
+        & = & \lambda a'.\;\lambda k_{A}.\; 
+                 a'(\lambda a.\; k_A\;a) \\ 
+        & = & \lambda a'.\;\lambda k_{A}.\; a'\;k_A \\
+        & = & \lambda a'.\;a' \\
+        & = & id_{T(A)} \\
+    \end{array}
+  \end{displaymath}
+
+\item The proof of the second equation is as follows: 
+  \begin{displaymath}
+    \begin{array}{lcl}
+      f^* \circ \eta_A 
+        & = & \lambda a.\; f^*(\eta_A(a)) \\
+        & = & \lambda a.\; f^*(\lambda k.\;k\;a) \\
+        & = & \lambda a.\; \lambda k_a.\; 
+                (\lambda k.\;k\;a)\;(\lambda a.\;f\;a\;k_a) \\
+        & = & \lambda a.\;\lambda k_a.\;
+                  (\lambda a.\;f\;a\;k_a)\;a \\
+        & = & \lambda a.\;\lambda k_a.\; f\;a\;k_a \\
+        & = & \lambda a.\; f\;a \\
+        & = & f \\                       
+    \end{array}
+  \end{displaymath}
+
+\item The proof of the third equation is as follows: 
+  \begin{displaymath}
+    \begin{array}{lcl}
+      f^* \circ g^* 
+      & = & \lambda a''.\; f^*(g^*(a'')) \\
+      & = & \lambda a''.\; f^*(\lambda k.\;a''(\lambda a.\;g\;a\;k)) \\
+      & = & \lambda a''.\;\lambda k.\;
+              (\lambda k.\;a''(\lambda a.\;g\;a\;k))\;
+              (\lambda a_1.\; f\;a\;k) \\
+      & = & \lambda a''.\;\lambda k.\;
+              a''(\lambda a.\;g\;a\;(\lambda a_1.\;f\;a_1\;k)) \\
+      & = & \lambda a''.\;\lambda k.\;
+               a''(\lambda a.\;f^*\; (g a)\; k) \\
+      & = & \lambda a''.\;\lambda k.\;
+               a''(\lambda a.\;(f^* \circ g)\;a\;k) \\
+      & = & (f^* \circ g)^* \\       
+    \end{array}
+  \end{displaymath}
+\end{enumerate}
+\end{proof}
+
+\begin{figure}
+\begin{displaymath}
+  \begin{array}{lcl}
+  \interp{\Theta \vdash \cdot}\theta & = & 1 \\
+  \interp{\Theta \vdash \Gamma, x:A}\theta & = & 
+       \interp{\Theta \vdash \Gamma}\theta 
+       \times 
+       \interp{\Theta \vdash A:\bigstar}\theta \\
+  \end{array}
+\end{displaymath}
+\caption{Interpretation of Program Contexts}
+\label{lang-context-interp}
+\end{figure}
+
+\begin{figure}
+\begin{displaymath}
+  \begin{array}{lcl}
+    \interpE{\judgeE{x_1:A_1, \ldots, x_n:A_n}{x_i}{A_i}}\;\theta\;\gamma
+       & = & \pi_i(\gamma)
+    \\
+    \interpE{\judgeE{\Gamma}{\fun{x}{A}{e}}{A \to B}}\;\theta\;\gamma
+       & = & \semfun{v}{\interpE{\judgeE{\Gamma, x:A}{e}{B}}\;\theta\;(\gamma, v)} \\
+    \interpE{\judgeE{\Gamma}{e\;e'}{B}}\;\theta\;\gamma
+       & = & 
+       (\interpE{\judgeE{\Gamma}{e}{A\to B}}\;\theta\;\gamma)\;
+       (\interpE{\judgeE{\Gamma}{e'}{A}}\theta\;\gamma)
+    \\
+    \interpE{\judgeE{\Gamma}{\unit}{\unittype}}\;\theta\;\gamma
+       & = & 
+       *
+    \\
+    \interpE{\judgeE{\Gamma}{\pair{e_1}{e_2}}{A_1\times A_2}}\;\theta\;\gamma
+       & = & 
+          \sempair{\interpE{\judgeE{\Gamma}{e_1}{A_1}}\;\theta\;\gamma}
+                  {\interpE{\judgeE{\Gamma}{e_2}{A_2}}\;\theta\;\gamma}
+    \\
+    \interpE{\judgeE{\Gamma}{\fst{e}}{A_1}}\;\theta\;\gamma
+       & = & 
+       \pi_1(\interpE{\judgeE{\Gamma}{e}{A_1\times A_2}}\;\theta\;\gamma)
+    \\
+    \interpE{\judgeE{\Gamma}{\snd{e}}{A_2}}\;\theta\;\gamma
+       & = & 
+       \pi_2(\interpE{\judgeE{\Gamma}{e}{A_1\times A_2}}\;\theta\;\gamma)
+    \\
+    \interpE{\judgeE{\Gamma}{\inl{e}}{A_1+A_2}}\;\theta\;\gamma 
+       & = & 
+       \iota_1(\interpE{\judgeE{\Gamma}{e}{A_1}}\;\theta\;\gamma)
+    \\
+    \interpE{\judgeE{\Gamma}{\inr{e}}{A_1+A_2}}\;\theta\;\gamma 
+       & = & 
+       \iota_2 (\interpE{\judgeE{\Gamma}{e}{A_2}}\;\theta\;\gamma)
+    \\
+    \interpE{\judgeE{\Gamma}{\Case{e}{x}{e_1}{y}{e_2}}{C}}\;\theta\;\gamma
+       & = & 
+          \mbox{let } a = \interpE{\judgeE{\Gamma}{e}{A_1 + A_2}}\theta\;\gamma
+          \mbox{ in}\\
+       &   & 
+          \mbox{let } f_1 = \semfun{v_1}{\interpE{\judgeE{x:A_1, \Gamma}{e_1}{C}}\theta\;(\gamma, v_1)}
+          \mbox{ in}\\
+       &   & 
+          \mbox{let } f_2 = \semfun{v_2}{\interpE{\judgeE{y:A_2, \Gamma}{e_2}{C}}\theta\;(\gamma, v_2)} 
+          \mbox{ in}\\
+       &   &\;\;
+           [f_1, f_2](a)
+    \\
+    \interpE{\judgeE{\Gamma}{\z}{\N}}\;\theta\;\gamma
+       & = & 
+         0 
+    \\
+    \interpE{\judgeE{\Gamma}{\s{e}}{\N}}\;\theta\;\gamma
+       & = & 
+         s (\interpE{\judgeE{\Gamma}{e}{\N}}\;\theta\;\gamma)
+    \\
+    \interpE{\judgeE{\Gamma}{\iter{e}{e_0}{x}{e_1}}{A}}\;\theta\;\gamma
+    &=& 
+       \mbox{let } 
+          a = \interpE{\judgeE{\Gamma}{e}{\N}}\;\theta\;\gamma  
+       \mbox{ in}\\
+    & &\mbox{let } 
+          i = \interpE{\judgeE{\Gamma}{e_0}{A}}\;\theta\;\gamma
+       \mbox{ in}\\
+    & &\mbox{let } 
+          s = \semfun{v}{\interpE{\judgeE{\Gamma,x:A}{e_1}{A}}\;\theta\;(\gamma,v)}  
+       \mbox{ in}\\
+    & &\mbox{ }iter_A[i, s](a)
+   \\
+   \interpE{\judgeE{\Gamma}{\comp{c}}{\monad{A}}}\;\theta\;\gamma
+   & = & 
+     \interpC{\judgeC{\Gamma}{c}{A}}\;\theta\;\gamma
+   \\
+   \interpE{\judgeE{\Gamma}{\fix{x:D}{e}}{D}}\;\theta\;\gamma
+   & = & 
+     fix \circ \semfun{v}{(\interpE{\judgeE{\Gamma, x:D}{e}{D}}\;\theta\;(\gamma,v))}
+   \\
+   \interpE{\judgeE{\Gamma}{\Fun{\alpha}{\kappa}{e}}
+                           {\forall \alpha:\kappa.\; A}}\;\theta\;\gamma 
+   & = & 
+     \lambda \tau:\interp{\kappa}.\; 
+        (\interpE{\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e}{A}}\;(\theta, \tau)\;\gamma
+   \\
+   \interpE{\judgeE{\Gamma}{e\;\tau}{A[\tau/\alpha]}}\;\theta\;\gamma
+   & = & 
+     \interp{\judgeE{\Gamma}{e}{\forall \alpha:\kappa.\;A}}\;\theta\;\gamma\;
+            [\theta(\tau)]
+   \\
+   \interpE{\judgeE{\Gamma}{\pack{\tau}{e}}{\exists \alpha:\kappa.\;A}}
+           \;\theta\;\gamma
+   & = & 
+     ([\theta(\tau)], \interpE{\judgeE{\Gamma}{e}{A[\tau/\alpha]}}\;\theta\;\gamma)
+   \\
+   \interpE{\judgeE{\Gamma}{\unpack{\alpha}{x}{e}{e'}}{B}}\;\theta\;\gamma
+   & = & 
+   (\semfun{\pair{\tau}{v}}
+           {\interpE{\judgeE[\Theta, \alpha:\kappa]{\Gamma, x:A}{e'}{B}}
+                    \;(\theta, \tau)\;(\gamma,v)})
+   \\
+   & & \;\;
+   (\interpE{\judgeE{\Gamma}{e}{\exists \alpha:\kappa.\;A}}\;\theta\;\gamma)
+   \\
+   \interpE{\judgeE{\Gamma}{e}{B}}\;\theta\;\gamma 
+   & = & 
+     \interpE{\judgeE{\Gamma}{e}{A}}\;\theta\;\gamma \mbox{ when } \judgeKeq{A}{B}{\bigstar}
+     \mbox{ by EKeq}
+   \\
+  \end{array}
+\end{displaymath}
+\caption{Interpretation of Pure Terms}
+\label{lang-pure-interp}
+\end{figure}
+
+\begin{figure}
+\begin{displaymath}
+  \begin{array}{lcl}
+    \interpC{\judgeC{\Gamma}{e}{A}}\;\theta
+    & = & 
+    \eta_{\interp{A}\;\theta} \circ \interpE{\judgeE{\Gamma}{e}{A}}\;\theta
+    \\
+    \interpC{\judgeC{\Gamma}{\letv{x}{e}{c}}{B}}\;\theta\;\gamma
+    & = & 
+       \mbox{let }c : \interp{\monad{A}}\theta = \interpE{\judgeE{\Gamma}{e}{\monad{A}}}\;\theta\;\gamma \mbox{ in}\\
+    && \mbox{let }f : \interp{A}\theta \to \interp{\monad{B}}\theta = 
+                  \lambda v.\;\interpE{\judgeE{\Gamma, x:A}{c}{B}}\;\theta\; (\gamma, v) \mbox{ in}\\
+    && \;\; f^{*}(c)
+    \\
+    \interpC{\judgeC{\Gamma}{!e}{A}}\;\theta\;\gamma
+    & = &
+       \mbox{let }l = \interpE{\judgeE{\Gamma}{e}{\reftype{A}}}\;\theta\;\gamma 
+       \mbox{ in}\\
+    && \;\;\lambda k.\;\lambda (L, h).\; 
+        \left\{ \begin{array}{ll}
+                  k\; (h\;l)\; (L, h) & \mbox{when } l \in L \\
+                  \top                & \mbox{otherwise} \\
+        \end{array}
+        \right.
+    \\
+    \interpC{\judgeC{\Gamma}{e := e'}{\unittype}}\;\theta\;\gamma 
+    & = & 
+       \mbox{let }l = \interpE{\judgeE{\Gamma}{e}{\reftype{A}}}\;\theta\;\gamma 
+    \mbox{ in}\\
+    && \mbox{let }v = \interpE{\judgeE{\Gamma}{e'}{A}}\;\theta\;\gamma \mbox{ in}\\
+    && \;\; \lambda k.\;\lambda (L, h).\; 
+              \left\{ \begin{array}{ll}
+                       k \unit (L, [h|l:v]) & \mbox{when } l \in L \\
+                      \top                & \mbox{otherwise} \\
+              \end{array}
+              \right.
+    \\
+    \interpC{\judgeC{\Gamma}{\newref{A}{e}}{\reftype{A}}}\;\theta\;\gamma 
+    & = & 
+      \mbox{let }v = \interpE{\judgeE{\Gamma}{e}{A}}\;\theta\;\gamma \mbox{ in}\\
+    && \;\;\lambda k.\;\lambda (L, h).\; \\
+    && \;\;\qquad \mbox{let }l = (max(L) + 1, A) \mbox{ in}\\
+    && \;\;\qquad k\;l\;(L \cup \setof{l}, [h|l:v])
+    \\
+  \end{array}
+\end{displaymath}
+\caption{Interpretation of Computations}
+\label{lang-monadic-interp}
+\end{figure}
+
+
+
+\begin{figure}
+\begin{mathpar}
+\inferrule*[right=EqUnit]
+          { }
+          {\judgeEq{\Gamma}{e}{e'}{1}}
+\\
+% \inferrule*[right=EqPairCong]
+%           {\judgeEq{\Gamma}{e_1}{e'_1}{A_1} \\
+%            \judgeEq{\Gamma}{e_2}{e'_2}{A_2}}
+%           {\judgeEq{\Gamma}{\pair{e_1}{e_2}}{\pair{e'_1}{e'_2}}{A_1\times A_2}}
+% \and
+% \inferrule*[right=EqFstCong]
+%           {\judgeEq{\Gamma}{e}{e'}{A_1\times A_2}}
+%           {\judgeEq{\Gamma}{\fst{e}}{\fst{e'}}{A_1}}
+% \and
+% \inferrule*[right=EqFstCong]
+%           {\judgeEq{\Gamma}{e}{e'}{A_1\times A_2}}
+%           {\judgeEq{\Gamma}{\snd{e}}{\snd{e'}}{A_2}}
+% \\
+\inferrule*[right=EqPairFst]
+          {\judgeE{\Gamma}{\pair{e_1}{e_2}}{A_1\times A_2}}
+          {\judgeEq{\Gamma}{\fst{\pair{e_1}{e_2}}}{e_1}{A_1}}
+\and
+\inferrule*[right=EqPairSnd]
+          {\judgeE{\Gamma}{\pair{e_1}{e_2}}{A_1\times A_2}}
+          {\judgeEq{\Gamma}{\snd{\pair{e_1}{e_2}}}{e_2}{A_2}}
+\and
+\inferrule*[right=EqPairEta]
+          {\judgeE{\Gamma}{e}{A_1\times A_2}}
+          {\judgeEq{\Gamma}{e}{\pair{\fst{e}}{\snd{e}}}{A_1\times A_2}}
+\\
+% \inferrule*[right=EqFunCong]
+%           {\judgeEq{\Gamma, x:A}{e}{e'}{B} \\
+%            \judgeKeq{A}{A'}{\bigstar}}
+%           {\judgeEq{\Gamma}{\fun{x}{A}{e}}{\fun{x}{A'}{e'}}{B}}
+% \and
+% \inferrule*[right=EqAppCong]
+%           {\judgeEq{\Gamma}{e_1}{e'_1}{A \to B} \\
+%            \judgeEq{\Gamma}{e_2}{e'_2}{A}}
+%           {\judgeEq{\Gamma}{e_1\;e_2}{e'_1\;e'_2}{B}}
+% \and
+\inferrule*[right=EqFunEta]
+          {\judgeEq{\Gamma, x:A}{e\;x}{e'\;x}{B}}
+          {\judgeEq{\Gamma}{e}{e'}{A \to B}}
+\and
+\inferrule*[right=EqFunBeta]
+          {\judgeE{\Gamma}{(\fun{x}{A}{e})\;e'}{B}}
+          {\judgeEq{\Gamma}{(\fun{x}{A}{e})\;e'}{[e'/x]e}{B}}
+\\
+% \inferrule*[right=EqInlCong]
+%           {\judgeEq{\Gamma}{e}{e'}{A}}
+%           {\judgeEq{\Gamma}{\inl{e}}{\inl{e'}}{A+B}}
+% \and
+% \inferrule*[right=EqInrCong]
+%           {\judgeEq{\Gamma}{e}{e'}{B}}
+%           {\judgeEq{\Gamma}{\inr{e}}{\inr{e'}}{A+B}}
+% \and
+% \inferrule*[right=EqCaseCong]
+%           {\judgeEq{\Gamma}{e}{e'}{A+B} \\
+%            \judgeEq{\Gamma, x:A}{e_1}{e'_1}{C} \\
+%            \judgeEq{\Gamma, y:B}{e_2}{e'_2}{C} }
+%           {\judgeEq{\Gamma}{\Case{e}{x}{e_1}{y}{e_2}}{\Case{e'}{x}{e'_1}{y}{e'_2}}{C}}
+% \and
+\inferrule*[right=EqSumInlBeta]
+          {\judgeE{\Gamma}{\Case{\inl{e}}{x}{e_1}{y}{e_2}}{C}}
+          {\judgeEq{\Gamma}{\Case{\inl{e}}{x}{e_1}{y}{e_2}}{[e/x]e_1}{C}}
+\and
+\inferrule*[right=EqSumInrBeta]
+          {\judgeE{\Gamma}{\Case{\inr{e}}{x}{e_1}{y}{e_2}}{C}}
+          {\judgeEq{\Gamma}{\Case{\inr{e}}{x}{e_1}{y}{e_2}}{[e/x]e_1}{C}}
+\and
+\inferrule*[right=EqSumEta]
+          {\judgeE{\Gamma}{e}{A+B} \\
+           \judgeE{\Gamma, z:A+B}{e'}{C}}
+          {\judgeEq{\Gamma}{[e/z]e'}{\Case{e}{x}{[\inl{x}/z]e'}
+                                             {y}{[\inr{x}/z]e'}}{C}}
+\\
+\inferrule*[right=EqMonad]
+          {\judgeEqC{\Gamma}{c}{c'}{A}}
+          {\judgeEq{\Gamma}{\comp{c}}{\comp{c'}}{\monad{A}}}
+\and
+\inferrule*[right=EqFix]
+          {\judgeE{\Gamma}{\fix{x:D}{e}}{D}}
+          {\judgeEq{\Gamma}{\fix{x:D}{e}}{[\fix{x:D}{e}/x]e}{D}}
+\end{mathpar}
+\caption{Equality Rules for Sums, Products, Exponentials, and Suspended Computations}
+\label{lang-pure-eq-1}
+\end{figure}
+
+\begin{figure}
+\begin{mathpar}
+\inferrule*[right=EqNatZBeta]
+          {\judgeE{\Gamma}{\iter{\z}{e_0}{x}{e_1}}{A}}
+          {\judgeEq{\Gamma}{\iter{\z}{e_0}{x}{e_1}}{e_0}{A}}
+\and
+\inferrule*[right=EqNatSBeta]
+          {\judgeE{\Gamma}{\iter{\s{e}}{e_0}{x}{e_1}}{A}}
+          {\judgeEq{\Gamma}{\iter{\s{e}}{e_0}{x}{e_1}}{e_1[\iter{e}{e_0}{x}{e_1}/x]}{A}}
+\and
+\inferrule*[right=EqNatEta]
+          {\judgeE{\Gamma}{e_0}{A} \\
+           \judgeE{\Gamma, x:A}{e_1}{A} \\
+           \judgeEq{\Gamma}{[\z/n]e}{e_0}{A} \\
+           \judgeEq{\Gamma, m:\N}{[\s{m}/n]e}{[[m/n]e/x]e_1}{A}}
+          {\judgeEq{\Gamma, n:\N}{e}{\iter{n}{e_0}{x}{e_1}}{A}}
+\and
+\inferrule*[right=EqAllBeta]
+          {\judgeE{\Gamma}{\Fun{\alpha}{\kappa}{e}}
+                          {\forall \alpha:\kappa.\;A} \\
+           \judgeWK{\tau}{\kappa}}
+          {\judgeEq{\Gamma}{(\Fun{\alpha}{\kappa}{e})\;\tau}
+                           {[\tau/\alpha]e}
+                           {[\tau/\alpha]A}}
+\and
+\inferrule*[right=EqAllEta]
+          {\judgeEq[\Theta, \alpha:\kappa]{\Gamma}{e\;\alpha}{e'\;\alpha}{A} \\
+           \Theta \vdash \Gamma}
+          {\judgeEq{\Gamma}{e}{e'}{\forall \alpha:\kappa.\;A}}
+\and
+\inferrule*[right=EqExistsBeta]
+          {\judgeE{\Gamma}{\pack{\tau}{e}}{\exists \alpha:\kappa.\;A} \\
+           \judgeE[\Theta, \alpha:\kappa]{\Gamma, x:A}{e'}{B}}
+          {\judgeEq{\Gamma}{\unpack{\alpha}{x}{\pack{\tau}{e}}{e'}}
+                          {[\tau/\alpha][e/x]e'}
+                          {B}}
+\and
+\inferrule*[right=EqExistsEta]
+          {\judgeE{\Gamma, z:\exists \alpha:\kappa.\;A}{e'}{B} \\ 
+           \judgeE{\Gamma}{e}{\exists \alpha:\kappa.\;A}}
+          {\judgeEq{\Gamma}{\unpack{\alpha}{x}{e}{[\pack{\alpha}{x}/z]e'}}{[e/z]e'}{B}}
+\end{mathpar}
+\caption{Equality Rules for Numbers, Universals, and Existentials}
+\label{lang-pure-eq-2} 
+\end{figure}
+
+\begin{figure}
+\begin{mathpar}
+\inferrule*[right=EqMonadEta]
+          {\judgeE{\Gamma}{e}{\monad{A}}}
+          {\judgeEqC{\Gamma}{e}{\letv{x}{e}{x}}{A}}
+\and
+\inferrule*[right=EqMonadBeta]
+          {\judgeC{\Gamma}{\letv{x}{\comp{e}}{c}}{A}}
+          {\judgeEqC{\Gamma}{\letv{x}{\comp{e}}{c}}{[e/x]c}{A}}
+\and
+\inferrule*[right=EqMonadComm]
+          {\judgeC{\Gamma}{\letv{x}{\comp{\letv{y}{e}{c_1}}}{c_2}}{A}}
+          {\judgeEqC{\Gamma}{\letv{x}{\comp{\letv{y}{e}{c_1}}}{c_2}}
+                            {\letv{y}{e}{\letv{x}{\comp{c_1}}}{c_2}}{A}}
+\end{mathpar}
+\caption{Equality Rules for Computations}
+\label{lang-monad-eq}  
+\end{figure}
+
+
+\begin{figure}
+\begin{mathpar}
+\inferrule*[right=EqRefl]
+          {\judgeE{\Gamma}{e}{A}}
+          {\judgeEq{\Gamma}{e}{e}{A}}
+\and
+\inferrule*[right=EqSymm]
+          {\judgeEq{\Gamma}{e}{e'}{A}}
+          {\judgeEq{\Gamma}{e'}{e}{A}}
+\and
+\inferrule*[right=EqTrans]
+          {\judgeEq{\Gamma}{e}{e'}{A} \\
+           \judgeEq{\Gamma}{e'}{e''}{A}}
+          {\judgeEq{\Gamma}{e}{e''}{A}}
+\and
+\inferrule*[right=EqSubst]
+          {\judgeEq{\Gamma, x:A}{e_1}{e_2}{B} \\
+           \judgeEq{\Gamma}{e'_1}{e'_2}{A}}
+          {\judgeEq{\Gamma}{[e'_1/x]e_1}{[e'_2/x]e'_2}{B}}
+\and
+\inferrule*[right=EqMonadRefl]
+          {\judgeC{\Gamma}{c}{A}}
+          {\judgeEqC{\Gamma}{c}{c}{A}}
+\and
+\inferrule*[right=EqMonadSymm]
+          {\judgeEqC{\Gamma}{c}{c'}{A}}
+          {\judgeEqC{\Gamma}{c'}{c}{A}}
+\and
+\inferrule*[right=EqMonadTrans]
+          {\judgeEqC{\Gamma}{c}{c'}{A} \\
+           \judgeEqC{\Gamma}{c'}{c''}{A}}
+          {\judgeEqC{\Gamma}{c}{c''}{A}}
+\and
+\inferrule*[right=EqMonadSubst]
+          {\judgeEqC{\Gamma, x:A}{c_1}{c_2}{B} \\
+           \judgeEq{\Gamma}{e_1}{e_2}{A}}
+          {\judgeEqC{\Gamma}{[e_1/x]c_1}{[e_2/x]c_2}{B}}
+\end{mathpar}
+\caption{Congruence Rules for Equality}
+\label{lang-cong-eq}
+\end{figure}
+
+\begin{lemma}{(Soundness of Substitution)}
+\begin{enumerate}
+\item If we know that $\judgeE{\Gamma, y:A, \Gamma'}{e}{B}$ and $\judgeE{\Gamma}{e'}{A}$
+  and $\Theta \vdash \theta$, 
+  then $\interpE{\judgeE{\Gamma}{[e'/y]e}{B}}\;\theta\;(\gamma,\gamma') = 
+        \interpE{\judgeE{\Gamma, y:A}{e}{B}}\;\theta 
+                \;\left(\gamma, 
+                        \interpE{\judgeE{\Gamma}{e'}{A}}\;\theta\;\gamma,
+                        \gamma'
+                \right)$
+
+\item If we know that $\judgeC{\Gamma, y:A, \Gamma'}{c}{B}$ and $\judgeE{\Gamma}{e'}{A}$
+  and $\Theta \vdash \theta$, 
+  then $\interpC{\judgeE{\Gamma}{[e'/y]c}{B}}\;\theta\;(\gamma,\gamma') = 
+        \interpC{\judgeC{\Gamma, y:A}{c}{B}}\;\theta \;
+                \left(\gamma,
+                      \interpE{\judgeE{\Gamma}{e'}{A}}\;\theta\;\gamma,
+                      \gamma'
+                \right)$
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+This property follows by a mutual structural induction on the derivations 
+$\judgeE{\Gamma, y:A}{e}{B}$ and $\judgeC{\Gamma, y:A}{c}{C}$. 
+
+First, we'll do the cases for pure terms. (When there's no confusion,
+we'll write $\interpE{e}$ for
+$\interpE{\judgeE{\Gamma}{e}{A}}\;\theta$.)
+
+\begin{itemize}
+\item case EVar: 
+  There are two cases, depending on whether the $e = x_i$, or $e = y$
+
+  \begin{enumerate}
+  \item If $e = x_i$ for some $i$, then $[e'/y]x_i = x_i$, and so we have
+   $\interpE{\judgeE{\Gamma, \Gamma'}{[e'/y]x_i}{B}}\;\theta\;(\gamma, \gamma')$
+
+    \begin{eqnproof}
+      \eline
+            {\interpE{\judgeE{\Gamma, \Gamma'}{x_i}{B}}\;\theta\;(\gamma, \gamma')}
+            { Subst.}
+      \eline{\pi_i(\gamma, \gamma')}
+            { Semantics}
+      \eline{\pi_i(\gamma, \interpE{\judgeE{\Gamma}{e'}{A}}\;\theta\;\gamma, \gamma')}
+            { Adjusting $i$}
+      \eline{\interpE{\judgeE{\Gamma, y:A, \Gamma'}{x_i}{B}}\;\theta\;(\gamma, \interpE{\judgeE{\Gamma}{e'}{A}}\;\theta, \gamma')}
+            { Semantics}
+    \end{eqnproof}
+
+  \item If $e = y$, then we have $\interpE{\judgeE{\Gamma, \Gamma'}{[e'/y]y}{A}\;\theta\;(\gamma, \gamma')}$
+
+    \begin{eqnproof}
+      \eline
+            {\interpE{\judgeE{\Gamma, \Gamma'}{e'}{A}}\;\theta\;(\gamma,\gamma')}
+            { Subst. }
+      \eline{\interpE{\judgeE{\Gamma}{e'}{A}}\;\theta\;\gamma}
+            { Since $FV(e') \cap \Gamma = \emptyset$}
+      \eline{\interpE{\judgeE{\Gamma, y:A, \Gamma'}{y}{A}}\;\theta
+              \;(\gamma, \interpE{\judgeE{\Gamma}{y}{A}}\;\theta\;\gamma, \gamma')}
+            { Semantics}
+    \end{eqnproof}
+  \end{enumerate}
+
+\item case ELam: We have $\interpE{\judgeE{\Gamma, \Gamma'}{[e'/y](\fun{x}{B}{e})}{B \to B'}\;\theta\;(\gamma, \gamma')}$
+
+  \begin{eqnproof}
+    \eline
+          {\interpE{\judgeE{\Gamma, \Gamma'}{\fun{x}{B}{[e'/y]e}}{B \to B'}}\;\theta\;(\gamma, \gamma')}
+          {Subst.}
+    \eline{\semfun{v}{\interpE{\judgeE{\Gamma, \Gamma', x:B}{[e'/y]e}{B'}}\;\theta\;(\gamma, \gamma', v)}}
+          {Semantics}
+
+    \eline{\semfun{v}
+            {\interpE{\judgeE{\Gamma, y:A, \Gamma', x:B}{e}{B'}}\;\theta\;
+                       (\gamma, \interpE{\judgeE{\Gamma}{e'}{A}}\;\theta\;\gamma, 
+                        \gamma', v)}}     
+          {IH}
+    \eline{\interpE{\judgeE{\Gamma, y:A, \Gamma'}{\fun{x}{B}{e}}{B \to B'}}
+           \;\theta\;(\gamma, 
+                      \interpE{\judgeE{\Gamma}{e'}{A}}\;\theta\;\gamma, 
+                      \gamma')}
+          {Semantics}
+  \end{eqnproof}
+
+\item Case EApp: We have 
+   $\interpE{\judgeE{\Gamma, \Gamma'}{[e'/y](e_1\;e_2)}{B}}\;\theta\;
+       (\gamma, \gamma')$
+
+  \begin{eqnproof}
+    \eline{\interpE{\judgeE{\Gamma, \Gamma'}{[e'/y]e_1\;[e'/y]e_2}{B}}\;\theta\;
+           (\gamma, \gamma')}
+          {Subst.}
+    \eline{\interpE{\judgeE{\Gamma, \Gamma'}{[e'/y]e_1}{B_2 \to B}}\;\theta\;(\gamma, \gamma')\;\;
+           \interpE{\judgeE{\Gamma, \Gamma'}{[e'/y]e_2}{B_2}}\;\theta\;(\gamma, \gamma')}
+          {Semantics}
+     \eline{\interpE{\judgeE{\Gamma, y:A, \Gamma'}{e_1}{B_2 \to B}}\;\theta\;
+              \gamma''\;\;
+            \interpE{\judgeE{\Gamma, y:A, \Gamma'}{e_2}{B_2}}\;\theta\;\gamma''}
+           {IH, IH}
+     \eline{\interpE{\judgeE{\Gamma, y:A, \Gamma'}{e_1\;e_2}{B}}\;\theta\;\gamma''}
+           {Semantics}
+  \end{eqnproof}
+
+  (Where $\gamma'' = (\gamma, \interpE{\judgeE{\Gamma}{e'}{A}}\;\theta\;\gamma, \gamma')$)
+
+\item case EUnit: We have $\interpE{\judgeE{\Gamma, \Gamma'}{[e'/y]\unit}{\unittype}}\;\theta\;(\gamma, \gamma')$
+  \begin{eqnproof}
+   \eline{\interpE{\judgeE{\Gamma, \Gamma'}{\unit}{\unittype}}\;\theta\;(\gamma, \gamma')}
+         {Substitution}
+   \eline{*}
+         {Semantics}
+   \eline{\interpE{\judgeE{\Gamma, y:A, \Gamma'}{\unit}{\unittype}}\;\theta\;
+          (\gamma, \interpE{\judgeE{\Gamma}{e'}{A}}\;\theta\;\gamma, \gamma')}
+         {Semantics}
+  \end{eqnproof}
+
+
+\item case EPair: We have $\interpE{\judgeE{\Gamma, \Gamma'}{[e'/y]\pair{e_1}{e_2}}{B}}\;\theta\;
+       (\gamma, \gamma')$ 
+
+  \begin{eqnproof}
+    \eline{\interpE{\judgeE{\Gamma, \Gamma'}{\pair{[e'/y]e_1}{[e'/y]e_2}}{B_1\times B_2}}\;\theta\;(\gamma, \gamma')}
+          {Subst.}
+    \eline{\sempair{\interpE{\judgeE{\Gamma, \Gamma'}{[e'/y]e_1}{B_1}}\;\theta\;(\gamma, \gamma')}
+                   {\interpE{\judgeE{\Gamma, \Gamma'}{[e'/y]e_2}{B_2}}\;\theta\;(\gamma, \gamma')}}
+          {Semantics}
+     \eline{\sempair{\interpE{\judgeE{\Gamma, y:A, \Gamma'}{e_1}{B_1}}\;\theta\;
+                     \gamma''}
+                    {\interpE{\judgeE{\Gamma, y:A, \Gamma'}{e_2}{B_2}}\;\theta\;\gamma''}}
+           {IH, IH}
+     \eline{\interpE{\judgeE{\Gamma, y:A, \Gamma'}{\pair{e_1}{e_2}}{B}}\;\theta\;\gamma''}
+           {Semantics}
+  \end{eqnproof}
+
+  (Where $\gamma'' = (\gamma, \interpE{\judgeE{\Gamma}{e'}{A}}\;\theta\;\gamma, \gamma')$)
+
+
+\item Case EFst: We have $\interpE{\judgeE{\Gamma, \Gamma'}{[e'/y]\fst{e}}{B_1}}\;\theta\;(\gamma, \gamma')$
+
+  \begin{eqnproof}
+    \eline{\interpE{\judgeE{\Gamma, \Gamma'}{\fst{[e'/y]e}}{B_1}}\;\theta\;(\gamma, \gamma')}
+          {Substitution}
+    \eline{\pi_1(\interpE{\judgeE{\Gamma, \Gamma'}{[e'/y]e}{B_1\times B_2}}\;\theta\;(\gamma, \gamma'))}
+          {Semantics}
+    \eline{\pi_1(\interpE{\judgeE{\Gamma, y:A, \Gamma'}{e}{B_1\times B_2}}\;\theta\;\gamma'')}
+          {IH}
+    \eline{\interpE{\judgeE{\Gamma, y:A, \Gamma'}{\fst{e}}{B_1\times B_2}}\;\theta\;\gamma''}
+          {Semantics}
+  \end{eqnproof}
+
+  (Where $\gamma'' = (\gamma, \interpE{\judgeE{\Gamma}{e'}{A}}\;\theta\;\gamma, \gamma')$)
+
+\item Case ESnd: We have $\interpE{\judgeE{\Gamma, \Gamma'}{[e'/y]\snd{e}}{B_1}}\;\theta\;(\gamma, \gamma')$
+
+  \begin{eqnproof}
+    \eline{\interpE{\judgeE{\Gamma, \Gamma'}{\snd{[e'/y]e}}{B_2}}\;\theta\;(\gamma, \gamma')}
+          {Substitution}
+    \eline{\pi_2(\interpE{\judgeE{\Gamma, \Gamma'}{[e'/y]e}{B_1\times B_2}}\;\theta\;(\gamma, \gamma'))}
+          {Semantics}
+    \eline{\pi_2(\interpE{\judgeE{\Gamma, y:A, \Gamma'}{e}{B_1\times B_2}}\;\theta\;\gamma'')}
+          {IH}
+    \eline{\interpE{\judgeE{\Gamma, y:A, \Gamma'}{\snd{e}}{B_1\times B_2}}\;\theta\;\gamma''}
+          {Semantics}
+  \end{eqnproof}
+
+  (Where $\gamma'' = (\gamma, \interpE{\judgeE{\Gamma}{e'}{A}}\;\theta\;\gamma, \gamma')$)
+
+\item Case EInl: We have $\interpE{\judgeE{\Gamma, \Gamma'}{[e'/y]\inl{e}}{B_1 + B_2}}\;\theta\;(\gamma, \gamma')$
+
+  \begin{eqnproof}
+    \eline{\interpE{\judgeE{\Gamma, \Gamma'}{\inl{([e'/y]e)}}{B_1+B_2}}\;\theta\;(\gamma, \gamma')}
+          {Substitution}
+    \eline{\iota_1(\interpE{\judgeE{\Gamma, \Gamma'}{[e'/y]e}{B_1}}\;\theta\;(\gamma, \gamma'))}
+          {Semantics}
+    \eline{\iota_1(\interpE{\judgeE{\Gamma, y:A, \Gamma'}{e}{B_1}}\;\theta\;\gamma'')}
+          {IH}
+    \eline{\interpE{\judgeE{\Gamma, y:A, \Gamma'}{\inl{e}}{B_1+ B_2}}\;\theta\;\gamma''}
+          {Semantics}
+  \end{eqnproof}
+
+  (Where $\gamma'' = (\gamma, \interpE{\judgeE{\Gamma}{e'}{A}}\;\theta\;\gamma, \gamma')$)
+
+
+\item Case EInr: We have $\interpE{\judgeE{\Gamma, \Gamma'}{[e'/y]\inl{e}}{B_1 + B_2}}\;\theta\;(\gamma, \gamma')$
+
+  \begin{eqnproof}
+    \eline{\interpE{\judgeE{\Gamma, \Gamma'}{\inr{([e'/y]e)}}{B_1+B_2}}\;\theta\;(\gamma, \gamma')}
+          {Substitution}
+    \eline{\iota_2(\interpE{\judgeE{\Gamma, \Gamma'}{[e'/y]e}{B_2}}\;\theta\;(\gamma, \gamma'))}
+          {Semantics}
+    \eline{\iota_2(\interpE{\judgeE{\Gamma, y:A, \Gamma'}{e}{B_2}}\;\theta\;\gamma'')}
+          {IH}
+    \eline{\interpE{\judgeE{\Gamma, y:A, \Gamma'}{\inr{e}}{B_1+ B_2}}\;\theta\;\gamma''}
+          {Semantics}
+  \end{eqnproof}
+
+  (Where $\gamma'' = (\gamma, \interpE{\judgeE{\Gamma}{e'}{A}}\;\theta\;\gamma, \gamma')$)
+
+\item Case ECase: We have $\judgeE{\Gamma,\Gamma'}{[e'/y]\Case{e}{x_1}{e_1}{x_2}{e_2}}{C}$
+
+  \begin{eqnproof}
+    \eline{\judgeE{\Gamma, \Gamma'}{\Case{[e'/y]e}{x_1}{[e'/y]e_1}{x_2}{[e'/y]e_2}}{C}}
+          {Substitution}[1em]
+
+    \eclaim[(1)]{\judgeE{\Gamma, \Gamma'}{[e'/y]e}{B_1+B_2}}
+           {Inversion}
+    \eclaim[(2)]{\judgeE{\Gamma, \Gamma', x_1:B_1}{[e'/y]e_1}{B_1}}
+           {Inversion}
+    \eclaim[(3)]{\judgeE{\Gamma, \Gamma', x_2:B_2}{[e'/y]e_2}{B_2}}
+           {Inversion}
+    \eline[\interpE{(1)}]
+          {\lambda \theta\;(\gamma, \gamma').\; \interpE{\judgeE{\Gamma, y:A, \Gamma'}{e}{B_1+B_2}}\;\theta\;(\gamma, \interpE{e'}\theta\gamma, \gamma')}
+          {IH}
+    \eline[\interpE{(2)}]
+          {\lambda \theta\;(\gamma, \gamma').\; \interpE{\judgeE{\Gamma, y:A, \Gamma', x_1:B_1}{e_1}{C}}\;\theta\;(\gamma, \interpE{e'}\theta\gamma, \gamma')}
+          {IH}
+    \eline[\interpE{(3)}]
+          {\lambda \theta\;(\gamma, \gamma').\; \interpE{\judgeE{\Gamma, y:A, \Gamma', x_2:B_2}{e_2}{C}}\;\theta\;(\gamma, \interpE{e'}\theta\gamma, \gamma')}
+          {IH}
+  \end{eqnproof}
+
+  Now, the interpretation $\interpE{\judgeE{\Gamma, \Gamma'}{\Case{[e'/y]e}{x_1}{[e'/y]e_1}{x_2}{[e'/y]e_2}}{C}}\;\theta\;(\gamma, \gamma')$ will be equal to 
+$[f_1, f_2]\;a$, where 
+
+  \begin{eqnproof}
+    \eline[a]{\interpE{\judgeE{\Gamma, \Gamma'}{[e'/y]e}{B_1+B_2}}\;\theta\;(\gamma, \gamma')}{}
+    \eline{\interpE{\judgeE{\Gamma, y:A, \Gamma'}{e}{B_1+B_2}}\;\theta\;(\gamma, \interpE{e'}\;\theta\;\gamma, \gamma')}{}
+    \eline[f_1]{\lambda v.\;\interpE{\judgeE{\Gamma, \Gamma', x_1:B_1}{e_1}{C}}\;\theta\;(\gamma,\gamma', v)}{}
+    \eline{\lambda v.\;\interpE{\judgeE{\Gamma, y:A, \Gamma', x_1:B_1}{e_1}{C}}\;\theta\;(\gamma, \interpE{e'}\;\theta\;\gamma, \gamma', v)}
+               {}
+    \eline[f_2]{\lambda v.\;\interpE{\judgeE{\Gamma, \Gamma', x_2:B_2}{e_2}{C}}\;\theta\;(\gamma,\gamma', v)}{}
+    \eline{\lambda v.\;\interpE{\judgeE{\Gamma, y:A, \Gamma', x_2:B_2}{e_1}{C}}\;\theta\;(\gamma, \interpE{e'}\;\theta\;\gamma, \gamma', v)}
+         {}
+  \end{eqnproof}
+
+  Which means that $[f_1, f_2]\;a = \interpE{\judgeE{\Gamma, y:A, \Gamma'}{\Case{e}{x_1}{e_1}{x_2}{y_2}}{C}}\;\theta\;(\gamma, \interpE{e'}\;\theta\;\gamma, \gamma')$
+
+\item case EZero: We have $\interpE{\judgeE{\Gamma, \Gamma'}{[e'/y]\z}{\N}}\;\theta\;(\gamma, \gamma')$
+  \begin{eqnproof}
+   \eline{\interpE{\judgeE{\Gamma, \Gamma'}{\z}{\N}}\;\theta\;(\gamma, \gamma')}
+         {Substitution}
+   \eline{0}
+         {Semantics}
+   \eline{\interpE{\judgeE{\Gamma, y:A, \Gamma'}{\z}{\N}}\;\theta\;
+          (\gamma, \interpE{\judgeE{\Gamma}{e'}{A}}\;\theta\;\gamma, \gamma')}
+         {Semantics}
+  \end{eqnproof}
+
+\item case ESucc: We have $\interpE{\judgeE{\Gamma, \Gamma'}{[e'/y]\s{e}}{\N}}\;\theta\;(\gamma, \gamma')$
+
+  \begin{eqnproof}
+    \eline{\interpE{\judgeE{\Gamma, \Gamma'}{\s{[e'/y]e}}{\N}}\;\theta\;(\gamma, \gamma')}
+          {Substitution}
+    \eline{s(\interpE{\judgeE{\Gamma, \Gamma'}{[e'/y]e}{\N}}\;\theta\;(\gamma, \gamma'))}
+          {Semantics}
+    \eline{s(\interpE{\judgeE{\Gamma, y:A, \Gamma'}{e}{\N}}\;\theta\;\gamma'')}
+          {IH}
+    \eline{\interpE{\judgeE{\Gamma, y:A, \Gamma'}{\s{e}}{\N}}\;\theta\;\gamma''}
+          {Semantics}
+  \end{eqnproof}
+
+  (Where $\gamma'' = (\gamma, \interpE{\judgeE{\Gamma}{e'}{A}}\;\theta\;\gamma, \gamma')$)
+
+\item case EIter: We have $\judgeE{\Gamma, \Gamma'}{[e'/y]\iter{e}{e_0}{x}{e_1}}{C}$
+  \begin{eqnproof}
+    \eline{\judgeE{\Gamma, \Gamma'}{\iter{[e'/y]e}{[e'/y]e_0}{x}{[e'/y]e_1}}{C}}
+          {Substitution}
+          [1em]
+    \eclaim[(1)]
+          {\judgeE{\Gamma, \Gamma'}{[e'/y]e}{\N}}
+          {Inversion}
+    \eclaim[(2)]
+          {\judgeE{\Gamma, \Gamma'}{[e'/y]e_0}{C}}
+          {Inversion}
+    \eclaim[(3)]
+          {\judgeE{\Gamma, \Gamma', x:C}{[e'/y]e_1}{C}}
+          {Inversion}
+          [1em]
+    \eline[\interpE{(1)}]
+          {\lambda \theta\;(\gamma, \gamma').\;
+            \interpE{\judgeE{\Gamma, y:A, \Gamma'}{e}{\N}}
+              \;\theta
+              \;(\gamma, \interpE{e'}\;\theta\;\gamma, \gamma')}
+          {IH}
+    \eline[\interpE{(2)}]
+          {\lambda \theta\;(\gamma, \gamma').\;
+            \interpE{\judgeE{\Gamma, y:A, \Gamma'}{e_0}{C}}
+              \;\theta
+              \;(\gamma, \interpE{e'}\;\theta\;\gamma, \gamma')}
+          {IH}               
+    \eline[\interpE{(3)}]
+          {\lambda \theta\;(\gamma, \gamma'').\;
+            \interpE{\judgeE{\Gamma, y:A, \Gamma', x:C}{e_0}{C}}
+              \;\theta
+              \;(\gamma, \interpE{e'}\;\theta\;\gamma, \gamma'')}
+          {IH}               
+  \end{eqnproof}
+  Now, we assume suitable $\theta, \gamma, \gamma'$, and consider the 
+  interpretation of 
+
+  $$\interpE{\judgeE{\Gamma, \Gamma'}{\iter{[e'/y]e}{[e'/y]e_0}{x}{[e'/y]e_1}}{C}}\;\theta\;(\gamma, \gamma')$$ 
+
+  This is equal to $iter_C[i,s]\;a$, where:
+
+  \begin{eqnproof}
+    \eline[a]{\interpE{(1)}\;\theta\;(\gamma,\gamma')}{}
+    \eline{\interpE{\judgeE{\Gamma, y:A, \Gamma'}{e}{\N}}
+              \;\theta
+              \;(\gamma, \interpE{e'}\;\theta\;\gamma, \gamma')}
+          {}
+          [1em]
+    \eline[i]{\interpE{(2)}\;\theta\;(\gamma, \gamma')}{}
+    \eline{\interpE{\judgeE{\Gamma, y:A, \Gamma'}{e_0}{C}}
+              \;\theta
+              \;(\gamma, \interpE{e'}\;\theta\;\gamma, \gamma')}
+          {}
+    \eline[s]{\semfun{v}{\interpE{(3)}\;\theta\;(\gamma,\gamma',v)}}
+             {}
+    \eline{\semfun{v}{
+           \interpE{\judgeE{\Gamma, y:A, \Gamma', x:C}{e_1}{C}}
+           \;\theta
+           \;(\gamma, \interpE{e'}\;\theta\;\gamma, \gamma', v)}}
+          {}
+  \end{eqnproof}
+
+  Which means that
+  \begin{displaymath}
+    iter_C[i,s]\;a = \interpE{\judgeE{\Gamma, y:A, \Gamma'}{\iter{e}{[e'/y]e_0}{x}{[e'/y]e_1}}{C}}    \;\theta\;(\gamma, \interpE{e'}\;\theta\;\gamma, \gamma')
+  \end{displaymath}
+
+\item case EMonad: We have $\judgeE{\Gamma, \Gamma'}{[e'/y]\comp{c}}{\monad{B}}$. 
+
+  \begin{eqnproof}
+    \eline{\judgeE{\Gamma, \Gamma'}{\comp{[e'/y]c}}{\monad{B}}}
+          {Substitution}
+          [1em]
+    \eclaim[\mbox{We have}]
+           {\judgeC{\Gamma, \Gamma'}{[e'/y]c}{B}}
+           {Inversion}
+  \end{eqnproof}
+
+  By mutual induction, we know that for all suitable $\theta, \gamma, \gamma'$,
+  \begin{displaymath}
+   \interpC{\judgeC{\Gamma,\Gamma'}{[e'/y]c}{B}}\;\theta\;(\gamma,\gamma') = 
+   \interpC{\judgeE{\Gamma, y:A, \Gamma'}{c}{B}}
+           \;\theta\;
+           \;(\gamma, \interpE{e'}\;\theta\;\gamma, \gamma')
+  \end{displaymath}
+
+  Therefore we know that $\interpE{\judgeE{\Gamma, \Gamma'}{[e'/y]\comp{c}}{\monad{B}}}\;\theta\;(\gamma, \gamma')$ is
+
+  \begin{eqnproof}
+    \eline{\interpC{\judgeC{\Gamma,\Gamma'}{[e'/y]c}{B}}\;\theta\;(\gamma,\gamma)}
+          {Semantics}
+    \eline{\interpC{\judgeE{\Gamma, y:A, \Gamma'}{c}{B}}
+           \;\theta\;
+           \;(\gamma, \interpE{e'}\;\theta\;\gamma, \gamma')}
+          {See above}
+    \eline{\interpE{\judgeE{\Gamma, y:A, \Gamma'}{\comp{c}}{\monad{B}}}\;
+           \;\theta\;
+           \;(\gamma, \interpE{e'}\;\theta\;\gamma, \gamma')}
+          {Semantics}
+  \end{eqnproof}
+
+\item case EFix: We have that $\interpE{\judgeE{\Gamma, \Gamma'}{[e'/y](\fix{x:D}{e})}{D}}\;\theta\;(\gamma,\gamma')$ is
+
+  \begin{eqnproof}
+    \eline{\interpE{\judgeE{\Gamma, \Gamma'}{\fix{x:D}{([e'/y]e)}}{D}}
+           \;\theta\;(\gamma,\gamma')}
+          {Substitution}
+    \eline{\interpE{fix(\semfun{v}{
+             (\interpE{\judgeE{\Gamma, \Gamma', x:D}{[e'/y]e}{D}}
+               \;\theta\;(\gamma,\gamma',v))})}}
+          {Semantics}
+     \eline{\interpE{fix(\semfun{v}{
+             (\interpE{\judgeE{\Gamma, y:A, \Gamma', x:D}{e}{D}}
+               \;\theta\;(\gamma,\interpE{e'}\;\theta\;\gamma, \gamma',v))})}}
+          {IH }
+     \eline{\interpE{\judgeE{\Gamma, y:A, \Gamma'}{\fix{x:D}{e}}{D}}
+             \;\theta
+             \;(\gamma,\interpE{e'}\;\theta\;\gamma, \gamma',v)}
+           {Semantics}
+  \end{eqnproof}
+
+\item case ETLam: We have that $\interpE{\judgeE{\Gamma,\Gamma'}{[e'/y](\Fun{\alpha}{\kappa}{e})}{\forall \alpha:\kappa.\;B}}\;\theta\;(\gamma,\gamma')$ 
+
+  \begin{eqnproof}
+    \eline{\interpE{
+             \judgeE{\Gamma,\Gamma'}{\Fun{\alpha}{\kappa}{[e'/y]e}}{\forall \alpha:\kappa.\;B}}\;\theta\;(\gamma, \gamma')}
+          {Substitution}
+    \eline{\semfun{\tau}{\interpE{
+             \;\judgeE[\Theta, \alpha:\kappa]{\Gamma,\Gamma'}{[e'/y]e}{B}}\;(\theta, \tau)\;(\gamma, \gamma')}}
+          {Semantics}
+    \eline{\semfun{\tau}{\interpE{
+             \;\judgeE[\Theta, \alpha:\kappa]{\Gamma,\Gamma'}{e}{B}}
+      \;(\theta, \tau)\;(\gamma, \interpE{e'}\;(\theta, \tau)\;\gamma, \gamma')}}
+          {IH}
+    \eline{\semfun{\tau}{\interpE{
+             \;\judgeE[\Theta, \alpha:\kappa]{\Gamma,\Gamma'}{e}{B}}
+      \;(\theta, \tau)\;(\gamma, \interpE{e'}\;\theta\;\gamma, \gamma')}}
+          {Since $\alpha \not\in FTV(e')$}
+
+    \eline{\interpE{\judgeE{\Gamma, y:A, \Gamma'}
+                           {\Fun{\alpha}{\kappa}{e}}
+                           {\forall \alpha:\kappa.\;B}}
+           \;\theta\;(\gamma, \interpE{e'}\;\theta\;\gamma, \gamma')}
+          {Semantics}                 
+  \end{eqnproof}
+
+\item case ETApp: We have that $\interpE{\judgeE{\Gamma,\Gamma'}{[e'/y](e\;\tau)}{[\tau/\alpha]B}}\;\theta\;(\gamma, \gamma')$ is 
+
+  \begin{eqnproof}
+    \eline{\interpE{
+           \judgeE{\Gamma,\Gamma'}{([e'/y]e)\;\tau}{[\tau/\alpha]B}}
+           \;\theta\;(\gamma,\gamma')}
+          {Substitution}
+    \eline{\left(\interpE{\judgeE{\Gamma,\Gamma'}{[e'/y]e}{\forall \alpha:\kappa.\;B}}\;\theta\;(\gamma,\gamma')\right)\;[\theta(\tau)]}
+          {Semantics}
+    \eline{\left(
+             \interpE{\judgeE{\Gamma,y:A,\Gamma'}{e}{\forall \alpha:\kappa.\;B}}
+                 \;\theta\;(\gamma,\interpE{e'}\;\theta\;\gamma,\gamma')
+           \right)\; [\theta(\tau)]}
+          {IH}
+    \eline{\interpE{
+           \judgeE{\Gamma,\Gamma'}{e\;\tau}{[\tau/\alpha]B}}
+           \;\theta\;(\gamma,\interpE{e'}\;\theta\;\gamma, \gamma')}
+          {Substitution}
+  \end{eqnproof}
+
+\item case EPack: We have that $\interpE{\judgeE{\Gamma,\Gamma'}{[e'/y]\pack{\tau}{e}}{\exists \alpha:\kappa.\;B}}\;\theta\;(\gamma, \gamma')$ is
+
+  \begin{eqnproof}
+    \eline{\interpE{
+           \judgeE{\Gamma,\Gamma'}
+                  {[e'/y]\pack{\tau}{e}}
+                  {\exists \alpha:\kappa.\;B}}
+           \;\theta\;(\gamma, \gamma')}
+          {Substitution}
+    \eline{([\theta(\tau)], 
+            \interpE{
+            \judgeE{\Gamma,\Gamma'}
+                   {[e'/y]e}
+                   {[\tau/\alpha]B}}
+            \;\theta\;(\gamma,\gamma'))}
+          {Semantics}
+    \eline{([\theta(\tau)], 
+            \interpE{
+            \judgeE{\Gamma,y:A,\Gamma'}
+                   {e}
+                   {[\tau/\alpha]B}}
+            \;\theta\;(\gamma,\interpE{e'}\;\theta\;\gamma, \gamma'))}
+          {IH}
+    \eline{\interpE{
+           \judgeE{\Gamma,y:A, \Gamma'}
+                  {\pack{\tau}{e}}
+                  {\exists \alpha:\kappa.\;B}}
+           \;\theta\;(\gamma,\interpE{e'}\;\theta\;\gamma, \gamma')}
+          {Semantics}
+  \end{eqnproof}
+\item case EUnpack: We have $\interpE{\judgeE{\Gamma,\Gamma'}{[e'/y](\unpack{\alpha}{x}{e_1}{e_2})}{B}}\;\theta\;(\gamma,\gamma')$ as
+
+  \begin{eqnproof}
+    \eline{\interpE{
+           \judgeE{\Gamma,\Gamma'}
+                  {\unpack{\alpha}{x}{[e'/y]e_1}{[e'/y]e_2}}
+                  {B}}
+             \;\theta\;(\gamma,\gamma')}
+          {Substitution}
+    \eline{(\semfun{\pair{\tau}{v}}
+                   {(\interpE{\judgeE[\Theta, \alpha:\kappa]
+                             {\Gamma,\Gamma', x:A}
+                             {[e'/y]e_2}
+                             {B}}
+                     \;(\theta,\tau)
+                     \;(\gamma, \gamma', v))})}
+           {}
+    \eclaim{\;\;(\interpE{
+            \judgeE{\Gamma,\Gamma'}
+                   {[e'/y]e_1}
+                   {\exists \alpha:\kappa.\;A}}
+            \;\theta\;(\gamma,\gamma'))}
+          {Semantics}
+    \eline{(\semfun{\pair{\tau}{v}}
+                   {(\interpE{\judgeE[\Theta, \alpha:\kappa]
+                             {\Gamma,\Gamma', x:A}
+                             {e_2}
+                             {B}}
+                     \;(\theta,\tau)
+                     \;(\gamma, \interpE{e'}\;(\theta,\tau)\;\gamma, \gamma', v))})}
+           {}
+    \eclaim{\;\;(\interpE{
+            \judgeE{\Gamma,\Gamma'}
+                   {e_1}
+                   {\exists \alpha:\kappa.\;A}}
+            \;\theta\;(\gamma,\interpE{e'}\;\theta\;\gamma, \gamma'))}
+          {IH}
+    \eline{(\semfun{\pair{\tau}{v}}
+                   {(\interpE{\judgeE[\Theta, \alpha:\kappa]
+                             {\Gamma,\Gamma', x:A}
+                             {e_2}
+                             {B}}
+                     \;(\theta,\tau)
+                     \;(\gamma, \interpE{e'}\;\theta\;\gamma, \gamma', v))})}
+           {}
+    \eclaim{\;\;(\interpE{
+            \judgeE{\Gamma,\Gamma'}
+                   {e_1}
+                   {\exists \alpha:\kappa.\;A}}
+            \;\theta\;(\gamma,\interpE{e'}\;\theta\;\gamma, \gamma'))}
+          {$\alpha \not\in FTV(e')$}
+    \eline{\interpE{
+           \judgeE{\Gamma,\Gamma'}
+                  {\unpack{\alpha}{x}{e_1}{e_2}}
+                  {B}}
+           \;\theta
+           \;(\gamma,\interpE{e'}\;\theta\;\gamma, \gamma')}
+          {Semantics}
+  \end{eqnproof}
+
+\item case EKeq: We have $\interpE{\judgeE{\Gamma,\Gamma'}{[e'/y]e}{B}}\;\theta\;(\gamma,\gamma')$
+  \begin{eqnproof}
+    \eline{\interpE{\judgeE{\Gamma,\Gamma'}{[e'/y]e}{C}}\;\theta\;(\gamma,\gamma')}
+          {Semantics, $B = C$}
+    \eline{\interpE{\judgeE{\Gamma,y:A,\Gamma'}{e}{C}}
+           \;\theta
+           \;(\gamma,\interpE{e'}\;\theta\;\gamma,\gamma')}
+          {IH}
+    \eline{\interpE{\judgeE{\Gamma,y:A,\Gamma'}{e}{B}}
+           \;\theta
+           \;(\gamma,\interpE{e'}\;\theta\;\gamma,\gamma')}
+          {Semantics}
+  \end{eqnproof}
+\end{itemize}
+\end{proof}
+
+\begin{lemma}{(Soundness of Equality Rules)}
+We have that:
+\begin{enumerate}
+\item If $\judgeEq{\Gamma}{e}{e'}{A}$, then $\judgeE{\Gamma}{e}{A}$ and 
+$\judgeE{\Gamma}{e'}{A}$ and 
+$\interpE{\judgeE{\Gamma}{e}{A}} = \interpE{\judgeE{\Gamma}{e'}{A}}$.
+
+\item If $\judgeEqC{\Gamma}{c}{c'}{A}$, then $\judgeC{\Gamma}{c}{A}$ and 
+$\judgeC{\Gamma}{c'}{A}$ and 
+$\interpC{\judgeE{\Gamma}{c}{A}} = \interpC{\judgeC{\Gamma}{c'}{A}}$.
+\end{enumerate}
+\end{lemma}
+
+
+\begin{proof}
+The proof of this theorem is by induction on the derivation of 
+\end{proof}
