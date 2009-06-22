@@ -2692,7 +2692,60 @@ $[f_1, f_2]\;a$, where
           {Semantics}
   \end{eqnproof}
 \end{itemize}
+
+Now, the cases for the computation terms follow.
+
+\begin{itemize}
+\item case CReturn: We have that $\interpC{\judgeC{\Gamma,\Gamma'}{[e'/y]e}{B}}\;\theta\;(\gamma,\gamma')$
+  \begin{eqnproof}
+    \eline{\eta_{\interp{B}\theta}(
+             \interpE{\judgeE{\Gamma,\Gamma'}{[e'/y]e}{B}}
+               \;\theta
+               \;(\gamma,\gamma'))}
+          {Semantics}
+    \eline{\eta_{\interp{B}\theta}(
+             \interpE{\judgeE{\Gamma,y:A,\Gamma'}{e}{B}}
+               \;\theta
+               \;(\gamma,\interpE{e'}\;\theta\;\gamma, \gamma'))}
+          {Mutual IH}
+    \eline{\eta_{\interp{B}\theta}(
+             \interpE{\judgeE{\Gamma,y:A,\Gamma'}{e}{B}}
+               \;\theta
+               \;(\gamma,\interpE{e'}\;\theta\;\gamma, \gamma'))}
+          {Semantics}
+  \end{eqnproof}
+
+\item case CLet: We have that $\interpC{\judgeC{\Gamma,\Gamma'}{[e'/y](\letv{x}{e}{c})}{C}} \;\theta\;(\gamma,\gamma')$
+
+  \begin{eqnproof}
+    \eline{\interpC{
+           \judgeC{\Gamma,\Gamma'}{\letv{x}{[e'/y]e}{[e'/y]c}}{C}} 
+           \;\theta\;(\gamma,\gamma')}
+          {Substitution}
+    \eline{(\semfun{v}{\interpC{\judgeC{\Gamma,\Gamma',x:B}{[e'/y]c}{C}}
+                       \;\theta
+                       \;(\gamma,\gamma',v)})^*}
+          {}
+    \eclaim{\;\;(\interpE{\judgeE{\Gamma,\Gamma'}{[e'/y]e}{\monad{B}}}\;
+                \theta\;(\gamma,\gamma'))}
+           {Semantics}
+    \eline{(\semfun{v}{\interpC{\judgeC{\Gamma,y:A,\Gamma',x:B}{c}{C}}
+                       \;\theta
+                       \;(\gamma,\interpE{e'}\;\theta\;\gamma,\gamma',v)})^*}
+          {}
+    \eclaim{\;\;(\interpE{\judgeE{\Gamma,y:A,\Gamma'}{e}{\monad{B}}}\;
+                \theta\;(\gamma,\interpE{e'}\;\theta\;\gamma,\gamma'))}
+           {IH,IH}
+    \eline{\interpC{
+           \judgeC{\Gamma,y:A,\Gamma'}{\letv{x}{e}{c}}{C}} 
+           \;\theta\;(\gamma,\interpE{e'}\;\theta\;\gamma,\gamma')}
+          {Semantics}
+  \end{eqnproof}
+\end{itemize}
+
 \end{proof}
+
+
 
 \begin{lemma}{(Soundness of Equality Rules)}
 We have that:
