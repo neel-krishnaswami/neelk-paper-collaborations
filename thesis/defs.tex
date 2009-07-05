@@ -135,9 +135,12 @@
 
 \newenvironment{proof}{\noindent\textbf{Proof.}}{\noindent$\Box$}
 
-\newenvironment{eqnproof}{\begin{displaymath}\begin{array}{lcll}}
+\newenvironment{eqnproof}[1][]{${#1}$\begin{displaymath}\begin{array}{lcll}}
                          {\end{array}\end{displaymath}}
 
 \newcommand{\eline}[3][]{{#1} & = & {#2} & \mbox{{#3}} \\}
+
+\newcommand{\elines}[3][]{{#1} & = & \begin{array}{l} #2 \end{array} & \mbox{{#3}} \\}
+
 \newcommand{\eclaim}[3][]{{#1} &  & {#2} & \mbox{{#3}} \\}
 \newcommand{\efact}[2]{{#1} & & & \mbox{#2} \\}
