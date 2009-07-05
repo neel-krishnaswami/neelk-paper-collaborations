@@ -103,24 +103,28 @@ in figure~\ref{polytype-kinding}.
           { }
           {\judgeWK{\unittype}{\star}}
 \and
-\inferrule*[right=KNat]
-          { }
-          {\judgeWK{\N}{\star}}
-\and
 \inferrule*[right=KProd]
           {\judgeWK{\tau}{\star} \\
            \judgeWK{\sigma}{\star}}
           {\judgeWK{\tau \times \sigma}{\star}}
+\and
+\inferrule*[right=KArrow]
+          {\judgeWK{\tau}{\star} \\
+           \judgeWK{\sigma}{\star}}
+          {\judgeWK{\tau \to \sigma}{\star}}
 \and
 \inferrule*[right=KSum]
           {\judgeWK{\tau}{\star} \\
            \judgeWK{\sigma}{\star}}
           {\judgeWK{\tau + \sigma}{\star}}
 \and
-\inferrule*[right=KArrow]
-          {\judgeWK{\tau}{\star} \\
-           \judgeWK{\sigma}{\star}}
-          {\judgeWK{\tau \to \sigma}{\star}}
+\inferrule*[right=KNat]
+          { }
+          {\judgeWK{\N}{\star}}
+\and
+\inferrule*[right=KRef]
+          {\judgeWK{A}{\bigstar}}
+          {\judgeWK{\reftype{A}}{\star}}
 \and
 \inferrule*[right=KComp]
           {\judgeWK{\tau}{\star}}
@@ -129,10 +133,6 @@ in figure~\ref{polytype-kinding}.
 \inferrule*[right=KCont]
           {\judgeWK{\tau}{\star}}
           {\judgeWK{\cont{\tau}}{\star}}
-\and
-\inferrule*[right=KRef]
-          {\judgeWK{A}{\bigstar}}
-          {\judgeWK{\reftype{A}}{\star}}
 \\
 \inferrule*[right=KHyp]
           { \alpha:\kappa \in \Theta }
@@ -157,24 +157,28 @@ in figure~\ref{polytype-kinding}.
           { }
           {\judgeWK{\unittype}{\bigstar}}
 \and
+\inferrule*[right=KProd]
+          {\judgeWK{A}{\bigstar} \\
+           \judgeWK{B}{\bigstar}}
+          {\judgeWK{A \times B}{\bigstar}}
+\and
+\inferrule*[right=KArrow]
+          {\judgeWK{A}{\bigstar} \\
+           \judgeWK{B}{\bigstar}}
+          {\judgeWK{A \to B}{\bigstar}}
+\and
+\inferrule*[right=KSum]
+          {\judgeWK{A}{\bigstar} \\
+           \judgeWK{B}{\bigstar}}
+          {\judgeWK{A + B}{\bigstar}}
+\and
 \inferrule*[right=KNat]
           { }
           {\judgeWK{\N}{\bigstar}}
 \and
-\inferrule*[right=KProd]
-          {\judgeWK{\tau}{\bigstar} \\
-           \judgeWK{\sigma}{\bigstar}}
-          {\judgeWK{\tau \times \sigma}{\bigstar}}
-\and
-\inferrule*[right=KSum]
-          {\judgeWK{\tau}{\bigstar} \\
-           \judgeWK{\sigma}{\bigstar}}
-          {\judgeWK{\tau + \sigma}{\bigstar}}
-\and
-\inferrule*[right=KArrow]
-          {\judgeWK{\tau}{\bigstar} \\
-           \judgeWK{\sigma}{\bigstar}}
-          {\judgeWK{\tau \to \sigma}{\bigstar}}
+\inferrule*[right=KRef]
+          {\judgeWK{A}{\bigstar}}
+          {\judgeWK{\reftype{A}}{\bigstar}}
 \and
 \inferrule*[right=KComp]
           {\judgeWK{A}{\bigstar}}
@@ -183,10 +187,6 @@ in figure~\ref{polytype-kinding}.
 \inferrule*[right=KCont]
           {\judgeWK{A}{\bigstar}}
           {\judgeWK{\cont{A}}{\bigstar}}
-\and
-\inferrule*[right=KRef]
-          {\judgeWK{A}{\bigstar}}
-          {\judgeWK{\reftype{A}}{\bigstar}}
 \\
 \inferrule*[right=KHyp]
           { \alpha:\star \in \Theta }
@@ -235,10 +235,6 @@ representative of that class.
           {\judgeKeq{1}{1}{\star}}
 \and
 \inferrule[]
-          { }
-          {\judgeKeq{\N}{\N}{\star}}
-\and
-\inferrule[]
           {\judgeKeq{\tau}{\tau'}{\star} \\
            \judgeKeq{\sigma}{\sigma'}{\star}}
           {\judgeKeq{\tau \times \sigma}{\tau' \times \sigma'}{\star}}
@@ -246,12 +242,20 @@ representative of that class.
 \inferrule[]
           {\judgeKeq{\tau}{\tau'}{\star} \\
            \judgeKeq{\sigma}{\sigma'}{\star}}
-          {\judgeKeq{\tau \times \sigma}{\tau' + \sigma'}{\star}}
+          {\judgeKeq{\tau \to \sigma}{\tau' \to \sigma'}{\star}}
 \and
 \inferrule[]
           {\judgeKeq{\tau}{\tau'}{\star} \\
            \judgeKeq{\sigma}{\sigma'}{\star}}
-          {\judgeKeq{\tau \times \sigma}{\tau' \to \sigma'}{\star}}
+          {\judgeKeq{\tau + \sigma}{\tau' + \sigma'}{\star}}
+\and
+\inferrule[]
+          { }
+          {\judgeKeq{\N}{\N}{\star}}
+\and
+\inferrule[]
+          { \judgeKeq{A}{A'}{\bigstar} }
+          { \judgeKeq{\reftype{A}}{\reftype{A'}}{\star} }
 \and
 \inferrule[]
           { \judgeKeq{\tau}{\tau'}{\star} }
@@ -260,10 +264,6 @@ representative of that class.
 \inferrule[]
           { \judgeKeq{\tau}{\tau'}{\star} }
           { \judgeKeq{\cont{\tau}}{\cont{\tau'}}{\star} }
-\and
-\inferrule[]
-          { \judgeKeq{A}{A'}{\bigstar} }
-          { \judgeKeq{\reftype{A}}{\reftype{A'}}{\star} }
 \and
 \inferrule[]
           { \alpha:\kappa \in \Theta }
@@ -297,10 +297,6 @@ representative of that class.
           {\judgeKeq{1}{1}{\bigstar}}
 \and
 \inferrule[]
-          { }
-          {\judgeKeq{\N}{\N}{\bigstar}}
-\and
-\inferrule[]
           {\judgeKeq{A}{A'}{\bigstar} \\
            \judgeKeq{B}{B'}{\bigstar}}
           {\judgeKeq{A \times B}{A' \times B'}{\bigstar}}
@@ -308,12 +304,20 @@ representative of that class.
 \inferrule[]
           {\judgeKeq{A}{A'}{\bigstar} \\
            \judgeKeq{B}{B'}{\bigstar}}
-          {\judgeKeq{A \times B}{A' + B'}{\bigstar}}
+          {\judgeKeq{A \to B}{A' \to B'}{\bigstar}}
 \and
 \inferrule[]
           {\judgeKeq{A}{A'}{\bigstar} \\
            \judgeKeq{B}{B'}{\bigstar}}
-          {\judgeKeq{A \times B}{A' \to B'}{\bigstar}}
+          {\judgeKeq{A + B}{A' + B'}{\bigstar}}
+\and
+\inferrule[]
+          { }
+          {\judgeKeq{\N}{\N}{\bigstar}}
+\and
+\inferrule[]
+          { \judgeKeq{A}{A'}{\bigstar} }
+          { \judgeKeq{\reftype{A}}{\reftype{A'}}{\bigstar} }
 \and
 \inferrule[]
           { \judgeKeq{A}{A'}{\bigstar} }
@@ -322,10 +326,6 @@ representative of that class.
 \inferrule[]
           { \judgeKeq{A}{A'}{\bigstar} }
           { \judgeKeq{\cont{A}}{\cont{A'}}{\bigstar} }
-\and
-\inferrule[]
-          { \judgeKeq{A}{A'}{\bigstar} }
-          { \judgeKeq{\reftype{A}}{\reftype{A'}}{\bigstar} }
 \and
 \inferrule[]
           { \alpha:\kappa \in \Theta }
@@ -380,12 +380,12 @@ semantics is in CPO, the category of complete partial orders and
 continuous functions between them. In particular, we do not demand
 that all domains have least elements -- that is, we only require that
 the objects of this category be \emph{predomains}, rather than
-domains. As a result, we can we can model pure types as predomains
-lacking a bottom element.
+domains. This permits us to model pure types as predomains lacking a
+bottom element.
 
 In figure~\ref{interp-monotypes}, we give an interpretation of the
 closed, canonical monotypes (i.e., monotypes of kind $\star$, with no
-free occurrences of type variables within them, and no $beta$-redexes
+free occurrences of type variables within them, and no $\beta$-redexes
 within them).  This semantics is additionally parameterized with two
 arguments $K^+$ and $K^-$, whose purpose I will explain shortly.
 
@@ -442,14 +442,17 @@ furthermore we know it is well-founed, because all of the recursive
 calls to $\interpmono{-}$ are always on immediate subterms of the
 type.
 
-Most of the clauses of this definition should be relatively
-straightforward --- the main mystery is that we have parameterized this
-interpretation by two arguments $K_+$ and $K_-$, which I will explain
-when we reach the continuation and monadic type constructors. 
-We interpret the unit type as the one-element, discretely ordered
-predomain, the natural number type as the natural numbers with a
-discrete order, pairs as the categorical products of $CPO$, sums as
-coproducts, and functions via the exponentials of $CPO$.
+This definition defines a functor -- because the category Cat of
+categories and functors is itself cartesian closed, we can take the
+liberty of writing it as a lambda-expression. Most of the clauses of
+this definition should be relatively straightforward --- the main
+mystery is that we have parameterized this interpretation by two
+arguments $K_+$ and $K_-$, which I will explain when we reach the
+continuation and monadic type constructors.  We interpret the unit
+type as the one-element, discretely ordered predomain, the natural
+number type as the natural numbers with a discrete order, pairs as the
+categorical products of $CPO$, sums as coproducts, and functions via
+the exponentials of $CPO$.
 
 Reference types $\reftype{A}$ are interpreted as pairs consisting of
 natural numbers and the syntactic object $A$. The intuition is that
@@ -481,7 +484,7 @@ that we do not needed to mention them explicitly.
 To fix this gap, we will give an interpretation of polymorphic types
 as an indexed function from a context of closed monokinded type
 constructors to a a CPO.  As before, we parameterize by the
-continuation arguments.
+continuation arguments, and again define a functor.
 
 \begin{displaymath}
 \begin{array}{lcl}\interp{\judgeWK{A}{\bigstar}} &\in& \mathrm{Type Context} \to (CPO_\bot \times CPO^{op}_\bot) \to CPO 
@@ -568,14 +571,16 @@ H(K_+,K_-) & = & \Sigma L \subseteq^{fin} Loc.\;
 
 We use $H$ to define what heaps mean. A heap is a pair whose first
 component is a finite set of allocated locations, together with a map
-that takes each location in the set of allocated location and returns 
-a value of the appropriate type. 
+that takes each location in the set of allocated location and returns
+a value of the appropriate type.
 
-The answer type $\mathcal{K}$ is itself a function type, which takes a
-heap and returns an element of the Sierpinski lattice $O$. So if we
-can solve the equation $K = \mathcal{K}(K, K)$, then we can plug $K$
-into all our other definitions to interpret all of the types in our
-language.
+The continuation type is defined by the solution to the equation
+$\mathcal{K}$, which of type $CPO^{op}_\bot \times CPO_\bot \to
+CPO_\bot$. We know that this goes into $CPO_\bot$, since it defines a
+map into the two point domain, and a function space into a domain is
+itself a domain. So if we can solve the equation $K = \mathcal{K}(K,
+K)$, then we can plug $K$ into all our other definitions to interpret
+all of the types in our language.
 
 Filling this in, we can understand how continuations of type
 $\cont{\tau}$ work: they receive a value of type $\tau$ and a heap,
@@ -583,7 +588,6 @@ and then either loop or terminate. The monadic type $\monad{\tau}$ now
 can be seen as the state-and-continuation monad, which combines the
 effects of the continuation monad and the state monad via a domain 
 which looks a bit like $(\tau \to H \to O) \to H \to O$. 
-
 
 To show that this equation actually has a solution, it suffices to 
 show that $F$ is a locally-continuous functor. We'll prove this by 
@@ -608,26 +612,26 @@ continuous.
 \begin{lemma}{Local Continuity}
 \begin{enumerate}
 \item If $F,G : CPO_\bot \times CPO^{op}_\bot \to CPO$ are locally continuous,
-      then $F \times G$ is locally continuous.  
+      then $\lambda A,B. F(A,B) \times G(A,B)$ is locally continuous.  
 \item If $F,G : CPO_\bot \times CPO^{op}_\bot \to CPO$ are locally continuous,
-      then $F + G$ is locally continuous.  
+      then $\lambda A,B.\; F(A,B) + G(A,B)$ is locally continuous.  
 \item If $F,G : CPO_\bot \times CPO^{op}_\bot \to CPO$ are locally continuous,
-      then $F \to G$ is locally continuous.  
+      then $\lambda A,B.\;F(A,B) \to G(A,B)$ is locally continuous.  
 \item The constant functor $K_C$ is locally continuous. 
 \item If X is a set, and $F(x) : CPO_\bot \times CPO^{op}_\bot \to CPO$ is an
       $X$-indexed family of locally continuous functors, then 
-      $\Pi x:X.\;F(x)$ is a locally continuous functor. 
+      $\lambda (A,B).\; \Pi x:X.\;F(x)(A,B)$ is a locally continuous functor. 
 \item If X is a set, and $F(x) : CPO_\bot \times CPO^{op}_\bot \to CPO$ is an
       $X$-indexed family of locally continuous functors, then 
-      $\Sigma x:X.\;F(x)$ is a locally continuous functor. 
+      $\lambda (A,B).\;\Sigma x:X.\;F(x)(A,B)$ is a locally continuous functor. 
 \end{enumerate}
 \end{lemma}
  
 \begin{proof}
 
 \begin{enumerate}
-\item Suppose $F$ and $G$ are locally continuous. Now, we define 
-$F \times G$ to be the functor which takes $(A,B)$ to $F(A,B) \times G(A,B)$
+\item Suppose $F$ and $G$ are locally continuous. Now, for $A$ and $B$, we have 
+the functor which takes $(A,B)$ to $F(A,B) \times G(A,B)$
 on the object part, and which takes $(f,g)$ to $F(f,g) \times G(f,g)$ on
 the arrow part.
 
@@ -658,8 +662,8 @@ and that $\pi_j \circ \left<\sqcup_i h^1_i; \sqcup_i h^2_i\right> = \sqcup_i h^j
 and that the mediating morphism is unique. 
 
 
-\item Suppose $F$ and $G$ are locally continuous. Now, we define 
-$F + G$ to be the functor which takes $(A,B)$ to $F(A,B) + G(A,B)$
+\item Suppose $F$ and $G$ are locally continuous. Now, for $A$ and $B$
+we have the functor which takes $(A,B)$ to $F(A,B) + G(A,B)$
 on the object part, and which takes $(f,g)$ to $F(f,g) + G(f,g)$ on
 the arrow part.
 
@@ -690,8 +694,8 @@ that we know that $(\sqcup_i \left[h^1_i;h^2_i\right]) \circ
 h^2_i\right> \circ \mathsf{in}_j = \sqcup_i h^j_i$, and that the mediating
 morphism is unique.
 
-\item Suppose $F$ and $G$ are locally continuous. Now, we define 
-$F \to G$ to be the functor which takes $(A,B)$ to $F(B,A) \to G(A,B)$
+\item Suppose $F$ and $G$ are locally continuous. Now, for $A$ and $B$
+we have the functor which takes $(A,B)$ to $F(B,A) \to G(A,B)$
 on the object part, and which takes $(f,g)$ to $F(g,f) \to G(f,g)$ on
 the arrow part.
  
@@ -736,10 +740,9 @@ morphisms to the identity morphism, and hence trivially preserves
 limits. 
 
 \item Suppose $X$ is a set, and $F(x)$ is an $X$-indexed family of
-locally continuous functors. We define $\Pi x:X.\; F(x)$ as
-following. 
+locally continuous functors. 
 
-First, given objects $(A,B)$, we define the object part of this as the
+First, given objects $(A,B)$, we have the object part of this as the
 dependent function space $\Pi x:X.\; F(x)(A,B)$, with elements $u
 \sqsubseteq v$ if and only if for all $x \in X$, $u(x)
 \sqsubseteq_{F(x)(A,B)} v(x)$. 
@@ -757,7 +760,7 @@ $g = \lambda x.\; pi_x \circ g$, which means that $g = \lambda x.\; f_x$,
 which is exactly $\left<f_x\right>$. 
 
 
-Next, given morphisms $f \in A \to C$ and $g \in D \to B$, we define
+Next, given morphisms $f \in A \to C$ and $g \in D \to B$, we have
 $[\Pi x:X.\; F(x)](f,g) \in [\Pi x:X.\; F(x)](A,B) \to [\Pi x:X.\; F(x)](C,D)$
 as:
   
@@ -801,11 +804,10 @@ As a result, we can conclude that this functor is locally
 continuous.
 
 \item Suppose $X$ is a set, and $F(x)$ is an $X$-indexed family
-of locally continuous functors. We define the functor $\Sigma x:X.\;
-F(x)$ as following.
+of locally continuous functors. 
 
-First, given objects $(A,B)$, we define the object part of the functor
-as yielding the dependent sum $\Sigma x:X.\; F(x)(A,B)$. Ordering is
+First, given objects $(A,B)$, we have the object part of the functor
+yielding the dependent sum $\Sigma x:X.\; F(x)(A,B)$. Ordering is
 given pairwise, equipping the set $X$ with the trivial ordering. 
 That is $(x,o) \sqsubseteq (x', o')$ if and only if $x = x'$ and 
 $o \sqsubseteq_{F(x)(A,B)} o'$. 
@@ -823,7 +825,7 @@ $g = \lambda (x,v).\;g (x, v) = \lambda (x,v).\;(g\circ\inj{x})(v)$,
 which is clearly $\lambda (x,v).\; (f_x\;v)$, which is just $[f_x]$
 
 
-Next, given morphisms $f \in A \to C$ and $g \in D \to B$, we define
+Next, given morphisms $f \in A \to C$ and $g \in D \to B$, we have
 $[\Sigma x:X.\; F(x)](f,g) \in [\Pi x:X.\; F(x)](A,B) \to [\Sigma x:X.\; F(x)](C,D)$
 as:
 
@@ -1871,7 +1873,7 @@ and $f^*$ in terms of the internal language of CPO as follows:
    \\
    \interpE{\judgeE{\Gamma}{\fix{x:D}{e}}{D}}\;\theta\;\gamma
    & = & 
-     fix \circ \semfun{v}{(\interpE{\judgeE{\Gamma, x:D}{e}{D}}\;\theta\;(\gamma,v))}
+     fix(\semfun{v}{(\interpE{\judgeE{\Gamma, x:D}{e}{D}}\;\theta\;(\gamma,v))})
    \\
    \interpE{\judgeE{\Gamma}{\Fun{\alpha}{\kappa}{e}}
                            {\forall \alpha:\kappa.\; A}}\;\theta\;\gamma 
@@ -1964,8 +1966,9 @@ and $f^*$ in terms of the internal language of CPO as follows:
 \begin{figure}
 \begin{mathpar}
 \inferrule*[right=EqUnit]
-          { }
-          {\judgeEq{\Gamma}{e}{e'}{1}}
+          {\judgeE{\Gamma}{e}{\unittype} \\
+           \judgeE{\Gamma}{e'}{\unittype} }
+          {\judgeEq{\Gamma}{e}{e'}{\unittype}}
 \\
 % \inferrule*[right=EqPairCong]
 %           {\judgeEq{\Gamma}{e_1}{e'_1}{A_1} \\
@@ -2063,6 +2066,7 @@ and $f^*$ in terms of the internal language of CPO as follows:
 \inferrule*[right=EqNatEta]
           {\judgeE{\Gamma}{e_0}{A} \\
            \judgeE{\Gamma, x:A}{e_1}{A} \\
+           \judgeE{\Gamma}{e}{A} \\
            \judgeEq{\Gamma}{[\z/n]e}{e_0}{A} \\
            \judgeEq{\Gamma, m:\N}{[\s{m}/n]e}{[[m/n]e/x]e_1}{A}}
           {\judgeEq{\Gamma, n:\N}{e}{\iter{n}{e_0}{x}{e_1}}{A}}
@@ -2077,6 +2081,8 @@ and $f^*$ in terms of the internal language of CPO as follows:
 \and
 \inferrule*[right=EqAllEta]
           {\judgeEq[\Theta, \alpha:\kappa]{\Gamma}{e\;\alpha}{e'\;\alpha}{A} \\
+           \judgeE{\Gamma}{e}{\forall \alpha:\kappa.\;A} \\
+           \judgeE{\Gamma}{e'}{\forall \alpha:\kappa.\;A} \\
            \Theta \vdash \Gamma}
           {\judgeEq{\Gamma}{e}{e'}{\forall \alpha:\kappa.\;A}}
 \and
@@ -2098,15 +2104,15 @@ and $f^*$ in terms of the internal language of CPO as follows:
 
 \begin{figure}
 \begin{mathpar}
-\inferrule*[right=EqMonadEta]
-          {\judgeE{\Gamma}{e}{\monad{A}}}
+\inferrule*[right=EqCommandEta]
+          {\judgeC{\Gamma}{c}{A}}
           {\judgeEqC{\Gamma}{e}{\letv{x}{e}{x}}{A}}
 \and
-\inferrule*[right=EqMonadBeta]
+\inferrule*[right=EqCommandBeta]
           {\judgeC{\Gamma}{\letv{x}{\comp{e}}{c}}{A}}
           {\judgeEqC{\Gamma}{\letv{x}{\comp{e}}{c}}{[e/x]c}{A}}
 \and
-\inferrule*[right=EqMonadComm]
+\inferrule*[right=EqCommandComm]
           {\judgeC{\Gamma}{\letv{x}{\comp{\letv{y}{e}{c_1}}}{c_2}}{A}}
           {\judgeEqC{\Gamma}{\letv{x}{\comp{\letv{y}{e}{c_1}}}{c_2}}
                             {\letv{y}{e}{\letv{x}{\comp{c_1}}}{c_2}}{A}}
@@ -2136,20 +2142,20 @@ and $f^*$ in terms of the internal language of CPO as follows:
            \judgeEq{\Gamma}{e'_1}{e'_2}{A}}
           {\judgeEq{\Gamma}{[e'_1/x]e_1}{[e'_2/x]e'_2}{B}}
 \and
-\inferrule*[right=EqMonadRefl]
+\inferrule*[right=EqCommandRefl]
           {\judgeC{\Gamma}{c}{A}}
           {\judgeEqC{\Gamma}{c}{c}{A}}
 \and
-\inferrule*[right=EqMonadSymm]
+\inferrule*[right=EqCommandSymm]
           {\judgeEqC{\Gamma}{c}{c'}{A}}
           {\judgeEqC{\Gamma}{c'}{c}{A}}
 \and
-\inferrule*[right=EqMonadTrans]
+\inferrule*[right=EqCommandTrans]
           {\judgeEqC{\Gamma}{c}{c'}{A} \\
            \judgeEqC{\Gamma}{c'}{c''}{A}}
           {\judgeEqC{\Gamma}{c}{c''}{A}}
 \and
-\inferrule*[right=EqMonadSubst]
+\inferrule*[right=EqCommandSubst]
           {\judgeEqC{\Gamma, x:A}{c_1}{c_2}{B} \\
            \judgeEq{\Gamma}{e_1}{e_2}{A}}
           {\judgeEqC{\Gamma}{[e_1/x]c_1}{[e_2/x]c_2}{B}}
@@ -2741,8 +2747,106 @@ Now, the cases for the computation terms follow.
            \;\theta\;(\gamma,\interpE{e'}\;\theta\;\gamma,\gamma')}
           {Semantics}
   \end{eqnproof}
-\end{itemize}
 
+\item case CGet: We have that $\interpC{\judgeC{\Gamma,\Gamma'}
+                                               {[e'/y](!e)}{B}}
+                                       \;\theta\;(\gamma,\gamma')$
+
+  \begin{eqnproof}
+    \eline{\interpC{
+           \judgeC{\Gamma,\Gamma'}
+                  {!([e'/y]e)}{B}}
+                  \;\theta\;(\gamma,\gamma')}
+          {Substitution}
+    \eline{\lambda k.\;\lambda (L, h).\; 
+              \left\{ \begin{array}{ll}
+                        k\; (h\;l)\; (L, h) & \mbox{when } l \in L \\
+                        \top                & \mbox{otherwise} \\
+                      \end{array}
+              \right.}
+          {Semantics}
+    \eclaim
+           {\mbox{where }l = \interpE{\judgeE{\Gamma,\Gamma'}
+                                             {[e'/y]e}{\reftype{B}}}
+                  \;\theta\;(\gamma,\gamma')}
+           {}[1em]
+
+    \eline{\interpC{
+           \judgeC{\Gamma,y:A,\Gamma'}
+                  {!e}{B}}
+                  \;\theta\;(\gamma,\interpE{e'}\;\theta\;\gamma, \gamma')}
+          {}
+    \eclaim[]
+          {\mbox{because }l = \interpE{\judgeE{\Gamma,y:A,\Gamma'}
+                                              {e}{\reftype{B}}}
+                              \;\theta\;(\gamma,
+                                         \interpE{e'}\;\theta\;\gamma, 
+                                         \gamma')}
+          {IH}
+  \end{eqnproof}
+
+\item case CSet: We have $\interpC{\judgeC{\Gamma,\Gamma'}
+                                          {[e'/y](e_1 := e_2)}{\unittype}}
+                                  \;\theta\;(\gamma,\gamma')$
+  \begin{eqnproof}
+    \eline{\interpC{\judgeC{\Gamma,\Gamma'}
+                                          {[e'/y]e_1 := [e'/y]e_2}{\unittype}}
+                                  \;\theta\;(\gamma,\gamma')}
+          {Substitution}
+    \eline{\lambda k.\;\lambda (L, h).\; 
+              \left\{ \begin{array}{ll}
+                       k \unit (L, [h|l:v]) & \mbox{when } l \in L \\
+                      \top                & \mbox{otherwise} \\
+              \end{array}
+              \right.}
+          {Semantics}
+    \eclaim{\mbox{where }l = \interpE{\judgeE{\Gamma,\Gamma;}{[e'/y]e_1}{\reftype{B}}}
+                               \;\theta\;(\gamma,\gamma')}
+           {}
+    \eclaim{\mbox{where }v = \interpE{\judgeE{\Gamma,\Gamma;}{[e'/y]e_2}{B}}
+                               \;\theta\;(\gamma,\gamma')}
+           {}
+           [1em]
+    \eline{\interpC{\judgeC{\Gamma,y:A,\Gamma'}{e_1 := e_2}{\unittype}}
+                   \;\theta
+                   \;(\gamma,\interpE{e'}\;\theta\;\gamma,\gamma')}
+          {}
+    \eclaim{\mbox{because }l = \interpE{\judgeE{\Gamma,y:A,\Gamma}{e_1}{\reftype{B}}}
+                               \;\theta\;(\gamma,\interpE{e'}\;\theta\;\gamma,\gamma')}
+           {IH}
+    \eclaim{\mbox{because }v = \interpE{\judgeE{\Gamma,y:A,\Gamma}{e_2}{B}}
+                               \;\theta\;(\gamma,\interpE{e'}\;\theta\;\gamma,\gamma')}
+           {IH}
+  \end{eqnproof}
+
+\item case CNew: We have that $\interpC{\judgeC{\Gamma,\Gamma'}{[e'/y]\newref{B}{e}}
+                                               {\reftype{B}}}
+                                       \;\theta\;(\gamma,\gamma')$.
+  \begin{eqnproof}
+    \eline{\interpC{\judgeC{\Gamma,\Gamma'}{\newref{B}{([e'/y]e)}}{\reftype{B}}}
+            \;\theta
+            \;(\gamma,\gamma')}
+          {Substitution}
+    \eline{\lambda k.\;\lambda (L, h).\;\left(
+             \begin{array}{l}
+               \mbox{let }l = (max(L) + 1, A) \mbox{ in} \\
+               k\;l\;(L \cup \setof{l}, [h|l:v]) \\
+             \end{array}\right)}
+          {}
+    \eclaim{\mbox{where }v = \interpE{\judgeE{\Gamma,\Gamma'}
+                                             {[e'/y]e}{A}}\;\theta\;(\gamma,\gamma')}
+           {Semantics}
+    \eline{\interpC{\judgeC{\Gamma,y:A,\Gamma'}{\newref{B}{e}}{\reftype{B}}}
+            \;\theta
+            \;(\gamma,\interpE{e'}\;\theta\;\gamma,\gamma')}
+          {}
+    \eclaim{\mbox{because }v = \interpE{\judgeE{\Gamma,\Gamma'}
+                                             {e}{A}}\;\theta\;(\gamma,\interpE{e'}\;\theta\;\gamma,\gamma')}
+           {IH}
+  \end{eqnproof}
+
+    
+\end{itemize}
 \end{proof}
 
 
@@ -2762,5 +2866,1072 @@ $\interpC{\judgeE{\Gamma}{c}{A}} = \interpC{\judgeC{\Gamma}{c'}{A}}$.
 
 
 \begin{proof}
-The proof of this theorem is by induction on the derivation of 
+The proof of this theorem is by induction on the derivations of $\judgeEq{\Gamma}{e}{e'}{A}$
+and $\judgeEqC{\Gamma}{c}{c'}{A}$. So, assuming we have suitable $\theta$ and $\gamma$, we
+proceed as follows:
+
+\begin{itemize}
+\item case EqUnit: From $\judgeEq{\Gamma}{e}{e'}{\unittype}$, we have
+
+  \begin{eqnproof}
+    \eclaim{\judgeE{\Gamma}{e}{\unittype}}{By inversion}
+    \eclaim{\judgeE{\Gamma}{e'}{\unittype}}{By inversion}
+  \end{eqnproof}
+
+  \begin{eqnproof}
+    \eline[\interpE{\judgeE{\Gamma}{e}{\unittype}}\;\theta\;\gamma]
+          {(*)}
+          {Semantics}
+    \eline{\interpE{\judgeE{\Gamma}{e'}{\unittype}}\;\theta\;\gamma}
+          {Semantics}
+  \end{eqnproof}
+
+\item case EqPairFst: From $\judgeEq{\Gamma}{\fst{\pair{e_1}{e_2}}}{e_1}{A_1}$, we have:
+
+  \begin{eqnproof}
+    \eclaim[1]{\judgeEq{\Gamma}{\fst{\pair{e_1}{e_2}}}{e_1}{A_1}}
+              {Hypothesis}
+    \eclaim[2]{\judgeE{\Gamma}{\pair{e_1}{e_2}}{A_1\times A_2}}
+           {By inversion on 1}
+    \eclaim[3]{\judgeE{\Gamma}{e_1}{A_1}}
+              {By inversion on 2}
+    \eclaim[4]{\judgeE{\Gamma}{\fst{\pair{e_1}{e_2}}}{A_1}}
+              {By rule EFst on 2}
+  \end{eqnproof}
+
+  \begin{eqnproof}[\interpE{\judgeE{\Gamma}{\fst{\pair{e_1}{e_2}}}{A_1}}\;\theta\;\gamma =]
+    \eline{\pi_1(\interpE{\judgeE{\Gamma}{\pair{e_1}{e_2}}{A_1\times A_2}}\;\theta\;\gamma)}
+          {Semantics}
+    \eline{\pi_1(\sempair{\interpE{\judgeE{\Gamma}{e_1}{A_1}}\;\theta\;\gamma}
+                         {\interpE{\judgeE{\Gamma}{e_1}{A_2}}\;\theta\;\gamma})}
+          {Semantics}
+    \eline{\interpE{\judgeE{\Gamma}{e_1}{A_1}}\;\theta\;\gamma}
+          {Products}
+  \end{eqnproof}
+
+\item case EqPairSnd: From $\judgeEq{\Gamma}{\snd{\pair{e_1}{e_2}}}{e_1}{A_2}$, we have:
+
+  \begin{eqnproof}
+    \eclaim[1]{\judgeEq{\Gamma}{\snd{\pair{e_1}{e_2}}}{e_1}{A_2}}
+              {Hypothesis}
+    \eclaim[2]{\judgeE{\Gamma}{\pair{e_1}{e_2}}{A_1\times A_2}}
+           {By inversion on 1}
+    \eclaim[3]{\judgeE{\Gamma}{e_2}{A_2}}
+              {By inversion on 2}
+    \eclaim[4]{\judgeE{\Gamma}{\snd{\pair{e_1}{e_2}}}{A_2}}
+              {By rule EFst on 2}
+  \end{eqnproof}
+
+  \begin{eqnproof}[\interpE{\judgeE{\Gamma}{\snd{\pair{e_1}{e_2}}}{A_2}}\;\theta\;\gamma =]
+    \eline{\pi_2(\interpE{\judgeE{\Gamma}{\pair{e_1}{e_2}}{A_1\times A_2}}\;\theta\;\gamma)}
+          {Semantics}
+    \eline{\pi_2(\sempair{\interpE{\judgeE{\Gamma}{e_1}{A_1}}\;\theta\;\gamma}
+                         {\interpE{\judgeE{\Gamma}{e_1}{A_2}}\;\theta\;\gamma})}
+          {Semantics}
+    \eline{\interpE{\judgeE{\Gamma}{e_2}{A_2}}\;\theta\;\gamma}
+          {Products}
+  \end{eqnproof}
+
+\item case EqPairEta: 
+  \begin{eqnproof}
+     \eclaim[1]{\judgeEq{\Gamma}{e}{\pair{\fst{e}}{\snd{e}}}{A_1\times A_2}}
+               {Hypothesis}
+     \eclaim[2]{\judgeE{\Gamma}{e}{A_1\times A_2}}
+               {Inversion}
+     \eclaim[3]{\judgeE{\Gamma}{\fst{e}}{A_1}}
+               {Rule EFst on 2}
+     \eclaim[4]{\judgeE{\Gamma}{\snd{e}}{A_2}}
+               {Rule ESnd on 2}
+     \eclaim[5]{\judgeE{\Gamma}{\pair{\fst{e}}{\snd{e}}}{A_1\times A_2}}
+               {Rule EPair on 3, 4}
+  \end{eqnproof}
+
+  \begin{eqnproof}[\interpE{\judgeE{\Gamma}{e}{A_1\times A_2}}\;\theta\;\gamma =]
+     \eline{\sempair{\pi_1(\interpE{\judgeE{\Gamma}{e}{A_1\times A_2}}\;\theta\;\gamma)}
+                     {\pi_2(\interpE{\judgeE{\Gamma}{e}{A_1\times A_2}}\;\theta\;\gamma)}}
+            {Products}
+     \eline{\sempair{\interpE{\judgeE{\Gamma}{\fst{e}}{A_1}}\;\theta\;\gamma}
+                     {\interpE{\judgeE{\Gamma}{\snd{e}}{A_2}}\;\theta\;\gamma}}
+            {Semantics $\times$ 2}
+     \eline{\interpE{\judgeE{\Gamma}{\pair{\fst{e}}{\snd{e}}}{A_1\times A_2}}\;\theta\;\gamma}
+            {Semantics}    
+  \end{eqnproof}
+
+\item case EqFunBeta:
+
+  \begin{eqnproof}
+    \eclaim[1]{\judgeEq{\Gamma}{(\fun{x}{A}{e})\;e'}{[e'/x]e}{B}}
+              {Hypothesis}
+    \eclaim[2]{\judgeE{\Gamma}{(\fun{x}{A}{e})\;e'}{B}}
+              {Inversion on 1}
+    \eclaim[3]{\judgeE{\Gamma}{e'}{A}}
+              {Inversion on 2}
+    \eclaim[4]{\judgeE{\Gamma}{\fun{x}{A}{e}}{A \to B}}
+              {Inversion on 2}
+    \eclaim[5]{\judgeE{\Gamma,x:A}{e}{B}}
+              {Inversion on 4}
+    \eclaim[6]{\judgeE{\Gamma}{[e'/x]e}{B}}
+              {Substitution 3 into 5}
+  \end{eqnproof}
+
+  \begin{eqnproof}[\interpE{\judgeE{\Gamma}{(\fun{x}{A}{e})\;e'}{B}}\;\theta\;\gamma = ]
+    \eline{(\interpE{\judgeE{\Gamma}{\fun{x}{A}{e}}{A \to B}}\;\theta\;\gamma)\;
+           (\interpE{\judgeE{\Gamma}{e'}{B}}\;\theta\;\gamma)}
+          {Semantics}
+    \eline{(\semfun{v}{(\interpE{\judgeE{\Gamma,x:A}{e}{B}}\;\theta\;(\gamma,v))}\;
+           \interpE{\judgeE{\Gamma}{e'}{B}\;\theta\;\gamma}}
+          {Semantics}
+    \eline{\interpE{\judgeE{\Gamma,x:A}{e}{B}}\;\theta\;
+             (\gamma,\interpE{\judgeE{\Gamma}{e'}{B}}\;\theta\;\gamma)}
+          {Functions}
+    \eline{\interpE{\judgeE{\Gamma}{[e'/x]e}{B}}\;\theta\;\gamma}
+          {Substitution}
+  \end{eqnproof}
+
+\item case EqFunEta: 
+
+  \begin{eqnproof}
+    \eclaim[1]{\judgeEq{\Gamma}{e}{e'}{A \to B}}
+           {Hypothesis}
+    \eclaim[2]{\judgeEq{\Gamma, x:A}{e\;x}{e'\;x}{B}}
+              {Inversion}
+    \eclaim[3]{\judgeE{\Gamma,x:A}{e}{B}}
+              {Induction}
+    \eclaim[4]{\judgeE{\Gamma,x:A}{e'}{B}}
+              {Induction}
+    \eclaim[5]{\judgeE{\Gamma}{e}{B}}
+              {since $x\not \in FV(e)$}
+    \eclaim[6]{\judgeE{\Gamma}{e'}{B}}
+              {since $x\not \in FV(e')$}
+  \end{eqnproof}
+  \begin{eqnproof}[\mbox{For arbitrary }v,]
+    \eline[\interpE{\judgeE{\Gamma,x:A}{e'}{B}}\;\theta\;(\gamma,v)]
+          {\interpE{\judgeE{\Gamma,x:A}{e}{B}}\;\theta\;(\gamma,v)}
+          {Induction}
+    \eline[\interpE{\judgeE{\Gamma,x:A}{e}{B}}\;\theta\;(\gamma,v)]
+          {\interpE{\judgeE{\Gamma}{e}{B}}\;\theta\;\gamma}
+          {since $x\not \in FV(e)$}
+    \eline[\interpE{\judgeE{\Gamma,x:A}{e'}{B}}\;\theta\;(\gamma,v)]
+          {\interpE{\judgeE{\Gamma}{e'}{B}}\;\theta\;\gamma}
+          {since $x\not \in FV(e')$}
+    \eline[\interpE{\judgeE{\Gamma}{e'}{B}}\;\theta\;\gamma]
+          {\interpE{\judgeE{\Gamma}{e}{B}}\;\theta\;\gamma}
+          {Transitivity}
+  \end{eqnproof}
+
+\item case EqSumInlBeta
+  \begin{eqnproof}
+    \eclaim[1]{\judgeEq{\Gamma}{\Case{\inl{e}}{x}{e_1}{y}{e_2}}{[e/x]e_1}{C}}
+              {Hypothesis}
+    \eclaim[2]{\judgeE{\Gamma}{\Case{\inl{e}}{x}{e_1}{y}{e_2}}{C}}
+              {Inversion on 1}
+    \eclaim[3]{\judgeE{\Gamma}{\inl{e}}{A + B}}
+              {Inversion on 2}
+    \eclaim[4]{\judgeE{\Gamma, x:A}{e_1}{C}}
+              {Inversion on 2}
+    \eclaim[5]{\judgeE{\Gamma, y:B}{e_2}{C}}
+              {Inversion on 2}
+    \eclaim[6]{\judgeE{\Gamma}{e}{A}}
+              {Inversion on 3}
+    \eclaim[7]{\judgeE{\Gamma}{[e/x]e_1}{C}}
+              {Substitute 6 into 4}
+  \end{eqnproof}
+  \begin{eqnproof}[\interpE{\judgeE{\Gamma}{\Case{\inl{e}}{x}{e_1}{y}{e_2}}{C}}\;\theta\;\gamma =]
+    \eline{[f_1,f_2](a)}
+          {Semantics}
+    \eclaim[\mbox{where}]
+           {\begin{array}{lcl}
+               a & = & \interpE{\judgeE{\Gamma}{\inl{e}}{A + B}}\;\theta\;\gamma \\
+                 & = & \iota_1(\interpE{\judgeE{\Gamma}{e}{A}}\;\theta\;\gamma) \\
+               f_1 & = & \semfun{v}{\interpE{\judgeE{\Gamma,x:A}{e_1}{C}}\;\theta\;(\gamma,v)} \\
+               f_2 & = & \semfun{v}{\interpE{\judgeE{\Gamma,y:B}{e_2}{C}}\;\theta\;(\gamma,v)} \\
+            \end{array}}
+           {}[2em]
+    \eline[{[f_1,f_2](a)}]
+          {[f_1,f_2](\iota_1(\interpE{\judgeE{\Gamma}{e}{A}}\;\theta\;\gamma))}
+          {Sums}
+    \eline{f_1(\interpE{\judgeE{\Gamma}{e}{A}}\;\theta\;\gamma)}
+          {}
+    \eline{\interpE{\judgeE{\Gamma,x:A}{e_1}{C}}\;\theta\;(\gamma,\interpE{\judgeE{\Gamma}{e}{A}})}
+          {Def of $f_1$}
+    \eline{\interpE{\judgeE{\Gamma}{[e/x]e_1}{C}}\;\theta\;\gamma}
+          {Substitutition}
+  \end{eqnproof}
+
+\item case EqSumInrBeta:
+  \begin{eqnproof}
+    \eclaim[1]{\judgeEq{\Gamma}{\Case{\inr{e}}{x}{e_1}{y}{e_2}}{[e/y]e_2}{C}}
+              {Hypothesis}
+    \eclaim[2]{\judgeE{\Gamma}{\Case{\inr{e}}{x}{e_1}{y}{e_2}}{C}}
+              {Inversion on 1}
+    \eclaim[3]{\judgeE{\Gamma}{\inr{e}}{A + B}}
+              {Inversion on 2}
+    \eclaim[4]{\judgeE{\Gamma, x:A}{e_1}{C}}
+              {Inversion on 2}
+    \eclaim[5]{\judgeE{\Gamma, y:B}{e_2}{C}}
+              {Inversion on 2}
+    \eclaim[6]{\judgeE{\Gamma}{e}{B}}
+              {Inversion on 3}
+    \eclaim[7]{\judgeE{\Gamma}{[e/y]e_2}{C}}
+              {Substitute 6 into 5}
+  \end{eqnproof}
+  \begin{eqnproof}[\interpE{\judgeE{\Gamma}{\Case{\inr{e}}{x}{e_1}{y}{e_2}}{C}}\;\theta\;\gamma =]
+    \eline{[f_1,f_2](a)}
+          {Semantics}
+    \eclaim[\mbox{where}]
+           {\begin{array}{lcl}
+               a & = & \interpE{\judgeE{\Gamma}{\inr{e}}{A + B}}\;\theta\;\gamma \\
+                 & = & \iota_2(\interpE{\judgeE{\Gamma}{e}{B}}\;\theta\;\gamma) \\
+               f_1 & = & \semfun{v}{\interpE{\judgeE{\Gamma,x:A}{e_1}{C}}\;\theta\;(\gamma,v)} \\
+               f_2 & = & \semfun{v}{\interpE{\judgeE{\Gamma,y:B}{e_2}{C}}\;\theta\;(\gamma,v)} \\
+            \end{array}}
+           {}[2em]
+    \eline[{[f_1,f_2](a)}]
+          {[f_1,f_2](\iota_2(\interpE{\judgeE{\Gamma}{e}{B}}\;\theta\;\gamma))}
+          {Sums}
+    \eline{f_2(\interpE{\judgeE{\Gamma}{e}{B}}\;\theta\;\gamma)}
+          {}
+    \eline{\interpE{\judgeE{\Gamma,y:B}{e_2}{C}}\;\theta\;(\gamma,\interpE{\judgeE{\Gamma}{e}{B}})}
+          {Def of $f_1$}
+    \eline{\interpE{\judgeE{\Gamma}{[e/y]e_2}{C}}\;\theta\;\gamma}
+          {Substitution}
+  \end{eqnproof}
+
+\item case EqSumEta:
+  \begin{eqnproof}
+    \eclaim[1]{\judgeEq{\Gamma}{\Case{e}{x}{[\inl{x}/z]e'}{y}{[\inr{y}/z]e'}}{[e/z]e'}{C}}
+              {Hypothesis}
+    \eclaim[2]{\judgeE{\Gamma}{e}{A+B}}
+              {Inversion on 1}
+    \eclaim[3]{\judgeE{\Gamma, z:A+B}{e'}{C}}
+              {Inversion on 1}
+    \eclaim[4]{\judgeE{\Gamma, x:A, z:A+B}{e'}{C}}
+              {Weakening on 3}
+    \eclaim[5]{\judgeE{\Gamma, x:A}{\inl{x}}{A+B}}
+              {By rules}
+    \eclaim[6]{\judgeE{\Gamma, x:A}{[\inl{x}/z]e'}{C}}
+              {Substitution of 5 into 4}
+    \eclaim[7]{\judgeE{\Gamma, y:B, z:A+B}{e'}{C}}
+              {Weakening on 3}
+    \eclaim[8]{\judgeE{\Gamma, y:B}{\inr{y}}{A+B}}
+              {By rules}
+    \eclaim[9]{\judgeE{\Gamma, y:B}{[\inr{y}/z]e'}{C}}
+              {Substitution of 8 into 7}
+    \eclaim[10]{\judgeE{\Gamma}{\Case{e}{x}{[\inl{x}/z]e'}{y}{[\inr{y}/z]e'}}{C}}
+               {By ECase on 2, 6, 9}
+    \eclaim[11]{\judgeE{\Gamma}{[e/z]e'}{C}}
+               {Substitution of 2 into 3}
+
+  \end{eqnproof}
+
+Now from the semantics, we know that $\interpE{\judgeE{\Gamma}{e}{A+B}}\;\theta\;\gamma$ is
+either equal to some $\iota_i(v_A)$ or some $\iota_2(v_B)$. 
+
+Suppose it is equal $\iota_1(v_A)$. Then,  $\interpE{\judgeE{\Gamma}{\Case{e}{x}{[\inl{x}/z]e'}{y}{[\inr{y}/z]e'}}{C}}\;\theta\;\gamma$ is equal to 
+\begin{eqnproof}
+  \eline{\left[
+           \begin{array}{l}
+            \semfun{v}{\interpE{\judgeE{\Gamma,x:A}{[\inl{x}/z]e'}{C}}\;\theta\;(\gamma,v)}, \\
+            \semfun{v}{\interpE{\judgeE{\Gamma,y:B}{[\inr{y}/z]e'}{C}}\;\theta\;(\gamma,v)}  \\
+           \end{array}\right]
+         (\iota_1(v_A))}
+        {Semantics}
+  \eline{\interpE{\judgeE{\Gamma,x:A}{[\inl{x}/z]e'}{C}}\;\theta\;(\gamma,v_A)}
+        {Sums}  
+  \eline{\begin{array}{l}
+           \interpE{\judgeE{\Gamma,x:A,z:A+B}{e'}{C}}\;\theta \\
+           \qquad (\gamma, v_A, \interpE{\judgeE{\Gamma,x:A}{\inl{x}}{A+B}}\;\theta\;(\gamma, v_A)) \\
+         \end{array}}
+        {Substitution}
+  \eline{\interpE{\judgeE{\Gamma,x:A,z:A+B}{e'}{C}}\;\theta\;(\gamma, v_A, \iota_1(v_A))}
+        {Semantics}
+  \eline{\interpE{\judgeE{\Gamma, z:A+B}{e'}{C}}\;\theta\;(\gamma, \iota_1(v_A))}
+        {Since $x \not \in FV(e')$}
+  \eline{\interpE{\judgeE{\Gamma, z:A+B}{e'}{C}}\;\theta\;(\gamma, \interpE{\judgeE{\Gamma}{e}{A+B}}\;\theta\;\gamma)}
+        {Meaning of $\iota_1(v_A)$}
+  \eline{\interpE{\judgeE{\Gamma}{[e/z]e'}{C}}\;\theta\;\gamma}
+        {Substitution}
+\end{eqnproof}
+
+Suppose it is $\iota_2(v_B)$. Then,
+$\interpE{\judgeE{\Gamma}{\Case{e}{x}{[\inl{x}/z]e'}{y}{[\inr{y}/z]e'}}{C}}\;\theta\;\gamma$
+is equal to
+\begin{eqnproof}
+  \eline{\left[
+           \begin{array}{l}
+            \semfun{v}{\interpE{\judgeE{\Gamma,x:A}{[\inl{x}/z]e'}{C}}\;\theta\;(\gamma,v)}, \\
+            \semfun{v}{\interpE{\judgeE{\Gamma,y:B}{[\inr{y}/z]e'}{C}}\;\theta\;(\gamma,v)}  \\
+           \end{array}\right]
+         (\iota_2(v_B))}
+        {Semantics}
+  \eline{\interpE{\judgeE{\Gamma,y:B}{[\inr{y}/z]e'}{C}}\;\theta\;(\gamma,v_B)}
+        {Sums}  
+  \eline{\begin{array}{l}
+           \interpE{\judgeE{\Gamma,y:B,z:A+B}{e'}{C}}\;\theta \\
+           \qquad (\gamma, v_B, \interpE{\judgeE{\Gamma,y:B}{\inr{y}}{A+B}}\;\theta\;(\gamma, v_B)) \\
+         \end{array}}
+        {Substitution}
+  \eline{\interpE{\judgeE{\Gamma,y:B,z:A+B}{e'}{C}}\;\theta\;(\gamma, v_B, \iota_2(v_B))}
+        {Semantics}
+  \eline{\interpE{\judgeE{\Gamma, z:A+B}{e'}{C}}\;\theta\;(\gamma, \iota_2(v_B))}
+        {Since $x \not \in FV(e')$}
+  \eline{\interpE{\judgeE{\Gamma, z:A+B}{e'}{C}}\;\theta\;(\gamma, \interpE{\judgeE{\Gamma}{e}{A+B}}\;\theta\;\gamma)}
+        {Meaning of $\iota_2(v_B)$}
+  \eline{\interpE{\judgeE{\Gamma}{[e/z]e'}{C}}\;\theta\;\gamma}
+        {Substitution}
+\end{eqnproof}
+
+\item case EqMonad:
+
+  \begin{eqnproof}
+    \eclaim[1]{\judgeEq{\Gamma}{\comp{c}}{\comp{c'}}{\monad{A}}}
+             {Hypothesis}
+    \eclaim[2]{\judgeEqC{\Gamma}{c}{c'}{A}}
+             {Inversion on 1}
+    \eclaim[3]{\judgeC{\Gamma}{c}{A}}
+             {Mutual Induction on 2}
+    \eclaim[4]{\judgeC{\Gamma}{c'}{A}}
+             {Induction on 2}
+    \eclaim[5]{\judgeE{\Gamma}{\comp{c}}{\monad{A}}}
+             {By rule EMonad on 3}
+    \eclaim[6]{\judgeE{\Gamma}{\comp{c'}}{\monad{A}}}
+             {By rule EMonad on 4}
+  \end{eqnproof}
+
+  \begin{eqnproof}
+    \eline[\interpE{\judgeE{\Gamma}{\comp{c}}{\monad{A}}}\;\theta\;\gamma]
+          {\interpC{\judgeC{\Gamma}{c}{A}}\;\theta\;\gamma}
+          {Semantics}
+    \eline{\interpC{\judgeC{\Gamma}{c'}{A}}\;\theta\;\gamma}
+          {Mutual Induction}
+    \eline{\interpE{\judgeE{\Gamma}{\comp{c'}}{\monad{A}}}\;\theta\;\gamma}
+          {Semantics}
+  \end{eqnproof}
+
+\item case EqFix
+  \begin{eqnproof}
+    \eclaim[1]{\judgeEq{\Gamma}{\fix{x:D}{e}}{[(\fix{x:D}{e})/x]e}{D}}
+              {Hypothesis}
+    \eclaim[2]{\judgeE{\Gamma}{\fix{x:D}{e}}{D}}
+              {Inversion on 1}
+    \eclaim[3]{\judgeE{\Gamma, x:D}{e}{D}}
+              {Inversion on 2}
+    \eclaim[4]{\judgeE{\Gamma}{[(\fix{x:D}{e})/x]e}{D}}
+              {Substitution of 2 into 3}
+  \end{eqnproof}
+  \begin{eqnproof}[\interpE{\judgeE{\Gamma}{\fix{x:D}{e}}{D}}\;\theta\;\gamma]
+    \eline{fix(\semfun{v}{(\interpE{\judgeE{\Gamma, x:D}{e}{D}}\;\theta\;(\gamma,v))})}
+          {Semantics}
+    \eline{\interpE{\judgeE{\Gamma, x:D}{e}{D}}\;\theta\;(\gamma,
+           fix(\semfun{v}{(\interpE{\judgeE{\Gamma, x:D}{e}{D}}\;\theta\;(\gamma,v))}))}
+          {Unroll $fix$}
+    \eline{\interpE{\judgeE{\Gamma, x:D}{e}{D}}\;\theta\;(\gamma,
+            \interpE{\judgeE{\Gamma}{\fix{x:D}{e}}{D}}\;\theta\;\gamma)}
+          {Definition}
+    \eline{\interpE{\judgeE{\Gamma}{[(\fix{x:D}{e})/x]e}{D}}\;\theta\;\gamma}
+          {Substitution}
+  \end{eqnproof}
+
+\item case EqNatZBeta:
+  \begin{eqnproof}
+    \eclaim[1]{\judgeEq{\Gamma}{\iter{\z}{e_0}{x}{e_1}}{e_0}{A}}
+              {Hypothesis}
+    \eclaim[2]{\judgeE{\Gamma}{\iter{\z}{e_0}{x}{e_1}}{A}}
+              {Inversion on 1}
+    \eclaim[3]{\judgeE{\Gamma}{\z}{\N}}
+              {Inversion on 2}
+    \eclaim[4]{\judgeE{\Gamma,x:A}{e_1}{A}}
+              {Inversion on 2}
+    \eclaim[5]{\judgeE{\Gamma}{e_0}{A}}
+              {Inversion on 2}
+  \end{eqnproof}
+  \begin{eqnproof}[\interpE{\judgeE{\Gamma}{\iter{\z}{e_0}{x}{e_1}}{A}}\;\theta\;\gamma =]
+    \eline{\begin{array}{l}
+             iter[\interpE{\judgeE{\Gamma}{e_0}{A}}\;\theta\;\gamma,
+                \semfun{v}{\interpE{\judgeE{\Gamma,x:A}{e_1}{A}}\;\theta\;(\gamma,v)}] \\
+            (\interpE{\judgeE{\Gamma}{\z}{\N}}\;\theta\;\gamma) \\
+           \end{array}}
+          {Semantics}
+    \eline{iter[\interpE{\judgeE{\Gamma}{e_0}{A}}\;\theta\;\gamma,
+                \semfun{v}{\interpE{\judgeE{\Gamma,x:A}{e_1}{A}}\;\theta\;(\gamma,v)}]
+            (z)}
+          {Semantics}
+    \eline{\interpE{\judgeE{\Gamma}{e_0}{A}}\;\theta\;\gamma}
+          {Iter properties}
+  \end{eqnproof}
+
+\item EqNatSBeta
+  \begin{eqnproof}
+    \eclaim[1]{\judgeEq{\Gamma}{\iter{\s{e}}{e_0}{x}{e_1}}{[\iter{e}{e_0}{x}{e_1}/x]e_1}{A}}
+              {Hypothesis}
+    \eclaim[2]{\judgeE{\Gamma}{\iter{\s{e}}{e_0}{x}{e_1}}{A}}
+              {Inversion on 1}
+    \eclaim[3]{\judgeE{\Gamma}{\s{e}}{\N}}
+              {Inversion on 2}
+    \eclaim[4]{\judgeE{\Gamma}{e_0}{A}}
+              {Inversion on 2}
+    \eclaim[5]{\judgeE{\Gamma,x:A}{e_1}{A}}
+              {Inversion on 2}
+    \eclaim[6]{\judgeE{\Gamma}{e}{\N}}
+              {Inversion on 3}
+    \eclaim[7]{\judgeE{\Gamma}{\iter{e}{e_0}{x}{e_1}}{A}}
+              {Rule EIter on 6, 4, 5}
+  \end{eqnproof}
+  \begin{eqnproof}[\interpE{\judgeE{\Gamma}{\iter{\s{e}}{e_0}{x}{e_1}}{A}}\;\theta\;\gamma =]
+    \eline{\begin{array}{l}
+              iter[\interpE{\judgeE{\Gamma}{e_0}{A}}\;\theta\;\gamma,
+                   \semfun{v}{\interpE{\judgeE{\Gamma,x:A}{e_1}{A}}\;\theta\;(\gamma,v)}] \\
+              \;\;(\interpE{\judgeE{\Gamma}{\s{e}}{\N}}\;\theta\;\gamma)
+           \end{array}}
+          {Semantics}
+    \eline{\begin{array}{l}
+              iter[\interpE{\judgeE{\Gamma}{e_0}{A}}\;\theta\;\gamma,
+                   \semfun{v}{\interpE{\judgeE{\Gamma,x:A}{e_1}{A}}\;\theta\;(\gamma,v)}] \\
+              \;\;(s(\interpE{\judgeE{\Gamma}{e}{\N}}\;\theta\;\gamma))
+           \end{array}}
+          {Semantics}
+    \eline{\begin{array}{l}
+             \interpE{\judgeE{\Gamma,x:A}{e_1}{A}}\;\theta \\
+             \left(\gamma,
+              \begin{array}{l}
+                iter[\interpE{\judgeE{\Gamma}{e_0}{A}}\;\theta\;\gamma,
+                     \semfun{v}{\interpE{\judgeE{\Gamma,x:A}{e_1}{A}}\;\theta\;(\gamma,v)}] \\
+                  \;\;(\interpE{\judgeE{\Gamma}{e}{\N}}\;\theta\;\gamma) \\
+              \end{array}\right) \\
+           \end{array}}
+          {Iter}
+     \eline{\interpE{\judgeE{\Gamma,x:A}{e_1}{A}}\;\theta
+            (\gamma, \interpE{\judgeE{\Gamma}{\iter{e}{e_0}{x}{e_1}}{A}}\;\theta\;\gamma)}
+           {Semantics}
+     \eline{\interpE{\judgeE{\Gamma}{[\iter{e}{e_0}{x}{e_1}/x]e_1}{A}}\;\theta\;\gamma}
+           {Substitution}
+  \end{eqnproof}
+
+\item case EqNatEta:
+  \begin{eqnproof}
+    \eclaim[1]{\judgeEq{\Gamma, n:\N}{\iter{n}{e_0}{x}{e_1}}{e}{A}}
+              {Hypothesis}
+    \eclaim[2]{\judgeE{\Gamma}{e}{A}}
+              {Inversion on 1}
+    \eclaim[3]{\judgeE{\Gamma}{e_0}{A}}
+              {Inversion on 1}
+    \eclaim[4]{\judgeE{\Gamma,n:\N}{e_0}{A}}
+              {Weakening on 3}
+    \eclaim[5]{\judgeE{\Gamma,x:A}{e_1}{A}}
+              {Inversion on 1}
+    \eclaim[6]{\judgeE{\Gamma,n:\N,x:A}{e_1}{A}}
+              {Weakening on 5}
+    \eclaim[7]{\judgeE{\Gamma,n:\N}{n}{\N}}
+              {Rule Hyp}
+    \eclaim[8]{\judgeE{\Gamma,n:\N}{\iter{n}{e_0}{x}{e_1}}{A}}
+              {Rule EIter on 7, 4, 6}
+  \end{eqnproof}
+
+Now, assume we have some suitable environment $(\gamma, v)$. So $v$ is a natural
+number, and we shall proceed by induction on it. 
+
+\begin{itemize}
+  \item case $v = 0$. 
+
+    \begin{eqnproof}[\interpE{\judgeE{\Gamma,n:\N}{e}{A}}\;\theta\;(\gamma,0) = ]
+      \eline{\interpE{\judgeE{\Gamma,n:\N}{e}{A}}\;\theta\;(\gamma, \interpE{\judgeE{\Gamma}{\z}{\N}}\;\theta\;\gamma)}
+            {Semantics}
+      \eline{\interpE{\judgeE{\Gamma}{[\z/n]e}{A}}\;\theta\;\gamma}
+            {Substitution}
+      \eline{\interpE{\judgeE{\Gamma}{e}{A}}\;\theta\;\gamma}
+            {Induction Hypothesis}
+      \eline{\interpE{\judgeE{\Gamma,n:\N}{e}{A}}\;\theta\;(\gamma, 0)}
+            {Weakening}
+    \end{eqnproof}
+
+\item case $v = s(k)$
+  By induction, we know \\
+$\interpE{\judgeE{\Gamma, n:\N}{e}{A}}\;\theta\;(\gamma, k)$ $=$ $\interpE{\judgeE{\Gamma,n:\N}{\iter{n}{e_0}{x}{e_1}}{A}}\;\theta\;(\gamma, k)$
+
+\ \\
+
+  \begin{eqnproof}[\interpE{\judgeE{\Gamma,n:\N}{\iter{n}{e_0}{x}{e_1}}{A}}\;\theta\;(\gamma,s(k)) =]
+    \eline{iter\left[
+            \begin{array}{l}
+              \interpE{\judgeE{\Gamma, n:\N}{e_0}{A}}\;\theta\;(\gamma,s(k)), \\
+              \semfun{v}{\interpE{\judgeE{\Gamma,n:\N,x:A}{e_1}{A}}\;\theta\;(\gamma,s(k),v)} \\
+            \end{array}\right](s(k))}
+          {Semantics}
+    \eline{iter\left[
+            \begin{array}{l}
+              \interpE{\judgeE{\Gamma}{e_0}{A}}\;\theta\;(\gamma), \\
+              \semfun{v}{\interpE{\judgeE{\Gamma,x:A}{e_1}{A}}\;\theta\;(\gamma,v)} \\
+            \end{array}\right](s(k))}
+          {since $x \not \in FV(e_0), FV(e_1)$}
+    \eline{iter\left[
+            \begin{array}{l}
+              \interpE{\judgeE{\Gamma, m:\N}{e_0}{A}}\;\theta\;(\gamma,k), \\
+              \semfun{v}{\interpE{\judgeE{\Gamma,m:\N,x:A}{e_1}{A}}\;\theta\;(\gamma,k,v)} \\
+            \end{array}\right](s(k))}
+          {By weakening}
+    \eline{\interpE{\judgeE{\Gamma,n:\N,x:A}{e_1}{A}}\;\theta\;(\gamma, iter[\ldots](k))}
+          {By $iter$}
+    \eline{\begin{array}{l}
+             \interpE{\judgeE{\Gamma,n:\N,x:A}{e_1}{A}}\;\theta \\
+             \;\;(\gamma, k,
+               \interpE{\judgeE{\Gamma,n:\N}{\iter{n}{e_0}{x}{e_1}}{A}}\;\theta\;(\gamma, k)) \\
+           \end{array}}
+          {Semantics}
+    \eline{\begin{array}{l}
+             \interpE{\judgeE{\Gamma,n:\N,x:A}{e_1}{A}}\;\theta \\
+             \;\;(\gamma, k,
+                  \interpE{\judgeE{\Gamma, n:\N}{e}{A}}\;\theta\;(\gamma, k)) \\
+           \end{array}}
+          {Inner Induction}
+    \eline{\interpE{\judgeE{\Gamma,n:\N}{[e/x]e_1}{A}}\;\theta\;(\gamma, k)} 
+          {Substitution}
+  \end{eqnproof}
+
+  \begin{eqnproof}[\interpE{\judgeE{\Gamma, n:\N}{e}{A}}\;\theta\;(\gamma, s(k)) =]
+    \eline{\interpE{\judgeE{\Gamma, m:\N, n:\N}{e}{A}}\;\theta\;(\gamma, k, s(k))}
+          {Weakening}
+    \eline{\interpE{\judgeE{\Gamma, m:\N, n:\N}{e}{A}}\;\theta\;(\gamma, k, \interpE{\judgeE{\Gamma, m:\N}{\s{m}}{\N}}\;\theta\;(\gamma, k))}
+          {Semantics}
+    \eline{\interpE{\judgeE{\Gamma, m:\N}{[\s{m}/n]e}{A}}\;\theta\;(\gamma, k)}
+          {Substitution}
+  \end{eqnproof}
+\end{itemize}
+
+  These two are equal by appeal to the outer induction hypothesis, which we get via 
+  inversion on the original judgement. 
+
+\item case EqAllBeta: 
+
+  \begin{eqnproof}
+    \eclaim[1]{\judgeEq{\Gamma}{(\Fun{\alpha}{\kappa}{e})\;\tau}{[\tau/\alpha]e}{[\tau/\alpha]A}}
+              {Hypothesis}
+    \eclaim[2]{\judgeE{\Gamma}{\Fun{\alpha}{\kappa}{e}}{\forall \alpha:\kappa.\;A}}
+              {Inversion on 1}
+    \eclaim[3]{\judgeWK{\tau}{\kappa}}
+              {Inversion on 1}
+    \eclaim[4]{\judgeE[\Theta,\alpha:\kappa]{\Gamma}{e}{A}}
+              {Inversion on 2}
+    \eclaim[5]{\judgeE{\Gamma}{[\tau/\alpha]e}{[\tau/\alpha]A}}
+              {Substitute 3 into 4}
+    \eclaim[6]{\judgeE{\Gamma}{(\Fun{\alpha}{\kappa}{e})\;\tau}{[\tau/\alpha]A}}
+              {Rule ETApp on 2, 3}
+  \end{eqnproof}
+
+  \begin{eqnproof}[\interpE{\judgeE{\Gamma}{(\Fun{\alpha}{\kappa}{e})\;\tau}
+                                   {[\tau/\alpha]A}}\;\theta\;\gamma = ]
+    \eline{\interpE{\judgeE{\Gamma}{\Fun{\alpha}{\kappa}{e}}{\forall \alpha:\kappa.\;A}}
+                   \;\theta\;\gamma
+           \;
+           [\theta(\tau)]}
+          {Semantics}
+    \eline{(\semfun{\sigma}{\interpE{\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e}{A}}\;(\theta, \sigma)\;\gamma}) [\theta(\tau)]}
+          {Semantics}
+    \eline{\interpE{\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e}{A}}\;(\theta, [\theta(\tau)])\;\gamma}
+          {}
+    \eline{\interpE{\judgeE{\Gamma}{[\tau/\alpha]e}{[\tau/\alpha]A}}\;\theta\;\gamma}
+          {Type Substitution}
+  \end{eqnproof}
+
+\item case EqAllEta:
+
+  \begin{eqnproof}
+    \eclaim[1]{\judgeEq{\Gamma}{e}{e'}{\forall \alpha:\kappa.\;A}}
+              {Hypothesis}
+    \eclaim[2]{\judgeE{\Gamma}{e}{\forall \alpha:\kappa.\;A}}
+              {Inversion on 1}
+    \eclaim[3]{\judgeE{\Gamma}{e'}{\forall \alpha:\kappa.\;A}}
+              {Inversion on 1}
+  \end{eqnproof}
+
+  \begin{eqnproof}
+    \eline[\interpE{\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e\;\alpha}{A}}\;(\theta, \sigma)\;\gamma]        {\interpE{\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e'\;\alpha}{A}}\;(\theta, \sigma)\;\gamma}
+          {Induction}[1em]
+
+    \eline[\interpE{\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e\;\alpha}{A}}\;(\theta, \sigma)\;\gamma]
+          {(\interpE{\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e}{\forall \alpha:\kappa.\;A}}\;(\theta, \sigma)\;\gamma)\;\sigma}
+          {Semantics}
+    \eline{(\interpE{\judgeE{\Gamma}{e}{\forall \alpha:\kappa.\;A}}\;\theta\;\gamma)\;\sigma}
+          {Strengthening}[1em]
+
+    \eline[\interpE{\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e'\;\alpha}{A}}\;(\theta, \sigma)\;\gamma]
+          {(\interpE{\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e'}{\forall \alpha:\kappa.\;A}}\;(\theta, \sigma)\;\gamma)\;\sigma}
+          {Semantics}
+    \eline{(\interpE{\judgeE{\Gamma}{e'}{\forall \alpha:\kappa.\;A}}\;\theta\;\gamma)\;\sigma}
+          {Strengthening}[1em]
+
+    \eline[(\interpE{\judgeE{\Gamma}{e}{\forall \alpha:\kappa.\;A}}\;\theta\;\gamma)\;\sigma]
+          {(\interpE{\judgeE{\Gamma}{e'}{\forall \alpha:\kappa.\;A}}\;\theta\;\gamma)\;\sigma}
+          {Transitivity}[1em]
+
+    \eline[\interpE{\judgeE{\Gamma}{e}{\forall \alpha:\kappa.\;A}}\;\theta\;\gamma]
+          {\interpE{\judgeE{\Gamma}{e'}{\forall \alpha:\kappa.\;A}}\;\theta\;\gamma}
+          {Extensionality}[1em]
+  \end{eqnproof}
+
+\item case EqExistsBeta: 
+
+  \begin{eqnproof}
+    \eclaim[1]{\judgeEq{\Gamma}{\unpack{\alpha}{x}{\pack{\tau}{e}}{e'}}{[\tau/\alpha, e/x]e'}{C}}
+              {Hypothesis}
+    \eclaim[2]{\judgeE{\Gamma}{\pack{\tau}{e}}{\exists \alpha:\kappa.\;A}}
+              {Inversion on 1}
+    \eclaim[3]{\judgeE[\Theta, \alpha:\kappa]{\Gamma, x:A}{e'}{C}}
+              {Inversion on 1}
+    \eclaim[4]{\judgeWK{\tau}{\kappa}}
+              {Inversion on 2}
+    \eclaim[5]{\judgeE{\Gamma}{e}{[\tau/\alpha]A}}
+              {Inversion on 2}
+    \eclaim[6]{\judgeE{\Gamma}{[\tau/\alpha, e/x]e'}{C}}
+              {Substitution of 4,5 into 3}
+    \eclaim[7]{\judgeE{\Gamma}{\unpack{\alpha}{x}{\pack{\tau}{e}}{e'}}{C}}
+              {By rule EUnpack on 2, 3}
+  \end{eqnproof}
+
+  \begin{eqnproof}[\interpE{\judgeE{\Gamma}{\unpack{\alpha}{x}{\pack{\tau}{e}}{e'}}{C}}\;\theta\;\gamma = ]
+    \eline{\begin{array}{l}
+             (\semfun{(\sigma,v)}{\interpE{\judgeE[\Theta,\alpha:\kappa]{\Gamma,x:A}{e'}{C}}\;(\theta,\sigma)\;(\gamma,v)}) \\
+             \;\;\interpE{\judgeE{\Gamma}{\pack{\tau}{e}}{\exists \alpha:\kappa.\;A}}\;\theta\;\gamma \\
+           \end{array}}
+          {Semantics}
+    \eline{\begin{array}{l}
+             (\semfun{(\sigma,v)}{\interpE{\judgeE[\Theta,\alpha:\kappa]{\Gamma,x:A}{e'}{C}}\;(\theta,\sigma)\;(\gamma,v)}) \\
+             \;\;\left([\theta(\tau)], \interpE{\judgeE{\Gamma}{e}{[\tau/\alpha]A}}\;\theta\;\gamma\right) \\
+           \end{array}}
+          {Semantics}
+    \eline{\begin{array}{l}
+             \interpE{\judgeE[\Theta,\alpha:\kappa]{\Gamma,x:A}{e'}{C}} \\
+             (\theta,[\theta(\tau)])\;(\gamma, \interpE{\judgeE{\Gamma}{e}{[\tau/\alpha]A}}\;\theta\;\gamma) \\
+           \end{array}}
+          {Simplify}
+    \eline{\interpE{\judgeE{\Gamma,x:A}{[\tau/\alpha, e/x]e'}{C}} \theta\;\gamma}
+          {Substitution}
+  \end{eqnproof}
+
+\item case EqExistsEta: 
+  \begin{eqnproof}
+    \eclaim[1]{\judgeEq{\Gamma}{\unpack{\alpha}{x}{e}{[\pack{\alpha}{x}/z]e'}}{[e/z]e'}{B}}
+              {Hypothesis}
+    \eclaim[2]{\judgeE{\Gamma}{e}{\exists \alpha:\kappa.\;A}}
+              {Inversion on 1}
+    \eclaim[3]{\judgeE{\Gamma, z:\exists \alpha:\kappa.\;A}{e'}{B}}
+              {Inversion on 1}
+    \eclaim[4]{\judgeE{\Gamma}{[e/z]e'}{B}}
+              {Substitution of 2 into 3}
+    \eclaim[5]{\judgeE[\Theta,\alpha:\kappa]{\Gamma, x:A, z:\exists \alpha:\kappa.\;A}{e'}{B}}
+              {Weakening on 3}
+    \eclaim[6]{\judgeE[\Theta,\alpha:\kappa]{\Gamma, x:A}{\pack{\alpha}{x}}{\exists \alpha:\kappa.\;A}}
+              {Rule EPack}
+    \eclaim[7]{\judgeE[\Theta,\alpha:\kappa]{\Gamma, x:A}{[\pack{\alpha}{x}/z]e'}{B}}
+              {Substitution of 6 into 5}
+    \eclaim[8]{\judgeE{\Gamma}{\unpack{\alpha}{x}{e}{[\pack{\alpha}{x}/z]e'}}{B}}
+              {Rule EUnpack on 2, 7}
+  \end{eqnproof}
+
+  \begin{eqnproof}[\interpE{\judgeE{\Gamma}{\unpack{\alpha}{x}{e}{[\pack{\alpha}{x}/z]e'}}{B}}
+                   \;\theta\;\gamma =]
+    \eline{\begin{array}{l}
+             (\semfun{(\sigma,v)}{\interpE{\judgeE[\Theta, \alpha:\kappa]
+                                                  {\Gamma, x:A}{[\pack{\alpha}{x}/z]e'}{B}}
+                                \;(\theta,\sigma)\;(\gamma,v)}) \\
+           \;\interpE{\judgeE{\Gamma}{\pack{\tau}{e}}{\exists \alpha:\kappa.\;A}}
+                     \;\theta\;\gamma \\
+           \end{array}}
+          {Semantics}
+    \eline{\begin{array}{l}
+             (\lambda (\sigma,v).\;\interpE{\judgeE[\Theta,\alpha:\kappa]
+                                                  {\Gamma, x:A, z:\exists \alpha:\kappa.\;A}
+                                                  {e'}{B}} \\
+             \;\;  (\theta,\sigma) \\
+             \;\;  (\gamma,v, 
+                      \interpE{\judgeE[\Theta, \alpha:\kappa]
+                                      {\Gamma, x:A}{\pack{\alpha}{x}}{\exists \alpha:\kappa.\;A}}
+                      \;(\theta,\sigma)\;(\gamma, v)) \\
+           \;\interpE{\judgeE{\Gamma}{\pack{\tau}{e}}{\exists \alpha:\kappa.\;A}}
+                     \;\theta\;\gamma \\
+           \end{array}}
+          {Substitution}
+    \eline{\begin{array}{l}
+             (\lambda (\sigma,v).\;\interpE{\judgeE[\Theta,\alpha:\kappa]
+                                                  {\Gamma, x:A, z:\exists \alpha:\kappa.\;A}
+                                                  {e'}{B}} 
+             \;(\theta,\sigma)\; (\gamma,v, (\sigma, v))) \\
+           \;\interpE{\judgeE{\Gamma}{\pack{\tau}{e}}{\exists \alpha:\kappa.\;A}}
+                     \;\theta\;\gamma \\
+           \end{array}}
+          {Semantics}
+    \eline{\begin{array}{l}
+             (\lambda (\sigma,v).\;\interpE{\judgeE[\Theta,\alpha:\kappa]
+                                                  {\Gamma, x:A, z:\exists \alpha:\kappa.\;A}
+                                                  {e'}{B}} 
+             \;(\theta,\sigma)\; (\gamma,v, (\sigma, v))) \\
+           \;([\theta(\tau)], \interpE{\judgeE{\Gamma}{e}{[\tau/\alpha]A}}\;\theta\;\gamma) \\
+           \end{array}}
+          {Semantics}
+    \eline{\begin{array}{l}
+             \interpE{\judgeE[\Theta,\alpha:\kappa]
+                             {\Gamma, x:A, z:\exists \alpha:\kappa.\;A}
+                             {e'}{B}} \\
+             \; (\theta, [\theta(\tau)]) \\
+             \; (\gamma, \interpE{\judgeE{\Gamma}{e}{[\tau/\alpha]A}}\;\theta\;\gamma,
+                 ([\theta(\tau)], \interpE{\judgeE{\Gamma}{e}{[\tau/\alpha]A}}\;\theta\;\gamma))\\
+           \end{array}}
+          {Simplify}
+    \eline{\begin{array}{l}
+             \interpE{\judgeE[\Theta,\alpha:\kappa]
+                             {\Gamma, x:A, z:\exists \alpha:\kappa.\;A}
+                             {e'}{B}} \\
+             \; (\theta, [\theta(\tau)]) \\
+             \; (\gamma, \interpE{\judgeE{\Gamma}{e}{[\tau/\alpha]A}}\;\theta\;\gamma,
+                 \interpE{\judgeE{\Gamma}{\pack{\tau}{e}}{\exists \alpha:\kappa.\;A}}
+                     \;\theta\;\gamma) \\
+           \end{array}}
+          {Semantics}
+    \eline{\begin{array}{l}
+             \interpE{\judgeE[\Theta,\alpha:\kappa]{\Gamma, x:A}{[e/z]e'}{B}} \\
+             \; (\theta, [\theta(\tau)]) 
+             \; (\gamma, \interpE{\judgeE{\Gamma}{e}{[\tau/\alpha]A}}\;\theta\;\gamma) \\
+           \end{array}}
+          {Substitution}
+    \eline{\interpE{\judgeE{\Gamma}{[e/z]e'}{B}}\;\theta\;\gamma}
+          {$\alpha,x \not \in FV([e/z]e')$}
+  \end{eqnproof}
+
+\item case EqCommandEta: 
+
+  \begin{eqnproof}
+    \eclaim[1]{\judgeEqC{\Gamma}{c}{\letv{x}{\comp{c}}{x}}{A}}
+              {Hypothesis}
+    \eclaim[2]{\judgeC{\Gamma}{c}{A}}
+              {Inversion on 1}
+    \eclaim[3]{\judgeE{\Gamma}{\comp{c}}{\monad{A}}}
+              {Rule EMonad on 2}
+    \eclaim[4]{\judgeE{\Gamma, x:A}{x}{A}}
+              {Rule EHyp}
+    \eclaim[5]{\judgeC{\Gamma, x:A}{x}{A}}
+              {Rule CReturn on 4}
+    \eclaim[6]{\judgeC{\Gamma}{\letv{x}{\comp{c}}{x}}{A}}
+              {By Rule CLet on 3,5}
+  \end{eqnproof}
+
+  \begin{eqnproof}[\interpC{\judgeC{\Gamma}{\letv{x}{\comp{c}}{x}}{A}}\;\theta\;\gamma =]
+    \eline{\begin{array}{l}
+             (\semfun{v}{\interpC{\judgeC{\Gamma,x:A}{x}{A}}\;\theta\;(\gamma,v)})^* \\
+           \; \interpE{\judgeE{\Gamma}{\comp{c}}{\monad{A}}}\;\theta\;\gamma \\ 
+           \end{array}}
+          {Semantics}
+    \eline{\begin{array}{l}
+            (\semfun{v}{\eta(\interpE{\judgeE{\Gamma,x:A}{x}{A}}\;\theta\;(\gamma,v))})^* \\
+            \;\interpC{\judgeC{\Gamma}{c}{A}}\;\theta\;\gamma \\
+           \end{array}}
+          {Semantics}
+    \eline{(\semfun{v}{(\eta(v))})^*\;(\interpC{\judgeC{\Gamma}{c}{A}}\;\theta\;\gamma)}
+          {Simplify}
+    \eline{id(\interpC{\judgeC{\Gamma}{c}{A}}\;\theta\;\gamma)}
+          {Monad law}
+    \eline{\interpC{\judgeC{\Gamma}{c}{A}}\;\theta\;\gamma}
+          {Simplify}
+  \end{eqnproof}
+
+\item EqCommandBeta:
+
+  \begin{eqnproof}
+    \eclaim[1]{\judgeEqC{\Gamma}{\letv{x}{\comp{e}}{c}}{[e/x]c}{B}}
+              {Hypothesis}
+    \eclaim[2]{\judgeC{\Gamma}{\letv{x}{\comp{e}}{c}}{B}}
+              {Inversion on 1}
+    \eclaim[3]{\judgeE{\Gamma}{\comp{e}}{\monad{A}}}
+              {Inversion on 2}
+    \eclaim[4]{\judgeC{\Gamma,x:A}{c}{B}}
+              {Inversion on 2}
+    \eclaim[5]{\judgeC{\Gamma}{e}{A}}
+              {Inversion on 3}
+    \eclaim[6]{\judgeE{\Gamma}{e}{A}}
+              {Inversion on 5}
+    \eclaim[7]{\judgeC{\Gamma}{[e/x]c}{B}}
+              {Substitution of 6 into 4}
+  \end{eqnproof}
+
+  \begin{eqnproof}[\interpC{\judgeC{\Gamma}{\letv{x}{\comp{e}}{c}}{B}}\;\theta\;\gamma =]
+    \eline{\begin{array}{l}
+             (\semfun{v}{\interpC{\judgeC{\Gamma,x:A}{c}{B}}\;\theta\;(\gamma,v)})^* \\
+             \;\; (\interpE{\judgeE{\Gamma}{\comp{e}}{\monad{A}}}\;\theta\;\gamma) \\
+           \end{array}}
+          {Semantics}
+    \eline{\begin{array}{l}
+             (\semfun{v}{\interpC{\judgeC{\Gamma,x:A}{c}{B}}\;\theta\;(\gamma,v)})^* \\
+             \;\; (\interpC{\judgeC{\Gamma}{e}{A}}\;\theta\;\gamma) \\
+           \end{array}}
+          {Semantics}
+    \eline{\begin{array}{l}
+             (\semfun{v}{\interpC{\judgeC{\Gamma,x:A}{c}{B}}\;\theta\;(\gamma,v)})^* \\
+             \;\; \eta(\interpE{\judgeE{\Gamma}{e}{A}}\;\theta\;\gamma) \\
+           \end{array}}
+          {Semantics}
+    \eline{\begin{array}{l}
+             (\semfun{v}{\interpC{\judgeC{\Gamma,x:A}{c}{B}}\;\theta\;(\gamma,v)}) \\
+             \;\; (\interpE{\judgeE{\Gamma}{e}{A}}\;\theta\;\gamma) \\
+           \end{array}}
+          {Monad laws}
+    \eline{\interpC{\judgeC{\Gamma,x:A}{c}{B}}
+             \;\theta\;(\gamma, \interpE{\judgeE{\Gamma}{e}{A}}\;\theta\;\gamma)}
+          {Simplify}
+    \eline{\interpC{\judgeC{\Gamma}{[e/x]c}{B}}\;\theta\;\gamma}
+          {Substitution}
+  \end{eqnproof}
+
+\item EqCommandComm:
+  \begin{eqnproof}
+    \eclaim[1]{\scriptsize \judgeEqC{\Gamma}{\letv{x}{\comp{\letv{y}{e}{c_1}}}{c_2}}
+                                {\letv{y}{e}{\letv{x}{\comp{c_1}}{c_2}}}{C}}
+              {Hypothesis}
+    \eclaim[2]{\judgeC{\Gamma}{\letv{x}{\comp{\letv{y}{e}{c_1}}}{c_2}}{C}}
+              {Inversion on 1}
+    \eclaim[3]{\judgeE{\Gamma}{\comp{\letv{y}{e}{c_1}}}{\monad{B}}}
+              {Inversion on 2}
+    \eclaim[4]{\judgeC{\Gamma,x:B}{c_2}{C}}
+              {Inversion on 2}
+    \eclaim[5]{\judgeC{\Gamma}{\letv{y}{e}{c_1}}{B}}
+              {Inversion on 3}
+    \eclaim[6]{\judgeE{\Gamma}{e}{\monad{A}}}
+              {Inversion on 5}
+    \eclaim[7]{\judgeC{\Gamma,y:A}{c_1}{B}}
+              {Inversion on 5}
+    \eclaim[8]{\judgeC{\Gamma,y:A,x:B}{c_2}{C}}
+              {Weakening on 4}
+    \eclaim[9]{\judgeE{\Gamma,y:A}{\comp{c_1}}{\monad{B}}}
+              {Rule EMonad on 7}
+    \eclaim[10]{\judgeC{\Gamma,y:A}{\letv{x}{\comp{c_1}}{c_2}}{C}}
+               {Rule CLet on 9, 8}
+    \eclaim[11]{\judgeC{\Gamma}{\letv{y}{e}{\letv{x}{\comp{c_1}}{c_2}}}{C}}
+               {Rule CLet on 6, 10}
+  \end{eqnproof}
+
+  \begin{eqnproof}[\interpC{\judgeC{\Gamma}{\letv{x}{\comp{\letv{y}{e}{c_1}}}{c_2}}{C}}
+                   \;\theta\;\gamma =]
+    \elines{(\semfun{v_2}{\interpC{\judgeC{\Gamma,x:B}{c_2}{C}}\;\theta\;(\gamma,v_2)})^* \\
+            \; \interpE{\judgeE{\Gamma}{\comp{\letv{y}{e}{c_1}}}{\monad{B}}}\;\theta\;\gamma \\}
+           {Semantics}
+    \elines{(\semfun{v_2}{\interpC{\judgeC{\Gamma,x:B}{c_2}{C}}\;\theta\;(\gamma,v_2)})^* \\
+            \; \interpC{\judgeC{\Gamma}{\letv{y}{e}{c_1}}{\monad{B}}}\;\theta\;\gamma \\}
+           {Semantics}
+    \elines{(\semfun{v_2}{\interpC{\judgeC{\Gamma,x:B}{c_2}{C}}\;\theta\;(\gamma,v_2)})^* \\
+            \; ((\semfun{v_1}{\interpC{\judgeC{\Gamma,y:A}{c_1}{B}}\;\theta\;(\gamma,v_1)})^* \\
+            \;\;\; \interpE{\judgeE{\Gamma}{e}{\monad{A}}}\;\theta\;\gamma) \\ }
+           {Semantics}
+    \elines{(\lambda v_1.\; (\semfun{v_2}{\interpC{\judgeC{\Gamma,x:B}{c_2}{C}}\;\theta\;(\gamma,v_2)})^* \\
+            \;\;(\interpC{\judgeC{\Gamma,y:A}{c_1}{B}}\;\theta\;(\gamma,v_1)))^* \\  
+            \qquad \interpE{\judgeE{\Gamma}{e}{\monad{A}}}\;\theta\;\gamma) \\}
+           {Monad Laws}
+    \elines{(\lambda v_1.\; (\semfun{v_2}{\interpC{\judgeC{\Gamma,y:A,x:B}{c_2}{C}}\;\theta\;(\gamma,v_1, v_2)})^* \\
+            \;\;(\interpC{\judgeC{\Gamma,y:A}{c_1}{B}}\;\theta\;(\gamma,v_1)))^* \\  
+            \qquad \interpE{\judgeE{\Gamma}{e}{\monad{A}}}\;\theta\;\gamma) \\}
+           {Weakening}
+    \elines{(\lambda v_1.\; (\semfun{v_2}{\interpC{\judgeC{\Gamma,y:A,x:B}{c_2}{C}}\;\theta\;(\gamma,v_1, v_2)})^* \\
+            \;\;(\interpE{\judgeE{\Gamma,y:A}{\comp{c_1}}{\monad{B}}}\;\theta\;(\gamma,v_1)))^* \\  
+            \qquad \interpE{\judgeE{\Gamma}{e}{\monad{A}}}\;\theta\;\gamma) \\}
+           {Semantics}
+    \elines{(\lambda v_1.\;
+              \interpC{\judgeC{\Gamma,y:A}{\letv{x}{\comp{c_1}}{c_2}}{C}}
+                      \;\theta\;(\gamma,v_1))^* \\
+            \qquad \interpE{\judgeE{\Gamma}{e}{\monad{A}}}\;\theta\;\gamma \\}
+           {Semantics}
+    \eline{\interpC{\judgeC{\Gamma}{\letv{y}{e}{\letv{x}{c_1}{c_2}}}{C}}\;\theta\;\gamma}
+          {Semantics}
+  \end{eqnproof}
+
+\item EqRefl
+  \begin{eqnproof}
+    \eclaim[1]{\judgeEq{\Gamma}{e}{e}{A}}
+              {Hypothesis}
+    \eclaim[2]{\judgeE{\Gamma}{e}{A}}
+              {Inversion on 1}
+  \end{eqnproof}
+
+  \begin{eqnproof}
+    \eline[\interpE{\judgeE{\Gamma}{e}{A}}\;\theta\;\gamma] 
+          {\interpE{\judgeE{\Gamma}{e}{A}}\;\theta\;\gamma}
+          {Reflexivity}
+  \end{eqnproof}
+
+\item EqSymm
+   \begin{eqnproof}
+     \eclaim[1]{\judgeEq{\Gamma}{e}{e'}{A}}
+               {Hypothesis}
+     \eclaim[2]{\judgeEq{\Gamma}{e'}{e}{A}}
+               {Inversion on 1}
+     \eclaim[3]{\judgeE{\Gamma}{e}{A}}
+               {Induction on 2}
+     \eclaim[4]{\judgeE{\Gamma}{e'}{A}}
+               {Induction on 2}
+   \end{eqnproof}
+
+   \begin{eqnproof}
+     \eline[\interpE{\judgeE{\Gamma}{e'}{A}}\;\theta\;\gamma]
+           {\interpE{\judgeE{\Gamma}{e}{A}}\;\theta\;\gamma}
+           {Induction on 2, above}
+     \eline[\interpE{\judgeE{\Gamma}{e}{A}}\;\theta\;\gamma]
+           {\interpE{\judgeE{\Gamma}{e'}{A}}\;\theta\;\gamma}
+           {Symmetry on prev step}
+   \end{eqnproof}
+
+\item case EqTrans
+  \begin{eqnproof}
+    \eclaim[1]{\judgeEq{\Gamma}{e}{e''}{A}}
+              {Hypothesis}
+    \eclaim[2]{\judgeE{\Gamma}{e}{e'}{A}}
+              {Inversion on 1}
+    \eclaim[3]{\judgeE{\Gamma}{e'}{e''}{A}}
+              {Inversion on 1}
+    \eclaim[4]{\judgeE{\Gamma}{e}{A}}
+              {Induction on 2}
+    \eclaim[5]{\judgeE{\Gamma}{e''}{A}}
+              {Induction on 3}
+  \end{eqnproof}
+
+  \begin{eqnproof}
+    \eline[\interpE{\judgeE{\Gamma}{e}{A}}\;\theta\;\gamma]
+          {\interpE{\judgeE{\Gamma}{e'}{A}}\;\theta\;\gamma}
+          {Induction}
+    \eline[\interpE{\judgeE{\Gamma}{e'}{A}}\;\theta\;\gamma]
+          {\interpE{\judgeE{\Gamma}{e''}{A}}\;\theta\;\gamma}
+          {Induction}
+    \eline[\interpE{\judgeE{\Gamma}{e}{A}}\;\theta\;\gamma]
+          {\interpE{\judgeE{\Gamma}{e''}{A}}\;\theta\;\gamma}
+          {Transitivity}
+  \end{eqnproof}
+
+\item case EqSubst:
+  \begin{eqnproof}
+    \eclaim[1]{\judgeEq{\Gamma}{[e_2/x]e_1}{[e'_2/x]e'_1}{B}}
+              {Hypothesis}
+    \eclaim[2]{\judgeEq{\Gamma,x:A}{e_1}{e'_1}{B}}
+              {Inversion on 1}
+    \eclaim[3]{\judgeEq{\Gamma}{e_2}{e'_2}{A}}
+              {Inversion on 1}
+    \eclaim[4]{\judgeE{\Gamma,x:A}{e_1}{B}}
+              {Induction on 2}
+    \eclaim[5]{\judgeE{\Gamma,x:A}{e'_1}{B}}
+              {Induction on 2}
+    \eclaim[6]{\judgeE{\Gamma}{e_2}{A}}
+              {Induction on 3}
+    \eclaim[7]{\judgeE{\Gamma}{e'_2}{A}}
+              {Induction on 3}
+    \eclaim[8]{\judgeE{\Gamma}{[e_2/x]e_1}{B}}
+              {Substitution of 6 into 4}
+    \eclaim[9]{\judgeE{\Gamma}{[e'_2/x]e'_1}{B}}
+              {Substitution of 7 into 5}
+  \end{eqnproof}
+
+  \begin{eqnproof}[\interpE{\judgeE{\Gamma}{[e_2/x]e_1}{B}}\;\theta\;\gamma =]
+     \eline{\interpE{\judgeE{\Gamma,x:A}{e_1}{B}}\;\theta\;
+              (\gamma,\interpE{\judgeE{\Gamma}{e_2}{A}}\;\theta\;\gamma)} 
+           {Substitution}
+     \eline{\interpE{\judgeE{\Gamma,x:A}{e_1}{B}}\;\theta\;
+              (\gamma,\interpE{\judgeE{\Gamma}{e'_2}{A}}\;\theta\;\gamma)} 
+           {Induction}
+     \eline{\interpE{\judgeE{\Gamma,x:A}{e'_1}{B}}\;\theta\;
+              (\gamma,\interpE{\judgeE{\Gamma}{e'_2}{A}}\;\theta\;\gamma)} 
+           {Induction}
+     \eline{\interpE{\judgeE{\Gamma}{[e'_2/x]e'_1}{B}}\;\theta\;\gamma}
+           {Substitution}
+  \end{eqnproof}
+
+\item EqCommandRefl
+  \begin{eqnproof}
+    \eclaim[1]{\judgeEqC{\Gamma}{c}{c}{A}}
+              {Hypothesis}
+    \eclaim[2]{\judgeC{\Gamma}{c}{A}}
+              {Inversion on 1}
+  \end{eqnproof}
+
+  \begin{eqnproof}
+    \eline[\interpC{\judgeC{\Gamma}{c}{A}}\;\theta\;\gamma] 
+          {\interpC{\judgeC{\Gamma}{c}{A}}\;\theta\;\gamma}
+          {Reflexivity}
+  \end{eqnproof}
+
+\item EqCommandSymm
+   \begin{eqnproof}
+     \eclaim[1]{\judgeEqC{\Gamma}{c}{c'}{A}}
+               {Hypothesis}
+     \eclaim[2]{\judgeEqC{\Gamma}{c'}{c}{A}}
+               {Inversion on 1}
+     \eclaim[3]{\judgeC{\Gamma}{c}{A}}
+               {Induction on 2}
+     \eclaim[4]{\judgeC{\Gamma}{c'}{A}}
+               {Induction on 2}
+   \end{eqnproof}
+
+   \begin{eqnproof}
+     \eline[\interpC{\judgeC{\Gamma}{c'}{A}}\;\theta\;\gamma]
+           {\interpC{\judgeC{\Gamma}{c}{A}}\;\theta\;\gamma}
+           {Induction on 2, above}
+     \eline[\interpC{\judgeC{\Gamma}{c}{A}}\;\theta\;\gamma]
+           {\interpC{\judgeC{\Gamma}{c'}{A}}\;\theta\;\gamma}
+           {Symmetry on prev step}
+   \end{eqnproof}
+
+\item case EqCommandTrans
+  \begin{eqnproof}
+    \eclaim[1]{\judgeEqC{\Gamma}{c}{c''}{A}}
+              {Hypothesis}
+    \eclaim[2]{\judgeC{\Gamma}{c}{c'}{A}}
+              {Inversion on 1}
+    \eclaim[3]{\judgeC{\Gamma}{c'}{c''}{A}}
+              {Inversion on 1}
+    \eclaim[4]{\judgeC{\Gamma}{c}{A}}
+              {Induction on 2}
+    \eclaim[5]{\judgeC{\Gamma}{c''}{A}}
+              {Induction on 3}
+  \end{eqnproof}
+
+  \begin{eqnproof}
+    \eline[\interpC{\judgeC{\Gamma}{c}{A}}\;\theta\;\gamma]
+          {\interpC{\judgeC{\Gamma}{c'}{A}}\;\theta\;\gamma}
+          {Induction}
+    \eline[\interpC{\judgeC{\Gamma}{c'}{A}}\;\theta\;\gamma]
+          {\interpC{\judgeC{\Gamma}{c''}{A}}\;\theta\;\gamma}
+          {Induction}
+    \eline[\interpC{\judgeC{\Gamma}{c}{A}}\;\theta\;\gamma]
+          {\interpC{\judgeC{\Gamma}{c''}{A}}\;\theta\;\gamma}
+          {Transitivity}
+  \end{eqnproof}
+
+\item case EqCommandSubst:
+  \begin{eqnproof}
+    \eclaim[1]{\judgeEqC{\Gamma}{[e_2/x]c_1}{[e'_2/x]c'_1}{B}}
+              {Hypothesis}
+    \eclaim[2]{\judgeEqC{\Gamma,x:A}{c_1}{c'_1}{B}}
+              {Inversion on 1}
+    \eclaim[3]{\judgeEq{\Gamma}{e_2}{e'_2}{A}}
+              {Inversion on 1}
+    \eclaim[4]{\judgeC{\Gamma,x:A}{c_1}{B}}
+              {Induction on 2}
+    \eclaim[5]{\judgeC{\Gamma,x:A}{c'_1}{B}}
+              {Induction on 2}
+    \eclaim[6]{\judgeE{\Gamma}{e_2}{A}}
+              {Induction on 3}
+    \eclaim[7]{\judgeE{\Gamma}{e'_2}{A}}
+              {Induction on 3}
+    \eclaim[8]{\judgeC{\Gamma}{[e_2/x]c_1}{B}}
+              {Substitution of 6 into 4}
+    \eclaim[9]{\judgeC{\Gamma}{[e'_2/x]c'_1}{B}}
+              {Substitution of 7 into 5}
+  \end{eqnproof}
+
+  \begin{eqnproof}[\interpC{\judgeC{\Gamma}{[e_2/x]c_1}{B}}\;\theta\;\gamma =]
+     \eline{\interpC{\judgeC{\Gamma,x:A}{c_1}{B}}\;\theta\;
+              (\gamma,\interpE{\judgeE{\Gamma}{e_2}{A}}\;\theta\;\gamma)} 
+           {Substitution}
+     \eline{\interpC{\judgeC{\Gamma,x:A}{c_1}{B}}\;\theta\;
+              (\gamma,\interpE{\judgeE{\Gamma}{e'_2}{A}}\;\theta\;\gamma)} 
+           {Induction}
+     \eline{\interpC{\judgeC{\Gamma,x:A}{c'_1}{B}}\;\theta\;
+              (\gamma,\interpE{\judgeE{\Gamma}{e'_2}{A}}\;\theta\;\gamma)} 
+           {Induction}
+     \eline{\interpC{\judgeC{\Gamma}{[e'_2/x]c'_1}{B}}\;\theta\;\gamma}
+           {Substitution}
+  \end{eqnproof}
+
+\end{itemize}
 \end{proof}
