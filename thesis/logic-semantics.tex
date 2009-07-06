@@ -14,7 +14,7 @@ satisfying:
 \item $\forall p,q,r \in B.$ if $r \leq p$ and $r \leq q$, then
       $r \leq p \land q$ and 
       $p \land q \leq p$ and $p \land q \leq q$
-\item $\forall p,q,r \in B.$ if $p \leq r$ and $r \leq q$, then
+\item $\forall p,q,r \in B.$ if $p \leq r$ and $q \leq r$, then
       $p \vee q \leq r$ and
       $p \vee q \leq p$ and $p \vee q \leq q$.
 \item $\forall p, q, r.\; p \land q \leq r \iff p \leq q \implies r$
@@ -68,22 +68,161 @@ with the following operations:
 \end{itemize}
 \end{lemma}
 
+
+
+\begin{proof}
+\begin{enumerate}
+\item  We want to show $\forall p \in \powerset{M}.\; p \leq \top$
   \begin{tabbedproof}
         Assume $p \in \powerset{M}$ \\
     \oo By definition of powerset, $p \subseteq M$ \\
     \oo By definition of $\top$, $p \subseteq \top$ \\
-    \oo By definition of $\sqsubseteq$, $p \sqsubseteq \top$ \\
+    \oo By definition of $\leq$, $p \leq \top$ \\
   \end{tabbedproof}
 
-
-\begin{proof}
-Now, we'll check each of the conditions for a BI-algebra in turn. 
-
-\begin{enumerate}
-\item  We want to show $\forall p \in \powerset{M}.\; p \sqsubseteq \top$
-
-
 \item We want to show $\forall p \in B.\; \bot \leq p$
+  \begin{tabbedproof}
+        Assume $p \in \powerset{M}$ \\ 
+    \oo By definition of $\emptyset$, $\emptyset \subseteq p$ \\
+    \oo By definition of $\bot$, $\leq$, $\bot \leq p$ \\
+  \end{tabbedproof}
+
+\item We want to show $\forall p,q,r \in \powerset{M}.$ if $r \leq p$ and $r \leq q$, then
+      $r \leq p \land q$ and 
+      $p \land q \leq p$ and $p \land q \leq q$
+
+   \begin{tabbedproof}
+      Assume $p,q,r \in \powerset{M}$ \\
+      Assume $r \leq p$, $r \leq q$ \\[1em]
+
+      \oo By definition of $\leq$, $r \subseteq p$, $r \subseteq q$ \\
+      \oo By properties of $\cap$, $r \cap r \subseteq p \cap q$ \\
+      \oo Hence $r \subseteq p \cap q$ \\
+      \oo By definition of $\leq$ and $\land$, $r \leq p \land q$ \\[1em]
+      \oo By properties of $\cap$, $p \cap q \subseteq p$ \\
+      \oo By definition of $\leq$ and $\land$, $p \cap q \leq p$ \\[1em]
+      \oo By properties of $\cap$, $p \cap q \subseteq q$ \\
+      \oo By definition of $\leq$ and $\land$, $p \cap q \leq q$ \\
+   \end{tabbedproof}
+
+\item We want to show $\forall p,q,r \in \powerset{M}.$ if $p \leq r$ and $q \leq r$, then
+      $p \vee q \leq r$ and
+      $p \leq p \vee q$ and $q \leq p \vee q$.
+
+  \begin{tabbedproof}
+    Assume $p, q, r \in \powerset{M}$, $p \leq r$, $q \leq $ \\[1em]
+    \oo By definition of $\leq$, $p \subseteq r$, $q \subseteq r$ \\
+    \oo By set properties, $p \cup q \subseteq r$ \\
+    \oo By definitions, $p \vee q \leq r$ \\[1em]
+
+    \oo By set properties $p \subseteq p \cup q$ \\
+    \oo By definitions $p \leq p \vee q$ \\[1em]
+  
+    \oo By set properties $q \subseteq p \cup q$ \\
+    \oo By definitions $q \leq p \vee q$ \\
+  \end{tabbedproof}
+
+\item We want to show $\forall p, q, r \in \powerset{M}.\; p \land q \leq r \iff p \leq q \implies r$
+
+  \begin{tabbedproof}
+    Assume $p,q,r \in \powerset{M}$ \\[1em]
+
+    $\To$ direction: \\
+    \oo Assume $p \land q \leq r$ \\
+    \ooo By definitions, $p \cap q \subseteq r$ \\
+    \ooo Assume $m \in p$ \\
+    \oooo Want to show $m \in q \implies r$ \\
+    \oooo Equivalent to showing if $m \in q$, then $m \in r$ \\
+    \oooo Assume $m \in q$ \\
+    \ooooo Since $m \in p$ and $m \in q$, $m \in p \cap q$. \\
+    \ooooo Since $p \cap q \subseteq r$, $m \in r$ \\
+    \ooo Hence $p \subseteq q \implies r$ \\
+    \ooo By definition of $\leq$, $p \leq q \implies r$ \\[1em]
+
+    $\Leftarrow$ direction:\\
+    \oo Assume $p \leq q \implies r$ \\
+    \ooo By definition $p \subseteq q \implies r$ \\
+    \ooo Assume $m \in p \cap q$ \\
+    \oooo Hence $m \in p$ and $m \in q$ \\
+    \oooo Since $p \subseteq q \implies r$, if $m \in p$, then if $m \in q$, then $m \in r$ \\
+    \oooo Hence $m \in r$ \\
+    \ooo Hence $p \cap q \subseteq r$ \\
+    \ooo By definitions, $p \land q \leq r$ \\
+  \end{tabbedproof}
+
+\item We want to show $\forall p \in \powerset{M}.\; p * I = p$
+
+  \begin{eqnproof}[\mbox{Assume } p \in \powerset{M}]
+    \eline[p * I]
+          {\setof{m \in M\;|\; \exists m_1 \in p, m_2 \in \setof{e}.\;
+                                    m_1 \# m_2 \land m_1\cdot m_2 = m}}
+          {}
+    \eline{\setof{m \in M\;|\; \exists m_1 \in p.\; m_1 \# e \land m_1 \cdot e = m}}
+          {Simplification}
+    \eline{\setof{m \in M\;|\; \exists m_1 \in p.\; m_1 = m}}
+          {Monoid axioms}
+    \eline{p}
+          {}
+  \end{eqnproof}
+
+\item We want to show $\forall p, q \in \powerset{M}.\; p * q = q * r$
+
+  \begin{eqnproof}[\mbox{Assume }p,q \in \powerset{M}]
+    \eline[p * q]
+          {\setof{m \in M\;|\; \exists m_1 \in p, m_2 \in q.\; 
+                       m_1 \# m_2 \land m_1\cdot m_2 = m}}
+          {Definition}
+    \eline{\setof{m \in M\;|\; \exists m_2 \in q, m_1 \in p.\; 
+                       m_1 \# m_2 \land m_1\cdot m_2 = m}}
+          {Logical manipulation}
+    \eline{\setof{m \in M\;|\; \exists m_2 \in q, m_1 \in p.\; 
+                       m_2 \# m_1 \land m_2\cdot m_1 = m}}
+          {Commutativity}
+    \eline{q * p}
+          {Definition}    
+  \end{eqnproof}
+
+\item We want to show $\forall p, q, r \in \powerset{M}.\; (p * q) * r = p * (q * r)$
+
+  \begin{eqnproof}
+     \eline[p * q]
+           {\setof{m_1 \;|\; \exists m_p \in p, m_q \in q.\; 
+                             m_p \# m_q \land m_p \cdot m_q = m_1}}
+           {Definition}
+     \eline[(p * q) * r]
+           {\setof{m \;|\; \exists m_1 \in p * q, m_r \in r.\; 
+                             m_1 \# m_r \land m_1 \cdot m_r = m}}
+           {Definition}
+     \elines{\{ m\;|\; \exists m_1 \in p * q, m_p \in p, m_q \in q, m_r \in r. \\ 
+             \qquad m_p \# m_q \land m_p \cdot m_q = m_1 \\
+             \qquad m_1 \# m_r \land m_1 \cdot m_r = m \}\\ }
+            {Comprehension}
+     \elines{\{ m\;|\; \exists m_p \in p, m_q \in q, m_r \in r. \\ 
+             \qquad m_p \# m_q \land 
+                   (m_p\cdot m_q) \# m_r \land (m_p \cdot m_q) \cdot m_r = m \}\\ }
+            {Simplification}
+     \elines{\{ m\;|\; \exists m_p \in p, m_q \in q, m_r \in r. \\ 
+             \qquad m_p \# m_q \land 
+                   m_p \# m_r \land m_q \# m_r \land (m_p \cdot m_q) \cdot m_r = m \}\\ }
+            {Distribute $\#$}
+     \elines{\{ m\;|\; \exists m_p \in p, m_q \in q, m_r \in r. \\ 
+             \qquad m_p \# m_q \land 
+                   m_p \# m_r \land m_q \# m_r \land m_p \cdot (m_q \cdot m_r) = m \}\\ }
+            {Associativity}
+     \elines{\{ m\;|\; \exists m_p \in p, m_q \in q, m_r \in r. \\ 
+             \qquad m_p \# (m_q \cdot m_r) \land 
+                    m_q \# m_r \land m_p \cdot (m_q \cdot m_r) = m \}\\ }
+            {Redistributing $\#$}
+     \elines{\{ m\;|\; \exists m_p \in p, m_q \in q, m_r \in r, m_2 \in q * r \\ 
+             \qquad m_p \# (m_q \cdot m_r) \land m_2 = m_q \cdot m_r \\
+             \qquad m_q \# m_r \land m_p \cdot (m_q \cdot m_r) = m \}\\ }
+            {Introducing $m_2$}
+     \elines{\{m \;|\; \exists m_p \in p, m_2 \in q * r.\;
+              m_p \# m_2 \land m_p \cdot m_2 = m \}\\ }
+            {Comprehension}
+     \elines{p * (q * r)}
+            {Definition}
+  \end{eqnproof}
 \end{enumerate}
 \end{proof}
 
