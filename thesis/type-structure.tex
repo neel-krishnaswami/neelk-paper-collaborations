@@ -2164,6 +2164,67 @@ and $f^*$ in terms of the internal language of CPO as follows:
 \label{lang-cong-eq}
 \end{figure}
 
+\begin{lemma}{(Soundness of Type Substitution)}
+If we know that $\judgeWK{\tau}{\kappa}$, then 
+\begin{itemize}
+\item If $\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e}{A}$, then 
+       $\interpE{\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e}{A}}\;(\theta,[\theta(\tau)])\;\gamma$ =
+       $\interpE{\judgeE{[\tau/\alpha]\Gamma}{[\tau/\alpha]e}{[\tau/\alpha]A}}\;\theta\;\gamma$
+\item If $\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e}{A}$, then 
+       $\interpC{\judgeC[\Theta, \alpha:\kappa]{\Gamma}{c}{A}}\;(\theta,[\theta(\tau)])\;\gamma$ =
+       $\interpC{\judgeC{[\tau/\alpha]\Gamma}{[\tau/\alpha]c}{[\tau/\alpha]A}}\;\theta\;\gamma$
+\end{itemize}
+\end{lemma}
+
+\begin{proof}
+  The proof is by induction on the structure of the typing derivation. The
+interesting case is: 
+
+\begin{itemize}
+\item case EHyp: 
+
+  \begin{eqnproof}
+        [\interpE{\judgeE[\Theta, \alpha:\kappa]
+                         {\Gamma}
+                         {x_i}{A_i}}\;(\theta, {[\theta(\tau)]})\;\gamma =]
+    \eline{\pi_i(\gamma)}
+          {Semantics}
+  \end{eqnproof}
+
+  Now, observe that the tuple $\gamma$ is an element of $\interp{\Theta,\alpha:\kappa \vdash \Gamma}\;(\theta, [\theta(\tau)])$.
+
+  \begin{eqnproof}[\interp{\Theta,\alpha:\kappa \vdash \Gamma}\;(\theta, {[\theta(\tau)]}) =]
+     \eline{\interp{\interp{\judgeWK[\Theta,\alpha:\kappa]{A_1}{\bigstar}}\;
+                       (\theta, [\theta(\tau)]) 
+                    \times \ldots \times 
+                    \interp{\judgeWK[\Theta,\alpha:\kappa]{A_n}{\bigstar}}\;
+                       (\theta, [\theta(\tau)])}}
+           {Definition}
+     \eline{\interp{\judgeWK{[\tau/\alpha]A_1}{\bigstar}}\;\theta 
+            \times \ldots \times 
+            \interp{\judgeWK{[\tau/\alpha]A_n}{\bigstar}}\;\theta}
+           {Simplifying}
+     \eline{\interp{\Theta \vdash [\tau/\alpha]\Gamma}\;\theta}
+           {Definition}
+  \end{eqnproof}
+
+So $\gamma$ is also an element of $\interp{\Theta \vdash [\tau/\alpha]\Gamma}\;\theta$ as well, and so 
+
+  \begin{eqnproof}[\interpE{\judgeE{[\tau/\alpha]\Gamma}{x_i}{[\tau/\alpha]A_i}}\;\theta\;\gamma=]
+    \eline{\pi_i(\gamma)}
+          {Semantics}
+    \eline{\interpE{\judgeE[\Theta, \alpha:\kappa]
+                         {\Gamma}
+                         {x_i}{A_i}}\;(\theta, \left<\theta(\tau)\right>)\;\gamma}
+          {}
+  \end{eqnproof}
+
+\item other cases: 
+
+These all follow the structure of the derivation. 
+\end{itemize}
+\end{proof}
+
 \begin{lemma}{(Soundness of Substitution)}
 \begin{enumerate}
 \item If we know that $\judgeE{\Gamma, y:A, \Gamma'}{e}{B}$ and $\judgeE{\Gamma}{e'}{A}$
