@@ -94,11 +94,13 @@
 \newcommand{\judgeEqC}[5][\Theta]{{#1};{#2} \vdash {#3} \equiv {#4} \div {#5}}
 
 
+
+
 %% semantic operations
 
 \newcommand{\semfun}[2]{\lambda #1.\;#2}
 \newcommand{\sempair}[2]{\left({#1}, {#2}\right)}
-
+\newcommand{\powerset}[1]{\mathcal{P}(#1)}
 
 \newcommand{\paircat}[2]{\left<{#1};{#2}\right>}
 \newcommand{\sumcat}[2]{\left[{#1};{#2}\right]}
@@ -134,6 +136,20 @@
 \newtheorem{lemma}{Lemma}
 
 \newenvironment{proof}{\noindent\textbf{Proof.}}{\noindent$\Box$}
+
+\newenvironment{tabbedproof}
+               {\begin{tabbing}\;\;\=\;\;\=\;\;\=\;\;\=\;\;\=\;\;\=\;\;\=\;\;\=\\[-2em]}
+               {\end{\tabbing}}
+
+\newcommand{\oo}{\>}
+\newcommand{\ooo}{\>\>}
+\newcommand{\oooo}{\>\>\>}
+\newcommand{\ooooo}{\>\>\>\>}
+\newcommand{\oooooo}{\>\>\>\>\>}
+\newcommand{\ooooooo}{\>\>\>\>\>\>}
+\newcommand{\oooooooo}{\>\>\>\>\>\>\>}
+\newcommand{\ooooooooo}{\>\>\>\>\>\>\>\>}
+
 
 \newenvironment{eqnproof}[1][]{${#1}$\begin{displaymath}\begin{array}{lcll}}
                          {\end{array}\end{displaymath}}
