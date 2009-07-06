@@ -1,0 +1,421 @@
+\chapter{The Semantics of Separation Logic}
+
+\section{BI Algebras}
+
+A \emph{BI algebra} is a Heyting algebra with additional residuated
+monoidal structure to model the separating conjunction and wand. This
+means that a BI algebra is a partial order $(B, \leq)$ with
+operations $(\top, \land, \implies, \bot, \vee, I, *, \wand)$
+satisfying:
+
+\begin{enumerate}
+\item $\forall p \in B.\; p \leq \top$
+\item $\forall p \in B.\; \bot \leq p$
+\item $\forall p,q,r \in B.$ if $r \leq p$ and $r \leq q$, then
+      $r \leq p \land q$ and 
+      $p \land q \leq p$ and $p \land q \leq q$
+\item $\forall p,q,r \in B.$ if $p \leq r$ and $r \leq q$, then
+      $p \vee q \leq r$ and
+      $p \vee q \leq p$ and $p \vee q \leq q$.
+\item $\forall p, q, r.\; p \land q \leq r \iff p \leq q \implies r$
+\item $\forall p.\; p * I = p$
+\item $\forall p, q.\; p * q = q * r$
+\item $\forall p, q, r.\; (p * q) * r = p * (q * r)$
+\item $\forall p, q, r.\; p * q \leq r \iff p \leq q \wand r$
+\end{enumerate}
+
+The first five conditions are just the usual conditions for a Heyting
+algebra (that it have greatest and least elements, greatest lower
+bounds and least upper bounds, and that it have an implication). The
+next three are the monoid structure axioms, that say $I$ is the unit,
+and that $*$ is commutative and associative. The last axiom asserts
+the existence of a wand that behaves with respect to the separating
+conjunction the same way that the implication behaves with respect to
+the ordinary conjunction.
+
+\subsection{Partial Commutative Monoids}
+
+A partial commutative monoid is a triple $(M, e, \cdot)$, where 
+$e \in M$, and $(\cdot)$ is a partial operation from $M \times M$ to 
+$M$. We write $m \# m'$ to mean that $m$ and $m'$ are compatible -- 
+that is, $\exists m''.\; m \cdot m' = m''$. Furthermore, the following
+properties hold: 
+
+\begin{itemize}
+\item $e$ is a unit, so that $e \cdot m = m$. 
+\item $\cdot$ is commutative. $m \cdot m' = m' \cdot m$, if defined.
+\item $\cdot$ is associative. $m \cdot (m' \cdot m'') = (m \cdot m') \cdot m''$, if defined.
+\end{itemize}
+
+Given a partial commutative monoid, we can show that the powerset $\powerset{M}$ 
+forms a BI-algebra. 
+
+\begin{lemma}{(Powersets of Partial Commutative Monoids)}
+Given a partial commutative monoid $(M, e, \cdot)$, its powerset
+$(\powerset{M}, \subseteq)$ forms a BI-algebra
+with the following operations:
+
+\begin{itemize}
+\item $\top = M$
+\item $p \land q = p \cap q$
+\item $p \implies q = \setof{m \in M \;|\;\mbox{if }m \in p \mbox{ then } m \in q}$
+\item $\bot = \emptyset$ 
+\item $p \vee q = p \cup q$
+\item $I = \setof{e}$
+\item $p * q = \setof{m \in M\;|\; \exists m_1, m_2.\; 
+                       m_1 \# m_2 \land m_1 \in p \land m_2 \in q \land m_1\cdot m_2 = m}$
+\item $p \wand q = \{ m \in M \;|\; \forall m' \in p.\; \mbox{if } m \# m' \mbox{ then } m \cdot m' \in q \}$
+\end{itemize}
+\end{lemma}
+
+  \begin{tabbedproof}
+        Assume $p \in \powerset{M}$ \\
+    \oo By definition of powerset, $p \subseteq M$ \\
+    \oo By definition of $\top$, $p \subseteq \top$ \\
+    \oo By definition of $\sqsubseteq$, $p \sqsubseteq \top$ \\
+  \end{tabbedproof}
+
+
+\begin{proof}
+Now, we'll check each of the conditions for a BI-algebra in turn. 
+
+\begin{enumerate}
+\item  We want to show $\forall p \in \powerset{M}.\; p \sqsubseteq \top$
+
+
+\item We want to show $\forall p \in B.\; \bot \leq p$
+\end{enumerate}
+\end{proof}
+
+\subsection{Sets of Heaps form a BI algebra}
+
+
+As a example, given a set of heaps $H$, we can construct a BI algebra
+from it by considering the set of sets of heaps $\mathcal{P}(H)$. The
+ordering is inclusion $\subseteq$, and the operations are given by:
+
+\begin{itemize}
+\item $\top = H$
+\item $\bot = \emptyset$
+\item $p \land q = p \cap q$
+\item $p \vee q = p \cup q$
+\item $p \implies q = \{h \in H \;|\; \mbox{if } h \in p \mbox{ then } h \in q\}$
+\item $I = \{\emptyset\}$
+\item $p * q = \{ h \in H \;|\; \exists h_1 \in p, h_2 \in q.\; h_1 \# h_2 \land h = h_1 \cdot h_2\}$
+\item $p \wand q = \{ h \in H \;|\; \forall h' \in p.\; \mbox{if } h \# h' \mbox{ then } h \cdot h' \in q \}$
+\end{itemize}
+
+These definitions all satisfy the previous list of bullet points.
+
+\section{World Preorders}
+
+Now, we can define a world preorder $W(B)$ over a BI algebra as
+follows.  The elements of $W(B)$ are the elements of $B$, and for
+any two elements $p$ and $q$, the ordering $p \sqsubseteq q$ is 
+defined as follows:
+
+\begin{displaymath}
+p \sqsubseteq q \iff \exists r.\; p * r = q
+\end{displaymath}
+
+To verify the relation $\sqsubseteq$ is a preorder, we need to 
+show it is reflexive and transitive. 
+
+$p \sqsubseteq p$ holds because we can take $r$ to be $I$. To show 
+transitivity, we must show that $p_1 \sqsubseteq p_3$, given
+that $p_1 \sqsubseteq p_2$ and $p_2 \sqsubseteq p_3$. 
+\\
+
+\begin{tabular}{ll}
+$p_1 \sqsubseteq p_2$                 & By assumption  \\
+$\exists r.\; p_1 * r = p_2$          & Def of $\sqsubseteq$ \\
+$p_1 * r = p_2$                       & Existential elim (1)\\
+$p_2 \sqsubseteq p_3$                 & By assumption \\
+$\exists r'.\; p_2 * r' = p_3$        & Def of $\sqsubseteq$ \\
+$p_2 * r' = p_3$                      & Existential elim \\
+$(p_1 * r) * r' = p_3$                & Equality elim via (1) \\
+$p_1 * (r * r') = p_3$                & Associativity of $*$ \\
+$\exists r''. p_1 * r'' = p_3$        & Existential intro \\
+$p_1 \sqsubseteq p_3$                 & Def of $\sqsubseteq$ \\
+\end{tabular}
+
+\section{Heyting Algebras over Preorders}
+
+Given any preorder $(P, \sqsubseteq)$, we can construct a Heyting
+algebra by considering the set of its upward-closed subsets
+$\upset{P}$:
+
+\begin{displaymath}
+\upset{P} = 
+  \{ S \in \mathcal{P}(P) \;|\;
+     \forall p \in S, \forall q \in B. \mbox{ if } p \sqsubseteq q \mbox{ then } q \in S 
+  \}
+\end{displaymath}
+
+The ordering relation for the Heyting algebra is set inclusion, and
+the operations are:
+
+\begin{itemize}
+\item $\top = P$
+\item $\bot = \emptyset$
+\item $S \land S' = S \cap S'$
+\item $S \vee S' = S \cup S'$
+\item $S \implies S' = \{ r \in P \;|\; \forall r' \sqsupseteq r.\; 	
+                          \mbox{if } r' \in S \mbox{ then } r' \in S' \}$
+\end{itemize}
+
+To show that these operations actually form a Heyting algebra, we need
+to show that they satisfy the Heyting algebra axioms. It's immediately
+evident that $\top$ and $\bot$ are the maximal and minimal elements of
+the lattice. 
+
+Now we need to show that the meet and join are the greatest lower
+bounds and least upper bounds respectively.
+
+So, first, we need to show that if $S_1, S_2 \in \upset{P}$, 
+then $S_1 \land S_2 \in \upset{P}$. So we need to show that
+the intersection of two upwards-closed subsets is itself an upwards-closed
+subset. Suppose $x \in S_1 \land S_2$, and $y \sqsupseteq x$. Then:
+\\
+
+\begin{tabular}{ll}
+$x \in S_1 \cap S_2$          & Definition of $\land$ \\
+$x \in S_1$                   & Property of intersection (1) \\
+$x \in S_2$                   & Property of intersection (2) \\
+$y \in S_1$                   & By (1), and $S_1$ is upwards-closed \\
+$y \in S_2$                   & By (2), and $S_2$ is upwards-closed \\
+$y \in S_1 \cap S_2$          & Property of intersection \\
+$y \in S_1 \land S_2$         & Definition of $\land$ \\
+\end{tabular}
+\\
+
+Now we need to verify that that the intersection is the greatest lower
+bound. Suppose we have an $R$ such that $R \subseteq S_1$ and $R
+\subseteq S_2$. Then every element of $R$ must be in $S_1 \cap S_2$, which
+means that $S_1 \cap S_2$ is the greatest lower bound. 
+
+Next, we need to show that if $S_1, S_2 \in \upset{P}$, 
+then $S_1 \vee S_2 \in \upset{P}$. Suppose that 
+$x \in S_1 \vee S_2$ and that $y \sqsupseteq x$. Then:
+\\
+
+\begin{tabular}{ll}
+$x \in S_1 \cup S_2$               & Definition of $\vee$ \\
+$x \in S_1 \mbox{ or } x \in S_2$  & Property of union \\
+Suppose $x \in S_1$:               & \\
+\qquad $y \in S_1$                 & $S_1$ is upwards-closed \\
+\qquad $y \in S_1 \cup S_2$        & property of union \\
+\qquad $y \in S_1 \vee S_2$        & Def of $\vee$ \\
+Suppose $x \in S_2$:               & \\
+\qquad $y \in S_2$                 & $S_2$ is upwards-closed \\
+\qquad $y \in S_1 \cup S_2$        & property of union \\
+\qquad $y \in S_1 \vee S_2$        & Def of $\vee$ \\
+$y \in S_1 \vee S_2$               & Or-elim \\
+\end{tabular}
+\\
+
+Now, we verify that the union is the least upper bound. Suppose that
+we have an $R$ such that $S_1 \subseteq R$ and $S_2 \subseteq R$. Then,
+since each element of $S_1 \cup S_2$ is either an element of $S_1$
+or $S_2$, each element of $S_1 \cup S_2$ is also an element of $R$. So
+it's a least upper bound. 
+
+Now, we have to show that if $S_1, S_2 \in \upset{P}$, then
+$S_1 \implies S_2 \in \upset{P}$. So, suppose that 
+$x \in S_1 \implies S_2$, and that $y \sqsupseteq x$. 
+\\
+
+\begin{tabular}{ll}
+$x \in \{ r \in P \;|\; \forall r' \sqsupseteq r.\; 	
+                          \mbox{if } r' \in S_1 \mbox{ then } r' \in S_2 \}$ &
+Def of $S_1 \implies S_2$ \\
+
+$\forall r' \sqsupseteq x.\; 	
+    \mbox{if } r' \in S_1 \mbox{ then } r' \in S_2$ &
+Comprehension elim (1)
+\\
+
+Assume $z \sqsupseteq y$. & \\
+
+\qquad $z \sqsupseteq x$ & 
+Since $z \sqsupseteq y$ and $y \sqsupseteq x$ \\
+
+\qquad $\mbox{if } z \in S_1 \mbox{ then } z \in S_2$
+& Instantiate universal quant in (1) \\
+
+$\forall z \sqsupseteq y.\; 	
+\mbox{if } z \in S_1 \mbox{ then } z \in S_2$ &
+Universal Intro. \\
+
+$y \in \{ r \in P \;|\; \forall z \sqsupseteq r.\; 	
+                          \mbox{if } z \in S_1 \mbox{ then } z \in S_2 \}$ &
+Comprehension intro \\
+
+$y \in S_1 \implies S_2$ 
+& Def. of $\implies$ \\
+\end{tabular}
+
+Now that we know that $\implies$ has the correct codomain, we need to
+verify that it satisfies the following axiom: 
+
+\begin{displaymath}
+S_1 \land S_2 \subseteq R \iff S_1 \subseteq S_2 \implies R
+\end{displaymath}
+
+This is equivalent to showing that 
+
+\begin{displaymath}
+(\forall x.\; x \in S_1 \land S_2 \Rightarrow x \in R) \iff
+(\forall x.\; x \in S_1 \Rightarrow x \in S_2 \implies R)
+\end{displaymath}
+
+First, let's show the $\Rightarrow$ direction.
+\\
+
+\begin{tabular}{ll}
+Assume $\forall x.\; x \in S_1 \land S_2 \Rightarrow x \in R$ &
+(1)
+\\
+
+Assume $x \in S_1$ &
+(2)
+\\
+
+Assume $r' \sqsupseteq x$ &
+(3)
+\\
+
+Assume $r' \in S_2$ & 
+(4)
+\\
+
+$r' \in S_1$ & 
+Since $x \in S_1$ and $r' \sqsupseteq x$ \\
+
+$r' \in S_1 \cap S_2$ & 
+Since $r' \in S_1$ and $r' \in S_2$ \\
+
+$r' \in R$ &
+By assumption (1) \\
+
+$r' \in S_2 \Rightarrow r' \in R$ &
+Implication intro (4) \\
+
+$\forall r' \sqsupseteq x.\; r' \in S_2 \Rightarrow r' \in R$ &
+Universal intro (3) \\
+
+$x \in \{ r \in P \;|\; \forall r' \sqsupseteq r.\; r' \in S_2 \Rightarrow r' \in R$ &
+Comprehension intro \\
+
+$x \in S_2 \implies R$ &
+Definition of $\implies$ \\
+
+$\forall x.\; x \in S_1. \Rightarrow x \in S_2 \implies R$ &
+Universal intro (2) \\
+
+$(\forall x.\; x \in S_1 \land S_2 \Rightarrow x \in R) \Rightarrow (\forall x.\; x \in S_1 \Rightarrow x \in S_2 \implies R)$ &
+Implication intro (1) \\
+\end{tabular}
+\\
+
+Next, let's show the $\Leftarrow$ direction. 
+\\
+
+\begin{tabular}{ll}
+Assume $\forall x.\; x \in S_1 \Rightarrow x \in S_2 \implies R$ &
+(1) \\
+
+Assume $x \in S_1 \land S_2$ & 
+(2) \\
+
+$x \in S_1$ & 
+Since $x \in S_1 \land S_2$ (2)\\
+
+$x \in S_2$ & 
+Since $x \in S_1 \land S_2$ (3) \\
+
+$x \in S_2 \implies R$ & 
+By (2) and (1) \\
+
+$x \in \{ r \in P \;|\; \forall r' \sqsupseteq r.\; \mbox{if } r' \in S_2 \mbox{ then } r' \in R \}$ &
+Definition of $\implies$ \\
+
+$\forall r' \sqsupseteq x.\; \mbox{if } r' \in S_2 \mbox{ then } r' \in R$ &
+Comprehension instantiation (4) \\
+
+$x \sqsupseteq x$ & 
+Reflexivity (5) \\
+
+$\mbox{if } x \in S_2 \mbox{ then } x \in R$ & 
+Instantation of (4) with (5) \\
+
+$x \in R$ & 
+Implication elim via (3) \\
+
+$\forall x.\; x \in S_1 \land S_2 \Rightarrow x \in R$ & 
+Universal/Implication intro (2) \\
+
+$(\forall x.\; x \in S_1 \Rightarrow x \in S_2 \implies R) \Rightarrow (\forall x.\; x \in S_1 \land S_2 \Rightarrow x \in R)$ & 
+Implication intro (1) \\
+\end{tabular}
+\\
+
+This establishes that $\upset{P}$ forms a Heyting algebra. 
+
+\section{Specifications and the Higher Order Frame Rule}
+
+Now, since we know that given a BI algebra $B$, $W(B)$ forms a preorder, and
+that for any preorder its upward-closed subsets form a Heyting algebra, we
+can immediately see that $\upset{W(B})$ is a Heyting algebra. 
+
+This will give us the basic semantics of specifications. Now, define an 
+operation $S \otimes p$, where $S \in \upset{W(B})$ and
+$p \in W(B)$:
+
+\begin{displaymath}
+S \otimes p = \{ r \in W(B) \;|\; r * p \in S \}
+\end{displaymath}
+
+Now, we can show that $S \otimes p$ is in $\upset{W(B})$, and that 
+$S \subseteq S \otimes p $. The reason to do this is to give a semantics
+to the frame rule. Intuitively, if $S$ is a specification, then $S \otimes p$ 
+will be that specification with $p$ framed on to it. So we need to show that
+first, $S \otimes p$ actually is an element of our Heyting algebra of 
+specification truth values, and second, we want the frame rule to be 
+sound -- we want $S$ to always imply $S \otimes p$. 
+
+To show that $S \otimes p \in \upset{W(B)}$, we need to show that for all 
+$x,y$, if $x \in S \otimes p$ and $y \sqsupseteq x$, then $y \in S \otimes p$. 
+\\
+
+\begin{tabular}{ll}
+Assume $x \in S \otimes p$                          & (1) \\
+Assume $x \sqsubseteq y$                            & (2) \\
+$x \in \{ r \in \upset{W(B)} \;|\; r * p \in S \}$  & Def of $\otimes$ \\
+$x * p \in S$                                       & Comprehension elim \\
+$\exists r' \in W(B). y = x * r'$                            & Def of $\sqsubseteq$ via (2)\\
+Suppose $r' \in W(B)$.                              & Existential elim. \\
+$y = x * r'$                                        & (3) \\
+$x * p * r' \in S$                                  & $S$ upward-closed \\
+$(x * r') * p \in S$                                & Assoc, commutativity \\
+$y * p \in S$                                       & Equality via (3) \\
+$y \in \{r \in \upset{W(B)} \;|\; r * p \in S \}$   & Comprehension intro \\
+$y \in S \otimes p$                                 & Def. of $\otimes$ \\
+\end{tabular}
+\\
+
+
+To show $S \subseteq S \otimes p$, we need to show that if $x \in S$, then $x \in S \otimes p$. 
+\\
+
+\begin{tabular}{ll}
+Assume $x \in S$                      & (1) \\
+$x \sqsubseteq x * p$                 & Property of $\sqsubseteq$ \\
+$x * p \in S$                         & $S$ is upward-closed \\
+$x \in \{ r \in \upset{W(B)} \;|\; r * p \in S \}$ & Comprehension intro \\
+$x \in S \otimes p$                   & Definition of $\otimes$ \\ 
+If $x \in S$ then $x \in S \otimes p$ & Implication introduction via (1) \\ 
+\end{tabular}
+\\
+
+
