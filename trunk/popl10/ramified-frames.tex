@@ -543,14 +543,14 @@ $\ctext{newcell}\;\alpha\;code = [$\=$\letv{id}{!counter}{}$ \\
 
 $\ctext{update} : \forall \alpha:\star.\; \codetype{\alpha} \to \celltype{\alpha} \to \monad{\unittype}$\\
 $\ctext{update}\;\alpha\;exp\;a = 
-     [$\=$\letv{\_}{\ctext{invalidate}\;\pack{\alpha}{a}}{}$ \\
+     [$\=$\letv{\_}{\ctext{mark\_unready}\;\pack{\alpha}{a}}{}$ \\
        \>$a.code := exp]$ \\[1em]
 
-$\ctext{invalidate} : ecell \to \monad{\unittype}$ \\
-$\ctext{invalidate}\;ecell =\; $\=$\ctext{unpack}(\alpha, a) = ecell\; \ctext{in}$\\
+$\ctext{mark\_unready} : ecell \to \monad{\unittype}$ \\
+$\ctext{mark\_unready}\;ecell =\; $\=$\ctext{unpack}(\alpha, a) = ecell\; \ctext{in}$\\
 \>  $[$\=$\letv{os}{\comp{!a.obs}}{}$ \\
 \>     \>$\letv{rs}{\comp{!a.reads}}{}$ \\
-\>     \>$\letv{\_}{\ctext{iterset}\;\ctext{invalidate}\;os}{}$ \\
+\>     \>$\letv{\_}{\ctext{iterset}\;\ctext{mark\_unready}\;os}{}$ \\
 \>     \>$\letv{\_}{\ctext{iterset}\;(\ctext{remove\_obs}\;ecell)\;rs}{}$ \\
 \>     \>$\letv{\_}{\comp{a.value := \ctext{None}}}{}$ \\
 \>     \>$\letv{\_}{\comp{a.reads := \ctext{emptyset}}}{}$ \\
@@ -601,12 +601,12 @@ Cells are represented with a 5-tuple. There is a reference pointing to
 the code expression, as well as a value field pointing to an optional
 value. The value field will be set to $\ctext{None}$ if the cell is in
 an unready, un-memoized state, and will be $\ctext{Some}\;v$ if the
-cell's code has been evalated to a value $v$. In addition there are
+cell's code has already been evalated to a value $v$. In addition there are
 two fields representing the dependencies. If the code expression has
 been evaluated and a memoized value generated, then the $reads$ field
 will point to the set of cells that the computation directly read
 while computing its value. Otherwise it will point to the empty
-set. Conversely, the field $obs$ contains the cell's observers -- the
+set. Conversely, the field $obs$ contains the cell's observers --- the
 set of cells that have read the current cell as part of their own
 computations. Obviously, this is only non-empty when the cell has been
 evaluated. Finally, each cell also has an integer id field, which is a
@@ -623,18 +623,18 @@ simply read an update the reference, and return empty read sets, since
 neither of them read any cells. 
 
 Interesting things first happen with the $\readcell e$ operation. This
-function will first check to see if the cell has a memoized value. If
-it does, we return that immediately. Otherwise, we evaluate the cell's
-code, and update the current cell's value and read set. In addition,
-each cell that was read in the evaluation of the code (i.e., the set
-returned as the second component of the monadic type's return value)
-also has its observer set updated with the current cell. Now, if any
-of the dependencies change, they will be able to invalidate the
-current cell, which depends upon them. Note that the dependencies
-between cells are all dynamic -- we cannot examine the inside of a
-code expression to find its ``free cells'', and so we rely upon the
-invariant that a code expression will return every cell it read, in
-addition to its return value.
+function will first check to see if the cell has a memoized value
+ready. If it does, we return that immediately. Otherwise, we evaluate
+the cell's code, and update the current cell's value and read set. In
+addition, each cell that was read in the evaluation of the code (i.e.,
+the set returned as the second component of the monadic type's return
+value) also has its observer set updated with the newly-ready current
+cell. Now, if any of the dependencies change, they will be able to
+invalidate the current cell, which depends upon them. Note that the
+dependencies between cells are all dynamic --- we cannot examine the
+inside of a code expression to find its ``free cells'', and so we rely
+upon the invariant that a code expression will return every cell it
+read, in addition to its return value.
 
 Further interesting things happen with the $\ctext{newcell}\;cmd$
 operation.  It creates a new cell value, setting the code field with
@@ -648,16 +648,16 @@ identifiers by incrementing it as we create new cells.
 
 Finally, the $\ctext{update}\;cell\;cmd$ operation updates a cell
 $cell$ with a new code expression $cmd$. (As an aside, it's worth
-noting that this is a genuine, unavoidable, use higher-order store: we
-make use of pointers to code, including the ability to dynamically
+noting that this is a genuine, unavoidable, use of higher-order store:
+we make use of pointers to code, including the ability to dynamically
 modify them.) Once we modify a cell, any memoized value it has is no
-longer necessarily correct. 
+longer necessarily correct.
 
 Therefore, we have to drop the memoized value of the cell, and any
 cell that transitively observes the cell. This is what the
-$\ctext{invalidate}$ function does. Given a cell, it takes all of the
-observers of the current cell and recursively invalidates all of
-them. Then it removes the current cell from the observer sets of
+$\ctext{mark\_unready}$ function does. Given a cell, it takes all of the
+observers of the current cell and recursively makes all of
+them unready. Then it removes the current cell from the observer sets of
 everyone it depends on, and then it nulls out the current cell's
 memoized value, as well as setting its read and observer sets to
 empty. Notice that there is no explicit base case to the recursive
@@ -670,11 +670,11 @@ one place:
 
 \begin{itemize}
   \item Every cell must have a unique numeric identifer
-  \item Every cell is either ready/valid, or unready/invalid. 
-  \item Every valid cell has a memoized value, and maintains 
+  \item Every cell is either ready, or unready. 
+  \item Every ready cell has a memoized value, and maintains 
     two sets, one containing every cell that it reads, and the
     other containing every cell it is ready by. 
-  \item Every invalid cell has no memoized value, and has 
+  \item Every unready cell has no memoized value, and has 
     both an empty read set and an empty observer set. 
   \item The overall dependency graph among the valid cells must form a
     directed acyclic graph. 
@@ -694,24 +694,27 @@ the primary contributions of this work.
 
 The key to getting around our difficulties lies in the difference
 between the implementation of $\ctext{update}$, and in $\ctext{read}$.
-$\ctext{update}$ calls $\ctext{invalidate}$, which recursively follows
+$\ctext{update}$ calls $\ctext{mark\_unready}$, which recursively follows
 the observers. The $\ctext{read}$ function, on the other hand,
-proceeds in the opposite direction -- it evaluates code expressions,
+proceeds in the opposite direction --- it evaluates code expressions,
 recursively descending into the footprint of its command. The opposite
 direction these two functions look is why we end up needing a global
 invariant: we need to know that these two directions are in harmony
 with one another.
 
-Now, note that the type of $\ctext{invalidate}$ is simply monadic
+Now, note that the type of $\ctext{mark\_unready}$ is simply monadic
 $\monad{\unittype}$, which precludes it from being called from within
 a $\codetype{A}$. This means that when we are evaluating a code
 expression, we will never actually follow the observers fields --
-we'll only patch them as needed to maintain the global invariant.
-As a result, we can conceivably find an abstract description 
+we'll only patch the observer fields as needed, whenever we evaluate a
+cell and change it from invalid to valid.  As a result, an abstract
+description of the heap which \emph{does not explicitly mention
+the observer sets} will prove sufficient for reasoning about
+the behavior of $\codetype{A}$ expressions.
 
-
-An \emph{abstract heap formula} is a syntactic description of the
-state of part of the cell heap. It is given by the following grammar:
+With this plan, we introduce \emph{abstract heap formulas}, which are
+syntactic descriptions of the state of part of the cell heap. These
+syntactic expressions are given by the following grammar:
 \begin{displaymath}
   \begin{array}{lcl}
     \phi & ::= & I \bnfalt \phi \otimes \psi \bnfalt \cellpos{a}{e}{v}{r} \bnfalt \cellneg{a}{e}\\
@@ -719,41 +722,152 @@ state of part of the cell heap. It is given by the following grammar:
   \end{array}
 \end{displaymath}
 
-Informally, $I$ represents an empty abstract heap, and $\phi \otimes
-\psi$ represents an abstract heap that can be broken into two disjoint
-parts $\phi$ and $\psi$. The atomic form $\localref{r}{v}$ says that
-$r$ is a piece of local state owned by the network, currently with
-value $v$.
+Informally, a formula $I$ represents an empty abstract heap, and a
+formula $\phi \otimes \psi$ represents an abstract heap that can be
+broken into two disjoint parts $\phi$ and $\psi$. We will only
+consider formulas modulo the associativity and commutativity of
+$\otimes$, and take $I$ to be the unit of this binary operator.
 
-There are two atomic forms representing cells. $\cellneg{a}{e}$ says
-that $a$ is a cell with code $e$, which is unready to deliver a value
---- it needs to be re-evaluated before it can yield a
-value. $\cellpos{a}{e}{v}{r}$ says that $a$ is a cell with code $e$,
-and that it has value $v$, assuming that all of its reads in $r$ all
-themselves have ready values. 
+The atomic form $\localref{r}{v}$ says that $r$ is a piece of local
+state owned by the network, currently with value $v$. There are two
+atomic forms representing cells. $\cellneg{a}{e}$ says that $a$ is a
+cell with code $e$, which is unready to deliver a value --- it needs
+to be re-evaluated before it can yield a value. $\cellpos{a}{e}{v}{r}$
+says that $a$ is a cell with code $e$, and that may be ready to deliver
+the value $v$, assuming that everything in its read set $r$ are themselves
+ready. If anything it reads is known to be unready, then it is unready
+itself. (We will sometimes write $\celleither{a}{e}$ when we are indifferent
+between these two atomic forms.) 
 
 First, notice the must/may flavor of this reading. The formula
-$\cellneg{a}{e}$ says that $a$ \emph{must} not have a current value. 
-The formula $\cellpos{a}{e}{v}{r}$  says that $a$ \emph{may} have a
-value, conditional on its read set $r$ having values. 
+$\cellneg{a}{e}$ says that $a$ \emph{must} be unready.  The formula
+$\cellpos{a}{e}{v}{r}$ says that $a$ \emph{may} have be ready,
+conditional on the readiness of the elements of its read set
+$r$. Second, notice that the backwards dependencies are entirely
+missing from these formulas. We have simply left out the other half of
+the dependency graph from this description. Forgetting this
+information will be critical for local reasoning.
 
-Second, notice that the backwards dependencies are entirely missing
-from these formulas. We have simply left out the other half of the
-dependency graph from this description. Forgetting this information is
-actually critical for local reasoning. 
+We have emphasized that the straightforward invariant is not obviously
+modular. Before we can elaborate any further on this point, we will
+need to look at the formal statement of the heap invariant. We
+introduce the predicate $G(\phi)$, which describes the entire heap of
+cells allocated by our library, and which satisfy both the conditions
+described in the previous section, and the additional constraint that
+the cell heap agree with $\phi$.\footnote{This is why we insisted that
+  the abstract heap formulas are syntactic objects --- this permits us
+  to define predicates on them by induction over the structure of the
+formula.}
 
-The invariant governing 
 
 \begin{tabbing}
-    $G(\phi) = $ \\ 
-\;\;\= $\exists H \in Heap.\;$\=$ R_H^\dagger = O_H \land R_H^+ \mbox{ strict partial order }$ \\
-    \> \> $\land\; R \subseteq V_H \times V_H \land unique(H)$ \\
+    $G(\phi) \triangleq $ \\ 
+\;\;\= $\exists H \in CellHeap.\;$\=$ R_H^\dagger = O_H \land R_H^+ \mbox{ strict partial order }$ \\
+    \> \> $\land\; R_H \subseteq V_H \times V_H \land unique(H)$ \\
     \> \> $\land\; \satisfies{H}{\phi} \land heap(H)$ \\
 \end{tabbing}
 
+The auxilliary definitions we used in this definition are all given in
+Figure~\ref{heap-invariant}. 
+
+We first assert the existence of a cell heap $H$, which is a
+collection of cells, together with a function mapping each cell to a
+code expression, a possible value, a read set, an observed set, and an
+identifier. 
+
+In the next two lines, we assert all of the global conditions in terms
+of this mathematical cell heap. First, we assert that the relational
+transpose of the reads relation $R^\dagger_H$ is of the observes
+relation $O_H$, which enforces the condition that the reads and
+observe relations be the same, only pointing in opposite
+directions. Then, we require that the transitive (but not reflexive)
+closure of the reads relation, $R^+$ form a strict partial
+order. Strictness enforces the condition that there be no cycles in
+the dependence graph (because otherwise there would be elements $a$,
+such that $(a, a) \in R_H$).  Next, we require that the reads relation
+$R_H$ is a subset of the cartesian product $V_H \times V_H$ of the set
+of cells with values $V_H$. This ensures that a) there are no
+dependencies on unready cells, and b) all unready cells have empty
+read and observe sets. Finally, we ask that all of the cells in $H$
+have unique identifiers -- $unique(H)$ asserts that the identifier
+field is one half of an isomorphism between the cells in $H$, and the
+natural numbers from 0 to the size of $H$.
+
+In the third line, we begin by requiring that the cell heap satisfy
+the abstract heap formula $\phi$, which formalizes the informal
+reading of the abstract heap formulas given earlier. This satisfaction
+relation follows the general style of separation logic quite closely; 
+in a sense, our abstract heap formulas are giving a domain-specific
+version of separation logic
+
+The last clause finally connects the cell heap, which is a purely
+mathematical object, to the actual low-level heap the implementation
+uses. We ask that the global counter reference $counter$ point to an integer
+field equal to the size of the cell heap, and then use the iterated
+separating conjunction $\forall^*$ to require that for each cell in
+the cell heap, we have pointers to the appropriate code, value, read
+and observer fields. The read and observer fields point to values of
+type $\cellset$, each of which represent the appropriate sets of cells. 
+
+The global character of this invariant should be evident; we need to
+talk about \emph{all} of the cells in the heap in order to state our
+invariants. So it is not immediately clear that we have made much
+progress towards a modular proof technique. However, we are actually
+very close: with just two more ideas, we will be able to give a
+solution to this problem.
+
+As we mentioned earlier, our abstract heap formulas essentially give
+us a small domain-specific separation logic. This means that in order
+to reason locally over cell heaps, we need to find an
+application-specific version of the frame rule for our library. 
+
+To do this, we'll need to adapt some ideas proposed by
+Benton~\cite{benton}, and Birkedal and Yang~\cite{birkedal-yang}. They
+suggested interpreting the frame rule of separation logic as a form of
+quantification -- instead of having a separate frame rule that allows
+adding a frame to any triple, they proposed that all of the atomic
+rules of the program logic be replaced with rules possessing an extra
+quantifier ranging over ``the rest of the stores'':
+
+\begin{mathpar}
+  \inferrule*[right=QuantifiedExample]
+          { }
+          { \forall R.\; \setof{ (e \pointsto v) * R } \;e := v'\; \setof{ (e \pointsto v') * R}}
+\end{mathpar}
+
+Now, any use of the frame rule can be interpreted as instantiating the
+universal quantifier appropriately, and the frame rule becomes an
+admissible property of the logic. The reason this idea is fruitful for
+us is that it will allow us to give a frame rule, even though the
+underlying semantics of our library does not actually satisfy any
+analogues of the traditional safety monotonicity and frame lemmas. For
+example, the $\ctext{update}$ operation certainly does not act locally
+-- it recursively traverses the observers set, possibly mutating a
+very large part of the cell graph. 
+
+Nevertheless, we can prove the soundness of the following triple: 
+
+\begin{lemma}{(Update Rule)}
+For all cells $o$ and code expressions $e$ and $e'$, the following
+triple is provable: 
+
+\begin{tabbing}
+$\forall \psi:\formula.\; $\=$\setof{G(\celleither{o}{e} \otimes \psi)}$ \\
+                           \>${\ctext{update}\;o\;e}$ \\
+                           \>$\setof{a:1.\; G(\cellneg{a}{e} \otimes \psi)}$
+\end{tabbing}
+\end{lemma}
+\begin{proof}
+  The key to this proof is the conditional nature of the $\cellpos{c}{e}{v}{r}$
+formula. When we evaluate the $\ctext{update}$ command, we find everything
+which depends on $o$, and set it to 
+\end{proof}
+
+\end{lemma}
+
 \begin{figure}
 \begin{tabbing}
-$Heap = \Sigma$\=$ D \in \powersetfin{ecell}.$ \\
+$CellHeap = \Sigma$\=$ D \in \powersetfin{ecell}.$ \\
                \>$(\Pi (\pack{\alpha}{\_}) \in D. ($\=${\codetype{\alpha}} \;\times$ \\
                \>                          \>${\opttype{\alpha}} \;\times$ \\
                \>                          \>${\powersetfin{ecell}} \;\times$ \\
@@ -797,7 +911,7 @@ $heap(D,h) = $ \\
                          \>$c.value \pointsto value(h(c)) \;* $ \\
                          \>$c.reads \pointsto v_r \;* $ \\
                          \>$c.obs   \pointsto v_o \;* $ \\
-                         \>$c.id    \pointsto identity(h(c)) \;\land$ \\
+                         \>$c.id    = identity(h(c)) \;\land$ \\
                          \>$set(D, v_r, reads(h(c))) \;\land$ \\
                          \>$set(D, v_o, obs(h(c)))$ \\[1em]
 \end{tabbing}
@@ -1000,7 +1114,7 @@ argument 0, it will return a 1 element list containing the output at
 timestep 0), which means that the call to $last$ in $cycle$ is
 actually safe. In order to calculate $gen$, we need to recursively
 calculate the outputs for all smaller timesteps, and this is what
-$\hat{p}$ is needed for -- it is what lets us know that $p$ has a good
+$\hat{p}$ is needed for --- it is what lets us know that $p$ has a good
 finite approximation.
 
 All of these definitions are familiar to functional programmers, and
@@ -1079,7 +1193,7 @@ $\loopop a_0\; p \; input = $ \\
 \end{figure}
 
 While the definitions in the previous subsection yield very clean
-proofs, they are not suitable as implementations -- for example,
+proofs, they are not suitable as implementations --- for example,
 $loop$ recomputes an entire history at each time step! We can derive
 better implementations by thinking about how imperative, event-driven
 programming works.
@@ -1121,7 +1235,7 @@ create a local reference $r$, initialized to $0$. Then we build a cell $out$,
 whose code reads an increments $r$, and which will read $a$ or $b$ depending
 on whether the reference's contents are less than or equal to $k$. Notice
 that the demand-driven nature of evaluation means that we never redundantly
-evaluate $p$ or $q$'s networks -- we only ever execute one of them. 
+evaluate $p$ or $q$'s networks --- we only ever execute one of them. 
 
 Finally, the operation $\loopop\;a_0\;p$ builds a feedback network by
 explicitly creating a reference to hold an accumulator parameter. It
@@ -1213,7 +1327,7 @@ $\forall a_0, p, f.\;
 \end{tabbing}
 
 These lemmas are what permit us to reason about our transducer
-implementation as if it were a pure implementation -- for each
+implementation as if it were a pure implementation --- for each
 combinator in the interface, we have a proof that shows the
 corresponding implementation combinator lifts
 
