@@ -70,7 +70,7 @@ critical idea is to distinguish between the footprint of a command,
 and the state whose invariants depends upon the footprint. To do so,
 we define an application-specific semantics of updates, and introduce
 the concept of a \emph{ramification operator} to explain how a local
-changes can alter our knowledge of the rest of the heap.
+change can alter our knowledge of the rest of the heap.
 
 To illustrate the utility of this style of proof, we verify an
 imperative implementation of combinators implementing stream
@@ -80,22 +80,21 @@ imperative implementation as if it were purely functional, even though
 it is implemented using state and imperative callback procedures.
 \end{abstract}
 
-\category{CR-number}{subcategory}{third-level}
+\category{F.3.1}{Logics and Meanings of Programs}{Specifying and Verifying and Reasoning about Programs}
 
 \terms
-separation logic, frame rule, ramification problem, dataflow, 
-functional reactive programming, subject-observer, model-view-controller
-
+languages, verification
 
 \keywords
-keyword1, keyword2
+separation logic, frame rule, ramification problem, dataflow, 
+functional reactive programming, subject-observer
 
 \section{Introduction}
 
 In many interactive programs, there are mutable data structures which
 change over time, and which must maintain some relationships with one
 another. For example, in a web browser, we need to present a web page
-both as a tree data structure for scripts to manipulate, and at the
+both as a tree data structure for scripts to manipulate, and 
 display a graphical image for the human user to view. Any change made
 to the tree by a script must be reflected in a change to the image
 that the human sees --- the two structures must remain synchronized.
@@ -125,8 +124,8 @@ ownership over the subject's data (its \emph{footprint}) in order to
 prove the correctness of code modifying the subject. This direction
 of ownership is natural to verify with separation logic. 
 
-However, we explicitly maintain the \emph{other} direction of
-dependency as well --- we must track everything which depends upon the
+However, we must explicitly maintain the \emph{other} direction of
+dependency as well --- we track everything which depends upon the
 subject, and modify them appropriately whenever the subject changes.
 However, the natural program invariant now becomes a global property:
 we need to know the full dependency graph covering all subjects and
@@ -136,7 +135,7 @@ invariant means that a naive correctness proof will not respect the
 modular structure of the program --- if we modify the dependency graph
 in any way, we now have to re-verify the entire program!
 
-However, the the intention of the subject-observer pattern is
+However, the intention of the subject-observer pattern is
 precisely to allow the program to remain oblivious to the exact number
 and nature of the observers, which allows the programmer to add new
 observers without disturbing the behavior of the rest of the program.
@@ -152,7 +151,7 @@ Concretely, our contributions are as follows:
     state, and which is implemented as higher-order functions
     dynamically creating networks of imperative callbacks
 
-    We then give an ``application-specific semantics'' for this
+    We then give an ``abstract semantics'' for this
     library, structured as a set of separation logic lemmas about our
     dataflow library. These lemmas permit \emph{modular} correctness
     proofs about programs using this API, even in the face of the fact
@@ -176,8 +175,7 @@ Concretely, our contributions are as follows:
 
   \item To illustrate the utility of this proof technique, we verify
     an imperative implementation of combinators implementing stream
-    transducers in the style of functional reactive programming. We 
-    can write programs which build up 
+    transducers in the style of functional reactive programming. 
 
     Ultimately, clients can reason about the behavior of the imperative
     implementation ``as if'' it were purely functional, even though it
@@ -211,7 +209,7 @@ executing the command $c$ will result in a postcondition state $q$
 formalized is an extension of the polymorphic lambda calculus with a
 monadic type constructor to represent side-effecting computations.
 The types of our language are the unit type $1$, the function space $A
-\to B$, the natural number type $\N$, the reference type
+\to B$, inductive types like the natural number type $\N$, the reference type
 $\reftype{A}$, as well as universal and existential types $\forall
 \alpha:\kappa.\;A$ and $\exists \alpha:\kappa.\;A$.\footnote{These
   quantifiers are actually all restricted to \emph{predicative}
@@ -253,7 +251,7 @@ We have $\unit$ as the inhabitant of $1$, natural numbers $\z$ and
 $\s{e}$, and functions $\fun{x}{A}{e}$. We also have the corresponding
 eliminations for each type, including projections for products and
 case statements for sum types. For the natural numbers, we add a
-primitive recursion construct $\iter{e}{e_z}{x}{e_s}$. If $e = \z$,
+primitive iteration construct $\iter{e}{e_z}{x}{e_s}$. If $e = \z$,
 this computes $e_z$ , and if $e = \s{e'}$, it computes
 $e_s[(\iter{e'}{e_z}{x}{e_s})/x]$. This bounded iteration allows us
 to implement (for example) arithmetic operations as pure expressions.
@@ -277,7 +275,7 @@ some $\comp{c'}$, and then evaluate $c'$, modifying the heap and
 binding its return value to $x$. Then, in this augmented environment,
 we run $c$. The fact that monadic commands have return values explains
 why our sequential composition is also a binding construct. Finally,
-we have primitive computations $\newref{A}{(e)}$, $!e$, and $e := e'$,
+we have primitive computations $\newref{A}{e}$, $!e$, and $e := e'$,
 which let us allocate, read and write references (inhabiting type
 $\reftype{A}$), respectively. To save space, we will also write
 $\ctext{run}\;e$, when $e$ is a term of monadic type, as an
@@ -391,8 +389,8 @@ conditions grows quadratically.
 With separation logic, we add the \emph{spatial} connectives to
 address this difficulty. A separating conjunction $p * q$ means that
 the state can be broken into two \emph{disjoint} parts, one of which
-is in the state described by $p$, and the other of which is in the
-state described by $q$. The disjointness property makes the
+is in the set described by $p$, and the other of which is in the
+set described by $q$. The disjointness property makes the
 noninterference of $p$ and $q$ implicit. This avoids the unwanted
 quadratic growth in the size of our assertions. In addition to the
 separating conjunction, we have its unit $\emp$, which is true of the
@@ -405,9 +403,9 @@ combination is described by $q$.
 
 The universal and existential quantifiers $\forall x:\omega.\;p$ and
 $\exists x:\omega.\;p$ are higher-order quantifiers ranging over all
-sorts $\omega$. The sorts include the language types $A$, the sort of
+sorts $\omega$. The sorts include the language types $A$, kinds $\kappa$, the sort of
 propositions $\assert$, and function spaces over sorts $\omega \To
-\omega'$. Constructors for terms of all these sorts in the syntax
+\omega'$. Constructors for terms of all these sorts are
 given in Figure~\ref{assert-syntax}. For the function space, we
 include lambda-abstraction and application. Because our assertion
 language contains within it the classical higher-order logic of sets,
@@ -427,10 +425,10 @@ triple $\mspec{p}{e}{a:A}{q}$.
 \begin{displaymath}
 \begin{array}{llcl}
 \mbox{Assertion Sorts} & 
-\omega & ::= & A \bnfalt \omega \To \omega \bnfalt \assert 
+\omega & ::= & A \bnfalt \kappa \bnfalt \omega \To \omega \bnfalt \assert 
 \\[0.5em]
 \mbox{Assertion} & 
-p & ::= & e \bnfalt x \bnfalt \fun{x}{\omega}{p} \bnfalt p\;q \\
+p & ::= & e \bnfalt A \bnfalt x \bnfalt \fun{x}{\omega}{p} \bnfalt p\;q \\
 \mbox{Constructors}
 & &  |  & \top \bnfalt p \land q \bnfalt p \implies q 
           \bnfalt \bot \bnfalt p \vee q \\
@@ -457,12 +455,13 @@ describes, then if $c$ terminates, it will end in a heap described by
 the predicate $q$. Since monadic computations can return a value in
 addition to having side-effects, we add the binder $a:A$ to the third
 clause of the triple to let us name and use the return value in the
-postcondition.
+postcondition. Likewise, the triple $\mspec{p}{e}{a:A}{q}$ means the
+same thing, only for terms of monadic type rather than syntactic computations.
 
 We then treat Hoare triples as one of the atomic proposition forms of
 a first-order intuitionistic logic (see
 Figure~\ref{assert-syntax}). The other form of atomic proposition are
-the specifications $\setof{p}$, which are $specifications$ saying that
+the specifications $\setof{p}$, which are \emph{specifications} saying that
 an \emph{assertion} $p$ is true. These formulas are useful for
 expressing aliasing relations between defined predicates, without
 necessarily revealing the implementations. In addition, we can form
@@ -483,7 +482,7 @@ quantifier hides that from it --- for example, we can expose a
 $table(t, map)$ predicate that does not reveal whether a hash table is
 implemented with single or double hashing.
 
-\section{Demand-Driven Notification Network}
+\section{Demand-Driven Notification Networks}
 
 A simple intuition for a ``demand-driven notification network'' is to
 think of it as a generalized spreadsheet. We have a collection of
@@ -548,11 +547,11 @@ $\updatecell\;\alpha\;exp\;a =
        \>$a.code := exp]$ \\[1em]
 
 $\ctext{mark\_unready} : ecell \to \monad{\unittype}$ \\
-$\ctext{mark\_unready}\;ecell =\; $\=$\ctext{unpack}(\alpha, a) = ecell\; \ctext{in}$\\
+$\ctext{mark\_unready}\;cell =\; $\=$\ctext{unpack}(\alpha, a) = cell\; \ctext{in}$\\
 \>  $[$\=$\letv{os}{\comp{!a.obs}}{}$ \\
 \>     \>$\letv{rs}{\comp{!a.reads}}{}$ \\
 \>     \>$\letv{\_}{\ctext{iterset}\;\ctext{mark\_unready}\;os}{}$ \\
-\>     \>$\letv{\_}{\ctext{iterset}\;(\ctext{remove\_obs}\;ecell)\;rs}{}$ \\
+\>     \>$\letv{\_}{\ctext{iterset}\;(\ctext{remove\_obs}\;cell)\;rs}{}$ \\
 \>     \>$\letv{\_}{\comp{a.value := \ctext{None}}}{}$ \\
 \>     \>$\letv{\_}{\comp{a.reads := \ctext{emptyset}}}{}$ \\
 \>     \>$a.obs   := \ctext{emptyset}]$ 
@@ -572,7 +571,7 @@ The type $\celltype{A}$ is the type of dynamic data values. A cell
 contains a reference to a piece of code, a possible memoized value,
 plus enough information to correctly invalidate its memoized value
 when the cell's dependencies change. We can create a new cell by
-calling $\newcell\;e$, which returns a brand new cell with the
+calling $\newcell e$, which returns a brand new cell with the
 code expression $e$ inside it. We can also modify a cell with 
 the command $\updatecell\;cell\;exp$, which modifies the cell
 $cell$ by installing the new expression $exp$ in it. 
@@ -589,11 +588,11 @@ operations.
 The actual implementation is also given in
 Figure~\ref{notification-implementation}. The abstract type of code is
 implemented using the underlying monad of imperative commands, so that
-a $\codetype{A}$ is implemented with the type $\monad{(A \times
+$\codetype{A}$ is implemented with the type $\monad{(A \times
   \cellset)}$.  The intuition is that when we evaluate a term we are
 allowed to read some cells along the way, and so must return a set of
 all the cells that we read in order to do proper dependency
-management, so $\cellset$ is a type representing sets of
+management. So, $\cellset$ is a type representing sets of
 (existentially-quantified) cells.  (The precise specification of
 $\cellset$ is given in Appendix A, since describing it is a
 distraction from the main development.)
@@ -620,7 +619,7 @@ value and the empty set, since it doesn't read any cells. Likewise,
 $\bind e\;f$ will evaluate the first argument and pass the returned
 value to the function $f$. It will return the function's return value,
 together with the union of the two read sets. $\getref r$ and $\setref r\;v$
-simply read an update the reference, and return empty read sets, since
+simply read and update the reference, and return empty read sets, since
 neither of them read any cells. 
 
 Interesting things first happen with the $\readcell e$ operation. This
@@ -631,7 +630,7 @@ addition, each cell that was read in the evaluation of the code (i.e.,
 the set returned as the second component of the monadic type's return
 value) also has its observer set updated with the newly-ready current
 cell. Now, if any of the dependencies change, they will be able to
-invalidate the current cell, which depends upon them. Note that the
+invalidate the current cell, which observes them. Note that the
 dependencies between cells are all dynamic --- we cannot examine the
 inside of a code expression to find its ``free cells'', and so we rely
 upon the invariant that a code expression will return every cell it
@@ -642,8 +641,8 @@ operation.  It creates a new cell value, setting the code field with
 the argument $cmd$, and generating an id by dereferencing and
 incrementing the variable $counter$. The $counter$ variable occurs
 freely in this definition, because it is a piece of state global to
-this whole module, and must be initialized by whatever initialization
-routine first constructs this whole module as an existential package.
+this module, and must be initialized by whatever initialization
+routine first constructs the whole module as an existential package.
 Since $counter$ is otherwise private, we can generate unique
 identifiers by incrementing it as we create new cells. 
 
@@ -659,7 +658,7 @@ cell that transitively observes the cell. This is what the
 $\ctext{mark\_unready}$ function does. Given a cell, it takes all of the
 observers of the current cell and recursively makes all of
 them unready. Then it removes the current cell from the observer sets of
-everyone it depends on, and then it nulls out the current cell's
+all the cells it reads, and then it nulls out the current cell's
 memoized value, as well as setting its read and observer sets to
 empty. Notice that there is no explicit base case to the recursive
 call; if there are any cycles in the dependency graph, invalidation
@@ -674,7 +673,7 @@ informally, all in one place:
   \item Every cell is either ready, or unready. 
   \item Every ready cell has a memoized value, and maintains 
     two sets, one containing every cell that it reads, and the
-    other containing every cell it is ready by. 
+    other containing every cell it is observed by. 
   \item Every unready cell has no memoized value, and has 
     both an empty read set and an empty observer set. 
   \item The overall dependency graph among the valid cells must form a
@@ -684,7 +683,7 @@ informally, all in one place:
 \end{itemize}
 
 Formalizing these constraints is relatively straightforward, but we
-have the problem that these constraints are somewhat global in nature:
+have the problem that these constraints are global in nature:
 we can't be sure that the dependency graph is acyclic without having
 it all available to examine, and likewise we can't in general know
 that a cell is in the read set of everything in its observed set
@@ -696,7 +695,7 @@ the primary contributions of this work.
 \subsection{The Structure of the Global Invariant}
 
 The key to getting around our difficulties lies in the difference
-between the implementation of $\updatecell$, and in $\ctext{read}$.
+between the implementation of $\updatecell$, and of $\ctext{read}$.
 $\updatecell$ calls $\ctext{mark\_unready}$, which recursively follows
 the observers. The $\ctext{read}$ function, on the other hand,
 proceeds in the opposite direction --- it evaluates code expressions,
@@ -705,12 +704,12 @@ direction these two functions look is why we end up needing a global
 invariant: we need to know that these two directions are in harmony
 with one another.
 
-Now, note that the type of $\ctext{mark\_unready}$ is simply monadic
-$\monad{\unittype}$, which precludes it from being called from within
+Now, note that the type of $\ctext{mark\_unready}$ is simply the monadic
+type $\monad{\unittype}$, which precludes it from being called from within
 a $\codetype{A}$. This means that when we are evaluating a code
-expression, we will never actually follow the observers fields --
-we'll only patch the observer fields as needed, whenever we evaluate a
-cell and change it from invalid to valid.  As a result, an abstract
+expression, we will never actually follow the observer fields --
+we'll only patch them as needed, whenever we evaluate a
+cell and change it from unready to ready.  As a result, an abstract
 description of the heap which \emph{does not explicitly mention
 the observer sets} will prove sufficient for reasoning about
 the behavior of $\codetype{A}$ expressions.
@@ -737,10 +736,10 @@ atomic forms representing cells. $\cellneg{a}{e}$ says that $a$ is a
 cell with code $e$, which is unready to deliver a value --- it needs
 to be re-evaluated before it can yield a value. $\cellpos{a}{e}{v}{r}$
 says that $a$ is a cell with code $e$, and that may be ready to deliver
-the value $v$, assuming that everything in its read set $r$ are themselves
+the value $v$, assuming that all the cells in its read set $r$ are themselves
 ready. If anything it reads is known to be unready, then it is unready
-itself. (We will sometimes write $\celleither{a}{e}$ when we are indifferent
-between these two atomic forms.) 
+itself. (We will sometimes write $\celleither{a}{e}$ when we do not care
+whether $a$ is ready or not.)
 
 First, notice the must/may flavor of this reading. The formula
 $\cellneg{a}{e}$ says that $a$ \emph{must} be unready.  The formula
@@ -787,10 +786,10 @@ observes relation $O_H$, which enforces the condition that the reads
 and observe relations be the same, only pointing in opposite
 directions (i.e., if $a$ reads $b$, then $b$ is observed by
 $a$). Then, we require that the transitive (but not reflexive) closure
-of the reads relation, $R^+$ form a strict partial order. Strictness
+of the reads relation, $R^+_H$ form a strict partial order. Strictness
 enforces the condition that there be no cycles in the dependence graph
 (because otherwise there would be elements $a$, such that $(a, a) \in
-R_H$).  Next, we require that the reads relation $R_H$ is a subset of
+R^+_H$).  Next, we require that the reads relation $R_H$ is a subset of
 the Cartesian product $V_H \times V_H$ of the set of cells with values
 $V_H$. This ensures that a) there are no dependencies on unready
 cells, and b) all unready cells have empty read and observe
@@ -799,14 +798,14 @@ identifiers -- $unique(H)$ asserts that the identifier field is one
 half of an isomorphism between the cells in $H$, and the natural
 numbers from 0 to the size of $H$.
 
-In the third line, we begin by requiring that the cell heap satisfy
+In the third line, we begin by requiring that the cell heap $H$ satisfy
 the abstract heap formula $\phi$, which formalizes the informal
 reading of the abstract heap formulas given earlier. This satisfaction
 relation follows the general style of separation logic quite closely; 
 in a sense, our abstract heap formulas are giving a domain-specific
 version of separation logic.
 
-The last clause finally connects the cell heap, which is a purely
+The last clause $heap(H)$ finally connects the cell heap, which is a purely
 mathematical object, to the actual low-level heap the implementation
 uses. We ask that the global counter reference $counter$ point to an integer
 field equal to the size of the cell heap, and then use the iterated
@@ -864,7 +863,7 @@ $heap(D,h) = $ \\
                          \>$c.obs   \pointsto v_o \;* $ \\
                          \>$c.id    = identity(h(c)) \;\land$ \\
                          \>$set(D, v_r, reads(h(c))) \;\land$ \\
-                         \>$set(D, v_o, obs(h(c)))$ \\[1em]
+                         \>$set(D, v_o, obs(h(c)))$ 
 \end{tabbing}
 \caption{Definitions for Heap Invariant}
 \label{heap-invariant}
@@ -885,7 +884,7 @@ us a small domain-specific separation logic. This means that in order
 to reason locally over cell heaps, we need to find an
 application-specific version of the frame rule for our library. 
 
-To do this, we'll need to adapt some ideas proposed by
+To do this, we will adapt some ideas proposed by
 Benton~\cite{benton}, and Birkedal and Yang~\cite{birkedal-yang}. They
 suggested interpreting the frame rule of separation logic as a form of
 quantification -- instead of having a separate frame rule that allows
@@ -894,7 +893,7 @@ rules of the program logic be replaced with rules possessing an extra
 quantifier ranging over ``the rest of the heap'':
 
 \begin{mathpar}
-  \inferrule*[right=QuantifiedExample]
+  \inferrule*[right=Example]
           { }
           { \forall R.\; \setof{ (e \pointsto v) * R } \;e := v'\; \setof{ (e \pointsto v') * R}}
 \end{mathpar}
@@ -909,8 +908,8 @@ $\updatecell$ operation certainly does not act locally -- it
 recursively traverses the observers set, possibly mutating a very
 large part of the cell graph.
 
-For example, we can prove the soundness of the following triple specifying
-$\updatecell$. 
+Nonetheless, we can prove the soundness of the following triple
+specifying $\updatecell$.
 
 \begin{prop}{(Update Rule)}
 For all cells $o$ and code expressions $e$ and $e'$, the following
@@ -931,7 +930,7 @@ modify it to be unready.
 
 Now consider any positive cell formula in $\psi$ which reads $o$,
 directly or indirectly. The satisfaction relation for $\phi$ tells us
-that a positive formula must have everything in its read set to be
+that a positive formula must have everything in its read set be
 ready, in order to represent a ready cell. So by changing $o$'s
 formula to the unready state, we no longer require that positive
 formula to represent a ready cell. As a result, we can leave the
@@ -952,7 +951,7 @@ $\forall \psi:\formula.\; $\=$\setof{G(\psi)}$ \\
 \end{prop}
 
 \begin{proof}
-This is much than $\updatecell$: we just need to allocate a new
+This is much easier than $\updatecell$: we just need to allocate a new
 numeric id for the new cell, and show that the extended cell heap
 continues to satisfy all of the expected properties.
 \end{proof}
@@ -973,7 +972,7 @@ continues to satisfy all of the expected properties.
             {\astep{\phi}{\readcell a}{\phi}{v}{\setof{a}}{\emptyset}}
 \and
   \inferrule*[right=AUnready]
-            {\unready{\phi}{a} \\
+            {\unready{\celleither{a}{e} \otimes \phi}{a} \;\;
              \astep{\phi}{e}{\phi'}{v}{r}{u}}
             {\aconfig{\celleither{a}{e} \otimes \phi}
                      {\readcell a} \Downarrow \\
@@ -985,13 +984,13 @@ continues to satisfy all of the expected properties.
 \\
   \inferrule*[right=AGetRef]
             { } 
-            {\astep{\phi \otimes \localref{r}{v}}{\getref r}
-                   {\phi \otimes \localref{r}{v}}{v}{\emptyset}{\emptyset}}
+            {\astep{\localref{r}{v}}{\getref r}
+                   {\localref{r}{v}}{v}{\emptyset}{\emptyset}}
 \and
   \inferrule*[right=ASetRef]
             { } 
-            {\astep{\phi \otimes \localref{r}{v}}{\setref r\;v'}
-                   {\phi \otimes \localref{r}{v'}}{\unit}{\emptyset}{\emptyset}}
+            {\astep{\localref{r}{v}}{\setref r\;v'}
+                   {\localref{r}{v'}}{\unit}{\emptyset}{\emptyset}}
 \\
 \\
   \inferrule*[right=AbstractFrame]
@@ -1058,7 +1057,7 @@ continues to satisfy all of the expected properties.
 
 \subsection{Ramified Frame Properties}
 
-Ironically, this strategy is sufficient for $\newcell$ and
+Ironically, this strategy is sufficient for $\newcell$and
 $\updatecell$, but is not adequate for defining a frame property
 for $\codetype{A}$ expressions. 
 
@@ -1069,7 +1068,7 @@ value 5, and b) see the cell formula change to $\cellpos{a}{\return
   5}{5}{\emptyset}$.  However, the fact that we are now changing cells
 from negative to positive means that the conditional character of
 readiness, which worked in our favor with $\updatecell$ and
-$\newcell$, now works against us.
+$\newcell\!\!$, now works against us.
 
 In particular, suppose that we run this command with a framed abstract heap
 formula $\psi = \cellpos{b}{\readcell a}{17}{\setof{a}}$. Now, the
@@ -1110,9 +1109,9 @@ represent all of the indirect consequences of an action?
 
 We can understand our difficulty as an instance of the ramification
 problem. When we evaluate a code expression, we may read some unready
-cells and send them an unready state in the precondition to a ready
+cells and send them from an unready state in the precondition to a ready
 state in the postcondition. However, we may have had some cell formulas in
-our frame which claimed their corresponding cell were unready purely
+our frame which claimed their corresponding cells were unready purely
 because one of the cells in our footprint was unready. Therefore, when
 we update the footprint, we must modify the frame formula to account
 for the ramifications of our update in the footprint. So even though
@@ -1135,7 +1134,7 @@ judgments and predicates.
 
 In Figure~\ref{readiness} we define the two judgments $\unready{\phi}{o}$
 and $\ready{\phi}{o}{v}$, which establish whether a cell is ready or
-unready, given that we know the cell heap satisfies $\phi$.
+unready, from the syntactic structure of $\phi$. 
 
 \begin{prop}{(Soundness of $\ready{\phi}{o}{v}$ and $\unready{\phi}{o}$)}
 For all $\phi, o,$ and $H$ such that $H = (D,h)$:
@@ -1169,7 +1168,7 @@ simply combine their ramification effects without having to worry
 about the order that they were evaluated in. The second and third let
 us know that a ramification cannot make us forget a cell is unready,
 nor can it make anything ready that was not ready before. The last
-property permits us to constrain the effect of a ramification -- if we
+property permits us to constrain the effect of a ramification --- if we
 know that two parts of the abstract heap formula do not read each
 other at all, we can deduce that ramifications from one will not
 affect the other.
@@ -1194,7 +1193,7 @@ $\astep{\phi}{e}{\phi'}{v}{r}{u} \triangleq$ \\[0.5em]
     \>                  \>$\{\forall o.\;$\=$(\unready{\phi \otimes \psi}{o} \land o \in \domain{\psi})$ \\
     \>                  \> \> $\implies \unready{\phi' \otimes R(u, \psi)}{o}\}$ \\
 \>$\!\!\specand$ \\ 
-\>$\{\forall c \in r \cup u.\; \exists v.\; \ready{\phi'}{c}{v} \;\land \forall c \in u.\; \unready{\phi}{c}\}$ \\
+\>$\{\forall c \in r \cup u.\; \exists v.\; \ready{\phi'}{c}{v} \;\land \forall c \in u.\; \unready{\phi}{c}\}$ 
 \end{tabbing}
 \caption{Definition of the Abstract Semantics}
 \label{abstract-semantics}
@@ -1225,7 +1224,7 @@ format, mimicking the structure of a big-step operational semantics.
 In rule \textsc{AUnit}, we give a specification for the $\return v$ command, 
 which simply returns its argument and neither reads nor updates any 
 cells or state. The \textsc{ABind} rule explains how sequential composition 
-works -- as expected, we evaluate the first monadic argument, and pass
+works --- as expected, we evaluate the first monadic argument, and pass
 the result to the functional argument, and evaluate that. The read and
 update sets are simply the union of the two executions. Reading a cell
 comes in two variants, \textsc{AReady} and \textsc{AUnready}. If a cell is ready, we
@@ -1270,8 +1269,7 @@ yields a stream of outputs $\stream{B}$. Note that a stream can be
 viewed either as an infinite sequence of values, or isomorphically as
 a function from natural numbers to values (i.e., a function from times
 to values). In our discussion, we'll switch freely between these two
-views, using whichever viewpoint is most convenient.
-\footnote{Given an infinite stream $vs$, we will use use $take\;n\;vs$ to denote
+views, using the most convenient viewpoint.\footnote{Given an infinite stream $vs$, we will use use $take\;n\;vs$ to denote
 the finite list consisting of the first $n$ elements of the stream
 $vs$. Correspondingly, $drop\;n\;vs$ is the infinite stream with $vs$
 with its first $n$ elements cut off. With a function $f$, $map\;f\;vs$
@@ -1343,7 +1341,7 @@ simple ``switching combinator''.  It behaves as if it were $p$ for the
 first $k$ time steps, and then behaves as if it were $q$, only
 starting with the input stream beginning at time $k$.
 
-The combinator $loop\;a_0\;p$ is a ``feedback'' operation. It acts
+The combinator $loop\;a_0\;p$ is a feedback operation. It acts
 upon a transducer $p$ which takes pairs of $A$s and $B$s, and yields
 pairs of $A$s and $C$s. It turns it into a combinator that takes $B$s
 to $C$s, by giving $p$ the value $a_0$ (and its $B$-input) on the
@@ -1480,12 +1478,12 @@ The operation $\switchop\;k\;p\;q$ is the first example that uses
 local state. Given an $input$ cell, we first build networks corresponding
 to $p$ and to $q$ (with outputs $a$ and $b$, respectively). Then we
 create a local reference $r$, initialized to $0$. Then we build a cell $out$,
-whose code reads an increments $r$, and which will read $a$ or $b$ depending
+whose code reads and increments $r$, and which will read $a$ or $b$ depending
 on whether the reference's contents are less than or equal to $k$. Notice
 that the demand-driven nature of evaluation means that we never redundantly
 evaluate $p$ or $q$'s networks --- we only ever execute one of them. 
 
-Finally, the operation $\loopop\;a_0\;p$ builds a feedback network by
+Finally, the operation $\loopop a_0\;p$ builds a feedback network by
 explicitly creating a reference to hold an accumulator parameter. It
 constructs a local reference initialized to $a_0$, and then constructs
 a cell $ab$ which reads the input and the local reference to produce a
@@ -1531,12 +1529,13 @@ $\Phi$ realizes the stream transducer $f$, when the event loop writes
 inputs into $i$ and reads outputs from $o$''. We have highlighted the
 key pieces of this definition with boxes. First, given some input
 stream $v$, we existentially assert the existence of a \emph{stream}
-of abstract heap formulas $\phi$. These streams represent the evolving
+of abstract heap formulas $\phi$. This stream represents the evolving
 state of the network over time --- because our notification networks
 contain local state, that state can potentially have a different value
 at each time step. Then, in the unboxed formulas, we assert some
 well-formedness properties, such as 1) the initial value of the stream
-matching our $\Phi$, 2) the domain of the network remaining constant
+matching our $\Phi$, 2) the domain of the network (i.e., the cells whose
+atomic formulas are in that formula) remaining constant
 over time, 3) that the output is unready if the input is, and 4) that
 the network reads only the specified input cell. (All of these
 conditions could be relaxed, but for the basic FRP combinators we
@@ -1546,30 +1545,30 @@ transducers as the program ran, since at that point we would need to
 create new cells at each time step.)
 
 We state the stream property with the $Transducer$ sub-predicate. It
-asserts that if, at each time $n$ we have input state $\phi_i$ which
-yields the $n$-th input when $i$ is read (the second boxed formula), then 
+asserts for all time $n$, that if we have input state $\phi_i$ which
+yields $v_i$ when $i$ is read (the second boxed formula), then 
 reading $o$ in a larger state containing both the input $phi_i$ and the
-$n$-th transducer state $\phi_n$ will 1) return the $n$-th transduced
+$n$-th transducer state $\phi_n$ will 1) return the $n$-th output
 value $(f\;v)_n$, and 2) will update the state of the network to 
 the next time step $\phi_{n+1}$ (the third boxed formula). 
 
 With this property in hand, we can prove the following specifications: 
 
-\begin{prop}{(FRP Combinator Lemmas)}
-First, we define the $Relate$ predicate as follows:
+\begin{prop}{(FRP Correctness)}
+We define the $Relate$ predicate:
 \begin{tabbing}
 $Relate_{A,B}(p, f) \triangleq$ \\
 \;\; $\forall \psi:\formula, i:\celltype{A}.$ \\ 
 \qquad $\setof{G(\psi)}\;p\;i\;\{o:\celltype{B}.\;
                \exists \Phi.\;$\=$G(\Phi \otimes \psi) \;\land$ \\
-                               \>$ Realize(i, \Phi, o, f) \valid\}$ \\[1em]
+                               \>$ Realize(i, \Phi, o, f) \valid\}$
 \end{tabbing}
 \noindent Then, the following specifications are provable: 
 \begin{tabbing}
 $\forall f:A\to B.\; Relate(\liftop f, lift\;f)$ \\[1em]
 
 $\forall p, f, q, g.\;$\=$Relate(p, f) \specand Relate(q, g)$ \\
-                       \>$\specimp Relate(compose\;f\;g, \composeop p\;q)$ \\[1em]
+                       \>$\specimp Relate(\composeop p\;q, compose\;f\;g)$ \\[1em]
 
 $\forall p, f, q, g.\;$\=$Relate(p, f) \specand Relate(q, g)$ \\
                        \>$\specimp Relate(\parop p\;q, par\;f\;g)$ \\[1em]
@@ -1578,7 +1577,7 @@ $\forall k, p, f, q, g.\;$\=$Relate(p, f) \specand Relate(q, g)$ \\
                           \>$\specimp Relate(\switchop k\;p\;q, switch\;k\;f\;g)$ \\[1em]
 
 $\forall a_0, p, f.\; 
-  Relate(p, f) \specimp Relate(\loopop\;a_0\;p, loop\;f\;a_0)$
+  Relate(p, f) \specimp Relate(\loopop\;a_0\;p, loop\;a_0\;f)$
 \end{tabbing}
 \end{prop}
 
@@ -1601,7 +1600,7 @@ and assignment as a way of globally broadcasting information to the
 rest of the program state. These algorithms have all been naturally
 resistant to modular proofs, because of the apparent need to know
 ``the rest of the world'' in the program invariant. It would be
-interesting to study
+interesting to see if ramifications can help.
 
 Second, we would like to investigate the relationship between
 ramification operators and methods based on
@@ -1614,7 +1613,7 @@ Third, in this work we have presented ramifications as a style of
 specification useful for verifying a particular library. Might it be
 sensible or useful to bake ramification operators into the basic
 logical framework? If so, what are their logical properties --- $R(u,
-\phi)$ looks a family of modal operators on the formula $\phi$, but
+\phi)$ looks like a family of modal operators on the formula $\phi$, but
 even in our first example we needed a number of auxiliary interaction
 lemmas to make them truly useful.
 
@@ -1651,7 +1650,7 @@ in our FRP example.
 
 Acar and his coauthors~\cite{self-adjusting} have proposed
 \emph{self-adjusting computation} as a technique for using change
-propagation to write programs that dynamically and incrementally
+propagation to write programs that incrementally
 recompute answers as the inputs are adjusted. It would be worth 
 studying if our techniques could help verifying implementations of this
 idea.
@@ -1710,8 +1709,8 @@ $\ctext{removeset}\;v\;x$, which removes $x$ from the set $v$
 represents. We also have $\ctext{iterset}\;f\;v$, which iterates over
 the elements of $v$'s set and applies $f$ to each element in some
 sequential order. (Observe that the specification makes use of two 
-auxiliary predicates, $matches$ and $iterseq$, which assert that a
-set and a list have the same elements, and $iterseq$, which constructs
+auxiliary predicates: $matches$, which assert that a
+set and a list have the same elements; and $iterseq$, which constructs
 a command representing the sequential execution of those elements.) 
 
 We have three axioms that our implementation must satisfy. First, if a
@@ -1720,8 +1719,7 @@ represent a set in any larger world $W'$. Second, the values in a set
 are always a subset of the world $W$. Finally, we require that
 $set(W,v,elts)$ is a pure predicate (i.e., is not heap-dependent),
 which implies that it have a purely functional implementation (for
-example, as a binary tree). This is not strictly necessary, but eases
-verification. 
+example, as a binary tree). 
 
 
 \begin{tabbing}
