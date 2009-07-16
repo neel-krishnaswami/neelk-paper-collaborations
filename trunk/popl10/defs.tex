@@ -1,0 +1,213 @@
+\newcommand{\ctext}[1]{\mbox{\textsf{{#1}}}}
+\newcommand{\unittype}{\mathbf{1}}
+\newcommand{\reftype}[1]{\ctext{ref }#1}
+\newcommand{\monad}[1]{\bigcirc{#1}}
+\newcommand{\cont}[1]{\ctext{cont}\;{#1}}
+\newcommand{\opttype}[1]{\ctext{option }{#1}}
+\newcommand{\seqsort}[1]{\ctext{seq }{#1}}
+\newcommand{\listtype}[1]{\ctext{list }{#1}}
+
+\newcommand{\pair}[2]{\left<{#1},{#2}\right>}
+\newcommand{\fst}[1]{\ctext{fst } #1}
+\newcommand{\snd}[1]{\ctext{snd } #1}
+
+\newcommand{\inj}[1]{\iota_{#1}}
+\newcommand{\inl}[1]{\ctext{inl }#1}
+\newcommand{\inr}[1]{\ctext{inr }#1}
+\newcommand{\Case}[5]{\ctext{case}(#1,\; {#2}.\; #3,\; {#4}.\; #5)}
+\newcommand{\listcase}[5]{\ctext{case}(#1,\;\ctext{Nil} \to {#2},\;
+                                       \ctext{Cons}({#3},{#4}) \to {#5})}
+\newcommand{\optcase}[4]{\ctext{case}(#1,\;
+                                      \ctext{None} \to {#2},\;
+                                      \ctext{Some}\;{#3} \to {#4})}
+\newcommand{\z}{\ctext{z}}
+\newcommand{\s}[1]{\ctext{s}(#1)}
+\newcommand{\iter}[4]{\ctext{iter}(#1, {#2}, {#3}.\; {#4})}
+\newcommand{\iterseq}[4]{\ctext{iter}_{\mathsf{seq}}(#1, {#2}, #3.\; {#4})}
+\newcommand{\comp}[1]{[#1]}
+\newcommand{\fun}[3]{\lambda #1:#2.\;#3}
+\newcommand{\Fun}[3]{\Lambda #1:#2.\;#3}
+\newcommand{\unit}{\left<\right>}
+\newcommand{\pack}[2]{\ctext{pack}({#1}, {#2})}
+\newcommand{\unpack}[4]{\ctext{unpack}({#1}, {#2}) = {#3} \;\ctext{in}\;{#4}}
+\newcommand{\alt}{\;|\;}
+\newcommand{\letv}[3]{\ctext{letv }#1 = #2\ctext{ in }#3}
+\newcommand{\newref}[2]{\ctext{new}_{#1}(#2)}
+\newcommand{\run}[1]{\ctext{run }{#1}}
+\newcommand{\ok}{\ctext{ ok}}
+\newcommand{\FV}[1]{\mathrm{FV}({#1})}
+
+\newcommand{\fix}[2]{\ctext{fix}\;{#1}.\;{#2}}
+
+\newcommand{\statecfg}[2]{\left<{#1};\;{#2}\right>}
+\newcommand{\eval}[4]{\left<{#1};\;{#2}\right> \leadsto \left<{#3};\;{#4}\right>}
+\newcommand{\evalabort}[2]{\left<{#1};\;{#2}\right> \leadsto \mathbf{abort}}
+
+\newcommand{\domain}[1]{\mbox{dom}({#1})}
+\newcommand{\upset}[1]{\mathcal{P}^{\uparrow}({#1})}
+
+\newcommand{\pointsto}{\mapsto}
+\newcommand{\disj}{\vee}
+\renewcommand{\implies}{\supset}
+\newcommand{\wand}{-\!\!*}
+\newcommand{\emp}{\mathsf{emp}}
+\newcommand{\validprop}[1]{{#1}\ctext{ valid}}
+
+\newcommand{\todo}[1]{\texttt{[TODO: {#1}]}}
+
+\newcommand{\setof}[1]{\{{#1}\}}
+
+\newcommand{\To}{\Rightarrow}
+
+\newcommand{\N}{\mathbb{N}}
+
+\newcommand{\assert}{\ctext{prop}}
+
+\newcommand{\bigstep}{\Downarrow}
+
+\newcommand{\bigeval}[4]{\left<{#1};\;{#2}\right> \bigstep \left<{#3};\;{#4}\right>}
+\newcommand{\bigevalabort}[2]{\left<{#1};\;{#2}\right> \bigstep \mathbf{abort}}
+
+\newcommand{\spec}[4]{\{{#1}\}{#2}\{{#3}.\;{#4}\}}
+\newcommand{\specX}[3]{\{{#1}\}{#2}\{{#3}\}}
+\newcommand{\mspec}[4]{\langle{#1}\rangle{#2}\langle{#3}.\;{#4}\rangle}
+\newcommand{\bnfalt}{\;\;|\;\;}
+
+\newcommand{\specor}{\ctext{ or }}
+\newcommand{\specand}{\;\ctext{and}\;}
+\newcommand{\specimp}{\ctext{ implies }}
+\newcommand{\spectype}{\ctext{spec}}
+\newcommand{\valid}{\ctext{ valid}}
+
+\newcommand{\interp}[1]{[\![{#1}]\!]}
+\newcommand{\interpE}[1]{\interp{#1}^e}
+\newcommand{\interpC}[1]{\interp{#1}^c}
+
+\newcommand{\interpF}[1]{[\![{#1}]\!]_f}
+\newcommand{\interpmono}[1]{\interp{#1}^{\mathrm{m}}}
+
+\newcommand{\entails}{\models}
+
+\newcommand{\judgeE}[4][\Theta]{{#1};\;{#2} \vdash {#3} : {#4}}
+\newcommand{\judgeC}[4][\Theta]{{#1};\;{#2} \vdash {#3} \div {#4}}
+\newcommand{\judgeEq}[5][\Theta]{{#1};\;{#2} \vdash {#3} \equiv {#4} : {#5}}
+\newcommand{\judgeEqC}[5][\Theta]{{#1};{#2} \vdash {#3} \equiv {#4} \div {#5}}
+
+
+
+
+%% semantic operations
+
+\newcommand{\semfun}[2]{\lambda #1.\;#2}
+\newcommand{\sempair}[2]{\left({#1}, {#2}\right)}
+\newcommand{\powerset}[1]{\mathcal{P}(#1)}
+
+\newcommand{\paircat}[2]{\left<{#1};{#2}\right>}
+\newcommand{\sumcat}[2]{\left[{#1};{#2}\right]}
+\newcommand{\abscat}[1]{\lambda({#1})}
+
+
+\newcommand{\judgeP}[3]{{#1} \vdash {#2} : {#3}}
+\newcommand{\judgeS}[2]{{#1} \vdash {#2} : \spectype}
+
+\newcommand{\judgeSCtx}[2]{{#1} \vdash {#2} : \ctext{context}}
+
+\newcommand{\judgeEqP}[4]{{#1} \vdash {#2} \equiv {#3} : {#4}}
+
+
+\newcommand{\judgeWK}[3][\Theta]{{#1} \vdash {#2} : {#3}}
+\newcommand{\judgeKeq}[4][\Theta]{{#1} \vdash {#2} \equiv {#3} : {#4}}
+
+\newcommand{\entailsP}[3]{{#1} \rhd {#2} \vdash {#3}}
+\newcommand{\entailsS}[3]{{#1}; {#2} \vdash {#3} \ok}
+
+\newcommand{\chartp}{\ctext{char}}
+\newcommand{\fonttp}{\ctext{font}}
+
+\newcommand{\LOC}{loc}
+\newcommand{\MONO}{\mathbf{mono}}
+\newcommand{\HEAP}{heap}
+\newcommand{\PROP}{Prop}
+\newcommand{\TRUE}{True}
+\newcommand{\HPROP}{Prop}
+\newcommand{\TYPE}{Type}
+
+\newtheorem{prop}{Proposition}
+\newtheorem{lemma}{Lemma}
+
+\newenvironment{proof}{\noindent\textbf{Proof.}}{\noindent$\Box$}
+
+\newenvironment{tabbedproof}{\begin{tabbing}\;\;\=\;\;\=\;\;\=\;\;\=\;\;\=\;\;\=\;\;\=\;\;\=\\[-2em]}{\end{tabbing}}
+
+\newcommand{\oo}{\>}
+\newcommand{\ooo}{\>\>}
+\newcommand{\oooo}{\>\>\>}
+\newcommand{\ooooo}{\>\>\>\>}
+\newcommand{\oooooo}{\>\>\>\>\>}
+\newcommand{\ooooooo}{\>\>\>\>\>\>}
+\newcommand{\oooooooo}{\>\>\>\>\>\>\>}
+\newcommand{\ooooooooo}{\>\>\>\>\>\>\>\>}
+
+
+\newenvironment{eqnproof}[1][]{${#1}$\begin{displaymath}\begin{array}{lcll}}
+                         {\end{array}\end{displaymath}}
+
+
+\newcommand{\eline}[3][]{{#1} & = & {#2} & \mbox{{#3}} \\}
+
+\newcommand{\elines}[3][]{{#1} & = & \begin{array}{l} #2 \end{array} & \mbox{{#3}} \\}
+
+\newcommand{\eclaim}[3][]{{#1} &  & {#2} & \mbox{{#3}} \\}
+\newcommand{\efact}[2]{{#1} & & & \mbox{#2} \\}
+
+%%
+
+\newcommand{\runcmd}{\ctext{run}\;}
+\newcommand{\return}{\ctext{return}\;}
+\newcommand{\bind}{\ctext{bind}\;}
+\newcommand{\readcell}{\ctext{read}\;}
+
+
+\newcommand{\ready}[3]{\ctext{ready}({#1}, {#2}, {#3})}
+\newcommand{\unready}[2]{\ctext{unready}({#1}, {#2})}
+
+\newcommand{\cellprop}[5]{\ctext{cell}^{#1}({#2}, {#3}, {#4}, {#5})}
+\newcommand{\cellneg}[2]{\cellprop{-}{#1}{#2}{\_}{\_}}
+\newcommand{\cellpos}[4]{\cellprop{+}{#1}{#2}{#3}{#4}}
+\newcommand{\celleither}[2]{\cellprop{\pm}{#1}{#2}{-}{-}}
+\newcommand{\localref}[2]{\ctext{local}({#1}, {#2})}
+\newcommand{\getref}{\ctext{getref}\;}
+\newcommand{\setref}{\ctext{setref}\;}
+
+\newcommand{\aconfig}[2]{\left<{#1};{#2}\right>}
+\newcommand{\aeffect}[2]{\left[{#1}|{#2}\right]}
+\newcommand{\astep}[6]{\aconfig{#1}{#2}\Downarrow\aconfig{#3}{#4}\aeffect{#5}{#6}}
+
+\newcommand{\powersetfin}[1]{\mathcal{P}^{\mathrm{fin}}({#1})}
+\newcommand{\celltype}[1]{\ctext{cell}\;{#1}}
+\newcommand{\bool}{\ctext{bool}}
+\newcommand{\settype}[1]{\ctext{Set}({#1})}
+
+\newcommand{\codetype}[1]{\ctext{code}\;{#1}}
+
+\newcommand{\newcell}{\ctext{newcell}\;}
+\newcommand{\cellset}{\ctext{cellset}}
+
+\newcommand{\comprehend}[2]{\setof{{#1}\;|\;{#2}}}
+\newcommand{\ST}[2]{\ctext{ST}({#1}, {#2})}
+\newcommand{\stream}[1]{\ctext{stream}({#1})}
+\newcommand{\formula}{\ctext{formula}}
+
+
+\newcommand{\updatecell}{\ctext{update}}
+
+
+\newcommand{\liftop}{\ctext{lift}\;}
+\newcommand{\composeop}{\ctext{compose}\;}
+\newcommand{\parop}{\ctext{par}\;}
+\newcommand{\loopop}{\ctext{loop}\;}
+\newcommand{\switchop}{\ctext{switch}\;}
+
+\newcommand{\satisfies}[2]{satisfies({#1}, {#2})}
+
+\newcommand{\closed}[2]{\ctext{closed}({#1}, {#2})}
