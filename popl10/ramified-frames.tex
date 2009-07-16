@@ -1100,7 +1100,7 @@ have numerous implicit preconditions (such as there being a bulb in
 the light socket), and dubbed the problem of identifying these
 implicit preconditions the qualification problem. 
 
-Some years later, Finger~\cite{finger} observed that the qualification
+Some years later, \citet{finger} observed that the qualification
 problem has a dual: actions can have indirect effects that are not
 explicitly stated in their specification (e.g., turning on the light can
 startle the cat). He called the problem of deducing these implicit
@@ -1365,7 +1365,7 @@ finite approximation.
 
 All of these definitions are familiar to functional programmers, and
 there are many techniques to prove properties of these functions ---
-coinductive proofs, Bird and Wadler's $take$-lemma, arguments based on
+coinductive proofs, the $take$-lemma of \citet{bird-wadler}, arguments based on
 the isomorphism between streams and functions from natural
 numbers. All of these serve to make proving properties about stream
 transducers very pleasant. For example, one property we will need in
@@ -1621,14 +1621,13 @@ lemmas to make them truly useful.
 
 Versions of separation logic~\cite{sep-logic} supporting higher-order
 languages and quantification over predicates have been proposed by
-Nanevski \emph{et al.} with Hoare Type Theory, and by Parkinson and
-Bierman for Java~\cite{parkinson-bierman}. It would be interesting to study
-how the proof techniques in this paper could be adapted to their
-setting.
+\citet{htt} with Hoare Type Theory, and by
+\citet{parkinson-bierman}. It would be interesting to study how the
+proof techniques in this paper could be adapted to their setting.
 
 Prior work on verifying callbacks using separation logic includes work
-by Krishnaswami \emph{et al.}~\cite{tldi09,ftfjp07} work by
-Parkinson~\cite{parkinson-iwaco-07}. The approach in both of these
+by \citet{tldi09,ftfjp07} work by
+\citet{parkinson-iwaco-07}. The approach in both of these
 papers was similar; each subject predicate was equipped with a list of
 observers, rather than maintaining them implicitly in the
 invariant. These approaches were not modular, because the observers
@@ -1637,10 +1636,10 @@ faced with chains of subjects and observers, because separation logic
 is a resource-based logic, and the existence of multiple paths to an
 object meant that ownership of observer state became ambiguous.
 
-Shaner \emph{et al.}~\cite{shaner-leavens-naumann} studied using gray-box model
+citet{shaner-leavens-naumann} studied using gray-box model
 programs to model higher-order method calls (which can be understood
-as a a variant of refinement calculus-based methods) in JML, and Leino
-\emph{et al.}~\cite{history-invariants} have applied Liskov and Wing's
+as a a variant of refinement calculus-based methods) in JML, and 
+\citet{history-invariants} have applied Liskov and Wing's
 idea of history invariants~\cite{liskov-wing} to model observers. As
 before, both of these methods are also non-modular, since they require
 knowing what all of the observers are, and furthermore both of these
@@ -1648,27 +1647,26 @@ methods sharply restrict the kinds of invariants that can be used,
 making it very difficult to model the code-update-based protocol seen
 in our FRP example.
 
-Acar and his coauthors~\cite{self-adjusting} have proposed
+\citet{self-adjusting} have proposed
 \emph{self-adjusting computation} as a technique for using change
 propagation to write programs that incrementally
 recompute answers as the inputs are adjusted. It would be worth 
 studying if our techniques could help verifying implementations of this
 idea.
 
-Functional reactive programming (FRP) was proposed by Ellliott and
-Hudak~\cite{frp} as a declarative formalism for interactive
-programming. The API in our paper differs from theirs in two
-ways. First, our interface is a variation of the \emph{arrowized FRP}
-interface proposed in \cite{afrp}, and secondly, we use a discrete
-model of time, rather than a continuous model of time --- though we
-found the core idea of using a declarative semantics as a
-specification for the interface an inspiring one. 
+Functional reactive programming (FRP) was proposed by \citet{frp} as a
+declarative formalism for interactive programming. The API in our
+paper differs from theirs in two ways. First, our interface is a
+variation of the \emph{arrowized FRP} interface proposed in
+\cite{afrp}, and secondly, we use a discrete model of time, rather
+than a continuous model of time --- though we found the core idea of
+using a declarative semantics as a specification for the interface an
+inspiring one.
 
 Furthermore, our work could also serve as a bridge between the work on
 purely functional reactive programming, and more imperative
-implementations, such as the work done by McDiarmid and Hsieh on
-SuperGlue~\cite{superglue} and Cooper and Krishnamurthi's FrTime
-system~\cite{frtime}.
+implementations, such as the work done by \citet{superglue} on
+SuperGlue and by \citet{frtime} on the FrTime system.
 
 
 \appendix
