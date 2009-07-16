@@ -1,0 +1,681 @@
+\documentclass{article}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathpartir}
+\input{defs}
+
+\begin{document}
+
+\begin{tabbing}
+$Realize(i, \Phi, o, f) \triangleq$ \\
+\qquad\= $\forall v:$\=$\,\stream{A}.\; \exists \phi:\stream{\formula}, u:\stream{\powersetfin{ecell}}.$ \\
+\>\> $[\forall n:\N.\;$\=$\closed{\phi_n}{\domain{\phi_n} \cup \setof{i}} \;\land$ \\
+\>\>\>$\domain{\phi_n} = \domain{\phi_{n+1}}\; \land$ \\
+\>\>\>$\forall \psi.\; \unready{\psi}{i} \implies \unready{\psi \otimes \phi_n}{o}]$ \\
+\>\> $\land \; \Phi = \phi_0$ \\
+\>\> $\land \;  Sequence(i, \phi, o, u, f, v)$ \\[1em]
+
+
+$Sequence(i, \phi, o, u, f, v) \triangleq$ \\
+\> $\forall $\=$ n:\N, \phi_i, \phi'_i, u_i.$ \\
+\>\> $\astep{\phi_i}{\readcell i}{\phi'_i}{v_n}{\setof{i}}{u_i} \; \land$ \\
+\>\> $\domain{\phi_i} = \domain{\phi'_i} \land 
+        \closed{\phi_i}{\domain{\phi_i}} \land 
+        \closed{\phi_i}{\domain{\phi'_i}} \land
+        \unready{\phi_i}{i} \land
+        i \in u_i$ \\
+\>\> $\Longrightarrow$ \\
+\>\> $\astep{\phi_i \otimes \phi_n}{\readcell o}
+              {\phi'_i \otimes \phi_{n+1}}{(f\;v)_n}
+              {\setof{o}}{u_i \cup u_n}$ \\
+\>\> $\land\; u \subseteq \domain{\phi_n} \land o \in u$ \\
+\end{tabbing}
+
+Now, we want to show the correctness of each of the basic operations. 
+
+\section{Proof of $\liftop$}
+
+We want to show:
+
+\begin{displaymath}
+\spec{G(\psi)}{\liftop f\;i}{o:B}{\exists \Phi.\; G(\Phi \otimes \psi) \land Realize(i,\Phi,o,map\;f)}
+\end{displaymath}
+
+So, executing the body of $\liftop f\;i$ gives us the post-state:
+
+\begin{displaymath}
+  G(\psi \otimes \cellneg{o}{\bind (\readcell i) \;(\semfun{v}{\return \fst{v}})})
+\end{displaymath}
+
+So we will take $\Phi = \cellneg{o}{\bind (\readcell i) \;(\semfun{v}{\return \fst{v}})}$, 
+and then define: 
+
+Now, we want to show $Realize(i, \Phi, o, map\;f)$. So we will assume
+we have some $v:\stream{A}$, and then define $\phi$ and $u$ as follows:
+
+\begin{displaymath}
+  \begin{array}{lcl}
+    \phi_n & = & \mbox{if}(n = 0, \Phi, \cellpos{o}{\ldots}{v_{n-1}}{\setof{i}}) \\
+    u_n    & = & \setof{i} \\
+  \end{array}
+\end{displaymath}
+
+Now, it's trivially the case that for arbitrary $n:\N$,
+$\closed{\phi_n}{\domain{\phi_n} \cup \setof{i}}$, and that $\domain{\phi_n}
+= \domain{\phi_{n+1}}$, and that $\forall \psi.\; \unready{\psi}{i}
+\implies \unready{\psi \otimes \phi_n}{o}$. This deals with the first batch
+of proof obligations. 
+
+Next, we need to show $Sequence(i, \phi, o, u, f, v)$. Assume that we
+have some $n$, $\phi_i$, $\phi'_i$, and $u_i$, such that
+
+\begin{itemize}
+\item $\astep{\phi_i}{\readcell i}{\phi'_i}{v_n}{\setof{i}}{u_i}$, 
+\item $i \in u_i$, 
+\item $\closed{\phi_i}{\domain{\phi_i}}$,
+\item $\closed{\phi'_i}{\domain{\phi'_i}}$, and
+\item $\domain{\phi_i} = \domain{\phi'_i}$, and
+\item $\unready{\phi_i}{i}$
+\end{itemize}
+
+We have as our prestate either $\phi_i \otimes \cellneg{a}{\ldots}$,
+or $\phi_i \otimes \cellpos{a}{\ldots}{v_{n-1}}{\setof{i}}$,
+depending on whether or not $n$ is 0. Because $\unready{\phi_i}{i}$,
+either way we know $\unready{\phi_i \otimes \celleither{a}{\ldots}}{a}$. 
+
+Therefore, to evaluate $\readcell o$, we need to apply rule
+$AUnready$. So we get the derivation tree: 
+
+\begin{mathpar}
+
+\inferrule*
+  {\inferrule*
+     {\astep{\phi_i}{\readcell i}{\phi'_i}{v_n}{\setof{i}}{u_i} \\
+      \astep{\phi'_i}{\return (f\;v_n)}{\phi'_i}{f\;v_n}{\emptyset}{\emptyset}}
+     {\astep{\phi_i}{cmd}{\phi'_i}{f\;v_n}{\setof{i}}{u_i}} \\
+   \unready{\phi_i\otimes \phi_n}{o} }
+  {\astep{\phi_i \otimes \phi_n}{\readcell o}
+        {\phi'_i \otimes \cellpos{o}{\ldots}{f\;v_n}{\setof{i}}}{f\;v_n}
+        {\setof{a}}{u_i \cup \setof{o}}}
+\end{mathpar}
+
+
+Which is exactly what we want, since $(map\;f\;v)_n = f\;v_n$, and $o \in \setof{o}$, and 
+$\setof{o} \subseteq \setof{o}$. 
+
+\section{Proof of $\parop$}
+
+We want to show that if 
+
+\begin{itemize}
+\item $\forall a, \psi.\; \spec{G(psi)}{p\;a}{c:C}{\exists \Phi^f.\; G(\psi \otimes \Phi^f) \land
+                                                   Realize(a, \Phi^f, c, f)}$ 
+\item $\forall b, \psi.\; \spec{G(psi)}{p\;b}{d:D}{\exists \Phi^g.\; G(\psi \otimes \Phi^g) \land
+                                                   Realize(b, \Phi^g, d, g)}$ 
+\end{itemize}
+
+then
+
+\begin{displaymath}
+  \forall i, \psi.\;\spec{G(\psi)}{\parop p\;q\;i}{o:C\times D}{\exists \Phi.\;
+                                        G(\psi \otimes \Phi) \land 
+                                        Realize(i, \Phi, o, g \circ f)}
+\end{displaymath}
+
+Assume $i, \psi$. After evaluating $\parop p\;q\;i$, we will have
+the following state.
+   
+\begin{displaymath}
+  G(\psi \otimes \hat{a} \otimes \hat{b} \otimes \Phi^f \otimes \Phi^g \otimes \hat{o})
+  \land Realize(a, \Phi^f, c, f) \land Realize(b, \Phi^g, d, g)
+\end{displaymath}
+
+where 
+\begin{displaymath}
+  \begin{array}{lcl}
+    \hat{a} & = & \cellneg{a}{\bind\;(\readcell i)\;(\semfun{v}{\return (\fst{v})})} \\
+    \hat{b} & = & \cellneg{b}{\bind\;(\readcell i)\;(\semfun{v}{\return (\snd{v})})} \\
+    \hat{o} & = & \cellneg{o}{\left[\begin{array}{l}
+                               \bind (\readcell c) (\lambda v_c.\; \\
+                               \bind (\readcell d) (\lambda v_d.\; \\
+                               \;\;\return \pair{v_c}{v_d})) \\
+                              \end{array}\right]} \\      
+  \end{array}
+\end{displaymath}
+
+So we will take our $\Phi = \hat{a} \otimes \hat{b} \otimes \Phi^f \otimes \Phi^g \otimes \hat{o}$, and we want to show $Realize(i, \Phi, o, par\;g\; f)$. 
+
+Now, we assume we have $v:\stream{A}$. Next, we'll instantiate
+$Realize(a, \Phi^f, c, f)$ with $v = map\;\pi_1\;v$, and 
+$Realize(b, \Phi^g, d, g)$ with $v = map\;\pi_2\;v$, which will give 
+us streams $\phi^f, \phi^g, u^f, u^g$, from which we can define $\phi$ and $u$: 
+
+\begin{displaymath}
+\begin{array}{lcl}
+  \phi_n & = & a_n \otimes b_n \otimes \phi^f_n \otimes \phi^g_n \otimes o_n \\
+  u_n    & = & \setof{a, b, o} \cup u^f_n \cup u^g_n \\[1em]
+
+  a_n & = & \mbox{if}(n = 0, \cellneg{a}{\ldots}, \cellpos{a}{\ldots}{(map\;\pi_1\;v)_{n-1}}{\setof{i}}) \\
+  b_n & = & \mbox{if}(n = 0, \cellneg{b}{\ldots}, \cellpos{a}{\ldots}{(map\;\pi_2\;v)_{n-1}}{\setof{i}}) \\
+  o_n & = & \mbox{if}(n = 0, \cellneg{o}{\ldots}, \cellpos{a}{\ldots}{(f \;v)_{n-1}}{\setof{i}}) \\
+\end{array}
+\end{displaymath}
+
+Again, it's easy to see that for arbitrary $n:\N$: 
+
+\begin{itemize}
+\item $\closed{\phi_n}{\domain{\phi_n} \cup \setof{i}}$, because $\phi^f_n$ and $\phi^g_n$
+are closed except for $a$ and $b$, respectively, which are within the domain of $\phi_n$,
+and $o$ depends upon $c$ and $d$, which are within the domains of $\phi^f_n$ and $\phi^g_n$,
+and $a$ and $b$ depend only upon $i$. 
+
+\item $\domain{\phi_n} = \domain{\phi_{n+1}}$, because $\phi^f$ and $\phi^g$ satisfy
+this property, and for all $n$ we add $a$, $b$ and $o$ to these two collections of cells. 
+
+\item $\forall \psi.\; \unready{\psi}{i} \implies \unready{\psi \otimes \phi_n}{o}$. 
+Here, if $n = 0$, $\unready{\psi \otimes \phi_0}{o}$ is automatic, since $o$ is in
+a negative state. For $n > 0$, we know from $\unready{\psi}{i}$. This means that 
+$\unready{\psi \otimes \celleither{a}{\ldots}}{a}$. In turn this means we know that 
+$\unready{\psi \otimes a^- \otimes \phi^f_n}{c}$, and since $c$ is in the read set
+of $o$, $\unready{\psi \otimes \phi_n}{o}$ holds. 
+\end{itemize}
+
+To show $Sequence(i, \phi, o, u, f, v)$, we assume an arbitrary $n,
+\phi_i, \phi'_i, u_i$, such that
+
+\begin{itemize}
+\item $\astep{\phi_i}{\readcell i}{\phi'_i}{v_n}{\setof{i}}{u_i}$, 
+\item $i \in u_i$, 
+\item $\closed{\phi_i}{\domain{\phi_i}}$,
+\item $\closed{\phi'_i}{\domain{\phi'_i}}$, and
+\item $\domain{\phi_i} = \domain{\phi'_i}$, and
+\item $\unready{\phi_i}{i}$
+\end{itemize}
+
+We'll first consider a $\phi^f_i$ defined as $\phi_i \otimes a_n$, and
+$\phi'^f_i$ defined as $\phi'_i \otimes a_{n+1}$.  Because $\phi_i
+\otimes a$ is closed with the same domain before and after, and
+because $a$ is unready because $\phi_i$ is, we can use $AUnready$ to
+prove that
+
+\begin{displaymath}
+  \astep{\phi^f_i}{\readcell a}{\phi'^f_i}{(map\;\pi_1\;v)_n}{\setof{a}}{u_i \cup \setof{a}}
+\end{displaymath}
+
+
+
+We'll use this to discharge the hypothesis of $Sequence(a, \phi^f, c, u^f,
+f, map\;\pi_1\;v)$. This tells us that:
+
+\begin{itemize}
+\item $\astep{\phi_i \otimes a_n \otimes \phi^f_n}{\readcell c}
+                          {\phi'_i \otimes a_{n+1} \otimes \phi^f_{n+1}}{(f \;(map\;\pi_1)\;v)_n}
+                          {\setof{c}}{u_i \cup \setof{a} \cup u^f_n}$ 
+\item $u^f_n \subseteq \domain{\phi^f_n}$
+\item $c \in u^f_n$
+\end{itemize}
+
+Next, we'll take a $\phi^g_i$ defined as $\phi'_i \otimes \cellneg{b}{\ldots})$, and
+$\phi'^g_i$ defined as $\phi'_i \otimes b_{n+1}$. Now, this means that 
+$b$ is unready. So applying rule $AUnready$, we get: 
+
+\begin{displaymath}
+  \astep{\phi^g_i}{\readcell b}{\phi'^g_i}{(map\;\pi_2\;v)_n}{\setof{b}}{\setof{b}}
+\end{displaymath}
+
+This evidently satisfies the conditions for the implication for our
+instance of $Sequence(b,\phi^g, c, u^g, g, map\;\pi_2\;v)$, which means we can conclude that: 
+
+\begin{itemize}
+\item $\astep{\phi^g_i \otimes \phi^g_n}{\readcell d}
+             {\phi'^g_i \otimes \phi^g_{n+1}}{(f \;(map\;\pi_2)\;v)_n}
+             {\setof{d}}{\setof{d} \cup u^g_n}$ 
+\item $u^g_n \subseteq \domain{\phi^g_n}$ 
+\item $d \in u^g_n$ 
+\end{itemize}
+
+With the preliminaries out of the way, assume that our state is
+$G(\phi_i \otimes \phi_n)$, and that we wish to evaluate $\readcell
+o$.  Now, we know that $\unready{\phi_i}{i}$, which means that
+$\unready{\phi_i \otimes \phi_n}{o}$ holds, so we have to use the rule
+$AUnready$, which calls for evaluating the code in $o$. The state is
+updated as follows:
+
+\begin{tabbing}
+$\{G(\phi_i \otimes a_n \otimes \phi^f_n \otimes b_n \otimes \phi^g_n)\}$ \\
+$\readcell c$ \\
+$\{G(\phi'_i \otimes a_{n+1} \otimes \phi^f_{n+1} \otimes R(u_i \cup \setof{a} \cup u^f_n,  b_n \otimes \phi^g_n))\}$ \\
+Since $i \in u_i$, we have: \\
+$\{G(\phi'_i \otimes \cellneg{b}{\ldots} \otimes \phi^f_{n+1} 
+   \otimes a_{n+1} \otimes
+   R(u_i \cup \setof{a} \cup u^f_n, \phi^g_n))\}$ \\
+Since $\closed{\phi^g_n}{\domain{\phi^g_n} \cup \setof{b}}$, we know: \\
+$\{G(\phi'_i \otimes \cellneg{b}{\ldots} \otimes \phi^f_{n+1} 
+   \otimes a_{n+1} \otimes \phi^g_n)\}$ \\
+$\readcell d$ \\
+$\{G(\phi'_i \otimes b_{n+1} \otimes \phi^g_{n+1} 
+   \otimes R(\setof{b} \cup u^g_n, a_{n+1} \otimes
+                                           \phi^f_{n+1}))\}$ \\
+Now, because of the closure properties, we know that:\\
+$\{G(\phi'_i \otimes b_{n+1} \otimes \phi^g_{n+1} 
+   \otimes a_{n+1} \otimes \phi^f_{n+1})\}$ \\
+\end{tabbing}
+We can also see that the value returned is $\pair{(f\;(map\;\pi_1\;v))_n}{(g\;(map\;\pi_2\;v))_n}$, which is equal to $(par\;f\;g\;v)_n$, and that the update set will be $u_i \cup \setof{a,b} \cup u^f_n \cup u^g_n$. 
+
+Then, we can finish applying the $AUnready$ rule to get the post-state of:
+
+$$\{G(\phi'_i \otimes b_{n+1} \otimes \phi^g_{n+1} 
+   \otimes a_{n+1} \otimes \phi^f_{n+1} \otimes o_{n+1})\}$$
+
+and an update set of $u_i \cup \setof{a,b,o} \cup u^f_n \cup u^g_n$, which is what
+we want. 
+
+Notice that we implicitly used the disjointness of the different parts of the
+cell heap here. 
+
+\section{Proving $\switchop$}
+
+We want to show that if 
+
+\begin{itemize}
+\item $\forall \psi, i.\; \spec{G(\psi)}{p\;i}{o^f:B}
+                               {\exists \Phi^f.\;G(\psi \otimes \Phi^f) \land 
+                                 Realize(i, \Phi^f, o^f, f)}$
+\item $\forall \psi, i.\; \spec{G(\psi)}{q\;i}{o^g:B}
+                               {\exists \Phi^f.\;G(\psi \otimes \Phi^g) \land 
+                                 Realize(i, \Phi^g, o^g, g)}$
+\end{itemize}
+
+then 
+\begin{displaymath}
+\forall \psi, i, k.\; \spec{G(\psi)}{\switchop k\;p\;q\;i}{o:B}
+                                 {\exists \Phi.\; G(\psi \otimes Phi) \land
+                                  Realize(i, o, b, (take\;k\;(f\;v)) \cdot (g\;(drop\;k\;v)))}
+\end{displaymath}
+
+Assume we have $\psi, i, k$. Then, if we execute $\switchop k\;p\;q\;i$, we get the state:
+\begin{displaymath}
+  G(\psi \otimes \Phi^f \otimes \Phi^g \otimes \localref{r}{0} \otimes \cellneg{o}{code}) \land
+    Realize(i, \Phi^f, o^f, f) \land Realize(i, \Phi^g, o^g, f)
+\end{displaymath}
+
+where $code$ is 
+
+\begin{displaymath}
+code = \begin{array}{l}
+              \bind (\getref r)\; (\lambda i:\N. \\ 
+              \bind (\setref r (i+1))\; (\lambda dummy:\unittype. \\
+              \;\;\readcell \mbox{if}(i < k, o^f, o^g))) \\
+       \end{array}
+\end{displaymath}
+
+Now, to prove our goal, let's take $\Phi = \Phi^f \otimes \Phi^g \otimes \localref(r, 0) \otimes \cellneg{o}{code}$. Therefore, we need to show $Realize(i, \Phi, o, switch\;k\;f\;g)$. Now, assume that 
+$v:\stream{A}$. 
+
+So, assume we have some stream $v$. 
+
+We want to give $\phi$ and $u$. First, we instantiate the quantifiers
+in $Realize(i, \Phi^f, o^f, f)$ with $v$ to get $\phi^f$ and $u^f$,
+with the expected properties. Then, we instantiate the quantifier in
+$Realize(i, \Phi^g, o^g, g)$ with $tail\;k\;v$ to get a $\phi^g$ and
+$u^g$.  Then, we can give a definition of $\phi$ and $u$ as:
+
+\begin{displaymath}
+  \begin{array}{lcll}
+    \phi_0 & = & \phi^f_0 \otimes \phi^g_0 \otimes \localref{r}{0} \otimes \cellneg{o}{code} & \\
+    \phi_n & = & \phi^f_n \otimes R(\setof{i}, \phi^g_0) \otimes 
+                 \localref{r}{i} \otimes \cellpos{o}{code}{(f\;v)_{i-1}}{\setof{o^f}}
+           & \mbox{if } 0 < i < k  \\
+    \phi_n & = & R(\setof{i}, \phi^f_k) \otimes \phi^g_{n-k} 
+                \otimes \localref{r}{n} \otimes \cellpos{o}{code}{(g\;(drop\;k\;v)_{n-k}}{\setof{o^g}}
+           & \mbox{if } n \geq \max(k,1) \\
+  \end{array}
+\end{displaymath}
+
+Now, we need to show that for all $n$, 
+
+\begin{itemize}
+\item $\closed{\phi_n}{\domain{\phi_n}\cup\setof{i}}$ holds, because
+  we know that $\phi^f_n$ and $\psi^g_n$ are closed with respect to
+  their respective domains, plus $i$, and that $o$ only ever depends
+  on $o^f$ or $o^g$, so the whole thing is closed. (The local ref
+  doesn't matter.).
+
+\item $\domain{\phi_n} = \domain{\phi_{n+1}}$, because we know that
+  $\domain{\phi^f_n} = \domain{\phi^g_n}$, and otherwise we only have
+  $o$ in our domain, so the whole thing has a fixed domain.
+
+\item To show for all $\psi$, $\unready{\psi}{i} \implies
+  \unready{\psi \otimes \phi_n}{o}$ holds, we need to do a case
+  split. Assume we have a $\psi$ such that $\unready{\psi}{i}$. If $n
+  = 0$, then $o$ is in a negative state, and so is immediately
+  unready. If $0 < n < k$, then we have
+  $\cellpos{o}{code}{v}{\setof{o^f}}$, and we know that
+  $\unready{\psi}{i}$ means that $\unready{\psi \otimes
+    \phi^f_n}{o^f}$, which means that $o$ is unready. If $n \geq \max(k,1)$,
+  then we have $\cellpos{o}{code}{v}{\setof{o^g}}$, and we know that
+  if $\unready{\psi}{i}$, then $\unready{\psi \otimes \phi^g_n}{o^g}$,
+  which lets us conclude that $o$ is unready.
+\end{itemize}
+
+
+Now, we assume that we have $n, \phi_i, \phi'_i, u_i$ such that
+
+\begin{itemize}
+\item $\astep{\phi_i}{\readcell i}{\phi'_i}{v_n}{\setof{i}}{u_i}$, 
+\item $i \in u_i$, 
+\item $\closed{\phi_i}{\domain{\phi_i}}$,
+\item $\closed{\phi'_i}{\domain{\phi'_i}}$, and
+\item $\domain{\phi_i} = \domain{\phi'_i}$, and
+\item $\unready{\phi_i}{i}$
+\end{itemize}
+
+We need to show that $\astep{\phi_i \otimes \phi_n}{\readcell o}{\phi'_i \otimes \phi_{n+1}}{(switch\;k\;f\;g)_n}{\setof{o}}{u_i \cup u_n}$
+
+\begin{displaymath}
+G(\phi_i \otimes \phi_n)  
+\end{displaymath}
+
+Now, we'll split on $k$. Suppose $k > 0$. 
+
+Now we have two cases for $n$. 
+
+Suppose that $n < k$. Then, if $i$ is zero then $o$ is unready
+immediately, and otherwise it's unready because $\unready{\phi_i}{i}$
+holds. So, we need to evaluate $o$'s code, which means reading
+$o^f$. We know $Sequence(i, \phi^f, o^f, u^f, f, v)$, and can
+discharge the hypotheses with the assumptions made above, giving us
+
+\begin{itemize}
+\item $\astep{\phi_i \otimes o^f_n}{\readcell o}
+             {\phi'_i \otimes \o^f_{n+1}}{(f\;v)_n}
+             {\setof{o^f}}{u_i \cup u^f_n}$
+\item $u^f_n \subseteq \domain{o^f}$
+\item $o^f \in u^f_n$
+\end{itemize}
+
+
+So we can evaluate the body of $o$ as follows:
+
+\begin{tabbing}
+$\setof{G(\phi_i \otimes \localref{r}{n} \phi^f_n \otimes R(i, \phi^g_0))}$ \\
+$\bind (\getref r) \;(\lambda i.$ \\
+$\{G(\phi_i \otimes \localref{r}{n} \otimes \phi^f_n \otimes R(i, \phi^g_0)) \land i = n\}$ \\
+$\bind (\setref r\;(i+1)) \;(\lambda dummy.\;$ \\
+$\{G(\phi_i \otimes \localref{r}{n+1} \otimes \phi^f_n \otimes R(i, \phi^g_0)) \land i = n\}$ \\
+$\readcell \mbox{if}(i < k, o^f, o^g)$ \\
+$\equiv$
+$\readcell o^f$ \\
+$\{G(\phi'_i \otimes \localref{r}{n+1} \otimes \phi^f_{n+1} \otimes R(i \cup u^f_n, \phi^g_0) \land i = n \land a = (f\;v)_n\}$ \\
+By closure \\
+$\{G(\phi'_i \otimes \localref{r}{n+1} \otimes \phi^f_{n+1} \otimes R(i, \phi^g_0) \land i = n \land a = (f\;v)_n\}$ \\
+\end{tabbing}
+
+Now, observe that $(switch\;k\;f\;g\;v)_n = (f\;v)_n$ since $n < k$.
+And then we finish by adding a ready $o$-cell in the $AUnready$ rule,
+which makes the post-state $\phi_{n+1}$.
+
+Now, suppose that $n \geq k$. Now, we instantiate $Sequence(i, \phi^g, o^g, f, (drop\;k\;v))$ 
+with $n - k$, and $\phi_i, \phi'_i,$ and $u_i$. This is okay because $(drop\;k\;v)_{n-k} = v_n$,
+and so this is sufficient to discharge the hypothesis, giving us the conclusions:
+
+\begin{itemize}
+\item $\astep{\phi_i \otimes o^g_{n-k}}{\readcell o}
+             {\phi'_i \otimes \o^f_{n-k+1}}{(g\;(drop\;k\;v))_{n-k}}
+             {\setof{o^g}}{u_i \cup u^g_{n-k}}$
+\item $u^f_{n-k} \subseteq \domain{o^f}$
+\item $o^f \in u^f_{n-k}$
+\end{itemize}
+
+With this in hand, we can evaluate the code of $o$ as follows:
+
+\begin{tabbing}
+$\{ \phi_i \otimes
+  G(R(\setof{i}, \phi^f_k) \otimes \phi^g_{n-k} \otimes 
+  \localref{r}{n})
+\}$ \\
+$\bind (\getref r) (\lambda i.\;$ \\
+$\{ \phi_i \otimes
+  G(R(\setof{i}, \phi^f_k) \otimes \phi^g_{n-k} \otimes 
+  \localref{r}{n})
+  \land i = n
+\}$ \\
+$\bind (\setref r\;(i+1)) (\lambda dummy.$ \\ 
+$\{ \phi_i \otimes
+  G(R(\setof{i}, \phi^f_k) \otimes \phi^g_{n-k} \otimes 
+  \localref{r}{n+1})
+  \land i = n
+\}$ \\
+$\readcell \mbox{if}(i < k, o^f, o^g)$ \\
+$\equiv$
+$\readcell o^g$ \\
+$\{ \phi'_i \otimes 
+  G(R(u_i \cup u^g_{n-k} cup \setof{i}, \phi^f_k) \otimes \phi^g_{n+1-k} \otimes 
+  \localref{r}{n+1})
+  \land i = n \land a = g\;(drop\;k\;v)_{n-k}
+\}$ \\
+By closure
+$\{ \phi'_i \otimes 
+  G(R(\setof{i}, \phi^f_k) \otimes \phi^g_{n+1-k} \otimes 
+  \localref{r}{n+1})
+  \land i = n \land a = g\;(drop\;k\;v)_{n-k}
+\}$ \\
+\end{tabbing}
+
+Now, observe that $(switch\;k\;f\;g\;v)_n = (g\;(drop\;k\;v))_{n-k}$ since $n \geq k$.
+And then we finish by adding a ready $o$-cell in the $AUnready$ rule,
+which makes the post-state $\phi_{n+1}$.
+
+\section{Proving $\loopop$}
+
+\subsection{Purely functional semantics}
+
+Here, we'll have to actually define $loop$ and friends. Suppose that
+$f$ is a causal stream function $\stream{A \times B} \to \stream{A
+  \times C}$, with corresponding list function $\hat{f}$, and that
+$a_0$ is in $A$, and $v$ is in $\stream{B}$.
+
+\begin{tabbing}
+  $loop\;a_0\;f\;v = map \; \pi_2 \; (cycle \;a_0 \; f \; v)$ \\[1em]
+
+  $cycle\; a_0 \;f \;v \;n = last(gen\;a_0\;f\;v\;n)$ \\[1em]
+
+  $gen\;a_0\;f\;v\;0\;\;\;\qquad$\=$= \hat{f}\;[\pair{a_0}{v_0}]$ \\
+  $gen\;a_0\;f\;v\;(n+1)$  \>$= \hat{f}\;(zip\;(a_0 \cdot (map\;\pi_1\;(gen\;a_0\;f\;v\;n)))\;
+                                               (take\;(n+2)\;v))$ \\
+\end{tabbing}
+
+The function $cycle$ is well-defined, because $gen$ always returns a
+list one element larger than its integer argument. 
+The theorem we need to prove about this loop function is the following
+property:
+
+\begin{displaymath}
+  cycle\;a_0\;f\;v = f\;(zip\;(a_0 \cdot (map\;\pi_1\;(cycle\;a_0\;f\;v)))\;v)
+\end{displaymath}
+
+We'll prove this by means of the well-known $take$-lemma, which says
+that two streams are equal if all of their finite approximations (by
+means of $take$) are equal.  First, observe that the definition of
+$cycle$ means that $take\;(n+1)\;(cycle\;a_0\;f\;v) =
+gen\;a_0\;f\;v\;n$.
+
+Now, we'll proceed by an induction on the length. 
+
+First, the 0-th approximations of a stream are always the empty list.
+
+Now, we'll look at what $take\;(n+1)\;(f\;(zip\;(a_0 \cdot
+(map\;\pi_1\;(cycle\;a_0\;f\;v)))\;v))$ is. If the length is exactly 1, then 
+
+\begin{tabbing}
+$take\;1\;(cycle\;a_0\;f\;v) = $ \\
+\;\;\=$= gen\;a_0\;f\;v\;0$ \\
+    \>$= \hat{f}[\pair{a_0}{v_0}]$ \\
+    \>$= \hat{f}(take\;1\;(zip\;(a_0 \cdot (map\;\pi_1\;(cycle\;a_0\;f\;v)))\;v))$ \\
+    \>$= take\;1\;(f\;(zip\;(a_0 \cdot (map\;\pi_1\;(cycle\;a_0\;f\;v)))\;v))$\\
+\end{tabbing}
+
+\noindent If the length is $n + 2$ for some $n$, then 
+
+
+\begin{tabbing}
+$take\;(n+2)\;(f\;(zip\;(a_0 \cdot (map\;\pi_1\;(cycle\;a_0\;f\;v)))\;v))$ \\
+\;\;\=$= \hat{f}(take\;(n+2)\;(zip\;(a_0 \cdot (map\;\pi_1\;(cycle\;a_0\;f\;v)))\;v))$ \\
+  \>$= \hat{f}(zip\;(take\;(n+2)\;(a_0 \cdot (map\;\pi_1\;(cycle\;a_0\;f\;v))))\;
+                  \;(take\;(n+2)\;v))$ \\
+  \>$= \hat{f}(zip\;(a_0 \cdot (take\;(n+1)\;(map\;\pi_1\;(cycle\;a_0\;f\;v))))
+                  \;(take\;(n+1)\;v))$ \\
+  \>$= \hat{f}(zip\;(a_0 \cdot (map\;\pi_1\;(take\;(n+1)\;(cycle\;a_0\;f\;v))))
+                  \;(take\;(n+1)\;v))$ \\
+  \>$= \hat{f}(zip\;(a_0 \cdot (map\;\pi_1\;(gen\;a_0\;f\;v\;n)))
+                  \;(take\;(n+1)\;v))$ \\
+  \>$= gen\;a_0\;f\;v\;(n+1)$ \\
+  \>$= take\;(n+2)\;(cycle\;a_0\;f\;v)$ \\
+\end{tabbing}
+
+Therefore, for all $n$, $take\;n\;(cycle\;a_0\;f\;v) = f\;(zip\;(a_0\cdot(map\;\pi_1\;(cycle\;a_0\;f\;v)))\;v)$. 
+
+\subsection{Transducer semantics}
+
+Now, we want to show that if 
+
+\begin{itemize}
+\item $\forall \psi, ab.\; \spec{G(\psi)}{p\;i}{ac:A\times C}{\exists \Phi^f.\; G(\psi \otimes \Phi) \land Realize(ab, \Phi^f, ac, f)}$
+\end{itemize}
+then $\forall \psi, i.\; \spec{G(\psi)}{\loopop\;a_0\;f}{o:C}{\exists \Phi.\; G(\psi \otimes \Phi) \land Realize(i, \Phi, o, loop\;a_0\;f)}$ \\
+
+Assume we have $\psi$ and $i$. Executing $\loopop\;a_o\;p\;i$ will leave us in the state: 
+\begin{displaymath}
+  G(\psi \otimes \cellneg{ab}{cmd_1} \otimes \localref{r}{a_0} \otimes \Phi^f \otimes \cellneg{o}{cmd_2}) \land Realize(ab, \Phi^f, ac, f)
+\end{displaymath}
+where $cmd_1$ is 
+\begin{displaymath}
+  \begin{array}{l}
+    \bind (\readcell i) \;(\lambda b.\;  \\
+    \bind (\getref r)   \;(\lambda a.\;  \\ 
+    \;\;\return \pair{a}{b})) \\
+  \end{array}
+\end{displaymath}
+and $cmd_2$ is 
+\begin{displaymath}
+  \begin{array}{l}
+    \bind (\readcell ac) \;(\lambda v.\; \\
+    \;\;\return (\snd{ac})) \\
+  \end{array}
+\end{displaymath}
+
+\noindent Now, we'll take $\Phi$ to be 
+\begin{displaymath}
+  \psi \otimes \cellneg{ab}{cmd_1} \otimes \localref{r}{a_0} \otimes \Phi^f \otimes \cellneg{o}{cmd_2}
+\end{displaymath}
+and try to show $Realize(i, \Phi, o, loop\;a_0\;f)$. 
+
+First, assume we have $v \in \stream{B}$. Then, we'll instantiate $Realize(ab, \Phi^f, ac, f)$ with $(zip\;(a_0\cdot(map\;\pi_1\;(cycle\;a_0\;f\;v)))\;v)$, and get $\phi^f$ and $u^f$
+
+Now, we'll define $\phi$ and $u$ as follows: 
+\begin{displaymath}
+  \begin{array}{lcl}
+    \phi_0 & = & \Phi \\
+    \phi_{n+1} & = & \cellpos{ab}{cmd_1}{(zip\;(a_0\cdot(map\;\pi_1\;(cycle\;a_0\;f\;v)))\;v)_n}{\setof{i}} \otimes \\
+               & &   \localref{r}{(a_0\cdot(map\;\pi_1\;(cycle\;a_0\;f\;v))\;v)_{n+1}} \otimes \\
+               & &   \phi^f_{n+1} \otimes 
+                     \cellpos{o}{cmd_2}{(map\;\pi_2\;(cycle\;a_0\;f\;v))_n}{\setof{ac}} \\[1em]
+
+    u_n & = & u^f_n \cup \setof{ab, o} \\
+  \end{array}
+\end{displaymath}
+
+Now, we need to verify the properties for all $n$: 
+\begin{itemize}
+\item $\closed{\phi_n}{\domain{\phi_n} \cup \setof{i}}$ holds because $\phi^f_n$ is closed with
+respect to itself and $ab$, and the other two cells $ab$ and $o$ only mention $i$ or things
+withing $\phi_n$. 
+
+\item $\domain{\phi_n} = \domain{\phi_{n+1}}$ because the cells $ab$ and $o$ are fixed
+throughout all $n$, and we know from $Realize(ab, \Phi^f, ac, f)$ that $\phi^f$ doesn't
+change its domain, either. 
+
+\item To show that for all $\psi$, $\unready{\psi}{i}$ implies $\unready{\psi \otimes \phi_n}{o}$, 
+we note that if $n = 0$, then $o$ is immediately unready. If $n > 0$, then $\unready{\psi}{i}$ implies $\unready{\psi \otimes \cellpos{ab}{cmd_1}{\ldots}{\setof{i}}}{\setof{ab}}$, which in turn
+implies \\ $\unready{\psi \otimes a^+ \otimes \phi^f_n}{\setof{ac}}$, which in turn implies \\$\unready{\psi \otimes a^+ \otimes \phi^f_n \otimes \cellpos{o}{cmd_2}{\ldots}{\setof{ac}}}{\setof{ac}}$.
+\end{itemize}
+
+Now, assume that we have some $n, \phi_i, \phi'_i, u_i$, such that: 
+
+\begin{itemize}
+\item $\astep{\phi_i}{\readcell i}{\phi'_i}{v_n}{\setof{i}}{u_i}$, 
+\item $i \in u_i$, 
+\item $\closed{\phi_i}{\domain{\phi_i}}$,
+\item $\closed{\phi'_i}{\domain{\phi'_i}}$, and
+\item $\domain{\phi_i} = \domain{\phi'_i}$, and
+\item $\unready{\phi_i}{i}$
+\end{itemize}
+
+Now, we'll consider $\phi^f_i = \phi_i \otimes \localref{r}{\ldots} \otimes \celleither{a}{cmd_1}$, and $\phi'^f_i = \phi'_i \otimes \localref{r}{\ldots} \otimes \celleither{a}{cmd_1}$, and $\phi'^f_i$, where the local reference and the cell $ab$ are as in $\phi_n$. Now, it's clear that the
+following properties hold: 
+
+\begin{itemize}
+\item $\astep{\phi^f_i}{\readcell ab}{\phi'^f_i}{(zip\;(a_0\cdot(map\;\pi_1\;(cycle\;a_0\;f\;v)))\;v)_n}{\setof{i}}{u_i \cup \setof{ab}}$, 
+\item $ab \in u_i \cup \setof{ab}$, 
+\item $\closed{\phi^f_i}{\domain{\phi^f_i}}$,
+\item $\closed{\phi'^f_i}{\domain{\phi'^f_i}}$, and
+\item $\domain{\phi^f_i} = \domain{\phi'^f_i}$, and
+\item $\unready{\phi^f_i}{ab}$
+\end{itemize}
+
+This means that we can discharge the hypotheses of the $Sequence$ property of $\phi^f$, giving
+us the property: 
+
+\begin{itemize}
+\item $\astep{\phi^f_i \otimes \phi^f_n}{\readcell ac}
+             {\phi'^f_i \otimes \phi^f_{n+1}}{(f\;(zip\;(a_0\cdot(map\;\pi_1\;(cycle\;a_0\;f\;v)))\;v))_n}
+             {\setof{ac}}{u_i \cup \setof{ab} \cup u^f_n}$
+
+This is the same thing as 
+
+$\astep{\phi^f_i \otimes \phi^f_n}{\readcell ac}
+             {\phi'^f_i \otimes \phi^f_{n+1}}{(cycle\;a_0\;f\;v)_n}
+             {\setof{ac}}{u_i \cup \setof{ab} \cup u^f_n}$
+\item $u^f_n \subseteq \domain{\phi^f_n}$
+\item $ac \in u^f_n$
+\end{itemize}
+
+Now, we need to show that $\astep{\phi_i \otimes \phi_n}{\readcell o}
+                                 {\phi'_i \otimes \phi_{n+1}}{(loop\;a_0\;f\;v)}
+                                 {\setof{o}}{u_i \cup u_n}$. 
+
+Since $\unready{\phi_i}{i}$, we know that $\unready{\phi_i \otimes \phi_n}{o}$, which
+means we need to use the rule $AUnready$ and evaluate the code of $o$. We do this
+as follows: 
+
+\begin{tabbing}
+$\{G(\phi_i \otimes ab_n 
+     \otimes \localref{r}{(a_0\cdot(map\;\pi_1\;(cycle\;a_0\;f\;v))\;v)_n} 
+     \otimes \phi^f_n)\}$ \\
+is the same as \\
+$\{G(\phi^f_i \otimes \phi^f_n)\}$ \\
+$\bind (\readcell ac) \;(\lambda v.$ \\
+$\{G(\phi'^f_i \otimes \phi^f_{n+1}) \land v = (cycle\;a_0\;f\;v)_n\}$ \\
+which is the same as \\
+$\{G(\phi'_i \otimes ab_{n+1}
+     \otimes \localref{r}{(a_0\cdot(map\;\pi_1\;(cycle\;a_0\;f\;v))\;v)} 
+     \otimes \phi^f_{n+1}) \land v = (cycle\;a_0\;f\;v)_n\}$ \\
+$\bind (\setref r \;(\pi_1 (cycle\;a_0\;f\;v)_n)) \;(\lambda dummy.\;$ \\
+$\{G(\phi'_i \otimes ab_{n+1}
+     \otimes \localref{r}{(a_0\cdot(map\;\pi_1\;(cycle\;a_0\;f\;v))\;v)_{n+1}} 
+     \otimes \phi^f_{n+1}) \land v = (cycle\;a_0\;f\;v)_n\}$ \\
+$\;\return (\fst{v})))$ \\
+$\{G(\phi'_i \otimes ab_{n+1}
+     \otimes \localref{r}{(a_0\cdot(map\;\pi_1\;(cycle\;a_0\;f\;v))\;v)_{n+1}} 
+     \otimes \phi^f_{n+1}) \land a = \pi_1\;(cycle\;a_0\;f\;v)_n\}$ \\
+which is the same as \\
+$\{G(\phi'_i \otimes ab_{n+1}
+     \otimes \localref{r}{(a_0\cdot(map\;\pi_1\;(cycle\;a_0\;f\;v))\;v)_{n+1}} 
+     \otimes \phi^f_{n+1}) \land a = (map\;\pi_1\;(cycle\;a_0\;f\;v))_n\}$ \\
+
+\end{tabbing}
+
+
+
+\end{document}
