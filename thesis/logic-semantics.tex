@@ -1699,16 +1699,20 @@ do so.
 
 \subsection{Semantics}
 
-Now, we'll consider the interpretation of the syntax. Ultimately,
+Now, we'll consider the interpretation of the syntax. 
+
+\subsubsection{Interpretation of Sorts}
+
+We'll start by explaining how to interpret the sorts. Ultimately,
 we're going to define assertions to be the powerset of heaps, and
 specifications to be upwards-closed sets of assertions, but because we
 allow types as sorts, and types may have free type variables, we will
 need to give an indexed, recursive definition in order to make
 everything work properly.
 
-To define this, we'll need to give a mutually-recursive definition
-between the interpretation the two judgements $\judgeACtx{\Delta}$,
-$\judgeA{\Delta}{\omega}$. 
+Therefore, we'll need to give a mutually-recursive definition between
+the interpretation the two judgements $\judgeACtx{\Delta}$,
+$\judgeA{\Delta}{\omega}$.
 
 \begin{displaymath}
   \begin{array}{lcl}
@@ -1855,6 +1859,145 @@ We proceed by mutual induction on the size of the derivation $\mathcal{D}_1$
   \end{eqnproof}
 \end{itemize}
 
+\item Case \textsc{SortType}: 
+  \begin{tabbedproof}
+  \oo Assume $\ms{D}_1 :: \judgeSort{A}$ and $\ms{D}_2 :: \judgeSort{A}$ \\
+  \ooo By inversion on $\ms{D}_1$, we get \\
+  \oooo $\ms{D}'_1 :: \judgeWK[\restrictkind{\Delta}]{A}{\bigstar}$ and  \\
+  \oooo $\ms{D}''_1 :: \judgeACtx{\Delta}$ \\
+  \ooo By inversion on $\ms{D}_2$, we get \\
+  \oooo $\ms{D}'_2 :: \judgeWK[\restrictkind{\Delta}]{A}{\bigstar}$ and  \\
+  \oooo $\ms{D}''_2 :: \judgeACtx{\Delta}$ \\
+  \ooo By mutual induction on $\ms{D}''_1, \ms{D}''_2$, we get $\interp{\ms{D}''_1} = \interp{\ms{D}''_2}$ \\
+  \ooo By semantics, $\interp{\ms{D}_1} = 
+            \semfun{\delta \in \interp{\ms{D}''_1}}
+                   {\interp{\ms{D}'_1 :: \judgeWK[\restrictkind{\Delta}]{A}{\bigstar}}
+                      \;\restricttyenv{\Delta}{\delta}\;(K,K)}$ \\
+  \ooo By semantics, $\interp{\ms{D}_2} = 
+            \semfun{\delta \in \interp{\ms{D}''_2}}
+                   {\interp{\judgeWK[\restrictkind{\Delta}]{A}{\bigstar}}
+                      \;\restricttyenv{\Delta}{\delta}\;(K,K)}$ \\
+  \ooo By equality, $\interp{\ms{D}_2} = 
+            \semfun{\delta \in \interp{\ms{D}''_1}}
+                   {\interp{\ms{D}'_2 :: \judgeWK[\restrictkind{\Delta}]{A}{\bigstar}}
+                      \;\restricttyenv{\Delta}{\delta}\;(K,K)}$ \\
+  \ooo To show $\interp{\ms{D}_1} = \interp{\ms{D}_2}$, assume $\delta \in \interp{\ms{D}''_1}$\\
+  \oooo Now $\interp{\ms{D}_1}\;\delta = 
+                \interp{\ms{D}'_1 :: \judgeWK[\restrictkind{\Delta}]{A}{\bigstar}}
+                      \;\restricttyenv{\Delta}{\delta}\;(K,K)$ \\
+  \oooo Now $\interp{\ms{D}_2}\;\delta = 
+                \interp{\ms{D}'_2 :: \judgeWK[\restrictkind{\Delta}]{A}{\bigstar}}
+                      \;\restricttyenv{\Delta}{\delta}\;(K,K)$ \\
+  \oooo Since type interpretation is coherent, \\
+  \oooo \; $\interp{\ms{D}'_1 :: \judgeWK[\restrictkind{\Delta}]{A}{\bigstar}} =
+             \interp{\ms{D}'_2 :: \judgeWK[\restrictkind{\Delta}]{A}{\bigstar}}$ \\
+  \oooo Therefore $\interp{\ms{D}_1}\;\delta = \interp{\ms{D}_2}\;\delta$ \\
+  \ooo Therefore $\interp{\ms{D}_1} = \interp{\ms{D}_2}$
+  \end{tabbedproof}
 \end{enumerate}
+\end{proof}
 
+
+\subsection{Interpretation of Equality Judgement}
+
+Now, we'll show that our equality judgement on sorts $\judgeSortEq{\omega}{\omega'}$ is
+sound. 
+
+\begin{lemma}{(Soundness of Sort Equality)}
+If $\judgeACtx{\Delta}$, $\judgeSort{\omega}$, and $\judgeSort{\omega'}$ are derivable, then if 
+$\judgeSortEq{\omega}{\omega'}$ is derivable, then $\interp{\judgeSort{\omega}} = \interp{\judgeSort{\omega'}}$. 
+\end{lemma}
+
+\begin{proof}
+We do this proof by induction on the equality derivation. 
+
+\begin{itemize}
+\item Case \textsc{SortEqProp}
+  \begin{tabbedproof}
+  \oo Assume $E :: \judgeSortEq{\assert}{\assert}$ \\
+  \oo Assume $D_1 :: \judgeACtx{\Delta}$ \\
+  \oo Assume $D_2 :: \judgeSort{\assert}$ \\
+  \oo Assume $D_3 :: \judgeSort{\assert}$ \\
+  \ooo By semantics, $\interp{D_2} = \semfun{\delta \in \interp{D_1}}{\powerset{H}}$ \\
+  \ooo By semantics, $\interp{D_3} = \semfun{\delta \in \interp{D_1}}{\powerset{H}}$ \\
+  \ooo Therefore $\interp{D_2} = \interp{D_3}$ \\
+  \end{tabbedproof}
+
+\item Case \textsc{SortEqKind}: 
+  \begin{tabbedproof}
+  \oo Assume $E :: \judgeSortEq{\kappa}{\kappa}$ \\
+  \oo Assume $D_1 :: \judgeACtx{\Delta}$ \\
+  \oo Assume $D_2 :: \judgeSort{\kappa}$ \\
+  \oo Assume $D_3 :: \judgeSort{\kappa}$ \\
+  \ooo By semantics, $\interp{D_2} = \semfun{\delta \in \interp{D_1}}{\interp{\kappa}}$ \\
+  \ooo By semantics, $\interp{D_3} = \semfun{\delta \in \interp{D_1}}{\interp{\kappa}}$ \\
+  \ooo Therefore $\interp{D_2} = \interp{D_3}$ \\
+  \end{tabbedproof}
+
+\item Case \textsc{SortEqImp}: 
+  \begin{tabbedproof}
+  \oo Assume $E :: \judgeSortEq{\omega'_1 \To \omega''_1}{\omega'_2 \To \omega''_2}$ \\
+  \oo Assume $D :: \judgeACtx{\Delta}$ \\
+  \oo Assume $D_1 :: \judgeSort{\omega_1 \To \omega'_1}$ \\
+  \oo Assume $D_2 :: \judgeSort{\omega_2 \To \omega'_2}$ \\
+  \ooo By inversion on $E$, we get 
+         $E' :: \judgeSortEq{\omega'_1}{\omega'_2}$ and 
+         $E'' :: \judgeSortEq{\omega''_1}{\omega''_2}$ \\
+  \ooo By inversion on $D_1$, we get $D'_1 :: \judgeSort{\omega'_1}$ 
+                                 and $D''_1 :: \judgeSort{\omega''_1}$ \\
+  \ooo By inversion on $D_2$, we get $D'_2 :: \judgeSort{\omega'_2}$ 
+                                 and $D''_2 :: \judgeSort{\omega''_2}$ \\
+  \ooo By induction on $E', D, D'_1, D'_2$, we get 
+             $\interp{\judgeSort{\omega'_1}} = \interp{\judgeSort{\omega'_2}}$ \\
+  \ooo By induction on $E'', D, D''_1, D''_2$, we get 
+             $\interp{\judgeSort{\omega''_1}} = \interp{\judgeSort{\omega''_2}}$ \\
+  \ooo By semantics, $\interp{D_1} = \semfun{\delta}{\interp{D'_1}\;\delta \to 
+                                                     \interp{D''_1}\;\delta}$ \\
+  \ooo By semantics, $\interp{D_2} = \semfun{\delta}{\interp{D'_2}\;\delta \to 
+                                                     \interp{D''_2}\;\delta}$ \\
+  \ooo We want to show $\interp{D_1} = \interp{D_2}$ \\
+  \ooo Assume $\delta \in \interp{D}$ \\
+  \oooo Now $\interp{D_1}\;\delta = \interp{D'_1}\;\delta \to \interp{D''_1}\;\delta$ \\
+  \oooo Now $\interp{D_2}\;\delta = \interp{D'_2}\;\delta \to \interp{D''_2}\;\delta$ \\
+  \oooo By equality, $\interp{D_2}\;\delta = \interp{D'_1}\;\delta \to \interp{D''_1}\;\delta$ \\
+  \oooo Therefore, $\interp{D_1}\;\delta = \interp{D_2}\;\delta$ \\
+  \ooo Therefore $\interp{D_1} = \interp{D_2}$ \\
+  \end{tabbedproof}
+
+\item Case \textsc{SortEqType}:
+  \begin{tabbedproof}
+  \oo Assume $E :: \judgeSortEq{A}{B}$ \\
+  \oo Assume $D_1 :: \judgeACtx{\Delta}$ \\
+  \oo Assume $D_2 :: \judgeSort{A}$ \\
+  \oo Assume $D_3 :: \judgeSort{B}$ \\
+  \ooo By inversion on $E$, $E' :: \judgeKeq[\restrictkind{\Delta}]{A}{B}{\bigstar}$ \\
+  \ooo By soundness of type equality, 
+         $\interp{\judgeWK[\restrictkind{\Delta}]{A}{\bigstar}} = 
+          \interp{\judgeWK[\restrictkind{\Delta}]{B}{\bigstar}}$ \\
+  \ooo By semantics, 
+          $\interp{D_2} = 
+             \semfun{\delta \in \interp{D_1}}
+                    {\interp{\judgeWK[\restrictkind{\Delta}]{A}{\bigstar}}
+                     \;\restricttyenv{\Delta}{\delta}\;(K,K)}$ \\
+  \ooo By semantics, 
+          $\interp{D_3} = 
+             \semfun{\delta \in \interp{D_1}}
+                    {\interp{\judgeWK[\restrictkind{\Delta}]{B}{\bigstar}}
+                     \;\restricttyenv{\Delta}{\delta}\;(K,K)}$ \\
+  \ooo We want to show $\interp{D_2} = \interp{D_3}$ \\
+  \ooo To do this, assume we have $\delta \in \interp{D_1}$ \\
+  \oooo Now $\interp{D_2}\;\delta = 
+                 \interp{\judgeWK[\restrictkind{\Delta}]{A}{\bigstar}}
+                 \;\restricttyenv{\Delta}{\delta}\;(K,K)$ \\
+  \oooo Now $\interp{D_3}\;\delta = 
+                 \interp{\judgeWK[\restrictkind{\Delta}]{B}{\bigstar}}
+                 \;\restricttyenv{\Delta}{\delta}\;(K,K)$ \\
+  \oooo By equality, $\interp{D_3}\;\delta = 
+                 \interp{\judgeWK[\restrictkind{\Delta}]{A}{\bigstar}}
+                 \;\restricttyenv{\Delta}{\delta}\;(K,K)$ \\
+  \oooo Therefore $\interp{D_2}\;\delta = \interp{D_3}\;\delta$ \\
+  \ooo Therefore $\interp{D_2} = \interp{D_3}$ \\
+  \end{tabbedproof}
+
+\end{itemize}
 \end{proof}
