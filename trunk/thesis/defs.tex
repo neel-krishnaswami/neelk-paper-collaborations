@@ -58,6 +58,7 @@
 \newcommand{\setof}[1]{\{{#1}\}}
 
 \newcommand{\To}{\Rightarrow}
+\newcommand{\From}{\Leftarrow}
 
 \newcommand{\N}{\mathbb{N}}
 
@@ -73,9 +74,12 @@
 \newcommand{\mspec}[4]{\langle{#1}\rangle{#2}\langle{#3}.\;{#4}\rangle}
 \newcommand{\bnfalt}{\;\;|\;\;}
 
-\newcommand{\specor}{\ctext{ or }}
-\newcommand{\specand}{\ctext{ and }}
-\newcommand{\specimp}{\ctext{ implies }}
+\newcommand{\specor}{\;||\;}
+\newcommand{\specand}{\;\&\;}
+\newcommand{\specimp}{\Longrightarrow}
+% \newcommand{\specor}{\ctext{ or }}
+% \newcommand{\specand}{\ctext{ and }}
+% \newcommand{\specimp}{\ctext{ implies }}
 \newcommand{\spectype}{\ctext{spec}}
 \newcommand{\valid}{\ctext{ valid}}
 
@@ -101,6 +105,7 @@
 \newcommand{\semfun}[2]{\lambda #1.\;#2}
 \newcommand{\sempair}[2]{\left({#1}, {#2}\right)}
 \newcommand{\powerset}[1]{\mathcal{P}(#1)}
+\newcommand{\powersetfin}[1]{\mathcal{P}^{\mathrm{fin}}(#1)}
 
 \newcommand{\paircat}[2]{\left<{#1};{#2}\right>}
 \newcommand{\sumcat}[2]{\left[{#1};{#2}\right]}
@@ -108,7 +113,7 @@
 
 
 \newcommand{\judgeP}[3]{{#1} \vdash {#2} : {#3}}
-\newcommand{\judgeS}[2]{{#1} \vdash {#2} : \spectype}
+\newcommand{\judgeS}[2][\Delta]{{#1} \vdash {#2} : \spectype}
 
 \newcommand{\judgeSCtx}[2]{{#1} \vdash {#2} : \ctext{context}}
 
@@ -135,18 +140,24 @@
 \newtheorem{prop}{Proposition}
 \newtheorem{lemma}{Lemma}
 
+\newcommand{\comprehend}[2]{\setof{{#1}\;|\;{#2}}}
+
 \newenvironment{proof}{\noindent\textbf{Proof.}}{\noindent$\Box$}
 
-\newenvironment{tabbedproof}{\begin{tabbing}\;\;\=\;\;\=\;\;\=\;\;\=\;\;\=\;\;\=\;\;\=\;\;\=\\[-2em]}{\end{tabbing}}
+\newcounter{prooflinenum}
+\newenvironment{tabbedproof}
+   {\setcounter{prooflinenum}{0}
+    \begin{tabbing}\;\;\=\;\;\;\;\;\=\;\;\;\;\=\;\;\;\;\=\;\;\;\;\=\;\;\;\;\=\;\;\;\;\=\;\;\;\;\=\;\;\;\;\=\\[-2em]}
+   {\end{tabbing}}
 
-\newcommand{\oo}{\>}
-\newcommand{\ooo}{\>\>}
-\newcommand{\oooo}{\>\>\>}
-\newcommand{\ooooo}{\>\>\>\>}
-\newcommand{\oooooo}{\>\>\>\>\>}
-\newcommand{\ooooooo}{\>\>\>\>\>\>}
-\newcommand{\oooooooo}{\>\>\>\>\>\>\>}
-\newcommand{\ooooooooo}{\>\>\>\>\>\>\>\>}
+\newcommand{\oo}{\addtocounter{prooflinenum}{1}\arabic{prooflinenum}\>\>}
+\newcommand{\ooo}{\addtocounter{prooflinenum}{1}\arabic{prooflinenum}\>\>\>}
+\newcommand{\oooo}{\addtocounter{prooflinenum}{1}\arabic{prooflinenum}\>\>\>\>}
+\newcommand{\ooooo}{\addtocounter{prooflinenum}{1}\arabic{prooflinenum}\>\>\>\>\>}
+\newcommand{\oooooo}{\addtocounter{prooflinenum}{1}\arabic{prooflinenum}\>\>\>\>\>\>}
+\newcommand{\ooooooo}{\addtocounter{prooflinenum}{1}\arabic{prooflinenum}\>\>\>\>\>\>\>}
+\newcommand{\oooooooo}{\addtocounter{prooflinenum}{1}\arabic{prooflinenum}\>\>\>\>\>\>\>\>}
+\newcommand{\ooooooooo}{\addtocounter{prooflinenum}{1}\arabic{prooflinenum}\>\>\>\>\>\>\>\>\>}
 
 
 \newenvironment{eqnproof}[1][]{${#1}$\begin{displaymath}\begin{array}{lcll}}
@@ -158,3 +169,19 @@
 
 \newcommand{\eclaim}[3][]{{#1} &  & {#2} & \mbox{{#3}} \\}
 \newcommand{\efact}[2]{{#1} & & & \mbox{#2} \\}
+
+\newcommand{\basicspec}[4]{[{#1}]\;{#2}\;[{#3}.\;{#4}]}
+
+% Macros for type checking assertions
+
+\newcommand{\pfun}[3]{\hat{\lambda} #1:#2.\;#3}
+\newcommand{\restrictkind}[1]{({#1})\Downarrow_K}
+\newcommand{\restricttype}[1]{({#1})\Downarrow_T}
+
+\newcommand{\restricttyenv}[2]{{#2}\Downarrow^{#1}_K}
+\newcommand{\judgeACtx}[1]{\vdash {#1} \;\ctext{ok}}
+\newcommand{\judgeA}[3][\Delta]{{#1} \vdash {#2} : {#3}}
+\newcommand{\judgeSort}[2][\Delta]{\judgeA[#1]{#2}{\ctext{sort}}}
+\newcommand{\judgeSortEq}[3][\Delta]{{#1} \vdash {#2} \equiv {#3} : \ctext{sort}}
+
+\newcommand{\ms}[1]{\mathcal{#1}}

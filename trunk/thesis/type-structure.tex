@@ -96,7 +96,6 @@ We give the kinding rules for the monotypes in
 figure~\ref{monotype-kinding}, and the kinding rules for polytypes
 in figure~\ref{polytype-kinding}. 
 
-
 \begin{figure}[h]
 \begin{mathpar}
 \inferrule*[right=KUnit]
@@ -209,6 +208,7 @@ in figure~\ref{polytype-kinding}.
 \label{polytype-kinding}
 \end{figure}
 
+\subsection{The Syntactic Theory of Kinds}
 
 Types also support a pair of equality judgements
 $\judgeKeq{\tau}{\tau'}{\kappa}$ and $\judgeKeq{A}{B}{\bigstar}$.  The
@@ -219,16 +219,7 @@ The only rules we have for the equality judgement for polytypes are
 simple congruence rules, plus a recursive call back to the other
 equality judgement whenever we need to compare monotyped terms.
 
-Because types and kinds form an instance of the simply typed lambda
-calculus, we know that there is a unique $\beta$-normal, $\eta$-long
-form for each well-kinded type expression, both for the monotypes and
-the polytypes. This means that when we quotient the set of well-kinded
-terms by the equality judgement, we know that each equivalence class
-contains a single long normal term, which we can take as the canonical
-representative of that class.
-
-
-\begin{figure}
+\begin{figure}[h]
 \begin{mathpar}
 \inferrule[]
           { }
@@ -275,6 +266,12 @@ representative of that class.
           { \judgeKeq{\tau \; \tau'}{\sigma \; \sigma'}{\kappa} }
 \and
 \inferrule[]
+         { \judgeKeq[\Theta, \alpha:\kappa']{\tau}{\sigma}{\kappa} }
+         { \judgeKeq{\fun{\alpha}{\kappa'}{\tau}}
+                    {\fun{\alpha}{\kappa'}{\sigma}}
+                    {\kappa' \to \kappa} }
+\and
+\inferrule[]
           { \judgeWK{(\fun{\alpha}{\kappa'}{\tau})\;\tau'}{\kappa} }
           { \judgeKeq{(\fun{\alpha}{\kappa'}{\tau})\;\tau'}
                      {[\tau'/\alpha]\tau}
@@ -284,6 +281,24 @@ representative of that class.
           { \judgeKeq[\Theta, \alpha:\kappa']
                      {\tau\;\alpha}{\sigma\;\alpha}{\kappa} }
           { \judgeKeq{\tau}{\sigma}{\kappa' \to \kappa} }
+\\
+\inferrule[]
+          { \judgeWK{\tau}{\kappa} }
+          { \judgeKeq{\tau}{\tau}{\kappa} }
+\and
+\inferrule[]
+          { \judgeKeq{\tau}{\sigma}{\kappa} }
+          { \judgeKeq{\sigma}{\tau}{\kappa} }
+\and
+\inferrule[]
+          { \judgeKeq{\tau}{\tau'}{\kappa} \\
+            \judgeKeq{\tau'}{\sigma}{\kappa} }
+          { \judgeKeq{\tau}{\sigma}{\kappa} }
+\and
+\inferrule[]
+          { \judgeKeq{\tau}{\tau'}{\kappa'} \\ 
+            \judgeKeq[\Theta, \alpha:\kappa']{\sigma}{\sigma'}{\kappa} }
+          { \judgeKeq{[\tau/\alpha]\sigma}{[\tau'/\alpha]\sigma'}{\kappa} }
 \end{mathpar}
 \caption{Equality Rules for Monotypes}
 \label{monotype-equality}
@@ -328,21 +343,21 @@ representative of that class.
           { \judgeKeq{\cont{A}}{\cont{A'}}{\bigstar} }
 \and
 \inferrule[]
-          { \alpha:\kappa \in \Theta }
-          { \judgeKeq{\alpha}{\alpha}{\kappa} }
+          { \alpha:\star \in \Theta }
+          { \judgeKeq{\alpha}{\alpha}{\bigstar} }
 \and
 \inferrule[]
           { \judgeKeq{\tau \; \sigma}{\tau' \; \sigma'}{\star} }
           { \judgeKeq{\tau \; \sigma}{\tau' \; \sigma'}{\bigstar} }
 \and
 \inferrule[]
-          { \judgeKeq{\Theta, \alpha:\kappa}{A}{B}{\bigstar} }
+          { \judgeKeq[\Theta, \alpha:\kappa]{A}{B}{\bigstar} }
           { \judgeKeq{\forall \alpha:\kappa.\;A}
                      {\forall \alpha:\kappa.\;B}
                      {\bigstar} }
 \and
 \inferrule[]
-          { \judgeKeq{\Theta, \alpha:\kappa}{A}{B}{\bigstar} }
+          { \judgeKeq[\Theta, \alpha:\kappa]{A}{B}{\bigstar} }
           { \judgeKeq{\exists \alpha:\kappa.\;A}
                      {\exists \alpha:\kappa.\;B}
                      {\bigstar} }
@@ -350,6 +365,51 @@ representative of that class.
 \caption{Equality Rules for Polytypes}
 \label{polytype-equality}
 \end{figure}
+
+\begin{prop}{(Substitution)}
+If we have that $\judgeWK[\Theta, \alpha:\kappa']{\tau}{\kappa}$ and 
+$\judgeWK{\tau'}{\kappa'}$, then $\judgeWK{[\tau'/\alpha]\tau}{\kappa}$. 
+\end{prop}
+\begin{proof}
+This follows from structural induction on the derivation of 
+$\judgeWK[\Theta, \alpha:\kappa']{\tau}{\kappa}$. 
+\end{proof}
+
+
+\begin{prop}{(Well-Kindedness of Equality)}
+If we have that $\judgeKeq{\tau}{\sigma}{\kappa}$, then we know that 
+$\judgeWK{\tau}{\kappa}$ and $\judgeWK{\sigma}{\kappa}$. 
+\end{prop}
+\begin{proof}
+This follows from structural induction on the derivation of   
+$\judgeKeq{\tau}{\sigma}{\kappa}$.
+\end{proof}
+
+
+
+
+\begin{prop}{(Substitutivity)}
+  If we have that $\judgeKeq{\sigma}{\sigma'}{\kappa_1}$, then 
+  \begin{itemize}
+    \item If $\judgeKeq[\Theta, \alpha:\kappa_1]{\tau}{\tau'}{\kappa_2}$, then
+             $\judgeKeq{[\sigma/\alpha]\tau}{[\sigma'/\alpha]\tau'}{\kappa_2}$.
+    \item If $\judgeKeq[\Theta, \alpha:\kappa_1]{A}{B}{\bigstar}$, then
+             $\judgeKeq{[\sigma/\alpha]A}{[\sigma'/\alpha]B}{\bigstar}$.
+  \end{itemize}
+\end{prop}
+
+Because types and kinds form an instance of the simply typed lambda
+calculus, we know that there is a unique $\beta$-normal, $\eta$-long
+form for each well-kinded type expression, both for the monotypes and
+the polytypes. This means that when we quotient the set of well-kinded
+terms by the equality judgement, we know that each equivalence class
+contains a single long normal term, which we can take as the canonical
+representative of that class.
+
+
+
+
+
 
 \section{Semantics of Types}
 
@@ -489,44 +549,44 @@ continuation arguments, and again define a functor.
 \begin{displaymath}
 \begin{array}{lcl}\interp{\judgeWK{A}{\bigstar}} &\in& \mathrm{Type Context} \to (CPO_\bot \times CPO^{op}_\bot) \to CPO 
 \\[1em]
-\interp{\judgeWK{\alpha}{\bigstar}}\;\eta\;(K_+,K_-) & = & 
-    \interpmono{\judgeWK[\cdot]{\eta(\alpha)}{\star}}(K_+, K_-) 
+\interp{\judgeWK{\alpha}{\bigstar}}\;\theta\;(K_+,K_-) & = & 
+    \interpmono{\judgeWK[\cdot]{\theta(\alpha)}{\star}}(K_+, K_-) 
 \\
-\interp{\judgeWK{\tau\;\tau'}{\bigstar}}\;\eta\;(K_+,K_-) & = & 
-    \interpmono{\judgeWK[\cdot]{\eta(\tau)\;\eta(\tau')}{\star}}(K_+, K_-) 
+\interp{\judgeWK{\tau\;\tau'}{\bigstar}}\;\theta\;(K_+,K_-) & = & 
+    \interpmono{\judgeWK[\cdot]{\theta(\tau)\;\theta(\tau')}{\star}}(K_+, K_-) 
 \\
-\interp{\judgeWK{\forall \alpha:\kappa.\;A}{\bigstar}}\;\eta\;(K_+,K_-) & = & 
+\interp{\judgeWK{\forall \alpha:\kappa.\;A}{\bigstar}}\;\theta\;(K_+,K_-) & = & 
     \Pi \tau:\kappa.\; 
-        \interp{\judgeWK[\Theta, \alpha:\kappa]{A}{\bigstar}}\;(\eta,\tau)\;(K_+,K_-) 
+        \interp{\judgeWK[\Theta, \alpha:\kappa]{A}{\bigstar}}\;(\theta,\tau)\;(K_+,K_-) 
 \\
-\interp{\judgeWK{\exists \alpha:\kappa.\;A}{\bigstar}}\;\eta\;(K_+,K_-) & = & 
+\interp{\judgeWK{\exists \alpha:\kappa.\;A}{\bigstar}}\;\theta\;(K_+,K_-) & = & 
     \Sigma \tau:\kappa.\; 
-        \interp{\judgeWK[\Theta, \alpha:\kappa]{A}{\bigstar}}\;(\eta,\tau)\;(K_+,K_-) 
+        \interp{\judgeWK[\Theta, \alpha:\kappa]{A}{\bigstar}}\;(\theta,\tau)\;(K_+,K_-) 
 \\
-\interp{\judgeWK{A \times B}{\bigstar}}\;\eta\;(K_+,K_-) & = & 
-   \interp{\judgeWK{A}{\bigstar}}\;\eta\;(K_+,K_-) \times
-   \interp{\judgeWK{B}{\bigstar}}\;\eta\;(K_+,K_-) 
+\interp{\judgeWK{A \times B}{\bigstar}}\;\theta\;(K_+,K_-) & = & 
+   \interp{\judgeWK{A}{\bigstar}}\;\theta\;(K_+,K_-) \times
+   \interp{\judgeWK{B}{\bigstar}}\;\theta\;(K_+,K_-) 
 \\
-\interp{\judgeWK{A + B}{\bigstar}}\;\eta\;(K_+,K_-) & = & 
-   \interp{\judgeWK{A}{\bigstar}}\;\eta\;(K_+,K_-) +
-   \interp{\judgeWK{B}{\bigstar}}\;\eta\;(K_+,K_-) 
+\interp{\judgeWK{A + B}{\bigstar}}\;\theta\;(K_+,K_-) & = & 
+   \interp{\judgeWK{A}{\bigstar}}\;\theta\;(K_+,K_-) +
+   \interp{\judgeWK{B}{\bigstar}}\;\theta\;(K_+,K_-) 
 \\
-\interp{\judgeWK{A \to B}{\bigstar}}\;\eta\;(K_+,K_-) & = & 
-   \interp{\judgeWK{A}{\bigstar}}\;\eta\;(K_-,K_+) \to
-   \interp{\judgeWK{B}{\bigstar}}\;\eta\;(K_+,K_-) 
+\interp{\judgeWK{A \to B}{\bigstar}}\;\theta\;(K_+,K_-) & = & 
+   \interp{\judgeWK{A}{\bigstar}}\;\theta\;(K_-,K_+) \to
+   \interp{\judgeWK{B}{\bigstar}}\;\theta\;(K_+,K_-) 
 \\
-\interp{\judgeWK{\unittype}{\bigstar}}\;\eta\;(K_+, K_-) & = & \setof{*} 
+\interp{\judgeWK{\unittype}{\bigstar}}\;\theta\;(K_+, K_-) & = & \setof{*} 
 \\
 
-\interp{\judgeWK{\N}{\bigstar}}\;\eta\;(K_+, K_-) & = &  \N 
+\interp{\judgeWK{\N}{\bigstar}}\;\theta\;(K_+, K_-) & = &  \N 
 \\
-\interp{\judgeWK{\cont{A}}{\bigstar}}\;\eta\;(K_+,K_-) & = & 
-   \interp{\judgeWK{A}{\bigstar}}\;\eta\;(K_-,K_+) \to K_+
+\interp{\judgeWK{\cont{A}}{\bigstar}}\;\theta\;(K_+,K_-) & = & 
+   \interp{\judgeWK{A}{\bigstar}}\;\theta\;(K_-,K_+) \to K_+
 \\
-\interp{\judgeWK{\monad{A}}{\bigstar}}\;\eta\;(K_+,K_-) & = & 
-   (\interp{\judgeWK{A}{\bigstar}}\;\eta\;(K_+,K_-) \to K_-) \to K_+
+\interp{\judgeWK{\monad{A}}{\bigstar}}\;\theta\;(K_+,K_-) & = & 
+   (\interp{\judgeWK{A}{\bigstar}}\;\theta\;(K_+,K_-) \to K_-) \to K_+
 \\
-\interp{\judgeWK{\reftype{A}}{\star}}\;\eta\;(K_+, K_-) & = & Loc(A) 
+\interp{\judgeWK{\reftype{A}}{\star}}\;\theta\;(K_+, K_-) & = & Loc([\theta(A)]) 
 \\
 \end{array}
 \end{displaymath}
@@ -2264,13 +2324,12 @@ $\interpE{\judgeE{\Gamma}{e}{A}}\;\theta$.)
    $\interpE{\judgeE{\Gamma, \Gamma'}{[e'/y]x_i}{B}}\;\theta\;(\gamma, \gamma')$
 
     \begin{eqnproof}
-      \eline
-            {\interpE{\judgeE{\Gamma, \Gamma'}{x_i}{B}}\;\theta\;(\gamma, \gamma')}
+      \eline{\interpE{\judgeE{\Gamma, \Gamma'}{x_i}{B}}\;\theta\;(\gamma, \gamma')}
             { Subst.}
       \eline{\pi_i(\gamma, \gamma')}
             { Semantics}
       \eline{\pi_i(\gamma, \interpE{\judgeE{\Gamma}{e'}{A}}\;\theta\;\gamma, \gamma')}
-            { Adjusting $i$}
+            { Adjusting $i$ }
       \eline{\interpE{\judgeE{\Gamma, y:A, \Gamma'}{x_i}{B}}\;\theta\;(\gamma, \interpE{\judgeE{\Gamma}{e'}{A}}\;\theta, \gamma')}
             { Semantics}
     \end{eqnproof}
