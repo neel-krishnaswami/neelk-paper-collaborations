@@ -159,6 +159,15 @@
 \newcommand{\oooooooo}{\addtocounter{prooflinenum}{1}\arabic{prooflinenum}\>\>\>\>\>\>\>\>}
 \newcommand{\ooooooooo}{\addtocounter{prooflinenum}{1}\arabic{prooflinenum}\>\>\>\>\>\>\>\>\>}
 
+\newcommand{\ox}{\>\>}
+\newcommand{\oox}{\>\>\>}
+\newcommand{\ooox}{\>\>\>\>}
+\newcommand{\oooox}{\>\>\>\>\>}
+\newcommand{\ooooox}{\>\>\>\>\>\>}
+\newcommand{\oooooox}{\>\>\>\>\>\>\>}
+\newcommand{\ooooooox}{\>\>\>\>\>\>\>\>}
+\newcommand{\oooooooox}{\>\>\>\>\>\>\>\>\>}
+
 
 \newenvironment{eqnproof}[1][]{${#1}$\begin{displaymath}\begin{array}{lcll}}
                          {\end{array}\end{displaymath}}
@@ -179,9 +188,10 @@
 \newcommand{\restricttype}[1]{({#1})\Downarrow_T}
 
 \newcommand{\restricttyenv}[2]{{#2}\Downarrow^{#1}_K}
+\newcommand{\restrictvals}[2]{{#2}\Downarrow^{#1}_T}
 \newcommand{\judgeACtx}[1]{\vdash {#1} \;\ctext{ok}}
 \newcommand{\judgeA}[3][\Delta]{{#1} \vdash {#2} : {#3}}
-\newcommand{\judgeSort}[2][\Delta]{\judgeA[#1]{#2}{\ctext{sort}}}
+\newcommand{\judgeSort}[2][\Delta]{\judgeA[{#1}]{{#2}}{\ctext{sort}}}
 \newcommand{\judgeSortEq}[3][\Delta]{{#1} \vdash {#2} \equiv {#3} : \ctext{sort}}
 
 \newcommand{\ms}[1]{\mathcal{#1}}
