@@ -2274,6 +2274,108 @@ Assume $D_0 :: \judgeA{\Delta}{p}{\omega}$.
 \end{enumerate}
 \end{proof}
 
+\subsubsection{Semantics of Sort Substitution}
+
+\begin{lemma}{(Substitution Preserves Meaning)}
+If we have that $\judgeA{p}{\omega}$, then 
+
+\begin{enumerate}
+\item If $(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') \in \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$, 
+      then $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$
+
+\item We also have that $\interp{\judgeSort[{\Delta, u:\omega, \Delta'}]{\omega'}}\;(\delta, \interp{\judgeA{p}{\omega}}, \delta') = \interp{\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega'}}\;(\delta, \delta')$. 
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+  \begin{enumerate}
+  \item First, we want to show if $(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') \in 
+                                   \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$, 
+      then $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$
+  \end{enumerate}
+\end{proof}
+  
+
+\subsection{Substitution for Equality Judgement}
+
+\subsubsection{Syntactic Substitution}
+
+\begin{lemma}{(Syntactic Substitution for Equality Judgement)}
+If we have that $\judgeA{p}{\omega}$ and $\judgeACtx{\Delta, u:\omega, \Delta'}$, and we have that 
+$\judgeSortEq[{\Delta, u:\omega, \Delta'}]{\omega_1}{\omega_2}$, 
+then $\judgeSortEq[{\Delta, [p/u]\Delta'}]{[p/u]\omega'}{[p/u]\omega''}$. 
+\end{lemma}
+
+\begin{proof}
+Assume $D_0 :: \judgeA{p}{\omega}$, and $D_C :: \judgeACtx{\Delta, u:\omega, \Delta'}$.  
+Now we'll proceed by structural induction on the equality judgement. 
+\begin{itemize}
+\item Case \textsc{SortEqProp}:
+  \begin{tabbedproof}
+    \oo Assume $D :: \judgeSortEq[{\Delta, u:\omega, \Delta'}]{\assert}{\assert}$\\
+    \ooo By context substitution on $D_C$, we have $D'_C :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
+    \ooo By rule \textsc{SortEqProp}, we have $D' :: \judgeSortEq[{\Delta, [p/u]\Delta'}]{\assert}{\assert}$ \\
+    \ooo By definition of substitution, $\assert = [p/u]\assert$ \\
+    \ooo Therefore $D' :: \judgeSortEq[{\Delta, [p/u]\Delta'}]{[p/u]\assert}{[p/u]\assert}$ \\
+  \end{tabbedproof}
+
+\item Case \textsc{SortEqKind}: 
+  \begin{tabbedproof}
+    \oo Assume $D :: \judgeSortEq[{\Delta, u:\omega, \Delta'}]{\kappa}{\kappa}$\\
+    \ooo By context substitution on $D_C$, we have $D'_C :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
+    \ooo By rule \textsc{SortEqKind}, we have $D' :: \judgeSortEq[{\Delta, [p/u]\Delta'}]{\kappa}{\kappa}$ \\
+    \ooo By definition of substitution, $\kappa = [p/u]\kappa$ \\
+    \ooo Therefore $D' :: \judgeSortEq[{\Delta, [p/u]\Delta'}]{[p/u]\kappa}{[p/u]\kappa}$ \\
+  \end{tabbedproof}
+
+\item Case \textsc{SortEqImp}: 
+  \begin{tabbedproof}
+    \oo Assume $D :: \judgeSortEq[{\Delta, u:\omega, \Delta'}]{\omega'_1 \To \omega''_1}{\omega'_2 \To \omega''_2}$\\
+    \ooo By context substitution on $D_C$, we have $D'_C :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
+    \ooo By inversion on $D$, we get \\
+    \oooo $E_1 :: \judgeSortEq[{\Delta, u:\omega, \Delta'}]{\omega'_1}{\omega''_1}$\\
+    \oooo $E_2 :: \judgeSortEq[{\Delta, u:\omega, \Delta'}]{\omega'_2}{\omega''_2}$\\
+    \ooo By induction on $E_1$, we have $E'_1 :: \judgeSortEq[{\Delta, [p/u]\Delta'}]{[p/u]\omega'_1}{[p/u]\omega''_1}$\\
+    \ooo By induction on $E_2$, we have $E'_2 :: \judgeSortEq[{\Delta, [p/u]\Delta'}]{[p/u]\omega'_2}{[p/u]\omega''_2}$\\
+    \ooo By rule \textsc{SortEqImp} with $E'_1, E'_2$, we have  \\
+    \ooox $D' :: \judgeSortEq[{\Delta, [p/u]\Delta'}]{[p/u]\omega'_1 \To [p/u]\omega''_1}{[p/u]\omega'_2 \To [p/u]\omega''_2}$\\
+    \ooo By definition of substitution, $[p/u]\omega'_1 \To [p/u]\omega''_1 = [p/u](\omega'_1 \To \omega''_1)$\\
+    \ooo By definition of substitution, $[p/u]\omega'_2 \To [p/u]\omega''_2 = [p/u](\omega'_2 \To \omega''_2)$\\
+    \ooo Therefore 
+           $D' :: \judgeSortEq[{\Delta, [p/u]\Delta'}]{[p/u](\omega'_1 \To \omega''_1)}{[p/u](\omega'_2 \To \omega''_2)}$\\
+  \end{tabbedproof}
+
+\item Case \textsc{SortEqType}:
+  \begin{tabbedproof}
+    \oo Assume $D :: \judgeSortEq[{\Delta, u:\omega, \Delta'}]{A}{B}$ \\
+    \ooo By inversion on $D$, we have $D_1 :: \judgeKeq[{\restrictkind{\Delta, u:\omega, \Delta'}}]{A}{B}{\bigstar}$ \\
+    \ooo Case analyze $\omega$: \\
+    \oooo When $\omega = \kappa$: \\
+    \ooooo We have $\judgeA{\Delta}{\tau}{\kappa}$, where $p = \tau$ \\
+    \ooooo By definition, 
+           $\restrictkind{\Delta, u:\kappa, \Delta'} = \restrictkind{\Delta}, u:\kappa, \restrictkind{\Delta'}$ \\
+    \ooooo Therefore $D_1 :: \judgeKeq[{\restrictkind{\Delta}, u:\kappa, \restrictkind{\Delta'}}]{A}{B}{\bigstar}$ \\
+    \ooooo By equality rule for types, we have 
+           $D'_1 :: \judgeKeq[{\restrictkind{\Delta}, \restrictkind{\Delta'}}]{[\tau/u]A}{[\tau/u]B}{\bigstar}$ \\
+    \ooooo Since kinds have no free variables, $\restrictkind{\Delta'} = \restrictkind{[\tau/u]\Delta'}$ \\
+    \ooooo Therefore $D'_1 :: \judgeKeq[{\restrictkind{\Delta}, \restrictkind{[\tau/u]\Delta'}}]{[\tau/u]A}{[\tau/u]B}{\bigstar}$ \\
+    \ooooo By rule \textsc{SortEqType}, we have 
+            $D' :: \judgeSortEq[{\Delta, [\tau/u]\Delta'}]{[\tau/u]A}{[\tau/u]B}$ \\
+    \ooooo Therefore $D' :: \judgeSortEq[{\Delta, [p/u]\Delta'}]{[p/u]A}{[p/u]B}$ \\
+    \oooo Otherwise when $\omega \not= \kappa$: \\
+    \ooooo By definition, 
+           $\restrictkind{\Delta, u:\kappa, \Delta'} = \restrictkind{\Delta}, \restrictkind{\Delta'}$ \\
+    \ooooo Since kinds have no free variables, $\restrictkind{\Delta'} = \restrictkind{[p/u]\Delta'}$ \\
+    \ooooo Therefore $\restrictkind{\Delta, u:\kappa, \Delta'} = \restrictkind{\Delta, [p/u]\Delta'}$ \\
+    \ooooo Since $u \not\in FV(A)$, we have $[p/u]A = A$ \\
+    \ooooo Since $u \not\in FV(B)$, we have $[p/u]A = B$ \\
+    \ooooo Therefore $D_1 :: \judgeKeq[{\restrictkind{\Delta, [p/u]\Delta'}}]{[p/u]A}{[p/u]B}{\bigstar}$ \\
+    \ooooo By rule \textsc{SortEqType}, we have $D' :: \judgeSortEq[{\Delta, [p/u]\Delta'}]{[p/u]A}{[p/u]B}$\\
+  \end{tabbedproof}
+\end{itemize}
+\end{proof}
+
+
 \subsection{Substitution for Terms and Specifications}
 
 \subsubsection{Syntactic Substitution}
@@ -2672,7 +2774,7 @@ Suppose that $D_0 :: \judgeA{p}{\omega}$. Then
              $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u](\validprop{q})}$ \\
       \end{tabbedproof}
 
-    \item Case \textsc{SpecBinary}
+    \item Case \textsc{SpecBinary}:
       \begin{tabbedproof}
         \oo Assume $D :: \judgeS[{\Delta, u:\omega, \Delta'}]{S_1 \oplus S_2}$ \\
         \ooo By inversion on $D$, we have \\
@@ -2687,6 +2789,20 @@ Suppose that $D_0 :: \judgeA{p}{\omega}$. Then
         \ooox $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u]S_1 \oplus [p/u]S_2}$ \\
         \ooo By definition of substitution, $[p/u]S_1 \oplus [p/u]S_2 = [p/u](S_1 \oplus S_2)$ \\
         \ooo Therefore $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u](S_1 \oplus S_2)}$ \\
+      \end{tabbedproof}
+
+    \item Case \textsc{SpecQuantify}:
+      \begin{tabbedproof}
+        \oo Assume $D :: \judgeS[{\Delta, u:\omega, \Delta'}]{Q u':\omega'.\; S}$ \\
+        \ooo By inversion on $D$, we have \\
+        \oooo $D_1 :: \judgeS[{\Delta, u:\omega, \Delta', u':\omega'}]{S}$ \\
+        \oooo $Q \in \setof{\forall, \exists}$ \\
+        \ooo By induction on $D_1$, we have $D'_1 :: \judgeS[{\Delta, [p/u]\Delta', u':[p/u]\omega'}]{[p/u]S}$ \\
+        \ooo By rule \textsc{SpecQuantify}, 
+              $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{Q u':[p/u]\omega'.\; [p/u]S}$ \\
+        \ooo By definition of substitution, $Q u':[p/u]\omega'.\; [p/u]S = [p/u](Q u':\omega'.\; S)$ \\
+        \ooo Therefore $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u](Q u':\omega'.\; S)}$ \\
+        
       \end{tabbedproof}
     \end{itemize}
   \end{enumerate}
