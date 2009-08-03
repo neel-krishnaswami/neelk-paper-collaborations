@@ -46,9 +46,9 @@ algebra (that it have greatest and least elements, greatest lower
 bounds and least upper bounds, and that it have an implication). The
 next three are the monoid structure axioms, that say $I$ is the unit,
 and that $*$ is commutative and associative. The last axiom asserts
-the existence of a wand that behaves with respect to the separating
-conjunction the same way that the implication behaves with respect to
-the ordinary conjunction.
+the existence of a wand that is adjoint to the separating conjunction
+the same way that the implication is adjoint to the ordinary
+conjunction.
 
 In addition, we'll also ask that this algebra be \emph{complete},
 which means that meets and joins of arbitrary sets of elements be
@@ -81,6 +81,19 @@ properties hold:
 \item $\cdot$ is associative. $m \cdot (m' \cdot m'') = (m \cdot m') \cdot m''$, if defined.
 \end{itemize}
 
+\begin{lemma}{(Disjointness Distributes)}
+If $(m_1\cdot m_2) \# m_3$, then $m_1 \# m_3$ and $m_2 \# m_3$
+\end{lemma}
+\begin{proof}
+Suppose $(m_1\cdot m_2) \# m_3$. Then, we know there is some $m = (m_1 \cdot m_2) \cdot m_3$. 
+Then, by associativity and commutativity, we know that $m = (m_1 \cdot m_3) \cdot m_2$. If
+it were the case that $m_1 \cdot m_3$ was not defined, then $m$ would not be defined, which
+is a contradiction. Therefore $m_1 \# m_3$. Similarly, $m_2 \# m_3$. 
+\end{proof}
+
+
+\subsubsection{BI-Algebras over Partial Commutative Monoids}
+
 Given a partial commutative monoid, we can show that the powerset $\powerset{M}$ 
 forms a BI-algebra. 
 
@@ -110,16 +123,16 @@ with the following operations:
 \item  We want to show $\forall p \in \powerset{M}.\; p \leq \top$
   \begin{tabbedproof}
         Assume $p \in \powerset{M}$ \\
-    \oo By definition of powerset, $p \subseteq M$ \\
-    \oo By definition of $\top$, $p \subseteq \top$ \\
-    \oo By definition of $\leq$, $p \leq \top$ \\
+    \oo By definition of powerset, we have $p \subseteq M$ \\
+    \oo By definition of $\top$, we have $p \subseteq \top$ \\
+    \oo By definition of $\leq$, we have $p \leq \top$ \\
   \end{tabbedproof}
 
 \item We want to show $\forall p \in B.\; \bot \leq p$
   \begin{tabbedproof}
         Assume $p \in \powerset{M}$ \\ 
-    \oo By definition of $\emptyset$, $\emptyset \subseteq p$ \\
-    \oo By definition of $\bot$, $\leq$, $\bot \leq p$ \\
+    \oo By definition of $\emptyset$, we have $\emptyset \subseteq p$ \\
+    \oo By definition of $\bot$, $\leq$, we have $\bot \leq p$ \\
   \end{tabbedproof}
 
 \item We want to show $\forall p,q,r \in \powerset{M}.$ if $r \leq p$ and $r \leq q$, then
@@ -130,14 +143,14 @@ with the following operations:
       Assume $p,q,r \in \powerset{M}$ \\
       Assume $r \leq p$, $r \leq q$ \\[1em]
 
-      \oo By definition of $\leq$, $r \subseteq p$, $r \subseteq q$ \\
-      \oo By properties of $\cap$, $r \cap r \subseteq p \cap q$ \\
+      \oo Expanding definition of $\leq$, we have $r \subseteq p$ and $r \subseteq q$ \\
+      \oo By properties of $\cap$, we have $r \cap r \subseteq p \cap q$ \\
       \oo Hence $r \subseteq p \cap q$ \\
-      \oo By definition of $\leq$ and $\land$, $r \leq p \land q$ \\[1em]
-      \oo By properties of $\cap$, $p \cap q \subseteq p$ \\
-      \oo By definition of $\leq$ and $\land$, $p \cap q \leq p$ \\[1em]
-      \oo By properties of $\cap$, $p \cap q \subseteq q$ \\
-      \oo By definition of $\leq$ and $\land$, $p \cap q \leq q$ \\
+      \oo By definition of $\leq$ and $\land$, we have $r \leq p \land q$ \\[1em]
+      \oo By properties of $\cap$, we have $p \cap q \subseteq p$ \\
+      \oo By definition of $\leq$ and $\land$, we have $p \wedge q \leq p$ \\[1em]
+      \oo By properties of $\cap$, we have $p \cap q \subseteq q$ \\
+      \oo By definition of $\leq$ and $\land$, we have $p \wedge q \leq q$ \\
    \end{tabbedproof}
 
 \item We want to show $\forall p,q,r \in \powerset{M}.$ if $p \leq r$ and $q \leq r$, then
@@ -146,15 +159,15 @@ with the following operations:
 
   \begin{tabbedproof}
     Assume $p, q, r \in \powerset{M}$, $p \leq r$, $q \leq $ \\[1em]
-    \oo By definition of $\leq$, $p \subseteq r$, $q \subseteq r$ \\
-    \oo By set properties, $p \cup q \subseteq r$ \\
-    \oo By definitions, $p \vee q \leq r$ \\[1em]
+    \oo By definition of $\leq$, we have $p \subseteq r$, $q \subseteq r$ \\
+    \oo By set properties, we have $p \cup q \subseteq r$ \\
+    \oo By definition of $\leq$, we have $p \vee q \leq r$ \\[1em]
 
-    \oo By set properties $p \subseteq p \cup q$ \\
-    \oo By definitions $p \leq p \vee q$ \\[1em]
+    \oo By set properties we have $p \subseteq p \cup q$ \\
+    \oo By definitions of $\leq$ and $\vee$, we have $p \leq p \vee q$ \\[1em]
   
-    \oo By set properties $q \subseteq p \cup q$ \\
-    \oo By definitions $q \leq p \vee q$ \\
+    \oo By set properties, we have $q \subseteq p \cup q$ \\
+    \oo By definitions of $\leq$ and $\vee$, we have  $q \leq p \vee q$ \\
   \end{tabbedproof}
 
 \item We want to show $\forall p, q, r \in \powerset{M}.\; p \land q \leq r \iff p \leq q \implies r$
@@ -164,38 +177,49 @@ with the following operations:
 
     $\To$ direction: \\
     \oo Assume $p \land q \leq r$ \\
-    \ooo By definitions, $p \cap q \subseteq r$ \\
-    \ooo Assume $m \in p$ \\
+    \ooo By definitions of $\leq$ and $\land$, we have $p \cap q \subseteq r$ \\
+    \ooo We want to show $p \leq q \implies r$ \\
+    \ooo So we want to show $p \subseteq (q \implies r)$ \\
+    \ooo So we want to show $\forall m$, if $m \in p$ then $m \in (q \implies r)$ \\
+    \ooo Assume $m$ and $m \in p$ \\
     \oooo Want to show $m \in q \implies r$ \\
     \oooo Equivalent to showing if $m \in q$, then $m \in r$ \\
     \oooo Assume $m \in q$ \\
-    \ooooo Since $m \in p$ and $m \in q$, $m \in p \cap q$. \\
-    \ooooo Since $p \cap q \subseteq r$, $m \in r$ \\
-    \ooo Hence $p \subseteq q \implies r$ \\
-    \ooo By definition of $\leq$, $p \leq q \implies r$ \\[1em]
+    \ooooo Since $m \in p$ and $m \in q$, we know $m \in p \cap q$. \\
+    \ooooo Since $p \cap q \subseteq r$, we know $m \in r$ \\
+    \ooo Therefore $p \subseteq q \implies r$ \\
+    \ooo By definition of $\leq$, we see $p \leq q \implies r$ \\[1em]
 
     $\Leftarrow$ direction:\\
     \oo Assume $p \leq q \implies r$ \\
-    \ooo By definition $p \subseteq q \implies r$ \\
+    \ooo By definition of $\leq$, we know $p \subseteq q \implies r$ \\
+    \ooo We want to show $p \land q \leq r$ \\
+    \ooo So we want to show $p \cap q \subseteq r$ \\
+    \ooo So we want to show $\forall m$, if $m \in p \cap q$ then $m \in r$ \\
     \ooo Assume $m \in p \cap q$ \\
     \oooo Hence $m \in p$ and $m \in q$ \\
-    \oooo Since $p \subseteq q \implies r$, if $m \in p$, then if $m \in q$, then $m \in r$ \\
+    \oooo Since $p \subseteq q \implies r$, we know for all $m$, if $m \in p$, then if $m \in q$, then $m \in r$ \\
     \oooo Hence $m \in r$ \\
     \ooo Hence $p \cap q \subseteq r$ \\
-    \ooo By definitions, $p \land q \leq r$ \\
+    \ooo By definition of $\leq$ and $\land$, we conclude $p \land q \leq r$ \\
   \end{tabbedproof}
 
 \item We want to show $\forall p \in \powerset{M}.\; p * I = p$
 
   \begin{eqnproof}[\mbox{Assume } p \in \powerset{M}]
     \eline[p * I]
-          {\setof{m \in M\;|\; \exists m_1 \in p, m_2 \in \setof{e}.\;
+          {\setof{m \in M\;|\; \exists m_1 \in p, m_2 \in I.\;
+                                    m_1 \# m_2 \land m_1\cdot m_2 = m}}
+          {}
+    \eline{\setof{m \in M\;|\; \exists m_1 \in p, m_2 \in \setof{e}.\;
                                     m_1 \# m_2 \land m_1\cdot m_2 = m}}
           {}
     \eline{\setof{m \in M\;|\; \exists m_1 \in p.\; m_1 \# e \land m_1 \cdot e = m}}
           {Simplification}
     \eline{\setof{m \in M\;|\; \exists m_1 \in p.\; m_1 = m}}
           {Monoid axioms}
+    \eline{\setof{m \in M\;|\; m \in p}}
+          {Simplification}
     \eline{p}
           {}
   \end{eqnproof}
@@ -270,9 +294,9 @@ only if $p \leq q \wand r$.
           $\comprehend{m}{\exists m_1, m_2.\; m_1 \# m_2 \land m_1 \in p \land m_2 \in q 
                                              \land m_1 \cdot m_2 = m}
            \subseteq r$ \\
-    \ooo By set properties, $\forall m.\; (\exists m_1, m_2.\; m_1 \# m_2 \land m_1 \in p \land m_2 \in q 
-                                             \land m_1 \cdot m_2 = m) \implies m \in r$. \\
-    \ooo By existential fiddling and instantiating $m$, \\
+    \ooo Thus, $\forall m.\; (\exists m_1, m_2.\; m_1 \# m_2 \land m_1 \in p \land m_2 \in q 
+                                             \land m_1 \cdot m_2 = m)$ implies $m \in r$. \\
+    \ooo By turning existentials on the left into universals, and instantiating $m$, \\
     \oooo
              $\forall m_1, m_2.\; (m_1 \# m_2 \land m_1 \in p \land m_2 \in q) \implies (m_1 \cdot m_2) \in r$ [HYP1] \\
     \ooo Now, to show $p \leq q \wand r$, we must show
@@ -319,11 +343,11 @@ $r \leq \bigwedge P$ and $\forall p \in P.\; \bigwedge P \leq p$.
     \oooo This is equivalent to showing $\forall m.\; m \in \bigcap P \implies m \in p$ \\
     \oooo Assume $m$, $m \in \bigcap P$.  \\
     \ooooo Therefore, $\forall p' \in P.\; m \in p'$. \\
-    \oooo Instantiating $p'$ with $p$, we get $m \in p$. \\
+    \ooooo Instantiating $p'$ with $p$, we get $m \in p$. \\
   \end{tabbedproof}
 
 \item We want to show $\forall r, P \subseteq B$, if $(\forall p \in P.\; p \leq r)$, then
-$\bigvee P \leq r$ and $\forall p \in P.\; p \leq \bigwedge P$. 
+$\bigvee P \leq r$ and $\forall p \in P.\; p \leq \bigvee P$. 
 
   \begin{tabbedproof}
     \oo Assume $r, P \subseteq B$, and $(\forall p \in P.\; p \leq r)$ \\[1em]
@@ -331,22 +355,22 @@ $\bigvee P \leq r$ and $\forall p \in P.\; p \leq \bigwedge P$.
     \oooo This is equivalent to showing $\bigcup P \subseteq r$ \\
     \oooo This is equivalent to showing $\forall m.\; m \in \bigcup P \implies m \in r$ \\
     \oooo Assume $m$, $m \in \bigcup P$. \\
-    \ooooo $m in \bigcup P$ is equivalent to $\exists p \in P.\; m \in p$ \\
+    \ooooo $m \in \bigcup P$ is equivalent to $\exists p \in P.\; m \in p$ \\
     \ooooo Suppose $p' \in P$ is the witness, and that $m \in p'$ \\ 
     \oooooo Instantiating the quantifier $p$ in the hypothesis, we get $p' \leq r$ \\
     \oooooo This means $\forall m', m' \in p' \implies m' \in r$ \\
     \oooooo Instantiating the quantifier $m'$ with $m$,  we conclude $m \in r$.  \\
     \oooo Therefore, $\forall m.\; m \in \bigcup P \implies m \in r$ \\[1em]
-    \ooo Second, we want to show $\forall p \in P.\; p \leq \bigwedge P$. \\
+    \ooo Second, we want to show $\forall p \in P.\; p \leq \bigvee P$. \\
     \oooo Assume $p$, $p \in P$ \\
-    \ooooo We want to show $p \leq \bigwedge P$ \\
+    \ooooo We want to show $p \leq \bigvee P$ \\
     \ooooo This is equivalent to showing $p \subseteq \bigcup P$ \\
     \ooooo This is equivalent to showing $\forall m.\; m \in p \implies m \in \bigcup P$ \\
     \ooooo This is equivalent to showing $\forall m.\; m \in p \implies \exists p' \in P.\; m \in p'$ \\
     \ooooo Assume $m$, $m \in p$ \\
     \oooooo Take $p'$ to be $p$, since $p \in P$. \\
     \oooooo Thus, $m \in p$ by hypothesis \\
-    \oooo Therefore, $p \leq \bigwedge P$ \\
+    \oooo Therefore, $p \leq \bigvee P$ \\
   \end{tabbedproof}
 
 \end{enumerate}
@@ -360,8 +384,9 @@ Now, we'll take our predomain $H$ and form a BI algebra from it. To do so, we wi
 map it with the forgetful functor $U$, so that we forget the partial order structure 
 and let $U(H)$ be an ordinary set. 
 
-Now, $U(H) = \sum L \in \powersetfin{Loc}.\; (\prod \sempair{n}{A} \in L.\; \interp{\judgeWK[\cdot]{A}{\bigstar}}(K,K))$
+Now, $U(H) = \sum L \in \powersetfin{Loc}.\; (\prod \sempair{n}{A} \in L.\; \interp{\judgeWK[\cdot]{A}{\bigstar}}\;(*)\;(K,K))$
 
+In what follows, we will usually suppress the $U$, in order to reduce clutter. 
 
 Now, we can define the operations on it as follows: 
 
@@ -579,7 +604,7 @@ meets and joins exist, and then the nullary and binary meets and joins
 will fall out as a special case.
 
 \begin{lemma}{(Meets in the algebra of specifications)}
-If $X \subseteq \upset{P}$, then $\bigvee X$ defines a meet. 
+If $X \subseteq \upset{P}$, then $\bigwedge X$ defines a meet. 
 \end{lemma}
 
 \begin{proof}
@@ -602,58 +627,9 @@ upwards-closed subset.
 \ooo Which means $\bigwedge_{i \in I} S_i \in \upset{P}$ \\ 
 \end{tabbedproof}
 
-\noindent Next, we need to show that $\forall S \in \upset{P}, X \subseteq \upset{P}$, 
-if $(\forall S' \in X.\; S' \leq S)$, then $\bigvee X \leq S$ and $\forall S' \in X.\; S' \leq \bigvee X$. 
-
-\ \\
-
-\begin{tabbedproof}
-\oo Assume $S \in \upset{P}, X \subseteq \upset{P}$, and $\forall S' \in X.\; S' \leq S$ \\
-\ooo First, we want to show $\bigvee X \leq S$ \\
-\oooo This is the same as $\forall p, p \in \bigvee X \implies p \in S$ \\
-\oooo Assume $p \in \bigvee X$ \\
-\ooooo This means $\exists S' in X.\; p \in S'$ \\
-\ooooo Let $S'$ be the witness to the existential, so $S' \in X$ and $p \in S'$ \\
-\oooooo Instantiating the quantifier in the hypothesis with $S'$, we get $S' \leq S$ \\
-\oooooo This means $\forall p \in S', p \in S$ \\
-\oooooo Instantiating the quantifier with $p$, we  get $p \in S$ \\
-\oooo Therefore $\forall p, p \in \bigvee X \implies p \in S$ \\
-\oooo This is equivalent to $\bigvee X \leq S$ \\[1em]
-
-\ooo Second, we want to show $\forall S' \in X.\; S' \leq \bigvee X$ \\
-\oooo Assume $S' in X$ \\
-\ooooo We want to show $S' \leq \bigvee X$ \\
-\ooooo This means $\forall p \in S', p \in \bigvee X$ \\
-\ooooo Assume $p \in S'$ \\
-\oooooo We want to show $p \in \bigvee X$ \\
-\oooooo This means we must show $\exists S' \in X.\; p \in S'$ \\
-\oooooo Witness the existential with $S'$, so we can show $p \in S'$ by hypothesis \\
-\oooo  Therefore $\forall S' \in X.\; S' \leq \bigvee X$ \\
-\end{tabbedproof}
-\end{proof}
-
-\begin{lemma}{(Joins in the algebra of specifications)}
-If $X \subseteq \upset{P}$, then $\bigvee X$ defines an arbitrary join. 
-\end{lemma}
-\begin{proof}
-First, we need to verify the join we defined actually maps into the 
-appropriate domain. 
-
-So we first need to show that if $X \subseteq \upset{P}$, then $\bigvee{X} \in \upset{P}$
-
-\begin{tabbedproof}
-\oo Assume  $X \subseteq \upset{P}$ \\
-\ooo We want to show $\bigvee{X} \in \upset{P}$ \\
-\ooo This means $\forall x \in \bigvee{X}, y \in P,$ if $x \sqsubseteq y$ then $y \in \bigvee{X}$\\
-\oooo Assume $x \in \bigvee X$, $y \in P$, $x \sqsubseteq y$ \\
-\ooooo Since $x \in \bigvee X$, we know $\exists S \in X.\; x \in S$ \\
-\ooooo Let $S$ be the witness of the existential, so $S \in X$ and $x \in S$ \\ 
-\oooooo  Since $S$ is upwards-closed, $x \in S$, and $x \sqsubseteq y$, we know $y \in S$ \\
-\oooo Therefore we can conclude $\exists S \in X.\; y \in S$ \\
-\oooo Therefore $y \in \bigvee X$ \\
-\end{tabbedproof}
-
-\noindent Now, we need to show that $\forall S \in \upset{P}$, if $X \subseteq
+\noindent Next, we need to show that the Heyting algebra axiom for meets. 
+Stated formally,
+this is $\forall S \in \upset{P}$, if $X \subseteq
 \upset{P}$ and $(\forall S' \in X.\; S \leq S')$, then $S
 \leq \bigwedge X$ and $\forall S' \in X, \bigwedge X \leq S'$.
 \\
@@ -665,7 +641,7 @@ So we first need to show that if $X \subseteq \upset{P}$, then $\bigvee{X} \in \
 \oooo This is equivalent to showing $\forall p.\; p \in S \implies p \in \bigwedge X$ \\
 \oooo Assume $p \in S$ \\
 \ooooo We want to show $p \in \bigwedge X$, so we want to show $\forall S' \in X.\; p \in S'$. \\
-\ooooo Assume $S' in X$ \\
+\ooooo Assume $S' \in X$ \\
 \oooooo From the hypothesis in 1, we know $S \leq S'$ \\
 \oooooo This means $\forall p.\; p \in S \implies p \in S'$ \\
 \oooooo Instantiate the quantifier with $p$ and use hypothesis 4 to conclude $p \in S'$ \\
@@ -682,48 +658,81 @@ So we first need to show that if $X \subseteq \upset{P}$, then $\bigvee{X} \in \
 \end{proof}
 
 
+
+\begin{lemma}{(Joins in the algebra of specifications)}
+If $X \subseteq \upset{P}$, then $\bigvee X$ defines an arbitrary join. 
+\end{lemma}
+\begin{proof}
+First, we need to verify the join we defined actually gives us an upwards-closed set.
+So we first need to show that if $X \subseteq \upset{P}$, then $\bigvee{X} \in \upset{P}$
+
+\vspace{0.5em}
+
+\begin{tabbedproof}
+\oo Assume  $X \subseteq \upset{P}$ \\
+\ooo We want to show $\bigvee{X} \in \upset{P}$ \\
+\ooo This means $\forall x \in \bigvee{X}, y \in P,$ if $x \sqsubseteq y$ then $y \in \bigvee{X}$\\
+\ooo Assume $x \in \bigvee X$, $y \in P$, $x \sqsubseteq y$ \\
+\oooo Since $x \in \bigvee X$, we know $\exists S \in X.\; x \in S$ \\
+\oooo Let $S$ be the witness of the existential, so $S \in X$ and $x \in S$ \\ 
+\ooooo  Since $S$ is upwards-closed, $x \in S$, and $x \sqsubseteq y$, we know $y \in S$ \\
+\ooo Therefore we can conclude $\exists S \in X.\; y \in S$ \\
+\ooo Therefore $y \in \bigvee X$ \\
+\end{tabbedproof}
+
+\noindent Now, we need to show the Heyting axioms for disjunction. Formally stated, it is $\forall S \in \upset{P}, X \subseteq
+\upset{P}$, if $(\forall S' \in X.\; S' \leq S)$, then $\bigvee X \leq
+S$ and $\forall S' \in X.\; S' \leq \bigvee X$.
+
+\vspace{0.5em}
+
+\begin{tabbedproof}
+\oo Assume $S \in \upset{P}, X \subseteq \upset{P}$, and $\forall S' \in X.\; S' \leq S$ \\
+\ooo First, we want to show $\bigvee X \leq S$ \\
+\oooo This is the same as $\forall p, p \in \bigvee X \implies p \in S$ \\
+\oooo Assume $p \in \bigvee X$ \\
+\ooooo This means $\exists S' \in X.\; p \in S'$ \\
+\ooooo Let $S'$ be the witness to the existential, so $S' \in X$ and $p \in S'$ \\
+\oooooo Instantiating the quantifier in the hypothesis with $S'$, we get $S' \leq S$ \\
+\oooooo This means $\forall p \in S', p \in S$ \\
+\oooooo Instantiating the quantifier with $p$, we  get $p \in S$ \\
+\oooo Therefore $\forall p, p \in \bigvee X \implies p \in S$ \\
+\oooo This is equivalent to $\bigvee X \leq S$ \\[1em]
+
+\ooo Second, we want to show $\forall S' \in X.\; S' \leq \bigvee X$ \\
+\oooo Assume $S' \in X$ \\
+\ooooo We want to show $S' \leq \bigvee X$ \\
+\ooooo This means $\forall p \in S', p \in \bigvee X$ \\
+\ooooo Assume $p \in S'$ \\
+\oooooo We want to show $p \in \bigvee X$ \\
+\oooooo This means we must show $\exists S' \in X.\; p \in S'$ \\
+\oooooo Witness the existential with $S'$, so we can show $p \in S'$ by hypothesis \\
+\oooo  Therefore $\forall S' \in X.\; S' \leq \bigvee X$ \\
+\end{tabbedproof}
+\end{proof}
+
+
+
+
 \begin{lemma}{(Implication)}
 If $S_1, S_2 \in \upset{P}$, then
 $S_1 \implies S_2 \in \upset{P}$. 
 \end{lemma}
 
 \begin{proof}
+First, we'll check that the definition gives us an upwards-closed set.
 
-First, we'll check that the definition puts us in the right codomain. 
+\vspace{0.5em}
 
-Suppose that $x \in S_1 \implies S_2$, and that $y \sqsupseteq x$.
-
-\begin{tabular}{ll}
-$x \in \{ r \in P \;|\; \forall r' \sqsupseteq r.\; 	
-                          \mbox{if } r' \in S_1 \mbox{ then } r' \in S_2 \}$ &
-Def of $S_1 \implies S_2$ \\
-
-$\forall r' \sqsupseteq x.\; 	
-    \mbox{if } r' \in S_1 \mbox{ then } r' \in S_2$ &
-Comprehension elim (1)
-\\
-
-Assume $z \sqsupseteq y$. & \\
-
-\qquad $z \sqsupseteq x$ & 
-Since $z \sqsupseteq y$ and $y \sqsupseteq x$ \\
-
-\qquad $\mbox{if } z \in S_1 \mbox{ then } z \in S_2$
-& Instantiate universal quant in (1) \\
-
-$\forall z \sqsupseteq y.\; 	
-\mbox{if } z \in S_1 \mbox{ then } z \in S_2$ &
-Universal Intro. \\
-
-$y \in \{ r \in P \;|\; \forall z \sqsupseteq r.\; 	
-                          \mbox{if } z \in S_1 \mbox{ then } z \in S_2 \}$ &
-Comprehension intro \\
-
-$y \in S_1 \implies S_2$ 
-& Def. of $\implies$ \\
-\end{tabular}
-
-\ \\
+\begin{tabbedproof}
+\oo Assume $x \in S_1 \implies S_2$, and that $y \sqsupseteq x$ \\
+\ooo From this, we know $\forall r' \sqsupseteq x, $ if $r' \in S_1$ then $r' \in S_2$ \\
+\ooo We want to show $\forall r' \sqsupseteq y, $ if $r' \in S_1$ then $r' \in S_2$ \\
+\ooo Assume $r' \sqsupseteq y$ and $r' \in S_1$ \\
+\oooo Since $r' \sqsupseteq y$ and $r' \sqsupseteq x$, we know $r' \sqsupseteq x$ \\
+\oooo From this  and $r' \in S_1$, we can use the hypothesis in line 2 to get $r' \in S_2$ \\
+\ooo Therefore $\forall r' \sqsupseteq y, $ if $r' \in S_1$ then $r' \in S_2$ \\
+\end{tabbedproof}
 
 \noindent Now that we know that $\implies$ has the correct codomain, we need to
 verify that it satisfies the following axiom: 
@@ -931,7 +940,7 @@ $\basicspec{p}{c}{a:A}{q}$:
 
 \begin{displaymath}
   \basicspec{p}{c}{a:A}{q(a)} \triangleq
-    \forall h \in p. c\;Approx(q)\;h = \bot 
+    \forall h \in p.\; \left(c\;Best(q)\;h = \bot\right)
 \end{displaymath}
 
 If $c$ is given a continuation which will run forever (i.e., equals
@@ -1001,10 +1010,10 @@ We have that $\spec{p}{\bot}{a:A}{q(a)} = \powerset{H}$.
      $\forall s \sqsupseteq r.\; \basicspec{p*s}{\bot}{a:A}{q(a) * s}$ \\
 \ooo Assume $s \sqsupseteq r$ \\
 \oooo We want to show $\basicspec{p*s}{\bot}{a:A}{q(a) * s}$ \\
-\oooo This is equivalent to $\forall h \in p. \bot\;Approx(q)\;h = \bot$ \\
+\oooo This is equivalent to $\forall h \in p. \bot\;Best(q)\;h = \bot$ \\
 \oooo Assume $h \in p$ \\
-\ooooo  By definition of least element, $\bot\;Approx(q)\;h = \bot$ \\
-\oooo Therefore $\forall h \in p. \bot\;Approx(q)\;h = \bot$ \\
+\ooooo  By definition of least element, $\bot\;Best(q)\;h = \bot$ \\
+\oooo Therefore $\forall h \in p. \bot\;Best(q)\;h = \bot$ \\
 \oooo Therefore $\basicspec{p*s}{\bot}{a:A}{q(a) * s}$ \\
 \ooo Therefore $\forall s \sqsupseteq r.\; \basicspec{p*s}{\bot}{a:A}{q(a) * s}$ \\
 \ooo Therefore $r \in \spec{p}{\bot}{a:A}{q(a)}$ \\
@@ -1037,20 +1046,20 @@ $\spec{p}{\sqcup_i c_i}{a:A}{q(a)}$.
          \basicspec{p * s}{\sqcup c_i}{a:A}{q(a) * s}$ \\
 \ooo Assume $r \in \powerset{H}, s \sqsupseteq r$ \\
 \oooo We want to show $\basicspec{p * s}{\sqcup c_i}{a:A}{q(a) * s}$ \\
-\oooo This is equivalent to $\forall h \in p * s.\; (\sqcup c_i)\; Approx(\semfun{a}{q(a)*s})\;h = \bot$ \\
+\oooo This is equivalent to $\forall h \in p * s.\; (\sqcup c_i)\; Best(\semfun{a}{q(a)*s})\;h = \bot$ \\
 \oooo Assume $h \in p * s$ \\ 
-\ooooo By continuity, we know $(\sqcup c_i)\; Approx(\semfun{a}{q(a)*s})\;h = 
-                               \bigsqcup (c_i\;Approx(\semfun{a}{q(a)*s})\;h)$ \\
+\ooooo By continuity, we know $(\sqcup c_i)\; Best(\semfun{a}{q(a)*s})\;h = 
+                               \bigsqcup (c_i\;Best(\semfun{a}{q(a)*s})\;h)$ \\
 \ooooo Suppose $c$ is an element of the chain of $c_i$ \\
 \oooooo Then we know $c \in \spec{p}{-}{a:A}{q}$ \\
 \oooooo This is equivalent to $\spec{p}{c}{a:A}{q} = \powerset{H}$ \\
 \oooooo This is equivalent to $\forall r, s \sqsupseteq r.\; \basicspec{p*s}{c}{a:A}{q(a)*s}$ \\
-\oooooo This is equivalent to $\forall r, s \sqsupseteq r, h \in p*s, c\;Approx(\semfun{a}{q(a)*s})\;h = \bot$ \\
-\oooooo Instantiating quantifiers with $r$, $s$, and $h$, we get $c\;Approx(\semfun{a}{q(a)*s})\;h = \bot$\\
-\ooooo Therefore $\forall c \in \comprehend{c_i}{i \in \N}$, $c\;Approx(\semfun{a}{q(a)*s})\;h = \bot$ \\
-\ooooo Therefore $\bigsqcup (c_i\;Approx(\semfun{a}{q(a)*s})\;h) = \bot$ \\
-\ooooo Therefore $(\sqcup c_i)\;Approx(\semfun{a}{q(a)*s})\;h = \bot$ \\
-\oooo Therefore $\forall h \in p * s.\; (\sqcup c_i)\; Approx(\semfun{a}{q(a)*s})\;h = \bot$ \\
+\oooooo This is equivalent to $\forall r, s \sqsupseteq r, h \in p*s, c\;Best(\semfun{a}{q(a)*s})\;h = \bot$ \\
+\oooooo Instantiating quantifiers with $r$, $s$, and $h$, we get $c\;Best(\semfun{a}{q(a)*s})\;h = \bot$\\
+\ooooo Therefore $\forall c \in \comprehend{c_i}{i \in \N}$, $c\;Best(\semfun{a}{q(a)*s})\;h = \bot$ \\
+\ooooo Therefore $\bigsqcup (c_i\;Best(\semfun{a}{q(a)*s})\;h) = \bot$ \\
+\ooooo Therefore $(\sqcup c_i)\;Best(\semfun{a}{q(a)*s})\;h = \bot$ \\
+\oooo Therefore $\forall h \in p * s.\; (\sqcup c_i)\; Best(\semfun{a}{q(a)*s})\;h = \bot$ \\
 \oooo Therefore $\basicspec{p * s}{\sqcup c_i}{a:A}{q(a) * s}$ \\
 \ooo Therefore $\forall r \in \powerset{H}, s \sqsupseteq r.\; 
                    \basicspec{p * s}{\sqcup c_i}{a:A}{q(a) * s}$ \\
@@ -1332,8 +1341,6 @@ only if $r \in [(S_1 \otimes p) \implies (S_2 \otimes p)]$.
 In this section, we'll give the syntax of specifications and
 assertions, and then we'll give their semantics.
 
-\subsection{Syntax}
-
 The syntactic categories are given in Figure~\ref{logic-syntax}. The
 sorts $\omega$ include $\assert$, the sort of propositions in
 separation logic, the kinds $\kappa$, the polytypes $A$, and
@@ -1557,17 +1564,14 @@ $\judgeA{p}{\omega}$, defined in Figure~\ref{logic-prop-ok}.
           {\judgeA{Q u:\omega.\; p}{\assert}}
 \and
 \inferrule*[right=TermPointsTo]
-          {\judgeACtx{\Delta} \\
-           \judgeWK[\restrictkind{\Delta}]{A}{\bigstar} \\
-           \judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}{e}{\reftype{A}} \\
-           \judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}{e'}{A}}
+          {\judgeA{e}{\reftype{A}} \\
+           \judgeA{e'}{A}}
           {\judgeA{e \pointsto_A e'}{\assert}}
 \and
 \inferrule*[right=TermEqual]
-          {\judgeSort{\omega} \\
-           \judgeA{p}{\omega} \\
+          {\judgeA{p}{\omega} \\
            \judgeA{q}{\omega}}
-          {\judgeA{p =_A q}{\assert}}
+          {\judgeA{p =_\omega q}{\assert}}
 \and
 \inferrule*[right=TermSpec]
           {\judgeS{S}}
@@ -1669,14 +1673,12 @@ do so.
 \boxed{\judgeS{S}} \\
 \inferrule*[right=SpecTriple]
           {\judgeA{p}{\assert} \\
-           \judgeA{A}{\bigstar} \\
-           \judgeC[\restrictkind{\Delta}]{\restricttype{\Delta}}{c}{A} \\
-           \judgeA[\Delta, a:A]{q}{\assert}} 
+           \judgeA[\Delta]{\comp{c}}{\monad{A}} \\
+           \judgeA[\Delta, a:A]{q}{\assert}}
           {\judgeS{\spec{p}{c}{a:A}{q}}}
 \and
 \inferrule*[right=SpecMTriple]
           {\judgeA{p}{\assert} \\
-           \judgeA{A}{\bigstar} \\
            \judgeA{e}{\monad{A}} \\
            \judgeA[\Delta, a:A]{q}{\assert}} 
           {\judgeS{\mspec{p}{e}{a:A}{q}}}
@@ -1697,11 +1699,11 @@ do so.
 \label{logic-spec-ok}
 \end{figure}
 
-\subsection{Semantics}
+\section{Semantics}
 
 Now, we'll consider the interpretation of the syntax. 
 
-\subsubsection{Interpretation of Sorts}
+\subsection{Interpretation of Sorts}
 
 We'll start by explaining how to interpret the sorts. Ultimately,
 we're going to define assertions to be the powerset of heaps, and
@@ -1898,7 +1900,7 @@ We proceed by mutual induction on the size of the derivation $\mathcal{D}_1$
 \end{proof}
 
 
-\subsection{Interpretation of Equality Judgement}
+\subsection{Interpretation of Equality Judgement on Sorts}
 
 Now, we'll show that our equality judgement on sorts $\judgeSortEq{\omega}{\omega'}$ is
 sound. 
@@ -2001,3 +2003,693 @@ We do this proof by induction on the equality derivation.
 
 \end{itemize}
 \end{proof}
+
+\subsubsection{Interpretation of Terms and Specifications}
+
+The term judgement $\judgeA{p}{\omega}$ is mutually recursively
+defined with the specification judgement $\judgeS{S}$. Therefore, when
+we give the semantics of these judgements, we need to define them
+together. 
+
+\begin{figure}
+\begin{displaymath}
+\begin{array}{lcl}
+\interp{\judgeA{p}{\omega}} & \in & \prod \delta \in \interp{\judgeACtx{\Delta}}.\; \interp{\judgeSort{\omega}}\;\delta \\
+\interp{\judgeS{S}} & \in & \interp{\judgeACtx{\Delta}} \to \upset{W(\powerset{H})} \\[1em]
+
+\interp{\judgeA{\tau}{\kappa}}\;\delta & = & 
+   \interp{\judgeWK[\restrictkind{\Delta}]{\tau}{\kappa}}\; (\restricttyenv{\Delta}{\delta}) \\
+\interp{\judgeA{e}{A}}\;\delta & = & 
+   U(\interp{\judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}{e}{A}}\;
+       (\restricttyenv{\Delta}{\delta})\; (K,K))\;
+       (\restrictvals{\Delta}{\delta}) \\
+\interp{\judgeA{\pfun{u}{\omega'}{p}}{\omega' \To \omega}}\;\delta & = & 
+   \semfun{v \in \interp{\judgeSort{\omega'}}}{\interp{\judgeA[\Delta,u:\omega']{p}{\omega}}\;(\delta, v)} \\
+\interp{\judgeA{p\;q}{\omega}}\;\delta & = & 
+   (\interp{\judgeA{p}{\omega' \To \omega}}\;\delta)\;(\interp{\judgeA{q}{\omega'}}\;\delta) \\
+\interp{\judgeA{u}{\omega}}\;\delta & = & \delta(u) \\
+
+\interp{\judgeA{c}{\assert}}\;\delta & = & \interp{c}^0 \\
+
+\interp{\judgeA{p \oplus q}{\assert}}\;\delta & = & 
+    \interp{\judgeA{p}{\assert}}\;\delta \;\;\interp{\oplus}^2\;\;
+    \interp{\judgeA{q}{\assert}}\;\delta \\
+
+\interp{\judgeA{Q u:\omega.\; q}{\assert}}\;\delta & = & 
+    \interp{Q}_{v \in \interp{\judgeSort{\omega}}\;\delta} 
+        \interp{\judgeA[\Delta, u:\omega]{p}{\assert}}\;\delta \\
+
+\interp{\judgeA{e \pointsto e'}{\assert}}\;\delta & = & 
+    \mbox{let } l = U(\interp{\judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}{e}{\reftype{A}}}\;(\restricttyenv{\Delta}{\delta}))\;(\restrictvals{\Delta}{\delta}) \\
+& &  \mbox{let }v = U(\interp{\judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}{e'}{A}}\;(\restricttyenv{\Delta}{\delta}))\;(\restrictvals{\Delta}{\delta}) \\
+& & \setof{(\setof{l}, \semfun{loc}{v \mbox{ when } loc = l})} \\
+
+
+\interp{\judgeA{e =_\omega e'}{\assert}}\;\delta & = & 
+   \mbox{if }\interp{\judgeA{e}{\omega}}\;\delta = \interp{\judgeA{e'}{\omega}}\;\delta 
+   \mbox{ then } \top \mbox{ else} \bot \\
+
+\interp{\judgeA{Q u:\omega.\; p}{\assert}}\;\delta & = & 
+  \interp{Q}^\infty_{v \in \interp{\judgeSort{\omega}}\;\delta}
+    \interp{\judgeA[\Delta, u:\omega]{p}{\assert}}\;(\delta, v) \\
+
+\interp{\judgeA{\validprop{S}}{\assert}}\;\delta & = & 
+   \mbox{if } \interp{\judgeS{S}}\;\delta = \top_{\upset{W(\powerset{H})}}
+   \mbox{ then } \top
+   \mbox{ else } \bot \\[1em]
+
+
+\interp{\top}^0 & = & \top \\
+\interp{\bot}^0 & = & \bot \\
+\interp{\emp}^0 & = & I \\[1em]
+
+\interp{\land}^2    & = & \land \\
+\interp{\implies}^2 & = & \implies \\
+\interp{\vee}^2     & = & \vee \\
+\interp{*}^2        & = & * \\
+\interp{\wand}^2    & = & \wand \\[1em]
+
+\interp{\forall}^\infty & = & \bigwedge \\
+\interp{\exists}^\infty & = & \bigvee \\
+\end{array}
+\end{displaymath}
+\caption{ Interpretation of Terms }
+\label{term-interpretation}  
+\end{figure}
+
+\begin{figure}
+\begin{displaymath}
+\begin{array}{lcl}
+\interp{\judgeS{S}} & = & \interp{\judgeACtx{\Delta}} \to \upset{W(\powerset{H})} \\ [1em]
+
+\interp{\judgeS{\spec{p}{c}{a:A}{q}}}\;\delta & = & 
+   \begin{array}{l}
+     \setof{\interp{\judgeA{p}{\assert}}\;\delta} \\
+      U(\interp{\judgeC[\restrictkind{\Delta}]{\restricttype{\Delta}}
+                       {c}{A}}\;(\restricttyenv{\Delta}{\delta}))\;
+       (\restricttyenv{\Delta}{\delta}) \\
+     \setof{v.\; \interp{\judgeA[\Delta, a:A]{q}{\assert}}\;(\delta,v)} \\
+   \end{array} 
+\\[2em]
+
+\interp{\judgeS{\mspec{p}{e}{a:A}{q}}}\;\delta & = & 
+   \begin{array}{l}
+     \setof{\interp{\judgeA{p}{\assert}}\;\delta} \\
+      U(\interp{\judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}
+                       {e}{A}}\;(\restricttyenv{\Delta}{\delta}))\;
+       (\restricttyenv{\Delta}{\delta}) \\
+     \setof{v.\; \interp{\judgeA[\Delta, a:A]{q}{\assert}}\;(\delta,v)} \\
+   \end{array} 
+\\[2em]
+
+\interp{\judgeS{\setof{p}}}\;\delta & = & 
+  \mbox{if } \interp{\judgeA{p}{\assert}}\;\delta = \top_{\powerset{H}}
+  \mbox{ then } \top 
+  \mbox{ else } \bot \\
+
+\interp{\judgeS{S_1 \oplus S_2}}\;\delta & = & 
+  \interp{\judgeS{S_1}}\;\delta \;\;\interp{\oplus}\;\; 
+  \interp{\judgeS{S_2}}\;\delta \\
+
+\interp{\judgeS{Q u:\omega.\; S}}\;\delta & = & 
+  \interp{Q}_{v \in \interp{\judgeSort{\omega}}\;\delta} 
+     \interp{\judgeS[\Delta, u:\omega]{S}}\;(\delta, v) \\[1em]
+
+\interp{\specand} & = & \land \\
+\interp{\specor}  & = & \vee  \\
+\interp{\specimp} & = & \implies \\[1em]
+
+\interp{\forall} & = & \bigwedge \\
+\interp{\exists} & = & \bigvee \\
+
+\end{array}
+\end{displaymath}
+\caption{Interpretation of Specifications}
+\label{spec-interpretation}  
+\end{figure}
+
+
+\section{Substitution Theorems}
+
+\subsection{Substitution for Sorts}
+
+\subsubsection{Syntactic Substitution}
+
+\begin{lemma}{(Syntactic Substitution for Sorts)}
+If $\judgeA{p}{\omega}$, then we have that:
+
+\begin{enumerate}
+\item If $\judgeACtx{\Delta, u:\omega, \Delta'}$, then  
+         $\judgeACtx{\Delta, [p/u]\Delta'}$. 
+\item If $\judgeSort[\Delta, u:\omega, \Delta']{\omega'}$,  then
+         $\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega'}$. 
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+This proof follows by mutual structural induction on each derivation. 
+Assume $D_0 :: \judgeA{\Delta}{p}{\omega}$. 
+
+\begin{enumerate}
+\item We want to show if $D  ::\; \judgeACtx{\Delta, u:\omega, \Delta'}$, then  
+                         $D' ::\; \judgeACtx{\Delta, [p/u]\Delta'}$. 
+  \begin{itemize}
+  \item Case \textsc{CtxNil}: 
+    \begin{tabbedproof}
+      \oo Assume $D ::\; \judgeACtx{\cdot}$ \\
+      \ooo Therefore $\cdot = \Delta, u:\omega, \Delta'$ \\
+      \ooo This is a contradiction, hence this case is vacuously true. 
+    \end{tabbedproof}
+
+  \item Case \textsc{CtxCons}: 
+    \begin{tabbedproof}
+      \oo Assume $D ::\; \judgeACtx{\Delta'', u'':\omega''}$ \\
+      \ooo Therefore $\Delta, u:\omega, \Delta' = \Delta'', u'':\omega''$ \\
+      \ooo By inversion on $D$, $D_1 :: \judgeACtx{\Delta''}$ \\
+      \ooo By inversion on $D$, $D_2 :: \judgeSort{\omega''}$ \\
+      \ooo We want to show $\judgeACtx{\Delta, [p/u]\Delta'}$ \\
+      \ooo By cases on $\Delta'$: \\
+      \oooo If $\Delta' = \cdot$: \\
+      \ooooo Then $\Delta'' = \Delta$, and $u = u''$, and $\omega = \omega''$ \\
+      \ooooo Then $[p/u]\Delta' = [p/u]\cdot = \cdot$ \\
+      \ooooo So $D_1 :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
+      \oooo If $\Delta' = \Delta''', u''':\omega'''$:\\
+      \ooooo Then $\Delta'' = \Delta, u:\omega, \Delta'''$ and $u''' = u''$ and $\omega'' = \omega'''$ \\ 
+      \ooooo By equality, $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'''}$ \\
+      \ooooo By induction on $D_1$, we have $D'_1 :: \judgeACtx{\Delta, [p/u]\Delta'''}$ \\ 
+      \ooooo By mutual induction on $D_2$, we have 
+                 $D'_2 :: \judgeSort[{\Delta, [p/u]\Delta'''}]{[p/u]\omega''}$ \\ 
+      \ooooo By rule $\textsc{CtxCons}$ on $D'_1$, $D'_2$, we have 
+                 $\judgeACtx{\Delta, [p/u]\Delta'}$ \\
+    \end{tabbedproof}
+  \end{itemize}
+
+\item We want to show that if 
+         $\judgeSort[\Delta, u:\omega, \Delta']{\omega'}$,  then
+         $\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega'}$. 
+
+  \begin{itemize}
+  \item Case \textsc{SortKind}: 
+    \begin{tabbedproof}
+      \oo Assume $D :: \judgeSort[\Delta, u:\omega, \Delta']{\kappa}$ \\
+      \ooo By inversion on $D$, we have $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'}$ \\
+      \ooo By mutual induction on $D_1$, we have 
+             $D'_1 :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
+      \ooo Since $\kappa$ has no free variables, $[p/u]\kappa = \kappa$ \\
+      \ooo By rule \textsc{SortKind} on $D'_1$, we have 
+             $\judgeSort[{\Delta, [p/u]\Delta'}]{\kappa}$ \\
+      \ooo By equality, we have 
+             $\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\kappa}$ \\
+    \end{tabbedproof}
+
+  \item Case \textsc{SortProp}: 
+    \begin{tabbedproof}
+      \oo Assume $D :: \judgeSort[\Delta, u:\omega, \Delta']{\assert}$ \\
+      \ooo By inversion on $D$, we have $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'}$ \\
+      \ooo By mutual induction on $D_1$, we have 
+             $D'_1 :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
+      \ooo Since $\assert$ has no free variables, $[p/u]\assert = \assert$ \\
+      \ooo By rule \textsc{SortProp} on $D'_1$, we have 
+             $\judgeSort[{\Delta, [p/u]\Delta'}]{\assert}$ \\
+      \ooo By equality, we have 
+             $\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\assert}$ \\
+    \end{tabbedproof}
+
+  \item Case \textsc{SortImp}: 
+    \begin{tabbedproof}
+      \oo Assume $D :: \judgeSort[\Delta, u:\omega, \Delta']{\omega_1 \To \omega_2}$ \\
+      \ooo By inversion on $D$, we have 
+             $D_1 :: \judgeSort[\Delta, u:\omega, \Delta']{\omega_1}$ \\
+      \ooo By inversion on $D$, we have 
+             $D_2 :: \judgeSort[\Delta, u:\omega, \Delta']{\omega_2}$ \\
+      \ooo By induction on $D_1$, we have 
+             $D'_1 :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega_1}$ \\
+      \ooo By induction on $D_2$, we have 
+             $D'_2 :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega_2}$ \\
+      \ooo By rule \textsc{SortImp}, we have 
+            $D' :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega_1 \To [p/u]\omega_2}$ \\
+      \ooo By definition of substitution, 
+            $D' :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u](\omega_1 \To \omega_2)}$ \\
+    \end{tabbedproof}
+
+  \item Case \textsc{SortType}: 
+    \begin{tabbedproof}
+      \oo Assume $D :: \judgeSort[\Delta, u:\omega, \Delta']{A}$ \\
+      \ooo By inversion on $D$, we have $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'}$ \\
+      \ooo By mutual induction on $D_1$, we have $D'_1 :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
+      \ooo By inversion on $D$, we have $D_2 :: \judgeWK[\restrictkind{\Delta, u:\omega, \Delta'}]
+                                                        {A}{\bigstar}$ \\
+      \ooo Case on $\omega$: \\
+      \oooo If $\omega = \kappa$: \\
+      \ooooo Then $\restrictkind{\Delta, u:\omega, \Delta'} = 
+                     \restrictkind{\Delta}, u:\kappa, \restrictkind{\Delta'}$ \\
+      \ooooo Then $D_0 :: \judgeA[\Delta]{\tau}{\kappa}$  where $p = \tau$ \\
+      \ooooo By inversion on $D_0$, we have $D'_0 :: \judgeWK[\restrictkind{\Delta}]{\tau}{\kappa}$ \\
+      \ooooo By substitution for types, we have 
+               $D'_2 :: \judgeWK[\restrictkind{\Delta}, \restrictkind{\Delta'}]
+                                {[\tau/u]A}{\bigstar}$ \\
+      \ooooo Since no kind in $\restrictkind{\Delta'}$ has any free variables, 
+             $\restrictkind{\Delta'} = \restrictkind{[\tau/u]\Delta'}$ \\
+      \ooooo Therefore $D'_2 :: \judgeWK[{\restrictkind{\Delta}, \restrictkind{[\tau/u]\Delta'}}]
+                                {[\tau/u]A}{\bigstar}$ \\
+      \ooooo By rule \textsc{SortType} on $D'_1$ and $D'_2$, we have 
+               $D' :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]A}$ \\
+      \oooo If $\omega \not= \kappa$: \\
+      \ooooo Then $\restrictkind{\Delta, u:\omega, \Delta'} = 
+                   \restrictkind{\Delta, \Delta'}$ \\
+      \ooooo Since no kind in $\restrictkind{\Delta'}$ has any free variables, 
+             $\restrictkind{\Delta'} = \restrictkind{[\tau/u]\Delta'}$ \\
+      \ooooo Then $\restrictkind{\Delta, u:\omega, \Delta'} = 
+                   \restrictkind{\Delta, [p/u]\Delta'}$ \\
+      \ooooo Therefore $D'_2 :: \judgeWK[\restrictkind{\Delta, [p/u]\Delta'}]
+                                       {A}{\bigstar}$ \\
+      \ooooo Therefore $u \not\in FV(A)$ \\
+      \ooooo Therefore $A = [p/u]A$ \\
+      \ooooo Therefore $D'_2 :: \judgeWK[\restrictkind{\Delta, [p/u]\Delta'}]
+                                      {[p/u]A}{\bigstar}$ \\
+      \ooooo By rule \textsc{SortType} on $D'_1, D'_2$, we have 
+              $D' :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]A}$ \\
+      
+    \end{tabbedproof}
+  \end{itemize}
+\end{enumerate}
+\end{proof}
+
+\subsection{Substitution for Terms and Specifications}
+
+\subsubsection{Syntactic Substitution}
+
+\begin{lemma}{(Syntactic Substitution for Terms and Specifications)}
+Suppose that $D_0 :: \judgeA{p}{\omega}$. Then
+\begin{enumerate}
+\item If $D :: \judgeA[{\Delta, u:\omega, \Delta'}]{q}{\omega'}$, then 
+         $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{[p/u]\omega'}$. 
+\item If $D :: \judgeS[{\Delta, u:\omega, \Delta'}]{S}$, then 
+         $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u]S}$. 
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+  Assume $D_0 :: \judgeA{p}{\omega}$.
+  \begin{enumerate}
+  \item We want to show if $D :: \judgeA[{\Delta, u:\omega, \Delta'}]{q}{\omega'}$, then 
+         $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{[p/u]\omega'}$.
+    \begin{itemize}
+    \item Case \textsc{TermType}: 
+      \begin{tabbedproof}
+        \oo Assume $D :: \judgeA[{\Delta, u:\omega, \Delta'}]{\tau}{\kappa}$, 
+            where $q = \tau$ and $\omega' = \kappa$ \\
+        \ooo By inversion on $D$, we have $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'}$ \\
+        \ooo By mutual induction on $D_1$, we have $D'_1 :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
+        \ooo By inversion on $D$, we have 
+                 $D_2 :: \judgeWK[\restrictkind{\Delta, u:\omega, \Delta'}]
+                                 {\tau}{\kappa}$ \\
+        \ooo Case analysis on $\omega$:\\
+        \oooo If $\omega = \kappa'$: \\
+        \ooooo Then $D_0 :: \judgeA[\Delta]{\tau'}{\kappa'}$, with $p = \tau'$ \\
+        \ooooo By inversion on $D_0$, we have 
+                $D'_0 :: \judgeWK[\restrictkind{\Delta}]{\tau'}{\kappa'}$ \\
+        \ooooo Then $\restrictkind{\Delta, u:\kappa', \Delta'} = 
+                       \restrictkind{\Delta}, u:\kappa, \restrictkind{\Delta'}$ \\
+        \ooooo Thus $D_2 :: \judgeWK[\restrictkind{\Delta}, u:\kappa', \restrictkind{\Delta'}]
+                                   {\tau}{\kappa}$ \\
+        \ooooo By type substitution, 
+                 $D'_2 :: \judgeWK[\restrictkind{\Delta}, \restrictkind{\Delta'}]
+                                  {[\tau'/u]\tau}{\kappa}$ \\
+        \ooooo Since $\restrictkind{\Delta'}$ has no free variables in kinds, 
+                 $\restrictkind{\Delta'} = \restrictkind{[\tau'/u]\Delta'}$ \\
+        \ooooo Hence $D'_2 :: \judgeWK[\restrictkind{\Delta}, \restrictkind{[\tau'/u]\Delta'}]
+                                  {[\tau'/u]\tau}{\kappa}$ \\
+        \ooooo Hence $D'_2 :: \judgeWK[\restrictkind{\Delta}, \restrictkind{[p/u]\Delta'}]
+                                  {[p/u]\tau}{\kappa}$ \\
+        \ooooo By rule \textsc{TermType} on $D'_1, D'_2$, we have 
+                  $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]\tau}{\kappa}$  \\
+        \ooooo Since $[p/u]\kappa = \kappa$, we have 
+                  $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]\tau}{[p/u]\kappa}$ \\
+        \oooo If $\omega \not=\kappa'$: \\
+        \ooooo Then $\restrictkind{\Delta, u:\kappa', \Delta'} = 
+                       \restrictkind{\Delta}, \restrictkind{\Delta'}$ \\
+        \ooooo Then $D_2 :: \judgeWK[\restrictkind{\Delta}, \restrictkind{\Delta'}]
+                                   {\tau}{\kappa}$ \\
+        \ooooo So $u \not \in FV(\tau)$ \\
+        \ooooo Hence $[p/u]\tau = \tau$ \\
+        \ooooo So $D_2 :: \judgeWK[\restrictkind{\Delta}, \restrictkind{\Delta'}]
+                                   {[p/u]\tau}{\kappa}$ \\
+        \ooooo Since $\restrictkind{\Delta'}$ has no free variables in kinds, 
+                 $\restrictkind{\Delta'} = \restrictkind{[\tau'/u]\Delta'}$ \\
+        \ooooo So $D_2 :: \judgeWK[\restrictkind{\Delta}, \restrictkind{[p/u]\Delta'}]
+                                   {[p/u]\tau}{\kappa}$ \\
+        \ooooo Since $[p/u]\kappa = \kappa$,
+               $D_2 :: \judgeWK[\restrictkind{\Delta}, \restrictkind{[p/u]\Delta'}]
+                                   {[p/u]\tau}{[p/u]\kappa}$ \\
+        \ooooo By rule \textsc{TermType} on $D'_1, D_2$, we have 
+                  $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]\tau}{[p/u]\kappa}$  \\
+      \end{tabbedproof}
+
+    \item Case \textsc{TermExpr}:
+      \begin{tabbedproof}
+      \oo Assume $D :: \judgeA[\Delta, u:\omega, \Delta']{e}{A}$, 
+           where $q = e$ and $\omega' = A$ \\
+      \ooo By inversion on $D$, we have $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'}$ \\
+      \ooo By mutual induction on $D_1$, we have 
+             $D'_1 :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
+      \ooo By inversion on $D$, we have 
+           $D_2 :: \judgeE[\restrictkind{\Delta, u:\omega, \Delta'}]
+                          {\restricttype{\Delta, u:\omega, \Delta'}}{e}{A}$ \\
+      \ooo Case analyze $\omega$: \\
+      \oooo If $\omega = \kappa$: \\
+      \ooooo We have $D_0 :: \judgeA{\tau}{\kappa}$ where $p = \tau$ \\
+      \ooooo By inversion on $D_0$, 
+             we have $D'_0 :: \judgeWK[\restrictkind{\Delta}]{\tau}{\kappa}$ \\
+      \ooooo We have $D_2 :: \judgeE[\restrictkind{\Delta, u:\kappa, \Delta'}]
+                                    {\restricttype{\Delta, u:\kappa, \Delta'}}
+                                    {e}{A}$ \\ 
+      \ooooo Note $\restricttype{\Delta, u:\kappa, \Delta'} = \restricttype{\Delta, \Delta'}$ \\
+      \ooooo Therefore $D_2 :: \judgeE[\restrictkind{\Delta, u:\kappa, \Delta'}]
+                                    {\restricttype{\Delta, \Delta'}}
+                                    {e}{A}$ \\ 
+      \ooooo By type substitution, 
+                 $D'_2 :: \judgeE[\restrictkind{\Delta, \Delta'}]
+                                 {\restricttype{[\tau/u]\Delta, [\tau/u]\Delta'}}
+                                 {[\tau/u]e}{[\tau/u]A}$ \\
+      \ooooo Since no kind has free variables,  we have
+                $\restrictkind{\Delta, \Delta'} = \restrictkind{\Delta, [\tau/u]\Delta'}$ \\
+      \ooooo Since $u \not\in FV(\Delta)$, we have
+                $\restricttype{[\tau/u]\Delta, [\tau/u]\Delta'} = 
+                 \restricttype{\Delta, [\tau/u]\Delta'}$ \\
+      \ooooo Therefore 
+               $D'_2 :: \judgeE[\restrictkind{\Delta, [\tau/u]\Delta'}]
+                                 {\restricttype{\Delta, [\tau/u]\Delta'}}
+                                 {[\tau/u]e}{[\tau/u]A}$ \\
+      \ooooo Therefore 
+               $D'_2 :: \judgeE[\restrictkind{\Delta, [p/u]\Delta'}]
+                                 {\restricttype{\Delta, [p/u]\Delta'}}
+                                 {[p/u]e}{[p/u]A}$ \\
+      \oooo If $\omega = B$: \\
+      \ooooo We have $D_0 :: \judgeA[\Delta]{e'}{A}$, where $p = e'$ \\
+      \ooooo By inversion on $D_0$, we have 
+               $D'_0 :: \judgeE[\restrictkind{\Delta}]
+                               {\restricttype{\Delta}}{e}{A}$ \\
+      \ooooo By weakening, we have 
+               $D''_0 :: \judgeE[\restrictkind{\Delta, u:B, \Delta'}]
+                               {\restricttype{\Delta}}{e}{A}$ \\
+      \ooooo We also have
+              $D_2 :: \judgeE[\restrictkind{\Delta, u:B, \Delta'}]
+                             {\restrictkind{\Delta, u:B, \Delta'}}
+                             {e}{A}$ \\
+      \ooooo By substitution on $D''_0$ into $D'_2$, we have \\
+      \ooooo \;\;
+              $D'_2 :: \judgeE[\restrictkind{\Delta, u:B, \Delta'}]
+                              {\restricttype{\Delta}, \restricttype{\Delta}}
+                              {[e'/u]e}{A}$ \\
+      \ooooo So $\restrictkind{\Delta, u:B, \Delta'} = \restrictkind{\Delta, \Delta'}$ \\
+      \ooooo Since $u:B$ not free in kinds, 
+             $\restrictkind{\Delta, \Delta'} = \restrictkind{\Delta, [e'/u]\Delta'}$ \\
+      \ooooo Since $u:B$ not free in types, 
+             $\restricttype{\Delta, \Delta'} = \restricttype{\Delta, [e'/u]\Delta'}$ \\
+      \ooooo Since $u:B$ not free in types, 
+             $[e'/u]A = A$ \\
+      \ooooo Therefore 
+               $D'_2 :: \judgeE[\restrictkind{\Delta, [e'/u]\Delta'}]
+                               {\restricttype{\Delta, [e'/u]\Delta}}
+                               {[e'/u]e}{[e'/u]A}$ \\
+      \ooooo Therefore 
+               $D'_2 :: \judgeE[\restrictkind{\Delta, [p/u]\Delta'}]
+                               {\restricttype{\Delta, [p/u]\Delta}}
+                               {[p/u]e}{[p/u]A}$ \\
+      \oooo Otherwise $\omega \not\in \setof{A, \kappa}$:  \\
+      \ooooo Since $\omega$ is not a kind, 
+               $\restrictkind{\Delta, u:\omega, \Delta'} = \restrictkind{\Delta, \Delta'}$\\
+      \ooooo Since $\omega$ is not a type, 
+               $\restricttype{\Delta, u:\omega, \Delta'} = \restricttype{\Delta, \Delta'}$ \\
+      \ooooo Since kinds have no free variables, 
+               $\restrictkind{\Delta, \Delta'} = \restrictkind{\Delta, [p/u]\Delta'}$  \\
+      \ooooo Since types have no non-kinded variables, 
+               $\restricttype{\Delta, \Delta'} = \restricttype{\Delta, [p/u]\Delta'}$ \\
+      \ooooo Since $u \not\in FV(e)$, $[p/u]e = e$ \\
+      \ooooo Since $u \not\in FV(A)$, $[p/u]A = A$ \\
+      \ooooo Therefore $D_2 :: \judgeE[\restrictkind{\Delta, [p/u]\Delta'}]
+                                      {\restricttype{\Delta, [p/u]\Delta'}}
+                                      {[p/u]e}{[p/u]A}$ \\
+      \ooo Therefore $D'_2 :: \judgeE[\restrictkind{\Delta, [p/u]\Delta'}]
+                                      {\restricttype{\Delta, [p/u]\Delta'}}
+                                      {[p/u]e}{[p/u]A}$ \\
+      \ooo By rule \textsc{TermExpr} on $D'_1, D'_2$, we have
+            $\judgeA[{\Delta, [p/u]\Delta'}]{[p/u]e}{[p/u]A}$ \\
+      \ooo Therefore, 
+            $\judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{[p/u]\omega'}$ \\
+      \end{tabbedproof}
+    
+    \item Case \textsc{TermHyp}: 
+      \begin{tabbedproof}
+        \oo Assume $D :: \judgeA[\Delta, u:\omega, \Delta']{u}{\omega}$ \\
+        \ooo By inversion on $D$, we have $m :: \omega = \assert \vee \omega = \omega' \To \omega''$\\
+        \ooo By inversion on $D$, we have $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'}$ \\
+        \ooo By mutual induction on $D_1$, $D'_1 :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
+        \ooo By iterated weakening on $D_0$, we have $D'_0 :: \judgeA[{\Delta, [p/u]\Delta'}]{p}{\omega}$ \\
+        \ooo By definition of substitution, $[p/u]u = p$ \\
+        \ooo Since $u \not\in FV(\omega)$, we have $[p/u]\omega = \omega$ \\
+        \ooo Therefore $D'_0 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]u}{\omega}$ \\
+      \end{tabbedproof}
+      
+    \item Case \textsc{TermAbs}:
+      \begin{tabbedproof}
+        \oo Assume $D :: \judgeA[\Delta, u:\omega, \Delta']{\pfun{u_1}{\omega_1}{q}}{\omega_1 \To \omega_2}$ \\
+        \ooo By inversion on $D$, we have $D_1 :: \judgeA[\Delta, u:\omega, \Delta', u_1:\omega_1]{q}{\omega_2}$ \\
+        \ooo By induction on $D_1$, we have 
+             $D'_1 :: \judgeA[{\Delta, [p/u]\Delta', u_1:[p/u]\omega_1}]{[p/u]q}{[p/u]\omega_2}$ \\
+        \ooo By rule \textsc{TermAbs}, 
+             $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{\pfun{u_1}{[p/u]\omega_1}{[p/u]q}}{[p/u]\omega_1 \To [p/u]\omega_2}$ \\
+        \ooo By substitution definition, $[p/u]\omega_1 \To [p/u]\omega_2 = [p/u](\omega_1 \To \omega_2)$ \\
+        \ooo By substitution definition, $\pfun{u_1}{[p/u]\omega_1}{[p/u]q} = [p/u](\pfun{u_1}{\omega_1}{q})$ \\
+        \ooo Therefore 
+           $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u](\pfun{u_1}{\omega_1}{q})}{[p/u](\omega_1 \To \omega_2)}$ \\
+      \end{tabbedproof}
+
+    \item Case \textsc{TermApp}
+      \begin{tabbedproof}
+        \oo Assume $D :: \judgeA[\Delta, u:\omega, \Delta']{q'\;q''}{\omega'}$ \\
+        \ooo By inversion on $D$, we have $D_1 :: \judgeA[\Delta, u:\omega, \Delta']{q'}{\omega'' \To \omega'}$ \\
+        \ooo By inversion on $D$, we have $D_2 :: \judgeA[\Delta, u:\omega, \Delta']{q''}{\omega''}$ \\
+        \ooo By induction on $D_1$, we have $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q'}{[p/u](\omega'' \To \omega')}$ \\
+        \ooo By induction on $D_2$, we have $D'_2 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q''}{[p/u]\omega''}$ \\
+        \ooo By definition of substitution, $[p/u](\omega'' \To \omega') = [p/u]\omega'' \To [p/u]\omega'$ \\
+        \ooo Therefore, $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q'}{[p/u]\omega'' \To [p/u]\omega'}$ \\
+        \ooo By rule \textsc{TermApp}, we have 
+           $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{([p/u]q')\;([p/u]q'')}{[p/u]\omega'}$ \\
+        \ooo By definition of substitution, $([p/u]q')\;([p/u]q'') = [p/u](q'\;q'')$ \\
+        \ooo Therefore $D' :: \judgeA{\Delta, [p/u]\Delta'}{[p/u](q'\;q'')}{[p/u]\omega'}$ \\
+      \end{tabbedproof}
+
+    \item Case \textsc{TermPropConst}:
+      \begin{tabbedproof}
+        \oo Assume $D :: \judgeA[\Delta, u:\omega, \Delta']{c}{\assert}$ \\
+        \ooo By inversion on $D$, we have $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'}$ \\
+        \ooo By inversion on $D$, we have $c \in \setof{\top, \bot, \emp}$ \\
+        \ooo By mutual induction on $D_1$, we have $D'_1 :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
+        \ooo By rule \textsc{TermPropConst} on $D_1$ and line 3, we have
+            $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{c}{\assert}$ \\
+        \ooo By definition of substitution, $[p/u]c = c$ \\
+        \ooo By definition of substitution, $[p/u]\assert = \assert$ \\
+        \ooo Therefore $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]c}{[p/u]\assert}$ \\
+      \end{tabbedproof}
+
+    \item Case \textsc{TermPropBinary}: 
+      \begin{tabbedproof}
+        \oo Assume $D :: \judgeA[\Delta, u:\omega, \Delta']{q_1 \oplus q_2}{\assert}$ \\
+        \ooo By inversion on $D$, we have $D_1 :: \judgeA[\Delta, u:\omega, \Delta']{q_1}{\assert}$ \\
+        \ooo By inversion on $D$, we have $D_2 :: \judgeA[\Delta, u:\omega, \Delta']{q_2}{\assert}$ \\
+        \ooo By inversion on $D$, we have $\oplus \in \setof{\land, \implies, \vee, *, \wand}$ \\
+        \ooo By induction on $D_1$, we have 
+             $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q_1}{[p/u]\assert}$ \\
+        \ooo By induction on $D_2$, we have 
+             $D'_2 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q_2}{[p/u]\assert}$ \\
+        \ooo By definition of substitution, $[p/u]\assert = \assert$ \\
+        \ooo Therefore $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q_1}{\assert}$ \\
+        \ooo Therefore $D'_2 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q_2}{\assert}$ \\
+        \ooo By rule \textsc{TermPropBinary} on $D'_1, D'_2$, and line 4, we have: \\
+        \oox \;\; $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q_1 \oplus [p/u]q_2}{\assert}$ \\
+        \ooo By definition of substitution, $[p/u](q_1 \oplus q_2) = [p/u]q_1 \oplus [p/u]q_2$ \\
+        \ooo Therefore $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u](q_1 \oplus q_2)}{[p/u]\assert}$ \\
+      \end{tabbedproof}
+
+    \item Case \textsc{TermPropQuantify}: 
+      \begin{tabbedproof}
+        \oo Assume $D :: \judgeA[\Delta, u:\omega, \Delta']{Q u_1:\omega_1.\; q}{\assert}$ \\
+        \ooo By inversion on $D$, we have 
+             $D_1 :: \judgeA[\Delta, u:\omega, \Delta', u_1:\omega_1]{q}{\assert}$ \\
+        \ooo By inversion on $D$, we have $Q \in \setof{\forall, \exists}$ \\
+        \ooo By induction on $D_1$, we have 
+             $D'_1 :: \judgeA[\Delta, [p/u]\Delta', u_1:[p/u]\omega_1]{[p/u]q}{[p/u]\assert}$ \\
+        \ooo By definition of substitution, $[p/u]\assert = \assert$ \\
+        \ooo Therefore $D'_1 :: \judgeA[{\Delta, [p/u]\Delta', u_1:[p/u]\omega_1}]{[p/u]q}{\assert}$ \\
+        \ooo By rule \textsc{TermPropQuantify} on $D'_1$ and line 3, we have \\
+        \oox $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{Q u_1:[p/u]\omega_1.\;[p/u]q}{\assert}$ \\
+        \ooo By definition of substitution, $Q u_1:[p/u]\omega_1.\;[p/u]q = [p/u](Q u:\omega_1.\; q)$ \\
+        \ooo Therefore $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u](Q u_1:\omega_1.\;q)}{[p/u]\assert}$ \\
+      \end{tabbedproof}
+
+    \item case \textsc{TermPointsTo}
+      \begin{tabbedproof}
+        \oo Assume $D :: \judgeA[\Delta, u:\omega, \Delta]{e \pointsto_A e'}{\assert}$ \\
+        \ooo By inversion on $D$, we have 
+             $D_1 :: \judgeA[\Delta, u:\omega, \Delta]{e}{\reftype{A}}$ \\
+        \ooo By inversion on $D$, we have 
+             $D_2 :: \judgeA[\Delta, u:\omega, \Delta]{e'}{A}$ \\
+        \ooo By induction on $D_1$, we have
+             $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]e}{[p/u]\reftype{A}}$ \\
+        \ooo By induction on $D_2$, we have
+             $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]e'}{[p/u]A}$ \\
+        \ooo By definition of substitution, $[p/u]\reftype{A} = \reftype{([p/u]A)}$ \\
+        \ooo Therefore, 
+             $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]e}{\reftype{([p/u]A)}}$ \\
+        \ooo By rule \textsc{TermPointsTo}, 
+             $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]e \pointsto_{[p/u]A} [p/u]e'}{\assert}$ \\
+        \ooo By definition of substitution, $[p/u]e \pointsto_{[p/u]A} e' = [p/u](e \pointsto_A e')$ \\
+        \ooo By definition of substitution, $[p/u]\assert = \assert$ \\
+        \ooo Therefore 
+             $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u](e \pointsto_A e')}{[p/u]\assert}$ \\
+      \end{tabbedproof}
+
+    \item Case \textsc{TermEqual}: 
+      \begin{tabbedproof}
+        \oo Assume $D :: \judgeA[{\Delta, u:\omega, \Delta'}]{q =_{\omega'} q'}{\assert}$ \\
+        \ooo By inversion on $D$, we have 
+             $D_1 :: \judgeA[{\Delta, u:\omega, \Delta'}]{q}{\omega}$ \\
+        \ooo By inversion on $D$, we have 
+             $D_2 :: \judgeA[{\Delta, u:\omega, \Delta'}]{q'}{\omega}$ \\
+        \ooo By induction on $D_1$, we have 
+             $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{[p/u]\omega}$ \\
+        \ooo By induction on $D_2$, we have 
+             $D'_2 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q'}{[p/u]\omega}$ \\
+        \ooo By rule \textsc{TermEqual}, we have 
+             $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q =_{[p/u]\omega} [p/u]q'}{\assert}$ \\
+        \ooo By definition of substitution, $[p/u]q =_{[p/u]\omega} [p/u]q' = [p/u](q =_\omega q')$\\
+        \ooo By definition of substitution, $[p/u]\assert = \assert$ \\
+        \ooo Therefore 
+             $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u](q =_\omega q')}{[p/u]\assert}$ \\
+      \end{tabbedproof}
+
+    \item Case \textsc{TermEqSort}:
+      \begin{tabbedproof}
+        \oo Assume $D :: \judgeA[{\Delta, u:\omega, \Delta'}]{q}{\omega'}$ \\
+        \ooo By inversion on $D$, we have 
+             $D_1 :: \judgeA[{\Delta, u:\omega, \Delta'}]{q}{\omega''}$ \\
+        \ooo By inversion on $D$, we have 
+             $D_2 :: \judgeSortEq[{\Delta, u:\omega, \Delta'}]{\omega'}{\omega''}$ \\
+        \ooo By induction, we have 
+             $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{[p/u]\omega''}$ \\
+        \ooo By equality sort substitution, 
+             $D'_2 :: \judgeSortEq[{\Delta, [p/u]\Delta'}]{[p/u]\omega'}{[p/u]\omega''}$ \\
+        \ooo By rule \textsc{TermEqSort}, 
+             $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{[p/u]\omega'}$ \\
+      \end{tabbedproof}
+
+    \item Case \textsc{TermSpec}: 
+      \begin{tabbedproof}
+        \oo Assume $D :: \judgeA[{\Delta, u:\omega, \Delta'}]{\validprop{S}}{\assert}$ \\
+        \ooo By inversion on $D$, we have
+             $D_1 :: \judgeS[{\Delta, u:\omega, \Delta'}]{S}$ \\
+        \ooo By mutual induction on $D_1$, we have 
+             $D'_1 :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u]S}$ \\
+        \ooo By rule \textsc{TermSpec}, we have 
+             $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{\validprop{([p/u]S)}}{\assert}$ \\
+        \ooo By definition of substitution, $\validprop{([p/u]S)} = [p/u](\validprop{S})$ \\
+        \ooo By definition of substitution, $[p/u]\assert = \assert$ \\
+        \ooo Therefore 
+             $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u](\validprop{S})}{[p/u]\assert}$ \\
+      \end{tabbedproof}
+    \end{itemize}
+
+  \item We want to show if $D :: \judgeS[{\Delta, u:\omega, \Delta'}]{S}$, then 
+         $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u]S}$. 
+    \begin{itemize}
+    \item Case \textsc{SpecTriple}
+      \begin{tabbedproof}
+        \oo Assume $D :: \judgeS[{\Delta, u:\omega, \Delta'}]{\spec{q}{c}{a:A}{r}}$ \\
+        \ooo By inversion on $D$, we have \\
+        \oooo $D_1 :: \judgeA[{\Delta, u:\omega, \Delta'}]{q}{\assert}$ \\
+        \oooo $D_2 :: \judgeA[{\Delta, u:\omega, \Delta'}]{\comp{c}}{\monad{A}}$ \\
+        \oooo $D_3 :: \judgeA[{\Delta, u:\omega, \Delta', a:A}]{r}{\assert}$ \\
+        \ooo By mutual induction on $D_1$, we have 
+             $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{[p/u]\assert}$ \\
+        \ooo By mutual induction on $D_2$, we have 
+             $D'_2 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]\comp{c}}{[p/u]\monad{A}}$ \\
+        \ooo By mutual induction on $D_1$, we have 
+             $D'_3 :: \judgeA[{\Delta, [p/u]\Delta', a:[p/u]A}]{[p/u]r}{[p/u]\assert}$ \\
+        \ooo By definition of substitution, $[p/u]\assert = \assert$ \\
+        \ooo By definition of substitution, $[p/u]\comp{c} = \comp{[p/u]c}$ \\
+        \ooo By definition of substitution, $[p/u]\monad{A} = \monad{([p/u]A)}$ \\
+        \ooo Therefore we have:\\
+        \oooo $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{\assert}$ \\
+        \oooo $D'_2 :: \judgeA[{\Delta, [p/u]\Delta'}]{\comp{[p/u]c}}{\monad{([p/u]A)}}$ \\
+        \oooo $D'_3 :: \judgeA[{\Delta, [p/u]\Delta', a:[p/u]A}]{[p/u]q}{\assert}$ \\
+        \ooo By rule \textsc{SpecTriple} on $D'_1, D'_2, D'_3$, we have \\
+        \oox $D' :: \judgeS[{\Delta, [p/u]\Delta'}]
+                            {\spec{[p/u]q}{[p/u]c}{a:[p/u]A}{[p/u]r}}$ \\
+        \ooo By definition of substitution, we have \\
+        \oox $\spec{[p/u]q}{[p/u]c}{a:[p/u]A}{[p/u]r} = [p/u]\spec{q}{c}{a:A}{r}$ \\
+        \ooo Therefore $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u]\spec{q}{c}{a:A}{r}}$ \\
+      \end{tabbedproof}
+
+    \item case \textsc{SpecMTriple}:
+      \begin{tabbedproof}
+        \oo Assume $D :: \judgeS[{\Delta, u:\omega, \Delta'}]{\mspec{q}{c}{a:A}{r}}$ \\
+        \ooo By inversion on $D$, we have \\
+        \oooo $D_1 :: \judgeA[{\Delta, u:\omega, \Delta'}]{q}{\assert}$ \\
+        \oooo $D_2 :: \judgeA[{\Delta, u:\omega, \Delta'}]{e}{\monad{A}}$ \\
+        \oooo $D_3 :: \judgeA[{\Delta, u:\omega, \Delta', a:A}]{r}{\assert}$ \\
+        \ooo By mutual induction on $D_1$, we have 
+             $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{[p/u]\assert}$ \\
+        \ooo By mutual induction on $D_2$, we have 
+             $D'_2 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]e}{[p/u]\monad{A}}$ \\
+        \ooo By mutual induction on $D_1$, we have 
+             $D'_3 :: \judgeA[{\Delta, [p/u]\Delta', a:[p/u]A}]{[p/u]r}{[p/u]\assert}$ \\
+        \ooo By definition of substitution, $[p/u]\assert = \assert$ \\
+        \ooo By definition of substitution, $[p/u]\monad{A} = \monad{([p/u]A)}$ \\
+        \ooo Therefore we have:\\
+        \oooo $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{\assert}$ \\
+        \oooo $D'_2 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]e}{\monad{([p/u]A)}}$ \\
+        \oooo $D'_3 :: \judgeA[{\Delta, [p/u]\Delta', a:[p/u]A}]{[p/u]q}{\assert}$ \\
+        \ooo By rule \textsc{SpecTriple} on $D'_1, D'_2, D'_3$, we have \\
+        \oox $D' :: \judgeS[{\Delta, [p/u]\Delta'}]
+                            {\mspec{[p/u]q}{[p/u]e}{a:[p/u]A}{[p/u]r}}$ \\
+        \ooo By definition of substitution, we have \\
+        \oox $\mspec{[p/u]q}{[p/u]e}{a:[p/u]A}{[p/u]r} = [p/u]\mspec{q}{e}{a:A}{r}$ \\
+        \ooo Therefore $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u]\mspec{q}{e}{a:A}{r}}$ \\
+      \end{tabbedproof}
+
+    \item Case \textsc{SpecAssert}:
+      \begin{tabbedproof}
+        \oo Assume $D :: \judgeS[{\Delta, u:\omega, \Delta'}]{\setof{q}}$ \\
+        \ooo By inversion on $D$, we have $D_1 :: \judgeA[{\Delta, u:\omega, \Delta'}]{q}{\assert}$ \\
+        \ooo By mutual induction on $D_1$, we have 
+              $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{[p/u]\assert}$ \\
+        \ooo By definition of substitution, $[p/u]\assert = \assert$ \\
+        \ooo Therefore $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{\assert}$ \\
+        \ooo By rule \textsc{SpecAssert}, 
+              $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{\validprop{([p/u]q)}}$ \\
+        \ooo By definition of substitution, $\validprop{([p/u]q)} = [p/u](\validprop{S})$ \\
+        \ooo Therefore 
+             $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u](\validprop{q})}$ \\
+      \end{tabbedproof}
+
+    \item Case \textsc{SpecBinary}
+      \begin{tabbedproof}
+        \oo Assume $D :: \judgeS[{\Delta, u:\omega, \Delta'}]{S_1 \oplus S_2}$ \\
+        \ooo By inversion on $D$, we have \\
+        \oooo $D_1 :: \judgeS[{\Delta, u:\omega, \Delta'}]{S_1}$ \\
+        \oooo $D_2 :: \judgeS[{\Delta, u:\omega, \Delta'}]{S_2}$ \\
+        \oooo $\oplus \in \setof{\specand, \specor, \specimp}$ \\
+        \ooo By induction on $D_1$, we have 
+               $D'_1 :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u]S_1}$ \\
+        \ooo By induction on $D_2$, we have 
+               $D'_2 :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u]S_2}$ \\
+        \ooo By rule \textsc{SpecBinary} on $D'_1, D'_2$ and line 5, we have \\
+        \ooox $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u]S_1 \oplus [p/u]S_2}$ \\
+        \ooo By definition of substitution, $[p/u]S_1 \oplus [p/u]S_2 = [p/u](S_1 \oplus S_2)$ \\
+        \ooo Therefore $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u](S_1 \oplus S_2)}$ \\
+      \end{tabbedproof}
+    \end{itemize}
+  \end{enumerate}
+\end{proof}
+  
+
