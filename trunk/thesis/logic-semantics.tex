@@ -2283,15 +2283,189 @@ If we have that $\judgeA{p}{\omega}$, then
 \item If $(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') \in \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$, 
       then $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$
 
-\item We also have that $\interp{\judgeSort[{\Delta, u:\omega, \Delta'}]{\omega'}}\;(\delta, \interp{\judgeA{p}{\omega}}, \delta') = \interp{\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega'}}\;(\delta, \delta')$. 
+\item  $\interp{\judgeSort[{\Delta, u:\omega, \Delta'}]{\omega'}}\;(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = \interp{\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega'}}\;(\delta, \delta')$. 
 \end{enumerate}
 \end{lemma}
 
 \begin{proof}
+  We proceed by mutual induction on the derivations of context
+  well-formedness and sort well-formedness. 
+
+  As a note, even though contexts are properly maximally nested tuples
+  (a la Lisp s-expressions), we will overload the tuple notation and
+  treat expressions like $(\delta, \delta')$ as if the comma were a
+  proper concatenation that reassociates everything. This is a
+  harmless convenience thanks to the fact that tuples are associative
+  up to isomorphism.
+
+  \noindent Assume $D_0 :: \judgeA{p}{\omega}$ \\
+
   \begin{enumerate}
   \item First, we want to show if $(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') \in 
                                    \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$, 
       then $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$
+      
+      \begin{itemize}
+      \item Case \textsc{CtxNil}:
+        \begin{tabbedproof}
+          \oo Assume $\judgeACtx{\cdot}$ \\
+          \ooo Therefore $\cdot = \Delta, u:\omega, \Delta'$ \\
+          \ooo This is a contradiction; hence this case is impossible. \\
+        \end{tabbedproof}
+
+      \item Case \textsc{CtxCons}: 
+        \begin{tabbedproof}
+          \oo Assume $D :: \judgeACtx{\Delta_1, u_1:\omega_1}$ \\
+          \oo Assume $(\delta, \interp{\judgeA[\Delta]{p}{\omega}}\;\delta, \delta') \in 
+                       \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$ \\
+          \ooo Therefore $\Delta, u:\omega, \Delta' = \Delta_1, u_1:\omega_1$ \\
+          \ooo Case analyze $\Delta'$: \\
+          \oooo If $\Delta' = \cdot$: \\
+          \ooooo Then $\delta' = \unit$ \\
+          \ooooo Then $\Delta = \Delta_1$ and $u = u_1$ and $\omega = \omega_1$ \\
+          \ooooo By inversion on $D :: \judgeACtx{\Delta_1, u:\omega}$, we get:\\
+          \oooooo $D_1 :: \judgeACtx{\Delta}$ \\
+          \oooooo $D_2 :: \judgeSort[\Delta]{\omega}$ \\
+          \ooooo By definition, $\delta \in \interp{\judgeACtx{\Delta}}$ \\
+          \ooooo By definition $[p/u]\cdot = \cdot$, and $\Delta, \cdot = \Delta$ \\
+          \ooooo Since $\delta' = \unit$, we have $(\delta, \delta') = \delta$ \\
+          \ooooo Therefore $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$ \\
+          \oooo If $\Delta' = \Delta'', u'':\omega''$: \\
+          \ooooo Then $\Delta, u:\omega, \Delta' = \Delta, u:\omega, \Delta'', u'':\omega''$ \\
+          \ooooo Then $\delta' = (\delta'', v'')$ \\
+          \ooooo By inversion on $D$, we get: \\
+          \oooooo $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'', u'':\omega''}$ \\
+          \oooooo $D_2 :: \judgeSort[{\Delta, u:\omega, \Delta''}]{\omega''}$ \\
+          \ooooo Therefore, $(\delta, \interp{p}{\omega}\;\delta, \delta'') \in 
+                             \interp{\Delta, u:\omega, \Delta''}$ \\
+          \ooooo Therefore, $v'' \in 
+                  \interp{\judgeSort[{\Delta, u:\omega, \Delta''}]{\omega''}}\;
+                     (\delta, \interp{p}{\omega}\;\delta, \delta'')$ \\
+          \ooooo Then, by induction on $D_1$, we have $(\delta, \delta'') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$ \\
+          \ooooo Then, by mutual induction on $D_2$, we have \\ 
+          \oooox  $\interp{\judgeSort[{\Delta, u:\omega, \Delta''}]{\omega''}} 
+                      \;(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta'') 
+                    = 
+                    \interp{\judgeSort[{\Delta, [p/u]\Delta''}]{[p/u]\omega''}}\;(\delta,\delta'')$ \\
+          \ooooo Therefore, $v'' \in \interp{\judgeSort[{\Delta, [p/u]\Delta''}]{[p/u]\omega''}}\;(\delta,\delta'')$ \\ 
+          \ooooo Therefore, by definition of semantics, 
+                   $(\delta, \delta'', v'') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'', [p/u]\omega''}}$ \\
+          \ooooo Therefore $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$ \\
+        \end{tabbedproof}
+      \end{itemize}
+
+  \item Now we want to show 
+    \begin{displaymath}
+      \interp{\judgeSort[{\Delta, u:\omega, \Delta'}]{\omega'}}\;(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = \interp{\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega'}}\;(\delta, \delta')
+    \end{displaymath}
+
+    \begin{itemize}
+    \item Case \textsc{SortKind}: 
+      \begin{tabbedproof}
+        \oo Assume we have $D :: \judgeSort[{\Delta, u:\omega, \Delta'}]{\kappa}$ \\
+        \ooo Then $\interp{\judgeSort[{\Delta, u:\omega, \Delta'}]{\kappa}}\;
+                     (\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = \interp{\kappa}$ \\
+        \ooo By syntactic substitution, we have $\judgeACtx{\Delta, [p/u]\Delta'}$ \\
+        \ooo By rule \textsc{SortKind}, we have $D' :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\kappa}$ \\
+        \ooo Since $[p/u]\kappa = \kappa$, we have $D' :: \judgeSort[{\Delta, [p/u]\Delta'}]{\kappa}$ \\
+        \ooo Then $\interp{\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\kappa}}\;(\delta, \delta') = 
+                \interp{\kappa}$ \\
+        \ooo So we have: \\
+        \ooox $\interp{\judgeSort[{\Delta, u:\omega, \Delta'}]{\kappa}}\;(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') =$ \\
+        \ooox $\interp{\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\kappa}}\;(\delta, \delta')$ \\
+      \end{tabbedproof}
+
+    \item Case \textsc{SortProp}: 
+      \begin{tabbedproof}
+        \oo Assume we have $D :: \judgeSort[{\Delta, u:\omega, \Delta'}]{\assert}$ \\
+        \ooo Then $\interp{\judgeSort[{\Delta, u:\omega, \Delta'}]{\assert}}\;
+                     (\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = \powerset{H}$ \\
+        \ooo By syntactic substitution, we have $\judgeACtx{\Delta, [p/u]\Delta'}$ \\
+        \ooo By rule \textsc{SortProp}, we have $D' :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\assert}$ \\
+        \ooo Since $[p/u]\assert = \assert$, we have $D' :: \judgeSort[{\Delta, [p/u]\Delta'}]{\assert}$ \\
+        \ooo Then $\interp{\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\assert}}\;(\delta, \delta') = 
+                \powerset{H}$ \\
+        \ooo So we have: \\
+        \ooox $\interp{\judgeSort[{\Delta, u:\omega, \Delta'}]{\assert}}\;(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') =$ \\
+        \ooox $\interp{\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\assert}}\;(\delta, \delta')$ \\
+      \end{tabbedproof}
+
+    \item Case \textsc{SortImp}: 
+      \begin{tabbedproof}
+        \oo Assume we have $D :: \judgeSort[{\Delta, u:\omega, \Delta'}]{\omega_1 \To \omega_2}$ \\
+        \ooo Then by inversion on $D$ we have:\\
+        \oooo $D_1 :: \judgeSort[{\Delta, u:\omega, \Delta'}]{\omega_1}$ \\
+        \oooo $D_2 :: \judgeSort[{\Delta, u:\omega, \Delta'}]{\omega_2}$ \\
+        \ooo By semantics, $\interp{D}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta')$\\
+        \ooox $= \interp{D_1}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta')
+                 \to
+                  \interp{D_2}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta')$\\
+        \ooo By syntactic substitution on $D_1$, we have
+               $D'_1 :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega_1}$ \\
+        \ooo By syntactic substitution on $D_2$, we have
+               $D'_2 :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega_2}$ \\
+        \ooo By induction on $D'_1$, we have 
+              $\interp{D_1}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = 
+               \interp{D'_1}(\delta, \delta')$ \\
+        \ooo By induction on $D'_2$, we have 
+              $\interp{D_2}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = 
+               \interp{D'_2}(\delta, \delta')$ \\
+        \ooo Therefore $\interp{D}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = 
+                         \interp{D'_1}(\delta, \delta') \to 
+                         \interp{D'_2}(\delta, \delta')$ \\
+        \ooo By rule \textsc{SortImp} on $D'_1, D'_2$, we have 
+              $D' :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega_1 \To [p/u]\omega_2}$ \\
+        \ooo By definition of substitution, $[p/u]\omega_1 \To [p/u]\omega_2 = [p/u](\omega_1 \To \omega_2)$ \\
+        \ooo Therefore $D' :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u](\omega_1 \To \omega_2)}$ \\
+        \ooo By semantics, 
+              $\interp{D'}(\delta, \delta') = \interp{D'_1}(\delta, \delta') \to 
+                                              \interp{D'_2}(\delta, \delta')$ \\
+        \ooo Therefore $\interp{D}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') 
+                        = \interp{D'}(\delta,\delta')$ \\
+      \end{tabbedproof}
+
+    \item Case \textsc{SortType}: 
+      \begin{tabbedproof}
+        \oo Assume $D :: \judgeSort[{\Delta, u:\omega, \Delta'}]{A}$ \\
+        \ooo By inversion on $D$, we have: \\
+        \oooo $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'}$ \\
+        \oooo $D_2 :: \judgeWK[\restrictkind{\Delta, u:\omega, \Delta'}]{A}{\bigstar}$ \\
+        \ooo By semantics, $\interp{D}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = 
+                              \interp{D_2}\;(\restricttyenv{\Delta, u:\omega, \Delta'}
+                                                           {(\delta, \interp{\judgeA{p}{\omega}}, \delta')})$ \\
+        \ooo Case-analyze $\omega$:\\
+        \oooo If $\omega = \kappa$:\\
+        \ooooo Then $D_0 :: \judgeA{\tau}{\kappa}$, where $p = \tau$ \\
+        \ooooo Then  $D_2 :: \judgeWK[\restrictkind{\Delta, u:\kappa, \Delta'}]{A}{\bigstar}$ \\
+        \ooooo By inversion on $D_0$, we have $D'_0 :: \judgeWK[\restrictkind{\Delta}]{\tau}{\kappa}$ \\
+        \ooooo By semantics, $\interp{D_0}\;\delta = \interp{D'_0}\;(\restricttyenv{\Delta}{\delta})$\\
+        \ooooo This is the result of substituting the canonical witness of $\tau$ filled in\\
+        \oooox with the type constructors in $\delta$. \\
+        \ooooo Likewise, the interpretation of $D_2$ is the result of substituting $A$ with\\
+        \oooox the type constructors in $(\delta, \interp{D_0}\;\delta, \delta')$ \\
+        \ooooo By the properties of substitutions, $\interp{D_2}$ is equal to substituting 
+               $\tau$ for $u$ in $A$, \\
+        \oooox and then substituting the remaining type constructors in 
+               $(\delta, \delta')$. \\
+        \ooooo Then, the well-kindedness of this comes from the well-kindedness \\
+        \oooox of substitution for type constructors. \\
+        \oooo If $\omega \not= \kappa$: \\
+        \ooooo Then  $D_2 :: \judgeWK[\restrictkind{\Delta, u:\omega, \Delta'}]{A}{\bigstar}$ \\
+        \ooooo Because $\omega \not= \kappa$, 
+                 $\restrictkind{\Delta, u:\omega, \Delta'} = \restrictkind{\Delta, \Delta'}$ \\
+        \ooooo Because kinds have no variables, 
+                 $\restrictkind{\Delta, \Delta'} = \restrictkind{\Delta, [p/u]\Delta'}$ \\
+        \ooooo Therefore $(\delta, \delta') \in \restrictkind{\Delta, [p/u]\Delta'}$ \\
+        \ooooo Because $u \not\in FV(A)$, $A = [p/u]A$ \\
+        \ooooo Thus $D_2 :: \judgeWK[\restrictkind{\Delta, [p/u]\Delta'}]{[p/u]A}{\bigstar}$ \\
+        \ooooo By mutual induction on $D_1$, we have $\judgeACtx{\Delta, [p/u]\Delta'}$ \\
+        \ooooo Then by rule \textsc{SortType}, we have $D' :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]A}$ \\
+        \ooooo So $\interp{D'}(\delta, \delta') = \interp{D_2}(\restricttyenv{\Delta,[p/u]\Delta'}{\delta, \delta'})$ \\
+        \ooooo But then, $\interp{D}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = 
+                          \interp{D'}(\delta, \delta')$ \\
+
+      \end{tabbedproof}
+    \end{itemize}
   \end{enumerate}
 \end{proof}
   
