@@ -2430,25 +2430,35 @@ If we have that $\judgeA{p}{\omega}$, then
         \ooo By inversion on $D$, we have: \\
         \oooo $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'}$ \\
         \oooo $D_2 :: \judgeWK[\restrictkind{\Delta, u:\omega, \Delta'}]{A}{\bigstar}$ \\
-        \ooo By semantics, $\interp{D}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = 
-                              \interp{D_2}\;(\restricttyenv{\Delta, u:\omega, \Delta'}
-                                                           {(\delta, \interp{\judgeA{p}{\omega}}, \delta')})$ \\
+        \ooo By mutual induction on $D_1$, we have $D'_1 :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
+        \ooo By semantics, 
+             $\interp{D}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = 
+              \interp{D_2}\;(\restricttyenv{\Delta, u:\omega, \Delta'}
+             {(\delta, \interp{\judgeA{p}{\omega}}, \delta')})$ \\
         \ooo Case-analyze $\omega$:\\
         \oooo If $\omega = \kappa$:\\
         \ooooo Then $D_0 :: \judgeA{\tau}{\kappa}$, where $p = \tau$ \\
         \ooooo Then  $D_2 :: \judgeWK[\restrictkind{\Delta, u:\kappa, \Delta'}]{A}{\bigstar}$ \\
         \ooooo By inversion on $D_0$, we have $D'_0 :: \judgeWK[\restrictkind{\Delta}]{\tau}{\kappa}$ \\
         \ooooo By semantics, $\interp{D_0}\;\delta = \interp{D'_0}\;(\restricttyenv{\Delta}{\delta})$\\
-        \ooooo This is the result of substituting the canonical witness of $\tau$ filled in\\
-        \oooox with the type constructors in $\delta$. \\
-        \ooooo Likewise, the interpretation of $D_2$ is the result of substituting $A$ with\\
-        \oooox the type constructors in $(\delta, \interp{D_0}\;\delta, \delta')$ \\
-        \ooooo By the properties of substitutions, $\interp{D_2}$ is equal to substituting 
-               $\tau$ for $u$ in $A$, \\
-        \oooox and then substituting the remaining type constructors in 
-               $(\delta, \delta')$. \\
-        \ooooo Then, the well-kindedness of this comes from the well-kindedness \\
-        \oooox of substitution for type constructors. \\
+        \ooooo Let $\theta$ = $\restricttyenv{\Delta}{\delta}$ \\
+        \ooooo Then $\interp{D'_0}\;\theta$ = $\theta(\tau)$ \\ 
+        \ooooo Likewise, $\interp{D_2}(\delta,\theta(\tau), \delta') = \interp{\judgeWK[\restrictkind{\Delta,u:\omega,\Delta'}]{A}{\bigstar}}\;(\restricttyenv{\Delta,u:\kappa,\Delta'}{[\delta, \theta(\tau), \delta']})$ \\
+        \ooooo Hence $\interp{D_2}(\delta,\theta(\tau),\delta) = (\theta, u:\theta(\tau), \restricttyenv{\Delta'}{\delta'})(A)$\\
+        \ooooo By definition of substitutions, 
+                 $\interp{D_2} = (\theta, \restricttyenv{\Delta'}{\delta'})([\tau/u]A)$\\
+        \ooooo By weakening on $D'_0$, we have $D'_0 :: \judgeWK[\Delta, \Delta']{\tau}{\kappa}$\\
+        \ooooo By substitution of $D'_0$ into $D'_2$, we get
+               $D'_3 :: \judgeWK[\restrictkind{\Delta, \Delta'}]{[\tau/u]A}{\bigstar}$ \\
+        \ooooo Since kinds have no free variables, 
+               $D'_3 :: \judgeWK[\restrictkind{\Delta, [\tau/u]\Delta'}]{[\tau/u]A}{\bigstar}$ \\
+        \ooooo By definition, $\interp{D'_3}\;(\theta, \restricttyenv{\Delta'}{\delta'}) = 
+                               (\theta, \restricttyenv{\Delta'}{\delta'})([\tau/u]A)$ \\
+        \ooooo By rule \textsc{SortType} on $D'_3$ and $D'_1$, we have 
+                 $D' :: \judgeSort[{\Delta, [\tau/u]\Delta'}]{[\tau/u]A}$ \\
+        \ooooo By semantics, $\interp{D'}(\delta,\delta') = \interp{D'_3}\;(\theta, \restricttyenv{\Delta'}{\delta'})$ \\
+        \ooooo Therefore $\interp{D}(\delta, \interp{\judgeA{\tau}{\kappa}}\;\delta, \delta') = 
+                          \interp{D'}(\delta,\delta')$ \\
         \oooo If $\omega \not= \kappa$: \\
         \ooooo Then  $D_2 :: \judgeWK[\restrictkind{\Delta, u:\omega, \Delta'}]{A}{\bigstar}$ \\
         \ooooo Because $\omega \not= \kappa$, 
@@ -2458,12 +2468,10 @@ If we have that $\judgeA{p}{\omega}$, then
         \ooooo Therefore $(\delta, \delta') \in \restrictkind{\Delta, [p/u]\Delta'}$ \\
         \ooooo Because $u \not\in FV(A)$, $A = [p/u]A$ \\
         \ooooo Thus $D_2 :: \judgeWK[\restrictkind{\Delta, [p/u]\Delta'}]{[p/u]A}{\bigstar}$ \\
-        \ooooo By mutual induction on $D_1$, we have $\judgeACtx{\Delta, [p/u]\Delta'}$ \\
         \ooooo Then by rule \textsc{SortType}, we have $D' :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]A}$ \\
         \ooooo So $\interp{D'}(\delta, \delta') = \interp{D_2}(\restricttyenv{\Delta,[p/u]\Delta'}{\delta, \delta'})$ \\
         \ooooo But then, $\interp{D}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = 
                           \interp{D'}(\delta, \delta')$ \\
-
       \end{tabbedproof}
     \end{itemize}
   \end{enumerate}
@@ -2976,10 +2984,149 @@ Suppose that $D_0 :: \judgeA{p}{\omega}$. Then
               $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{Q u':[p/u]\omega'.\; [p/u]S}$ \\
         \ooo By definition of substitution, $Q u':[p/u]\omega'.\; [p/u]S = [p/u](Q u':\omega'.\; S)$ \\
         \ooo Therefore $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u](Q u':\omega'.\; S)}$ \\
-        
       \end{tabbedproof}
     \end{itemize}
   \end{enumerate}
 \end{proof}
   
+\subsubsection{Semantics of Substitution}
+
+\begin{lemma}{(Substitution Preserves Meaning)}
+If $D_0 :: \judgeA{p}{\omega}$, then we have 
+
+\begin{enumerate}
+\item If $D :: \judgeA[{\Delta, u:\omega, \Delta'}]{q}{\omega'}$, then
+  then there is a $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{[p/u]\omega'}$ such
+  that for all $(\delta, \interp{D_0}\;\delta, \delta') \in 
+                \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$, 
+  we have that $\interp{D}\;(\delta, \interp{D_0}\;\delta, \delta') = \interp{D'}\;(\delta, \delta')$ 
+
+\item If $D :: \judgeS[{\Delta, u:\omega, \Delta'}]{S}$, then
+  then there is a $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u]S}$ such
+  that for all $(\delta, \interp{D_0}\;\delta, \delta') \in 
+                \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$, 
+  we have that $\interp{D}\;(\delta, \interp{D_0}\;\delta, \delta') = \interp{D'}\;(\delta, \delta')$ 
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+  Assume $D_0 :: \judgeA{p}{\omega}$. Now we proceed by mutual structural induction.
+  
+  \begin{enumerate}
+  \item We want to show if $D :: \judgeA[{\Delta, u:\omega, \Delta'}]{q}{\omega'}$, then
+  then there is a $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{[p/u]\omega'}$ such
+  that for all $(\delta, \interp{D_0}\;\delta, \delta') \in 
+                \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$, 
+  we have that $\interp{D}\;(\delta, \interp{D_0}\;\delta, \delta') = \interp{D'}\;(\delta, \delta')$ 
+  \begin{itemize}
+  \item Case \textsc{TermType}: 
+    \begin{tabbedproof}
+      \oo Assume $D :: \judgeA[{\Delta, u:\omega, \Delta'}]{\tau}{\kappa}$ \\
+      \ooo By substitution theorem, we have $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]\tau}{\kappa}$ \\
+      \ooo By inversion on $D$, we have $D_1 :: \judgeWK[\restrictkind{\Delta, u:\omega, \Delta'}]{\tau}{\kappa}$ \\
+      \ooo By inversion on $D'$ we have $D'_1 :: \judgeWK[\restrictkind{\Delta, [p/u]\Delta'}]{[p/u]\tau}{\kappa}$ \\
+      \ooo Assume $\delta, \delta'$ such that $(\delta, \interp{D_0}\;\delta,\delta') \in \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$ \\
+      \oooo By semantics, we have 
+            $\interp{D}(\delta, \interp{D_0}\;\delta, \delta') = 
+             \interp{D_1}(\restricttyenv{\Delta, u:\omega, \Delta'}{(\delta, \interp{D_1}\;\delta, \delta')})$ \\
+      \oooo By semantics, we have 
+            $\interp{D'}(\delta, \delta') = 
+             \interp{D'_1}(\restricttyenv{\Delta, [p/u]\Delta'}{(\delta, \delta')})$ \\
+      \oooo Case analyze $\omega$: \\
+      \ooooo If $\omega = \kappa'$: \\
+      \oooooo Then $D_0 :: \judgeA{\tau'}{\kappa'}$, where $p = \tau'$ \\
+      \oooooo Then by inversion on $D_0$ there is $D'_0 :: \judgeWK[\restrictkind{\Delta}]{\tau'}{\kappa'}$ \\
+      \oooooo Then $\interp{D_0}\;\delta = \interp{D'_0}\;\restricttyenv{\Delta}{\delta}$ \\
+      \oooooo Let $\theta = \restricttyenv{\Delta}{\delta}$ and $\theta' = \restricttyenv{\Delta'}{\delta'}$\\
+      \oooooo Then $\interp{D'_0}\;\theta = \theta(\tau')$ \\
+      \oooooo Then $\restrictkind{\Delta, u:\kappa', \Delta'} = \restrictkind{\Delta}, u:\kappa, \restrictkind{\Delta'}$ \\
+      \oooooo Then $\restricttyenv{\Delta, u:\kappa', \Delta'}{(\delta, \interp{D_0}\;\delta, \delta')} =  (\theta, \theta(\tau'), \theta')$ \\
+      \oooooo Then $\interp{D}(\delta, \interp{D_0}, \delta') = 
+                    \interp{D_1}(\theta, \theta(\tau'), \theta')$ \\
+      \oooooo Then $\interp{D_1}(\theta, \theta(\tau'), \theta') = 
+                   (\theta, \theta')([\tau'/u]\tau)$ by properties of substitution \\
+      \oooooo Then $(\theta, \theta') = \restricttyenv{\Delta, \Delta'}{\delta, \delta'}$ \\
+      \oooooo Since kinds have no free variables 
+              $\restricttyenv{\Delta, \Delta'}{(\delta, \delta')} = 
+               \restricttyenv{\Delta, [p/u]\Delta'}{(\delta, \delta')}$ \\
+      \oooooo Therefore $(\theta, \theta')([\tau'/u]\tau) = 
+                         \interp{D'_1}(\restricttyenv{\Delta, [p/u]\Delta'}{(\delta, \delta')})$\\
+      \oooooo Therefore $\interp{D}(\delta, \interp{D_0}\delta, \delta') = 
+                         \interp{D'}(\delta, \delta')$ \\
+      \ooooo If $\omega \not= \kappa'$: \\
+      \oooooo Then $\restrictkind{\Delta, u:\omega, \Delta'} = \restrictkind{\Delta, \Delta'}$ \\
+      \oooooo Then 
+              $\restricttyenv{\Delta, u:\omega, \Delta'}{(\delta, \interp{D_0}\delta, \delta')} = 
+               \restricttyenv{\Delta, \Delta'}{(\delta, \delta')}$ \\
+      \oooooo Then $D_1 :: \judgeWK[\restrictkind{\Delta, \Delta'}]{\tau}{\kappa}$ \\
+      \oooooo Since kinds have no free variables, 
+                  $\restrictkind{\Delta, \Delta'} = \restrictkind{\Delta, [p/u]\Delta'}$ \\
+      \oooooo Then $\restricttyenv{\Delta, u:\omega, \Delta'}
+                                  {(\delta, \interp{D_0}\delta, \delta')} = 
+                     \restricttyenv{\Delta, [p/u]\Delta'}{(\delta, \delta')}$ \\
+      \oooooo Since $u \not\in FV(\tau)$, we have $[p/u]\tau = \tau$ \\
+      \oooooo Therefore $D_1 :: \judgeWK[\restrictkind{\Delta, [p/u]\Delta'}]{[p/u]\tau}{\kappa}$ \\
+      \oooooo Then $\interp{D_1}\;\restricttyenv{\Delta, u:\omega, \Delta'}{(\delta, \interp{D_0}\delta, \delta')} = \interp{D'_1}\;\restricttyenv{\Delta, [p/u]\Delta'}{(\delta, \delta')}$ \\
+      \oooooo Then $\interp{D}(\delta, \interp{D_0}\delta, \delta') = 
+                    \interp{D'}(\delta, \delta')$ \\
+    \end{tabbedproof}
+
+  \item Case \textsc{TermExpr}: 
+    \begin{tabbedproof}
+      \oo Assume $D :: \judgeA[{\Delta, u:\omega, \Delta'}]{e}{A}$ \\
+      \oo By substitution theorem, $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]e}{[p/u]A}$ \\
+      \ooo By inversion on $D$, we have 
+           $D_1 :: \judgeE[\restrictkind{\Delta, u:\omega, \Delta'}]{\restricttype{\Delta, u:\omega, \Delta'}}{e}{A}$ \\
+      \ooo By inversion on $D'$, we have
+           $D_2 :: \judgeE[\restrictkind{\Delta, [p/u]\Delta'}]{\restricttype{\Delta, [p/u]\Delta'}}{[p/u]e}{[p/u]A}$ \\
+      \ooo Assume $(\delta, \interp{D_0}\delta, \delta') \in 
+                   \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$ \\
+      \oooo By semantics, \\
+      \ooox $\interp{D}(\delta, \interp{D_0}\delta, \delta') = 
+             U(\interp{D_1}\;\restricttyenv{\Delta, u:\omega, \Delta'}
+                                           {(\delta, \interp{D_0}\delta, \delta')})
+             \;\restrictvals{\Delta, u:\omega, \Delta'}{(\delta, \interp{D_0}\delta, \delta')}$\\
+      \oooo By semantics, \\
+      \ooox $\interp{D'}(\delta, \delta') = 
+             U(\interp{D_2}\;\restricttyenv{\Delta, [p/u]\Delta'}
+                                           {(\delta, \delta')})
+             \;\restrictvals{\Delta, [p/u]\Delta'}{(\delta, \delta')}$\\
+      \oooo Case on $\omega$: \\
+      \ooooo If $\omega = \kappa$: \\
+      \oooooo Then $D_0 :: \judgeA{\tau}{\kappa}$, where $p = \tau$ \\
+      \oooooo Let $\theta = \restricttyenv{\Delta}{\delta}$ and
+                  $\theta' = \restricttyenv{\Delta'}{\delta'}$ \\
+      \oooooo Then $\interp{D_0}\;\restricttyenv{\Delta}{\delta} = \theta(\tau)$ \\
+      \oooooo So we want to show\\
+      \ooooox $U(\interp{D_1}\;\restricttyenv{\Delta, u:\kappa, \Delta'}
+                                           {(\delta, \interp{D_0}\delta, \delta')}) =$ \\
+      \ooooox $U(\interp{D_2}\;\restricttyenv{\Delta, [p/u]\Delta'}
+                                               {(\delta, \delta')})
+                 \;\restrictvals{\Delta, [p/u]\Delta'}{(\delta, \delta')}$\\
+      \oooooo We know $\restricttyenv{\Delta, u:\kappa, \Delta'}
+                                     {(\delta, \interp{D_0}\delta, \delta')})
+                       = (\theta, \theta(\tau), \theta')$ \\
+      \oooooo Then $\interp{D_1}\;(\theta, \theta(\tau), \theta') = 
+                    \interp{D'_1}\;(\theta, \theta')$ by semantic substitution\\
+      \oooooo Where $D'_1 :: \judgeE[\restrictkind{\Delta}, \restrictkind{\Delta'}]
+                                    {[\tau/u]\restricttype{\Delta, u:\kappa, \Delta'}}
+                                    {[\tau/u]e}{[\tau/u]A}$ \\
+      \oooooo Since kinds have no free variables, $\restrictkind{\Delta'} = \restrictkind{[\tau/u]\Delta'}$ \\
+      \oooooo Since $u \not\in FV(\Delta)$, $[\tau/u]\Delta = \Delta$ \\
+      \oooooo Therefore $D'_1 :: \judgeE[{\restrictkind{\Delta, [\tau/u]\Delta'}}]
+                                    {\restricttype{\Delta, [\tau/u]\Delta'}}
+                                    {[\tau/u]e}{[\tau/u]A}$ \\
+      \oooooo By coherence, $\interp{D'_1} = \interp{D_1}$\\
+      \oooooo Therefore $\interp{D_1}\;(\theta, \theta(\tau), \theta') = 
+                         \interp{D_1}\;(\theta, \theta')$
+ 
+    \end{tabbedproof}
+  \end{itemize}
+
+  \end{enumerate}
+\end{proof}
+
+
+
+
 
