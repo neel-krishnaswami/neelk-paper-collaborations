@@ -142,7 +142,9 @@
 
 \newcommand{\comprehend}[2]{\setof{{#1}\;|\;{#2}}}
 
-\newenvironment{proof}{\noindent\textbf{Proof.}}{\noindent$\Box$}
+% \newenvironment{proof}{\begin{comment}}{\end{comment}}
+
+\newenvironment{proof}{\noindent\textbf{Proof.}}{\noindent\ensuremath{\Box}}
 
 \newcounter{prooflinenum}
 \newenvironment{tabbedproof}
