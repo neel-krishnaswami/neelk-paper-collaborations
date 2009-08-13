@@ -1,15 +1,15 @@
-\newcommand{\ctext}[1]{\mbox{\textsf{{#1}}}}
+\newcommand{\ctext}[1]{\mathsf{#1}}
 \newcommand{\unittype}{\mathbf{1}}
-\newcommand{\reftype}[1]{\ctext{ref }#1}
+\newcommand{\reftype}[1]{\ctext{ref}\;#1}
 \newcommand{\monad}[1]{\bigcirc{#1}}
 \newcommand{\cont}[1]{\ctext{cont}\;{#1}}
 \newcommand{\opttype}[1]{\ctext{option }{#1}}
-\newcommand{\seqsort}[1]{\ctext{seq }{#1}}
-\newcommand{\listtype}[1]{\ctext{list }{#1}}
+\newcommand{\seqsort}[1]{\ctext{seq}\;{#1}}
+\newcommand{\listtype}[1]{\ctext{list}\;{#1}}
 
 \newcommand{\pair}[2]{\left<{#1},{#2}\right>}
-\newcommand{\fst}[1]{\ctext{fst } #1}
-\newcommand{\snd}[1]{\ctext{snd } #1}
+\newcommand{\fst}[1]{\ctext{fst}\; #1}
+\newcommand{\snd}[1]{\ctext{snd}\; #1}
 
 \newcommand{\inj}[1]{\iota_{#1}}
 \newcommand{\inl}[1]{\ctext{inl }#1}
@@ -31,9 +31,9 @@
 \newcommand{\pack}[2]{\ctext{pack}({#1}, {#2})}
 \newcommand{\unpack}[4]{\ctext{unpack}({#1}, {#2}) = {#3} \;\ctext{in}\;{#4}}
 \newcommand{\alt}{\;|\;}
-\newcommand{\letv}[3]{\ctext{letv }#1 = #2\ctext{ in }#3}
+\newcommand{\letv}[3]{\ctext{letv}\;#1 = #2\;\ctext{in}\;#3}
 \newcommand{\newref}[2]{\ctext{new}_{#1}(#2)}
-\newcommand{\run}[1]{\ctext{run }{#1}}
+\newcommand{\run}[1]{\ctext{run}\;{#1}}
 \newcommand{\ok}{\ctext{ ok}}
 \newcommand{\FV}[1]{\mathrm{FV}({#1})}
 
@@ -113,9 +113,9 @@
 
 
 \newcommand{\judgeP}[3]{{#1} \vdash {#2} : {#3}}
-\newcommand{\judgeS}[2][\Delta]{{#1} \vdash {#2} : \spectype}
+\newcommand{\judgeS}[2][\Delta]{{#1} \vartriangleright {#2} : \spectype}
 
-\newcommand{\judgeSCtx}[2]{{#1} \vdash {#2} : \ctext{context}}
+\newcommand{\judgeSCtx}[2]{{#1} \vartriangleright {#2} : \ctext{context}}
 
 \newcommand{\judgeEqP}[4]{{#1} \vdash {#2} \equiv {#3} : {#4}}
 
@@ -123,7 +123,7 @@
 \newcommand{\judgeWK}[3][\Theta]{{#1} \vdash {#2} : {#3}}
 \newcommand{\judgeKeq}[4][\Theta]{{#1} \vdash {#2} \equiv {#3} : {#4}}
 
-\newcommand{\entailsP}[3]{{#1} \rhd {#2} \vdash {#3}}
+\newcommand{\entailsP}[3]{{#1} \vartriangleright {#2} \vdash {#3}}
 \newcommand{\entailsS}[3]{{#1}; {#2} \vdash {#3} \ok}
 
 \newcommand{\chartp}{\ctext{char}}
@@ -141,6 +141,7 @@
 \newtheorem{lemma}{Lemma}
 
 \newcommand{\comprehend}[2]{\setof{{#1}\;|\;{#2}}}
+
 
 % \newenvironment{proof}{\begin{comment}}{\end{comment}}
 
@@ -191,9 +192,9 @@
 
 \newcommand{\restricttyenv}[2]{{#2}\Downarrow^{#1}_K}
 \newcommand{\restrictvals}[2]{{#2}\Downarrow^{#1}_T}
-\newcommand{\judgeACtx}[1]{\vdash {#1} \;\ctext{ok}}
-\newcommand{\judgeA}[3][\Delta]{{#1} \vdash {#2} : {#3}}
+\newcommand{\judgeACtx}[1]{\vartriangleright {#1} \;\ctext{ok}}
+\newcommand{\judgeA}[3][\Delta]{{#1} \vartriangleright {#2} : {#3}}
 \newcommand{\judgeSort}[2][\Delta]{\judgeA[{#1}]{{#2}}{\ctext{sort}}}
-\newcommand{\judgeSortEq}[3][\Delta]{{#1} \vdash {#2} \equiv {#3} : \ctext{sort}}
+\newcommand{\judgeSortEq}[3][\Delta]{{#1} \vartriangleright {#2} \equiv {#3} : \ctext{sort}}
 
 \newcommand{\ms}[1]{\mathcal{#1}}
