@@ -858,8 +858,7 @@ continuation style interpretation of basic Hoare triples, as well.
 Given a $Q \in \interp{A} \to \powerset{H}$, we define $Approx(Q)$ as the set:
 \begin{displaymath}
   Approx(Q) \triangleq \comprehend{k \in \interp{A} \to H \to O}
-                         {\forall v \in \interp{A}, h \in H.\; 
-                            k\;v\;h = \bot \implies h \in Q(v)}
+                         {\forall v \in \interp{A}, h \in Q(v).\; k\;v\;h = \bot}
 \end{displaymath}
 
 These define a set of continuations which ``continuously approximate''
@@ -3669,7 +3668,7 @@ If $D_0 :: \judgeA{p}{\omega}$, then we have
       \ooo Therefore $\interp{D}(\delta, \interp{D_0}\delta, \delta') = \interp{D'}(\delta, \delta')$ \\
     \end{tabbedproof}
 
-  \item Case \text{TermEqSort}:
+  \item Case \textsc{TermEqSort}:
     \begin{tabbedproof}
       \oo Assume $D :: \judgeA[{\Delta, u:\omega,\Delta'}]{q}{\omega'}$ \\
       \oo By substitution on $D$, we have 
@@ -3713,11 +3712,17 @@ If $D_0 :: \judgeA{p}{\omega}$, then we have
       \ooo $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{\assert}$ \\                  
       \ooo $D'_2 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]\comp{c}}{[p/u](\monad{A})}$ \\  
       \ooo $D'_3 :: \judgeA[{\Delta, [p/u]\Delta', a:[p/u]A}]{[[p/u]r}{\assert}$ \\       
+      \oo By inversion on $D_2$, we have \\
+      \ooo $D_4 :: \judgeE[\restrictkind{\Delta,u:\kappa,\Delta'}]
+                           {\restricttype{\Delta,u:\kappa,\Delta'}}{\comp{c}}{\monad{A}}$ \\
+      \oo By inversion on $D'_2$, we have \\
+      \ooo $D'_4 :: \judgeE[\restrictkind{\Delta,[p/u]\Delta'}]
+                           {\restricttype{\Delta,[p/u]\Delta'}}{[p/u]\comp{c}}{[p/u](\monad{A})}$ \\
       \oo Assume $(\delta, \interp{D_0}\;\delta, \delta')\in \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$ \\
       \ooo By induction hypothesis, \\
       \oooo $\interp{D_1}(\delta, \interp{D_0}, \delta') = \interp{D''_1}(\delta, \delta')$\\
       \oooo $\interp{D_2}(\delta, \interp{D_0}, \delta') = \interp{D''_2}(\delta, \delta')$\\
-      \oooo $\interp{D_2}(\delta, \interp{D_0}, \delta') = \interp{D''_3}(\delta, \delta')$\\
+      \oooo $\forall v.\; \interp{D_3}(\delta, \interp{D_0}, \delta', v) = \interp{D''_3}(\delta, \delta', v)$\\
       \ooo Where \\ 
       \oooo $D''_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{\assert}$ \\                  
       \oooo $D''_2 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]\comp{c}}{[p/u](\monad{A})}$ \\  
@@ -3726,16 +3731,225 @@ If $D_0 :: \judgeA{p}{\omega}$, then we have
       \oooo $\interp{D'_1} = \interp{D''_1}$\\
       \oooo $\interp{D'_2} = \interp{D''_2}$\\
       \oooo $\interp{D'_3} = \interp{D''_3}$\\
-      \ooo By inversion on $D_2$, we have \\
-      \oooo $D_4 :: \judgeE[\restrictkind{\Delta,u:\kappa,\Delta'}]
-                           {\restricttype{\Delta,u:\kappa,\Delta'}}{\comp{c}}{\monad{A}}$ \\
-      \ooo By inversion on $D'_2$, we have \\
-      \oooo $D'_4 :: \judgeE[\restrictkind{\Delta,[p/u]\Delta'}]
-                           {\restricttype{\Delta,[p/u]\Delta'}}{[p/u]\comp{c}}{[p/u](\monad{A})}$ \\
-      \ooo By semantics, $\interp{D}(\delta, \interp{D_0}, \delta') = \interp{D'}(\delta, \delta')$ \\
-      \oooo let $P = \interp{D_1}(\delta, \interp{D_0}\delta, \delta')$ \\
+      \ooo By semantics, $\interp{D_2}(\delta, \interp{D_0}\delta, \delta') =$ \\
+      \oooox             $U(\interp{D_4}(\restricttyenv{\Delta, u:\omega, \Delta'}
+                                                      {(\delta, \interp{D_0}\delta, \delta')}))\;
+                                       (\restrictvals{\Delta, u:\omega, \Delta'}
+                                                     {(\delta, \interp{D_0}\delta, \delta')})$\\
+      \ooo This equals $U(\interp{D_4}(\restricttyenv{\Delta, u:\omega, \Delta'}
+                                                      {(\delta, \interp{D_0}\delta, \delta')})\;
+                                       (\restrictvals{\Delta, u:\omega, \Delta'}
+                                                     {(\delta, \interp{D_0}\delta, \delta')}))$\\
+      \ooo because of the restriction property. \\
+      \ooo Likewise, $\interp{D'_2}(\delta, \delta') = 
+                       U(\interp{D'_4}\restricttyenv{\Delta, [p/u]\Delta'}{(\delta, \delta')}
+                                      \restrictvals{\Delta, [p/u]\Delta'}{(\delta, \delta')})$ \\
+      \ooo Now, by cases on $\omega$: \\
+      \oooo If $\omega = \kappa$: \\
+      \ooooo By properties, $\restrictvals{\Delta, u:\omega, \Delta'}
+                                          {(\delta, \interp{D_0}\delta, \delta')} = 
+                              \restricttyenv{\Delta, [p/u]\Delta'}{\delta, \delta'}$ \\
+      \ooooo $\restricttype{\Delta, u:\omega, \Delta'} = 
+              \restricttype{\Delta, \Delta'}$ \\
+      \ooooo With these equations, plus substitution for types, \\
+      \oooooo $\interp{D_4}(\restricttyenv{\Delta, u:\omega, \Delta'}
+                                          {(\delta, \interp{D_0}\delta, \delta')})\;
+                                       (\restrictvals{\Delta, u:\omega, \Delta'}
+                                                     {(\delta, \interp{D_0}\delta, \delta')}) =$\\
+      \ooooox $\interp{D''_4}(\restricttyenv{\Delta, [p/u]\Delta'}{(\delta, \delta')})\;
+                          (\restrictvals{\Delta, [p/u]\Delta'}{(\delta, \delta')})$ \\
+      \ooooo Where $D''_4 :: \judgeE[\restrictkind{\Delta,[p/u]\Delta'}]
+                         {\restricttype{\Delta,[p/u]\Delta'}}{[p/u]\comp{c}}{[p/u](\monad{A})}$\\
+      \ooooo By coherence $\interp{D''_4} = \interp{D'_4}$ \\
 
+      \oooo When $\omega = B$: \\
+      \ooooo By definitions, $\restrictkind{\Delta, u:B, \Delta'} = 
+                              \restrictkind{\Delta, [p/u]\Delta'}$ \\
+      \ooooo By definitions, $\restricttyenv{\Delta, u:B, \Delta'}
+                                            {(\delta, \interp{D_0}\delta, \delta')} =
+                              \restricttyenv{\Delta, [p/u]\Delta'}
+                                            {(\delta, \delta')}$ \\ 
+      \ooooo With these equations, plus substitution for values, \\
+      \oooooo $\interp{D_4}(\restricttyenv{\Delta, u:\omega, \Delta'}
+                                          {(\delta, \interp{D_0}\delta, \delta')})\;
+                                       (\restrictvals{\Delta, u:\omega, \Delta'}
+                                                     {(\delta, \interp{D_0}\delta, \delta')}) =$\\
+      \ooooox $\interp{D''_4}(\restricttyenv{\Delta, [p/u]\Delta'}{(\delta, \delta')})\;
+                          (\restrictvals{\Delta, [p/u]\Delta'}{(\delta, \delta')})$ \\
+      \ooooo Where $D''_4 :: \judgeE[\restrictkind{\Delta,[p/u]\Delta'}]
+                         {\restricttype{\Delta,[p/u]\Delta'}}{[p/u]\comp{c}}{[p/u](\monad{A})}$\\
+      \ooooo By coherence $\interp{D''_4} = \interp{D'_4}$ \\
+      \oooo When $\omega \not= B$ and $\omega \not=\kappa$: \\
+      \ooooo By definitions, $\restrictkind{\Delta, u:\omega, \Delta'} =
+                              \restrictkind{\Delta, [p/u]\Delta'}$ \\
+      \ooooo By definitions, $\restricttype{\Delta, u:\omega, \Delta'} =
+                              \restricttype{\Delta, [p/u]\Delta'}$ \\
+      \ooooo By definitions, $\restricttyenv{\Delta, u:\omega, \Delta'}
+                                            {(\delta, \interp{D_0}\delta, \delta')} = 
+                              \restricttyenv{\Delta, [p/u]\Delta'}
+                                            {(\delta, \delta')}$ \\
+      \ooooo By definitions, $\restrictvals{\Delta, u:\omega, \Delta'}
+                                           {(\delta, \interp{D_0}\delta, \delta')} = 
+                              \restrictvals{\Delta, [p/u]\Delta'}
+                                           {(\delta, \delta')}$ \\
+      \ooooo Since $u \not\in FV(\comp{c})$, we have $\comp{c} = [p/u]\comp{c}$ \\
+      \ooooo Since $u \not\in FV(\monad{A})$, we have $\monad{A} = [p/u](\monad{A})$ \\
+      \ooooo With these equations, \\
+      \oooooo $\interp{D_4}(\restricttyenv{\Delta, u:\omega, \Delta'}
+                                          {(\delta, \interp{D_0}\delta, \delta')})\;
+                                       (\restrictvals{\Delta, u:\omega, \Delta'}
+                                                     {(\delta, \interp{D_0}\delta, \delta')}) =$\\
+      \ooooox $\interp{D_4}(\restricttyenv{\Delta, [p/u]\Delta'}{(\delta, \delta')})\;
+                          (\restrictvals{\Delta, [p/u]\Delta'}{(\delta, \delta')})$ \\
+      \ooooo Where $D_4 :: \judgeE[\restrictkind{\Delta,[p/u]\Delta'}]
+                             {\restricttype{\Delta,[p/u]\Delta'}}
+                             {[p/u]\comp{c}}
+                             {[p/u](\monad{A})}$\\
+      \ooooo By coherence $\interp{D_4} = \interp{D'_4}$ \\
+      \ooo By semantics, $\interp{D}(\delta, \interp{D_0}, \delta') = $  \\
+      \oooo let $P = \interp{D_1}(\delta, \interp{D_0}\delta, \delta')$ in \\
+      \oooo let $C = \interp{D_4}(\restricttyenv{\Delta, u:\omega, \Delta'}
+                                          {(\delta, \interp{D_0}\delta, \delta')})\;
+                                       (\restrictvals{\Delta, u:\omega, \Delta'}
+                                                     {(\delta, \interp{D_0}\delta, \delta')})$ in\\
+      \oooo let $Q = \semfun{v}{\interp{D_3}(\delta, \interp{D_0}\delta, \delta', v)}$ in \\
+      \oooox $\spec{P}{C}{a:A}{Q(a)}$ \\
+      \ooo By equations, $\interp{D}(\delta, \interp{D_0}, \delta') = $  \\
+      \oooo let $P = \interp{D'_1}(\delta, \delta')$ in \\
+      \oooo let $C = \interp{D'_4}(\restricttyenv{\Delta, [p/u]\Delta'}
+                                          {(\delta, \delta')})\;
+                                       (\restrictvals{\Delta, [p/u]\Delta'}
+                                                     {(\delta, \delta')})$ in\\
+      \oooo let $Q = \semfun{v}{\interp{D'_3}(\delta, \delta', v)}$ in \\
+      \oooox $\spec{P}{C}{a:A}{Q(a)}$ \\
+      \ooo Therefore $\interp{D}(\delta, \interp{D_0}, \delta') = \interp{D'}(\delta,\delta')$ \\
     \end{tabbedproof}
+
+  \item Case \textsc{SpecMTriple}: 
+    \begin{tabbedproof}
+      \oo Assume $D :: \judgeS[{\Delta, u:\omega, \Delta'}]{\mspec{q}{c}{a:A}{r}}$ \\
+      \oo By substitution on $D$, we have $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u]\mspec{q}{c}{a:A}{r}}$ \\
+      \oo By inversion on $D$, we have \\
+      \ooo $D_1 :: \judgeA[{\Delta, u:\omega, \Delta'}]{q}{\assert}$ \\
+      \ooo $D_2 :: \judgeA[{\Delta, u:\omega, \Delta'}]{e}{\monad{A}}$ \\
+      \ooo $D_3 :: \judgeA[{\Delta, u:\omega, \Delta', a:A}]{r}{\assert}$ \\
+      \oo By inversion on $D'$, we have \\ 
+      \ooo $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{\assert}$ \\                  
+      \ooo $D'_2 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]e}{[p/u](\monad{A})}$ \\  
+      \ooo $D'_3 :: \judgeA[{\Delta, [p/u]\Delta', a:[p/u]A}]{[[p/u]r}{\assert}$ \\       
+      \oo By inversion on $D_2$, we have \\
+      \ooo $D_4 :: \judgeE[\restrictkind{\Delta,u:\kappa,\Delta'}]
+                           {\restricttype{\Delta,u:\kappa,\Delta'}}{e}{\monad{A}}$ \\
+      \oo By inversion on $D'_2$, we have \\
+      \ooo $D'_4 :: \judgeE[\restrictkind{\Delta,[p/u]\Delta'}]
+                           {\restricttype{\Delta,[p/u]\Delta'}}{[p/u]e}{[p/u](\monad{A})}$ \\
+      \oo Assume $(\delta, \interp{D_0}\;\delta, \delta')\in \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$ \\
+      \ooo By induction hypothesis, \\
+      \oooo $\interp{D_1}(\delta, \interp{D_0}, \delta') = \interp{D''_1}(\delta, \delta')$\\
+      \oooo $\interp{D_2}(\delta, \interp{D_0}, \delta') = \interp{D''_2}(\delta, \delta')$\\
+      \oooo $\forall v.\; \interp{D_3}(\delta, \interp{D_0}, \delta', v) = \interp{D''_3}(\delta, \delta', v)$\\
+      \ooo Where \\ 
+      \oooo $D''_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{\assert}$ \\                  
+      \oooo $D''_2 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]e}{[p/u](\monad{A})}$ \\  
+      \oooo $D''_3 :: \judgeA[{\Delta, [p/u]\Delta', a:[p/u]A}]{[[p/u]r}{\assert}$ \\      
+      \ooo By coherence, \\
+      \oooo $\interp{D'_1} = \interp{D''_1}$\\
+      \oooo $\interp{D'_2} = \interp{D''_2}$\\
+      \oooo $\interp{D'_3} = \interp{D''_3}$\\
+      \ooo By semantics, $\interp{D_2}(\delta, \interp{D_0}\delta, \delta') =$ \\
+      \oooox             $U(\interp{D_4}(\restricttyenv{\Delta, u:\omega, \Delta'}
+                                                      {(\delta, \interp{D_0}\delta, \delta')}))\;
+                                       (\restrictvals{\Delta, u:\omega, \Delta'}
+                                                     {(\delta, \interp{D_0}\delta, \delta')})$\\
+      \ooo This equals $U(\interp{D_4}(\restricttyenv{\Delta, u:\omega, \Delta'}
+                                                      {(\delta, \interp{D_0}\delta, \delta')})\;
+                                       (\restrictvals{\Delta, u:\omega, \Delta'}
+                                                     {(\delta, \interp{D_0}\delta, \delta')}))$\\
+      \ooo because of the restriction property. \\
+      \ooo Likewise, $\interp{D'_2}(\delta, \delta') = 
+                       U(\interp{D'_4}\restricttyenv{\Delta, [p/u]\Delta'}{(\delta, \delta')}
+                                      \restrictvals{\Delta, [p/u]\Delta'}{(\delta, \delta')})$ \\
+      \ooo Now, by cases on $\omega$: \\
+      \oooo If $\omega = \kappa$: \\
+      \ooooo By properties, $\restrictvals{\Delta, u:\omega, \Delta'}
+                                          {(\delta, \interp{D_0}\delta, \delta')} = 
+                              \restricttyenv{\Delta, [p/u]\Delta'}{\delta, \delta'}$ \\
+      \ooooo $\restricttype{\Delta, u:\omega, \Delta'} = 
+              \restricttype{\Delta, \Delta'}$ \\
+      \ooooo With these equations, plus substitution for types, \\
+      \oooooo $\interp{D_4}(\restricttyenv{\Delta, u:\omega, \Delta'}
+                                          {(\delta, \interp{D_0}\delta, \delta')})\;
+                                       (\restrictvals{\Delta, u:\omega, \Delta'}
+                                                     {(\delta, \interp{D_0}\delta, \delta')}) =$\\
+      \ooooox $\interp{D''_4}(\restricttyenv{\Delta, [p/u]\Delta'}{(\delta, \delta')})\;
+                          (\restrictvals{\Delta, [p/u]\Delta'}{(\delta, \delta')})$ \\
+      \ooooo Where $D''_4 :: \judgeE[\restrictkind{\Delta,[p/u]\Delta'}]
+                         {\restricttype{\Delta,[p/u]\Delta'}}{[p/u]e}{[p/u](\monad{A})}$\\
+      \ooooo By coherence $\interp{D''_4} = \interp{D'_4}$ \\
+
+      \oooo When $\omega = B$: \\
+      \ooooo By definitions, $\restrictkind{\Delta, u:B, \Delta'} = 
+                              \restrictkind{\Delta, [p/u]\Delta'}$ \\
+      \ooooo By definitions, $\restricttyenv{\Delta, u:B, \Delta'}
+                                            {(\delta, \interp{D_0}\delta, \delta')} =
+                              \restricttyenv{\Delta, [p/u]\Delta'}
+                                            {(\delta, \delta')}$ \\ 
+      \ooooo With these equations, plus substitution for values, \\
+      \oooooo $\interp{D_4}(\restricttyenv{\Delta, u:\omega, \Delta'}
+                                          {(\delta, \interp{D_0}\delta, \delta')})\;
+                                       (\restrictvals{\Delta, u:\omega, \Delta'}
+                                                     {(\delta, \interp{D_0}\delta, \delta')}) =$\\
+      \ooooox $\interp{D''_4}(\restricttyenv{\Delta, [p/u]\Delta'}{(\delta, \delta')})\;
+                          (\restrictvals{\Delta, [p/u]\Delta'}{(\delta, \delta')})$ \\
+      \ooooo Where $D''_4 :: \judgeE[\restrictkind{\Delta,[p/u]\Delta'}]
+                         {\restricttype{\Delta,[p/u]\Delta'}}{[p/u]e}{[p/u](\monad{A})}$\\
+      \ooooo By coherence $\interp{D''_4} = \interp{D'_4}$ \\
+      \oooo When $\omega \not= B$ and $\omega \not=\kappa$: \\
+      \ooooo By definitions, $\restrictkind{\Delta, u:\omega, \Delta'} =
+                              \restrictkind{\Delta, [p/u]\Delta'}$ \\
+      \ooooo By definitions, $\restricttype{\Delta, u:\omega, \Delta'} =
+                              \restricttype{\Delta, [p/u]\Delta'}$ \\
+      \ooooo By definitions, $\restricttyenv{\Delta, u:\omega, \Delta'}
+                                            {(\delta, \interp{D_0}\delta, \delta')} = 
+                              \restricttyenv{\Delta, [p/u]\Delta'}
+                                            {(\delta, \delta')}$ \\
+      \ooooo By definitions, $\restrictvals{\Delta, u:\omega, \Delta'}
+                                           {(\delta, \interp{D_0}\delta, \delta')} = 
+                              \restrictvals{\Delta, [p/u]\Delta'}
+                                           {(\delta, \delta')}$ \\
+      \ooooo Since $u \not\in FV(e)$, we have $e = [p/u]e$ \\
+      \ooooo Since $u \not\in FV(\monad{A})$, we have $\monad{A} = [p/u](\monad{A})$ \\
+      \ooooo With these equations, \\
+      \oooooo $\interp{D_4}(\restricttyenv{\Delta, u:\omega, \Delta'}
+                                          {(\delta, \interp{D_0}\delta, \delta')})\;
+                                       (\restrictvals{\Delta, u:\omega, \Delta'}
+                                                     {(\delta, \interp{D_0}\delta, \delta')}) =$\\
+      \ooooox $\interp{D_4}(\restricttyenv{\Delta, [p/u]\Delta'}{(\delta, \delta')})\;
+                          (\restrictvals{\Delta, [p/u]\Delta'}{(\delta, \delta')})$ \\
+      \ooooo Where $D_4 :: \judgeE[\restrictkind{\Delta,[p/u]\Delta'}]
+                             {\restricttype{\Delta,[p/u]\Delta'}}
+                             {[p/u]e}
+                             {[p/u](\monad{A})}$\\
+      \ooooo By coherence $\interp{D_4} = \interp{D'_4}$ \\
+      \ooo By semantics, $\interp{D}(\delta, \interp{D_0}, \delta') = $  \\
+      \oooo let $P = \interp{D_1}(\delta, \interp{D_0}\delta, \delta')$ in \\
+      \oooo let $C = \interp{D_4}(\restricttyenv{\Delta, u:\omega, \Delta'}
+                                          {(\delta, \interp{D_0}\delta, \delta')})\;
+                                       (\restrictvals{\Delta, u:\omega, \Delta'}
+                                                     {(\delta, \interp{D_0}\delta, \delta')})$ in\\
+      \oooo let $Q = \semfun{v}{\interp{D_3}(\delta, \interp{D_0}\delta, \delta', v)}$ in \\
+      \oooox $\spec{P}{C}{a:A}{Q(a)}$ \\
+      \ooo By equations, $\interp{D}(\delta, \interp{D_0}, \delta') = $  \\
+      \oooo let $P = \interp{D'_1}(\delta, \delta')$ in \\
+      \oooo let $C = \interp{D'_4}(\restricttyenv{\Delta, [p/u]\Delta'}
+                                          {(\delta, \delta')})\;
+                                       (\restrictvals{\Delta, [p/u]\Delta'}
+                                                     {(\delta, \delta')})$ in\\
+      \oooo let $Q = \semfun{v}{\interp{D'_3}(\delta, \delta', v)}$ in \\
+      \oooox $\spec{P}{C}{a:A}{Q(a)}$ \\
+      \ooo Therefore $\interp{D}(\delta, \interp{D_0}, \delta') = \interp{D'}(\delta,\delta')$ \\
+    \end{tabbedproof}
+
 
   \item Case \textsc{SpecBinary}: 
     \begin{tabbedproof}
@@ -3762,13 +3976,348 @@ If $D_0 :: \judgeA{p}{\omega}$, then we have
       \ooo By IH and coherence, $\interp{D}(\delta, \interp{D_0}, \delta') = 
                           \interp{D'_1}(\delta,\delta') \;\interp{\oplus}\;
                           \interp{D'_2}(\delta,\delta')$ \\
+    \end{tabbedproof}
 
+  \item Case \textsc{SpecAssert}: 
+    \begin{tabbedproof}
+      \oo Assume $D :: \judgeS[{\Delta, u:\omega, \Delta'}]{\setof{q}}$ \\
+      \oo Assume $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u]\setof{q}}$ \\
+      \ooo By inversion on $D$, we have $D_1 :: \judgeA[{\Delta, u:\omega, \Delta'}]{q}{\assert}$ \\
+      \ooo By inversion on $D'$, we have $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{\assert}$ \\
+      \ooo Assume $(\delta, \interp{D_0}\delta, \delta') \in 
+                   \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$ \\
+      \ooo By mutual IH, $\interp{D_1}(\delta, \interp{D_0}\delta, \delta') =
+                          \interp{D''_1}(\delta, \delta')$ \\
+      \ooo where $D''_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{\assert}$ \\
+      \ooo By coherence $\interp{D'_1} = \interp{D''_1}$ \\
+      \ooo By semantics, $\interp{D}(\delta, \interp{D_0}\delta, \delta') =$ 
+              if $\interp{D_1}(\delta, \interp{D_0}\delta, \delta') = \top_{\powerset{H}}$ then $\top$ else $\bot$ \\
+      \ooo Therefore $\interp{D}(\delta, \interp{D_0}\delta, \delta') =$ 
+              if $\interp{D'_1}(\delta, \delta') = \top_{\powerset{H}}$ then $\top$ else $\bot$ \\
+      \ooo By semantics, $\interp{D'}(\delta, \delta') =$ 
+              if $\interp{D'_1}(\delta, \delta') = \top_{\powerset{H}}$ then $\top$ else $\bot$ \\
+      \ooo Therefore $\interp{D}(\delta, \interp{D_0}\delta, \delta') = 
+                      \interp{D'}(\delta, \delta')$ \\
+    \end{tabbedproof}
+
+  \item Case \textsc{SpecQuantify}: 
+    \begin{tabbedproof}
+      \oo Assume $D :: \judgeA[{\Delta, u:\omega, \Delta'}]{Q u':\omega'.\; q}{\assert}$ \\
+      \oo Assume $D':: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u](Q u':\omega'.\;q)}{\assert}$ \\
+      \ooo By inversion on $D$, we have 
+            $D_1 :: \judgeA[{\Delta, u:\omega, \Delta', u':\omega'}]{q}{\assert}$ \\
+      \ooo By inversion on $D'$, we have 
+            $D'_1 :: \judgeA[{\Delta, [p/u]\Delta', u':[p/u]\omega'}]{[p/u]q}{\assert}$ \\
+      \ooo Assume $(\delta, \interp{D_0}\delta, \delta') \in 
+                   \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$ \\
+      \oooo By IH, $\forall v.\; \interp{D_1}(\delta, \interp{D_0}\delta, \delta', v) = 
+                    \interp{D''_1}(\delta, \delta', v)$ \\
+      \oooo where $D''_1 :: \judgeA[{\Delta, [p/u]\Delta', u':[p/u]\omega'}]{[p/u]q}{\assert}$ \\
+      \oooo By coherence $\interp{D'_1} = \interp{D''_1}$ \\
+      \oooo By semantics, $\interp{D}(\delta, \interp{D_0}\delta, \delta') = 
+                  \interp{Q}_{v \in \interp{\judgeSort[\Delta, u:\omega, \Delta']{\omega'}}(\delta, \interp{D_0}\delta, \delta')}
+                      \interp{D_1}(\delta, \interp{D_0}\delta, \delta', v)$ \\
+      \oooo By substitution for sorts, and IH $\interp{D}(\delta, \interp{D_0}\delta, \delta')=$\\
+      \oooox $\interp{Q}_{v \in \interp{\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega'}}(\delta, \delta')}
+                      \interp{D'_1}(\delta, \delta', v)$ \\
+      \oooo Therefore $\interp{D}(\delta, \interp{D_0}\delta, \delta') = 
+                       \interp{D'}(\delta, \delta')$ \\
     \end{tabbedproof}
   \end{itemize}
 \end{enumerate}
 \end{proof}
 
 
+\section{The Program Logic}
+
+A specification $\judgeS{S}$ is \emph{valid} if and only if, for all
+$\delta \in \interp{\judgeACtx{\Delta}}$, $\interp{\judgeS{S}}\;\delta = \top$. 
+
+This says that for any assignment of the free variables, the valid
+specification $S$ is true.
+
+\subsection{Soundness of Axioms}
+
+\begin{lemma}{(Validity Distributes Through Implication)}
+$\judgeS{S_1 \specimp S_2}$ is valid is logically equivalent to: if
+$\judgeS{S_1}$ is valid, then $\judgeS{S_2}$ is valid.
+\end{lemma}
+
+\begin{proof}
+  \begin{tabbedproof}
+    \oo $\To$ direction: \\
+    \ooo Assume $\judgeS{S_1 \specimp S_2}$ is valid \\
+    \ooo Assume $\judgeS{S_1}$ is valid \\
+    \ooo Assume $\delta \in \interp{\judgeACtx{\Delta}}$ \\
+    \oooo We want to show $\interp{\judgeS{S_2}}\delta = \top$ \\
+    \oooo This is equivalent to showing $\forall p.\; p \in \interp{\judgeS{S_2}}\delta$ \\
+    \oooo Assume $p$ \\ 
+    \ooooo From $\judgeS{S_1}$ is valid, we know that $p \in \interp{\judgeS{S_1}}\;\delta$ \\
+    \ooooo From $\judgeS{S_1 \specimp S_2}$ is valid, we know 
+          $\forall p, q, \sqsupseteq p.\; q \in \interp{S_1}\delta \implies q \in \interp{S_2}\delta$ \\
+    \ooooo Instantiating both quantifiers with $p$, and discharging the hypotheses \\
+    \ooooo with $p \sqsupseteq p$ and line 7, we learn $p \interp{S_2}\delta$\\
+    \oo $\From$ direction: \\
+    \ooo Assume if $\judgeS{S_1}$ is valid, then $\judgeS{S_2}$ is valid. \\
+    \oooo We want to show that $\judgeS{S_1 \specimp S_2}$ is valid\\
+    \oooo So we want to show $\forall \delta, \interp{\judgeS{S_1 \specimp S_2}}\delta = \top$ \\
+    \oooo Assume $\delta$ \\
+    \ooooo So we want to show 
+  \end{tabbedproof}
+\end{proof}
 
 
+\begin{lemma}{(Assignment Axiom)}
+$\judgeS{\spec{e \pointsto_A -}{e := e'}{a:\unittype}{e \pointsto_A e'}}$ is valid  
+\end{lemma}
+\begin{proof}
+  \begin{tabbedproof}
+    \oo Assume $\delta \in \interp{\judgeACtx{\Delta}}$ \\
+    \ooo We want to show $\interp{\judgeS{\spec{e \pointsto_A -}{e := e'}{a:\unittype}{e \pointsto_A e'}}}\;\delta = \top$ \\
+    \ooo So we want to show $\forall r.\; r \in \interp{\judgeS{\spec{e \pointsto_A -}{e := e'}{a:\unittype}{e \pointsto_A e'}}}\;\delta$ \\
+    \ooo Assume $r$ \\
+    \oooo We want to show $r \in \interp{\judgeS{\spec{e \pointsto_A -}{e := e'}{a:\unittype}{e \pointsto_A e'}}}\;\delta$ \\
+    \oooo Let $\theta = \restricttyenv{\Delta}{\delta}$ \\
+    \oooo Let $\gamma = \restrictvals{\Delta}{\delta}$ \\
+    \oooo Let $P = \interp{\judgeA{e \pointsto_A -}{\assert}}\;\delta$ \\
+    \oooo Let $C = \interp{\judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}{\comp{e := e'}}{\monad{A}}}\;\theta\;\gamma$ \\
+    \oooo Let $E = \interp{\judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}{e}{\reftype{A}}}\;\theta\;\gamma$ \\
+    \oooo Let $E' = \interp{\judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}{e'}{A}}\;\theta\;\gamma$ \\
+    \oooo let $Q = \semfun{v}{\interp{\judgeA{e \pointsto_A e'}{\assert}}\;(\delta, v)}$ \\
+    \oooo We want to show $r \in \spec{P}{C}{a:A}{Q(a)}$ \\
+    \oooo We want to show $\forall s \sqsupseteq r.\; \basicspec{P * s}{C}{a:A}{Q(a) * s}$ \\
+    \oooo Assume $s \sqsupseteq r$ \\
+    \ooooo We want to show $\basicspec{P * s}{C}{a:A}{Q(a) * s}$ \\
+    \ooooo We want to show $\forall h \in (P * s).\; C\;Best(\semfun{a}{Q(a) * s})\;h = \bot$ \\
+    \ooooo Assume $h \in P * s$ \\
+    \oooooo By semantics $h \in P * s$ means $\exists h_1, h_2.\; h_1 \in P$, $h_2 \in s$, and
+            $h_1 \# h_2$ \\
+    \oooooo By semantics of assertions, $h_1 \in P$ means 
+            $\exists v \in \interp{\judgeWK[\restrictkind{\Delta}]{A}{\bigstar}}\;\theta.\;
+               h_1 = [E:v]$ \\
+    \oooooo Expanding definitions, 
+             $C = \semfun{k}{\semfun{h}{k\;\unit\;\mbox{if } E\in\domain{h} \mbox{ then } [h|E:E'] \mbox{ else }\top}}$ \\
+    \oooooo Therefore $C\;Best(\semfun{a}{Q(a) * s})\;h = $ \\
+    \oooooox $\mbox{if }E\in\domain{h_1 \cdot h_2} \mbox{ then }Best(\semfun{a}{Q(a) * s})\;\unit\;[h_1 \cdot h_2|E:E'] \mbox{ else } \top$ \\
+    \oooooo Since $E \in \domain{h_1}$, we know $C\;Best(\semfun{a}{Q(a) * s})\;h = $ \\
+    \oooooox $Best(\semfun{a}{Q(a) * s})\;\unit\;[h_1 \cdot h_2|E:E']$ \\
+    \oooooo Therefore we want to show $Best(\semfun{a}{Q(a) * s})\;\unit\;[h_1 \cdot h_2|E:E'] = \bot$ \\
+    \oooooo So we must show $\lnot \exists k \in Approx(\semfun{a}{Q(a) * s}).\; k\;\unit\;[h_1 \cdot h_2|E'] = \top$ \\
+    \oooooo So we must show $\forall k \in Approx(\semfun{a}{Q(a) * s}).\; k\unit\;[h_1\cdot h_2|E:E'] = \bot$ \\
+    \oooooo Assume $k \in Approx(\semfun{a}{Q(a) * s})$ \\
+    \ooooooo Since $[h_1\cdot h_2|E:E'] = [E:E']\cdot h_2$, we want 
+             $k\unit\;([E:E']\cdot h_2) = \bot$ \\
+    \ooooooo Now, $k \in Approx(\semfun{a}{Q(a) * s})$ means $\forall v, h \in (Q(v) * s)\; k\;v\;h = \bot$ \\
+    \ooooooo Now, instantiate the quantifier with $\unit$ and $[E:E']\cdot h_2$ \\
+    \ooooooo Now we must check $[E:E']\cdot h_2 \in Q(\unit) * s$ \\
+    \ooooooo We'll check that $[E:E'] \in Q(\unit)$ and $h_2 \in s$ \\
+    \ooooooo By semantics of assertions $Q(\unit) = \setof{[E:E']}$, so $[E:E'] \in Q(\unit)$ \\
+    \ooooooo From line 19, $h_2 \in s$ \\
+    \ooooooo Since $[E:E']$ has the same domain as $h_1$, we know $[E:E'] \# h_2$ \\
+    \ooooooo Therefore $[E:E']\cdot h_2 \in Q(\unit) * s$ \\
+    \ooooooo Therefore $k\unit\;[h_1\cdot h_2|E:E'] = \bot$ \\
+    \oooooo Therefore $\forall k \in Approx(\semfun{a}{Q(a) * s}).\; k\unit\;[h_1\cdot h_2|E:E'] = \bot$ \\
+    \oooooo Therefore $\lnot \exists k \in Approx(\semfun{a}{Q(a) * s}).\; k\;\unit\;[h_1 \cdot h_2|E'] = \top$ \\
+    \oooooo Therefore $Best(\semfun{a}{Q(a) * s})\;\unit\;[h_1 \cdot h_2|E:E'] = \bot$ \\
+    \ooooo Therefore $\forall h \in (P * s).\; C\;Best(\semfun{a}{Q(a) * s})\;h = \bot$ \\
+    \ooooo Therefore $\basicspec{P * s}{C}{a:A}{Q(a) * s}$ \\
+    \oooo Therefore $\forall s \sqsupseteq r.\; \basicspec{P * s}{C}{a:A}{Q(a) * s}$ \\
+    \oooo Therefore $r \in \spec{P}{C}{a:A}{Q(a)}$ \\
+    \ooo Therefore $\forall r.\; r \in \interp{\judgeS{\spec{e \pointsto_A -}{e := e'}{a:\unittype}{e \pointsto_A e'}}}\;\delta$ \\
+    \ooo Therefore $\interp{\judgeS{\spec{e \pointsto_A -}{e := e'}{a:\unittype}{e \pointsto_A e'}}}\;\delta = \top$ \\
+  \end{tabbedproof}
+\end{proof}
+
+
+\begin{lemma}{(Allocation Axiom)}
+If $\judgeS{\spec{\emp}{\newref{A}{e}}{a:\reftype{A}}{a \pointsto e}}$ is valid
+\end{lemma}
+\begin{proof}
+  \begin{tabbedproof}
+    \oo Assume $\delta \in \interp{\judgeACtx{\Delta}}$ \\
+    \ooo We want to show $\interp{\judgeS{\spec{\emp}{\newref{A}{e}}{a:\reftype{A}}{a \pointsto e}}}\delta = \top$ \\
+    \ooo So we want to show $\forall r.\; r \in \interp{\judgeS{\spec{\emp}{\newref{A}{e}}{a:\reftype{A}}{a \pointsto e}}}\delta$ \\
+    \ooo Assume $r$, \\
+    \oooo So we want to show $r \in \interp{\judgeS{\spec{\emp}{\newref{A}{e}}{a:\reftype{A}}{a \pointsto e}}}\delta$ \\
+    \oooo Let $\Theta = \restrictkind{\Delta}$ \\
+    \oooo Let $\theta = \restricttyenv{\Delta}{\delta}$ \\
+    \oooo Let $\Gamma = \restricttype{\Delta}$ \\
+    \oooo Let $\gamma = \restrictvals{\Delta}{\delta}$ \\
+    \oooo Let $C = \interp{\judgeE{\Gamma}{\comp{\newref{A}{e}}}{\monad{\reftype{A}}}\;\theta}\;\gamma$ \\
+    \oooo Let $E = \interp{\judgeE{\Gamma}{e}{A}\;\theta}\;\gamma$ \\
+    \oooo Let $Q = \semfun{v}{\interp{\judgeA[\Delta, a:\reftype{A}]{a \pointsto_A e}{\assert}}\;(\delta, v)}$ \\
+    \oooo So we want to show $r \in \spec{I}{C}{a:A}{Q(a)}$ \\
+    \oooo So we want to show $\forall s \sqsupseteq r.\; \basicspec{s}{C}{a:A}{Q(a)*s}$ \\
+    \oooo Assume $s \sqsupseteq r$ \\
+    \ooooo We want to show $\basicspec{s}{C}{a:A}{Q(a)*s}$ \\
+    \ooooo We want to show $\forall h \in s.\; C\;Best(\semfun{a}{Q(a)*s})\;h = \bot$ \\
+    \ooooo Assume $h \in s$ \\
+    \oooooo Expanding definitions, $C\;Best((\semfun{a}{Q(a)*s})\;h = $ \\
+    \oooooox let $l = (\max(\domain{h})+1, [\theta(A)])$ in $Best(\semfun{a}{Q(a)*s})\;l\;[h|l:E]$ \\
+    \oooooo So let $l = (\max(\domain{h})+1, [\theta(A)])$ \\
+    \oooooo We want to show $Best(\semfun{a}{Q(a)*s})\;l\;[h|l:E] = \bot$ \\
+    \oooooo To show this, we must show $\lnot (\exists k \in Approx(\semfun{a}{Q(a)*s}).\;k\;l\;[h|l:E] = \top)$ \\
+    \oooooo So we must show $\forall k \in Approx(\semfun{a}{Q(l)*s}).\;k\;l\;[h|l:E] = \bot)$ \\
+    \oooooo Assume $k \in Approx(\semfun{a}{Q(a)*s})$ \\
+    \ooooooo This means $\forall v, h \in Q(v)*s.\; k\;v\;h = \bot$ \\
+    \ooooooo Instantiate $v$ with $l$, and $h$ with $[l:E]\cdot h$ \\
+    \ooooooo Now we must check $[l:E]\cdot h \in Q(l) * s$ \\
+    \ooooooo So we will check $[l:E] \in Q(l)$ and $h \in s$ \\
+    \ooooooo Expanding definitions, $Q(l) = \setof{[l:E]}$, so $[l:E] \in Q(l)$ \\
+    \ooooooo From line 18, $h \in s$ \\
+    \ooooooo Since $l$ is bigger than anything in $\domain{h}$, it follows $[l:E] \# h$ \\
+    \ooooooo Therefore $[l:E]\cdot h \in Q(l) * s$ \\
+    \ooooooo Therefore $k\;l\;([l:E]\cdot h) = \bot$ \\
+    \oooooo Therefore $\forall k \in Approx(\semfun{a}{Q(l)*s}).\;k\;l\;[h|l:E] = \bot)$ \\
+    \ooooo Therefore $\forall h \in s.\; C\;Best(\semfun{a}{Q(a)*s})\;h = \bot$ \\
+    \ooooo Therefore $\basicspec{s}{C}{a:A}{Q(a)*s}$ \\
+    \oooo Therefore $\forall s \sqsupseteq r.\; \basicspec{s}{C}{a:A}{Q(a)*s}$ \\
+    \oooo Therefore $r \in \spec{I}{C}{a:A}{Q(a)}$ \\
+    \ooo Therefore $\forall r.\; r \in \interp{\judgeS{\spec{\emp}{\newref{A}{e}}{a:\reftype{A}}{a \pointsto e}}}\delta$ \\
+    \ooo Therefore $\interp{\judgeS{\spec{\emp}{\newref{A}{e}}{a:\reftype{A}}{a \pointsto e}}}\delta = \top$ \\
+  \end{tabbedproof}
+\end{proof}
+
+\begin{lemma}{(Read Axiom)}
+We have that $\judgeS{\spec{e \pointsto_A e'}{!e}{a:A}{e \pointsto_A e' \land a = e'}}$ is valid.\end{lemma}
+\begin{proof}
+  \begin{tabbedproof}
+    \oo Assume $\delta \in \interp{\judgeACtx{\Delta}}$ \\
+    \ooo We want to show $\interp{\judgeS{\spec{e \pointsto_A e'}{!e}{a:A}{e \pointsto e' \land a = e'}}}\delta = \top$ \\
+    \ooo So we want to show $\forall r.\; r \in \interp{\judgeS{\spec{e \pointsto_A e'}{!e}{a:A}{e \pointsto e' \land a = e'}}}\delta$ \\
+    \ooo Assume $r$, \\
+    \oooo So we want to show $r \in r \in \interp{\judgeS{\spec{e \pointsto_A e'}{!e}{a:A}{e \pointsto e' \land a = e'}}}\delta$ \\
+    \oooo Let $\Theta = \restrictkind{\Delta}$ \\
+    \oooo Let $\theta = \restricttyenv{\Delta}{\delta}$ \\
+    \oooo Let $\Gamma = \restricttype{\Delta}$ \\
+    \oooo Let $\gamma = \restrictvals{\Delta}{\delta}$ \\
+    \oooo Let $P = \interp{\judgeA{e \pointsto_A e'}{\assert}}\;\delta$ \\
+    \oooo Let $C = \interp{\judgeE{\Gamma}{\comp{!e}}{\monad{A}}\;\theta}\;\gamma$ \\
+    \oooo Let $E = \interp{\judgeE{\Gamma}{e}{\reftype{A}}\;\theta}\;\gamma$ \\
+    \oooo Let $E' = \interp{\judgeE{\Gamma}{e'}{A}\;\theta}\;\gamma$ \\
+    \oooo Let $Q = \semfun{v}{\interp{\judgeA[\Delta, a:\reftype{A}]{e \pointsto_A e' \land a = e'}{\assert}}\;(\delta, v)}$ \\
+    \oooo So we want to show $r \in \spec{P}{C}{a:A}{Q(a)}$ \\
+    \oooo So we want to show $\forall s \sqsupseteq r.\; \basicspec{P*s}{C}{a:A}{Q(a)*s}$ \\
+    \oooo Assume $s \sqsupseteq r$ \\
+    \ooooo We want to show $\basicspec{P*s}{C}{a:A}{Q(a)*s}$ \\
+    \ooooo We want to show $\forall h \in P*s.\; C\;Best(\semfun{a}{Q(a)*s})\;h = \bot$ \\
+    \ooooo Assume $h \in P*s$ \\
+    \oooooo There are $h_1$ and $h_2$ such that $h_1 \in P$, and $h_2 \in s$, and $h_1 \# h_2$ \\
+    \oooooo Expanding definitions, $C\;Best(\semfun{a}{Q(a)*s})\;(h_1 \cdot h_2) = $ \\
+    \oooooox if $E \in \domain{h}$ then $Best(\;(h\;E)\;h$ else $\top$ \\
+    \oooooo From definition of $P$, $h_1 = [E:E']$ \\
+    \oooooo Hence $E \in \domain{h_1}$, so $E \in \domain{h_1 \cdot h_2}$ \\
+    \oooooo Hence $C\;Best((\semfun{a}{Q(a)*s})\;(h_1 \cdot h_2) = 
+                   Best(\semfun{a}{Q(a)*s})\;(h\;E)\;h$ \\
+    \oooooo So we want to show $Best(\semfun{a}{Q(a)*s})\;(h\;E)\;h = \bot$ \\
+    \oooooo To show this, we must show $\lnot(\exists k \in Approx(\semfun{a}{Q(a)*s}).\; (h\;E)\;h = \top)$ \\
+    \oooooo So we want $\forall k \in Approx(\semfun{a}{Q(a)*s}).\; (h\;E)\;h = \bot)$ \\
+    \oooooo Assume $k \in Approx(\semfun{a}{Q(a)*s})$ \\
+    \ooooooo So we know $\forall v, h \in Q(v)*s.\; k\;v\;h = \bot$ \\
+    \ooooooo Instantiate with $v$ with $(h\;E)$, and $h$ with $h$ \\
+    \ooooooo So we must show $h \in Q(h\;E)*s$ \\
+    \ooooooo So we will check $h_1 \in Q(h\;E)$ and $h_2 \in s$, since $h_1 \cdot h_2 = h$ \\
+    \ooooooo So we want to check $h_1 \in \interp{\judgeA{e \pointsto_A e'}{\assert}}\;\delta = P$ \\
+    \ooooooox and also $h_1 \in \interp{\judgeA[\Gamma,a:A]{a = e'}{\assert}}(\delta,h\;E)$ \\
+    \ooooooo We know $h_1 \in P$ by assumption \\
+    \ooooooo Since $h\;E = E' = \interp{\judgeA{e'}{A}}\delta$, we know 
+              $\interp{\judgeA[\Gamma,a:A]{a = e'}{\assert}}(\delta,h\;E) = H$ \\
+    \ooooooo Therefore $h_1 \in \interp{\judgeA[\Gamma,a:A]{a = e'}{\assert}}(\delta,h\;E)$ \\
+    \ooooooo We know $h_2 \in s$ by assumption\\
+    \ooooooo Therefore $h \in Q(h\;E)*s$ \\
+    \ooooooo Therefore we know $k\;(h\;E)\;h = \bot$ \\
+    \oooooo Therefore $\forall k \in Approx((\semfun{a}{Q(a)*s}).\; (h\;E)\;h = \bot$ \\
+    \oooooo Therefore $Best(\semfun{a}{Q(a)*s})\;(h\;E)\;h = \bot$ \\
+    \ooooo Therefore $\forall h \in P*s.\; C\;Best(\semfun{a}{Q(a)*s})\;h = \bot$ \\
+    \ooooo Therefore $\basicspec{P*s}{C}{a:A}{Q(a)*s}$ \\
+    \oooo Therefore $\forall s \sqsupseteq r.\; \basicspec{P*s}{C}{a:A}{Q(a)*s}$ \\
+    \oooo Therefore $r \in \spec{P}{C}{a:A}{Q(a)}$ \\
+    \ooo Therefore $\forall r.\; r \in \interp{\judgeS{\spec{e \pointsto_A e'}{!e}{a:A}{e \pointsto e' \land a = e'}}}\delta$ \\
+    \ooo Therefore $\interp{\judgeS{\spec{e \pointsto_A e'}{!e}{a:A}{e \pointsto e' \land a = e'}}}\delta = \top$ \\
+  \end{tabbedproof}
+\end{proof}
+
+\begin{lemma}{(Sequential Composition Axiom)}
+Suppose $\judgeS{\mspec{p}{e}{x:A}{q}}$ is valid, and $\judgeS[\Delta,x:A]{\spec{q}{c}{a:B}{r}}$ is valid, and $x \not\in \FV{r}$. Then $\judgeS{\spec{p}{\letv{x}{e}{c}}{a:B}{r}}$ is valid. 
+\end{lemma}
+
+\begin{proof}
+  \begin{tabbedproof}
+    \oo Assume $\judgeS{\mspec{p}{e}{x:A}{q}}$ is valid \\
+    \oo Assume $\judgeS[\Delta,x:A]{\spec{q}{c}{a:B}{r}}$ is valid\\
+    \ooo Assume $\delta \in \interp{\judgeACtx{\Delta}}$ \\
+    \oooo We want to show $\interp{\judgeS{\spec{p}{\letv{x}{e}{c}}{a:B}{r}}}\delta = \top$\\
+    \oooo So we want $\forall t.\; t \in \interp{\judgeS{\spec{p}{\letv{x}{e}{c}}{a:B}{r}}}\delta$ \\
+    \oooo Assume $t$ \\
+    \ooooo Let $\Theta$ = $\restrictkind{\Delta}$ \\
+    \ooooo Let $\theta$ = $\restricttyenv{\Delta}{\delta}$ \\
+    \ooooo Let $\Gamma$ = $\restricttype{\Delta}$ \\
+    \ooooo Let $\gamma$ = $\restrictvals{\Delta}{\delta}$ \\
+    \ooooo Let $E = \interp{\judgeE{\Gamma}{e}{\monad{A}}}\;\theta\;\gamma$ \\
+    \ooooo Let $F = \semfun{v}{\interp{\judgeE{\Gamma,x:A}{\comp{c}}{\monad{B}}}\;\theta\;(\gamma,v)}$ \\
+    \ooooo Let $P = \interp{\judgeA{p}{\assert}}\delta$ \\
+    \ooooo Let $Q = \semfun{v}{\interp{\judgeA[\Delta,x:A]{q}{\assert}}\;\delta}$ \\
+    \ooooo Let $R = \semfun{v}{\semfun{v'}{\interp{\judgeA[\Delta,x:A,a:B]{q}{\assert}}\;(\delta, v, v')}}$ \\
+    \ooooo Let $R' = \semfun{v'}{\interp{\judgeA[\Delta,a:B]{q}{\assert}}\;(\delta, v')}$ \\
+    \ooooo Note $\forall v.\; R\;v = R'$ since $x \not\in \FV{r}$ \\
+    \ooooo Let $C = \interp{\judgeE{\Gamma}{\comp{\letv{x}{e}{c}}}{\monad{B}}}\;\delta$ \\
+    \ooooo By semantics, $C = F^*(E)$ \\
+    \ooooo By definition of monadic lift, $C = \semfun{k}{E\;(\semfun{v}{F\;v\;k})}$ \\
+    \ooooo So we want to show $t \in \spec{P}{C}{a:A}{R'(a)}$ \\
+    \ooooo So we want $\forall u \sqsupseteq t.\; \basicspec{P * u}{C}{a:A}{(R'(a) * u)}$ \\
+    \ooooo Assume $u \sqsupseteq t$ \\
+    \oooooo So we want to show $\forall h \in P * u.\; C\;Best(\semfun{a}{R'(a) * u})\;h = \bot$\\
+    \oooooo Assume $h \in P * u$ \\
+    \ooooooo So we want to show $E\;(\semfun{v}{F\;v\;Best(\semfun{a}{R'(a)*u})})\;h = \bot$ \\
+    \ooooooo We know $\judgeS{\mspec{p}{e}{x:A}{q}}$ is valid \\
+    \ooooooo Instantiating with the environment $\delta$, we get $\forall t.\; t \in \spec{P}{E}{a:A}{Q(a)}$ \\
+    \ooooooo Thus $\forall t, u \sqsupseteq t.\; \basicspec{P * u}{E}{a:A}{Q(a) * u}$ \\
+    \ooooooo Thus $\forall t, u \sqsupseteq t, h \in P * u, E\;Best(\semfun{a}{Q(a) * u})\;h = \bot$ \\
+    \ooooooo Instantiating, we get $E\;Best(\semfun{a}{Q(a) * u})\;h = \bot$ \\
+    \ooooooo So it suffices to show $(\semfun{v}{F\;v\;Best(\semfun{a}{R'(a)*u})}) \sqsubseteq 
+                                Best(\semfun{a}{Q(a) * u})$ \\
+    \ooooooo To do this, we can show $(\semfun{v}{F\;v\;Best(\semfun{a}{R'(a)*u})}) \in Approx(\semfun{a}{Q(a) * u})$ \\
+    \ooooooo To do this, we must show $\forall v, h \in Q(v) * u, F\;v\;Best(\semfun{a}{R'(a)*u})\;h = \bot$ \\
+    \ooooooo Assume $v, h \in Q(v) * u$ \\
+    \oooooooo We know $\judgeS[\Delta,x:A]{\spec{q}{c}{a:B}{r}}$ is valid\\
+    \oooooooo Instantiating with the environment $(\delta, v)$, we get \\
+    \oooooooox $\forall v, t, u \sqsupseteq t, h \in Q(v) * u, (F\;v)\;Best(\semfun{a}{R\;v\;a * u})\;h = \bot$ \\
+    \oooooooo Instantiating, we get $(F\;v)\;Best(\semfun{a}{R\;v\;a * u})\;h = \bot$ \\
+    \oooooooo By equality, we get $(F\;v)\;Best(\semfun{a}{R'(a) * u})\;h = \bot$ \\
+    \ooooooo Therefore $\forall v, h \in Q(v) * u, F\;v\;Best(\semfun{a}{R'(a)*u})\;h = \bot$ \\
+    \ooooooo Therefore $(\semfun{v}{F\;v\;Best(\semfun{a}{R'(a)*u})}) \sqsubseteq 
+                                Best(\semfun{a}{Q(a) * u})$ \\
+    \ooooooo Therefore $(\semfun{v}{F\;v\;Best(\semfun{a}{R'(a)*u})}) \in Approx(\semfun{a}{Q(a) * u})$ \\                        
+    \ooooooo Therefore $E\;(\semfun{v}{F\;v\;Best(\semfun{a}{R'(a)*u})})\;h = \bot$ \\
+    \oooooo Therefore $\forall h \in P * u.\; C\;Best(\semfun{a}{R'(a) * u})\;h = \bot$\\
+    \ooooo Therefore $\forall u \sqsupseteq t.\; \basicspec{P * u}{C}{a:A}{(R'(a) * u)}$ \\
+    \ooooo Therefore $t \in \spec{P}{C}{a:A}{R'(a)}$ \\
+    \oooo Therefore $\forall t.\; t \in \interp{\judgeS{\spec{p}{\letv{x}{e}{c}}{a:B}{r}}}\delta$ \\
+    \oooo Therefore $\interp{\judgeS{\spec{p}{\letv{x}{e}{c}}{a:B}{r}}}\delta = \top$\\
+  \end{tabbedproof}
+\end{proof}
+
+\begin{lemma}{(Fixed Point Induction)}
+We have that
+\begin{displaymath}
+   S \triangleq 
+   \judgeS{(\forall x:\monad{A}.\; \mspec{p}x{a:A}{q(a)} \specimp \mspec{p}{e}{a:A}{q})
+    \specimp \mspec{p}{\fix{x:\monad{A}}{e}}{a:A}{q}}
+\end{displaymath}
+\noindent is valid.
+\end{lemma}
+
+\begin{proof}
+  \begin{tabbedproof}
+    \oo Let $S_1 = \forall x:\monad{A}.\; \mspec{p}x{a:A}{q(a)} \specimp \mspec{p}{e}{a:A}{q}$\\
+    \oo Let $S_2 = \mspec{p}{\fix{x:\monad{A}}{e}}{a:A}{q}$ \\
+    \oo Assume $\delta \in \interp{\judgeACtx{\Delta}}$ \\
+    \ooo Next, we want to show $\interp{S}\;\delta = \top$ \\
+    \ooo So we want to show $\interp{S_1}\;\delta \implies \interp{S_2}\;\delta = \top$ \\
+    \ooo So we want to show $\forall t, \forall u \sqsupseteq t.$ if $u \in \interp{S_1}\;\delta$ then $u \in \interp{S_2}\;\delta$ \\
+    \ooo This is equivalent to $\forall t.$ if $t \in \interp{S_1}\;\delta$ then $t \in \interp{S_2}\;\delta$ \\
+    \ooo Assume $t$, and $t \in \interp{S_1}\;\delta$ \\
+    \ooo 
+  \end{tabbedproof}
+\end{proof}
 
