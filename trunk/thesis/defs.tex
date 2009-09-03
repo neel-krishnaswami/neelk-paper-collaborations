@@ -1,4 +1,7 @@
 \newcommand{\ctext}[1]{\mathsf{#1}}
+
+\newcommand{\normalize}[1]{\ctext{nf}({#1})}
+
 \newcommand{\unittype}{\mathbf{1}}
 \newcommand{\reftype}[1]{\ctext{ref}\;#1}
 \newcommand{\monad}[1]{\bigcirc{#1}}
@@ -49,9 +52,9 @@
 \newcommand{\pointsto}{\mapsto}
 \newcommand{\disj}{\vee}
 \renewcommand{\implies}{\supset}
-\newcommand{\wand}{-\!\!*}
+\newcommand{\wand}{-\!\!*\,}
 \newcommand{\emp}{\mathsf{emp}}
-\newcommand{\validprop}[1]{{#1}\ctext{ valid}}
+\newcommand{\validprop}[1]{{#1}\;\ctext{valid}}
 
 \newcommand{\todo}[1]{\texttt{[TODO: {#1}]}}
 
@@ -76,7 +79,8 @@
 
 \newcommand{\specor}{\;||\;}
 \newcommand{\specand}{\;\&\;}
-\newcommand{\specimp}{\Longrightarrow}
+\newcommand{\specimp}{\Rightarrow\!\!\!>}
+% \newcommand{\specimp}{\Longrightarrow}
 % \newcommand{\specor}{\ctext{ or }}
 % \newcommand{\specand}{\ctext{ and }}
 % \newcommand{\specimp}{\ctext{ implies }}
@@ -101,6 +105,9 @@
 
 
 %% semantic operations
+
+\newcommand{\worldleq}{\preceq}
+\newcommand{\worldgeq}{\succeq}
 
 \newcommand{\semfun}[2]{\lambda #1.\;#2}
 \newcommand{\sempair}[2]{\left({#1}, {#2}\right)}
@@ -198,3 +205,4 @@
 \newcommand{\judgeSortEq}[3][\Delta]{{#1} \vartriangleright {#2} \equiv {#3} : \ctext{sort}}
 
 \newcommand{\ms}[1]{\mathcal{#1}}
+\newcommand{\Frame}[2]{{#1} \otimes {#2}}
