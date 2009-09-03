@@ -206,3 +206,52 @@
 
 \newcommand{\ms}[1]{\mathcal{#1}}
 \newcommand{\Frame}[2]{{#1} \otimes {#2}}
+
+% Macros for ramified frames
+\newcommand{\runcmd}{\ctext{run}\;}
+\newcommand{\return}{\ctext{return}\;}
+\newcommand{\bind}{\ctext{bind}\;}
+\newcommand{\readcell}{\ctext{read}\;}
+
+
+\newcommand{\ready}[3]{\ctext{ready}({#1}, {#2}, {#3})}
+\newcommand{\unready}[2]{\ctext{unready}({#1}, {#2})}
+
+\newcommand{\cellprop}[5]{\ctext{cell}^{#1}({#2}, {#3}, {#4}, {#5})}
+\newcommand{\cellneg}[2]{\cellprop{-}{#1}{#2}{\_}{\_}}
+\newcommand{\cellpos}[4]{\cellprop{+}{#1}{#2}{#3}{#4}}
+\newcommand{\celleither}[2]{\cellprop{\pm}{#1}{#2}{-}{-}}
+\newcommand{\localref}[2]{\ctext{local}({#1}, {#2})}
+\newcommand{\getref}{\ctext{getref}\;}
+\newcommand{\setref}{\ctext{setref}\;}
+
+\newcommand{\aconfig}[2]{\left<{#1};{#2}\right>}
+\newcommand{\aeffect}[2]{\left[{#1}|{#2}\right]}
+\newcommand{\astep}[6]{\aconfig{#1}{#2}\Downarrow\aconfig{#3}{#4}\aeffect{#5}{#6}}
+
+
+\newcommand{\codetype}[1]{\ctext{code}\;{#1}}
+\newcommand{\cellset}{\ctext{cellset}}
+\newcommand{\celltype}[1]{\ctext{cell}\;{#1}}
+\newcommand{\bool}{\ctext{bool}}
+\newcommand{\settype}[1]{\ctext{Set}({#1})}
+
+\newcommand{\newcell}{\ctext{newcell}\;}
+
+\newcommand{\ST}[2]{\ctext{ST}({#1}, {#2})}
+\newcommand{\stream}[1]{\ctext{stream}({#1})}
+\newcommand{\formula}{\ctext{formula}}
+
+
+\newcommand{\updatecell}{\ctext{update}}
+
+
+\newcommand{\liftop}{\ctext{lift}\;}
+\newcommand{\composeop}{\ctext{compose}\;}
+\newcommand{\parop}{\ctext{par}\;}
+\newcommand{\loopop}{\ctext{loop}\;}
+\newcommand{\switchop}{\ctext{switch}\;}
+
+\newcommand{\satisfies}[2]{satisfies({#1}, {#2})}
+
+\newcommand{\closed}[2]{\ctext{closed}({#1}, {#2})}
