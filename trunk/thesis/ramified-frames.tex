@@ -1,0 +1,1383 @@
+\chapter{Ramified Frame Properties}
+
+\section{Introduction}
+
+In many interactive programs, there are mutable data structures which
+change over time, and which must maintain some relationships with one
+another. For example, in a web browser, we need to present a web page
+both as a tree data structure for scripts to manipulate, and 
+display a graphical image for the human user to view. Any change made
+to the tree by a script must be reflected in a change to the image
+that the human sees --- the two structures must remain synchronized.
+
+Likewise, in a spreadsheet, each cell contains a formula, which may
+refer to other cells, and whenever the user changes a cell, all of the
+cells which transitively depend upon it must be updated. Since
+spreadsheets can get very large, this should ideally be done in a lazy
+way, so that only the cells visible on the screen, and the cells
+necessary to compute them, are themselves recomputed.
+
+Typically, these dependencies are written using what is called the
+\emph{subject-observer} pattern. A mutable data structure (the
+subject) maintains a list of all of the data structures whose
+invariants depend upon it (the observers), and whenever it changes, it
+calls a function on each of those observers to update them in response
+to the change. (And in turn, the observers of the subject may be
+subjects of still other observers, ultimately forming DAGs of
+notifications.)
+
+While natural, these programs are very challenging to verify in a
+modular way, even when using a resource-sensitive logic adapted to
+reasoning about aliased mutable data, such as separation logic. The
+reason is that there are two directions of dependency, both of which
+matter for program proof. First, our program invariant must have
+ownership over the subject's data (its \emph{footprint}) in order to
+prove the correctness of code modifying the subject. This direction
+of ownership is natural to verify with separation logic. 
+
+However, we must explicitly maintain the \emph{other} direction of
+dependency as well --- we track everything which depends upon the
+subject, and modify them appropriately whenever the subject changes.
+However, the natural program invariant now becomes a global property:
+we need to know the full dependency graph covering all subjects and
+observers, so that we can say that the reads and is-read-by relations
+are relational transposes of one another. The global nature of this
+invariant means that a naive correctness proof will not respect the
+modular structure of the program --- if we modify the dependency graph
+in any way, we now have to re-verify the entire program!
+
+However, the intention of the subject-observer pattern is
+precisely to allow the program to remain oblivious to the exact number
+and nature of the observers, which allows the programmer to add new
+observers without disturbing the behavior of the rest of the program.
+Our goal, then, is to find a way of taking this piece of practical
+software engineering wisdom, and casting it into formal terms amenable
+to proof.
+
+Concretely, our contributions are as follows: 
+
+\begin{itemize}
+  \item We define a library with a monadic API for writing
+    demand-driven computations with dynamic dependencies and local
+    state, and which is implemented as higher-order functions
+    dynamically creating networks of imperative callbacks
+
+    We then give an ``abstract semantics'' for this
+    library, structured as a set of separation logic lemmas about our
+    dataflow library. These lemmas permit \emph{modular} correctness
+    proofs about programs using this API, even in the face of the fact
+    that the program invariants must be defined globally upon the
+    whole callback network.
+
+    The key idea is to distinguish between the direct footprint of a
+    command, and the program state which can depends upon that
+    footprint. The lemmas are then phrased so that they refer only to
+    the direct footprint of each command in the API. In addition, we
+    structure our lemmas to justify an unusual frame property for our
+    abstract semantics, which we can use to verify different parts of
+    an imperative dataflow network separately.
+
+    Unlike typical frame properties, the frame in our frame rule is
+    not the same in the pre- and the post-states. Instead, the two
+    sides of the frame are related by a \emph{ramification operator}
+    (so named in analogy to the ``ramification problem'' in AI), which
+    explains how local changes can alter our knowledge of the rest of
+    the heap.
+
+  \item To illustrate the utility of this proof technique, we verify
+    an imperative implementation of combinators implementing stream
+    transducers in the style of functional reactive programming. 
+
+    Ultimately, clients can reason about the behavior of the imperative
+    implementation ``as if'' it were purely functional, even though it
+    is implemented using local state and imperative callback
+    procedures.
+\end{itemize}
+
+\section{Demand-Driven Notification Networks}
+
+A simple intuition for a ``demand-driven notification network'' is to
+think of it as a generalized spreadsheet. We have a collection of
+cells, each of which contain program expressions whose evaluation may
+refer to other cells. When a cell is read, the expression within the
+cell is evaluated, possibly triggering the evaluation of other cells
+in a cascade. Furthermore, each cell memoizes its expression, so that
+repeated reads won't trigger re-evaluation, and maintains a set of
+dependencies so that when the code within a cell is changed, it and
+everything that depends on it invalidates the memoized value.
+
+\subsection{Implementing Notification Networks}
+
+\begin{figure}
+\begin{tabbing}
+$\codetype{A} = \monad{(A \times \cellset)}$ \\[1em]
+$\celltype{A} = \{$\=$code: \reftype{\codetype{A}};$ \\
+                   \>$value: \reftype{\opttype{A}};$ \\
+                   \>$reads: \reftype{\cellset};$ \\
+                   \>$obs:   \reftype{\cellset}\;$ \\
+                   \>$id:    \N\}$ \\[1em]
+
+$ecell = \exists \alpha:\star.\; \celltype{\alpha}$ \\[1em]
+
+$\ctext{unit} : \forall \alpha:\star.\; \alpha \to \codetype{\alpha}$ \\
+$\ctext{unit}\;x = \comp{\pair{x}{\ctext{emptyset}}}$ \\[1em]
+
+$\ctext{bind} : \forall \alpha,\beta:\star.\; \codetype{\alpha} \to (\alpha \to \codetype{\beta}) \to \codetype{\beta}$ \\
+$\ctext{bind}\;e\;f = [$\=$\letv{(v,r_1)}{e}{}$ \\
+                        \>$\letv{(v',r_2)}{f\;v}{}$ \\
+                        \>$\;\pair{v'}{\ctext{union}\;r_1\;r_2}]$\\[1em]
+
+$\ctext{read} : \forall \alpha:\star.\; \celltype{\alpha} \to \codetype{\alpha}$ \\
+$\ctext{read}\;a = [$\=$\letv{o}{\comp{!a.value}}{}$ \\
+                     \>$\ctext{run}\;\ctext{case}(o,$ \\
+                     \>\qquad\= $\ctext{Some}\;v \to \comp{\pair{v}{\ctext{singleton}\;a}},$ \\
+                     \>      \> $\ctext{None} \to [$\=$\letv{exp}{\comp{!a.code}}{}$ \\
+                     \>      \>                     \>$\letv{(v,r)}{exp}{}$ \\
+                     \>      \>                     \>$\letv{\_}{\comp{a.value := v}}{}$\\
+                     \>      \>                     \>$\letv{\_}{\comp{a.reads := r}}{}$ \\
+                     \>      \>                     \>$\letv{\_}{\ctext{setiter}\;(\ctext{add\_observer}\;a)\;r}{}$ \\
+                     \>      \>                     \>$\;\pair{v}{\ctext{singleton}\;a}])$ \\[1em]
+
+$\getref : \forall \alpha : \reftype{\alpha} \to \codetype{\alpha}$ \\
+$\getref r = \comp{\letv{v}{\comp{!r}}{\pair{v}{\ctext{emptyset}}}}$ \\[1em]
+
+$\setref : \forall \alpha : \reftype{\alpha} \to \alpha \to \codetype{\unittype}$ \\
+$\setref r\;v = \comp{\letv{dummy}{\comp{r := v}}{\pair{\unit}{\ctext{emptyset}}}}$ \\[1em]
+
+$\newcell : \forall \alpha:\star.\; \codetype{\alpha} \to \monad{\celltype{\alpha}}$ \\
+$\newcell\;\alpha\;code = [$\=$\letv{id}{!counter}{}$ \\
+                                   \>$\letv{\_}{\comp{counter := n + 1}}{}$ \\
+                                   \>$\letv{code}{\newref{\codetype{\alpha}}{code}}{}$ \\
+                                   \>$\letv{value}{\newref{\opttype{\alpha}}{\ctext{None}}}{}$ \\
+                                   \>$\letv{reads}{\newref{\cellset}{\ctext{emptyset}}}{}$ \\
+                                   \>$\letv{obs}{\newref{\cellset}{\ctext{emptyset}}}{}$ \\
+                                   \>$\; (code, value, reads, obs, id)]$ \\[1em]
+
+$\updatecell : \forall \alpha:\star.\; \codetype{\alpha} \to \celltype{\alpha} \to \monad{\unittype}$\\
+$\updatecell\;\alpha\;exp\;a = 
+     [$\=$\letv{\_}{\ctext{mark\_unready}\;\pack{\alpha}{a}}{}$ \\
+       \>$a.code := exp]$ \\[1em]
+
+$\ctext{mark\_unready} : ecell \to \monad{\unittype}$ \\
+$\ctext{mark\_unready}\;cell =\; $\=$\ctext{unpack}(\alpha, a) = cell\; \ctext{in}$\\
+\>  $[$\=$\letv{os}{\comp{!a.obs}}{}$ \\
+\>     \>$\letv{rs}{\comp{!a.reads}}{}$ \\
+\>     \>$\letv{\_}{\ctext{iterset}\;\ctext{mark\_unready}\;os}{}$ \\
+\>     \>$\letv{\_}{\ctext{iterset}\;(\ctext{remove\_obs}\;cell)\;rs}{}$ \\
+\>     \>$\letv{\_}{\comp{a.value := \ctext{None}}}{}$ \\
+\>     \>$\letv{\_}{\comp{a.reads := \ctext{emptyset}}}{}$ \\
+\>     \>$a.obs   := \ctext{emptyset}]$ 
+\end{tabbing}
+\caption{Implementation of Notification Networks}
+\label{notification-implementation}
+\end{figure}
+
+Our API for creating notification networks is given in
+Figure~\ref{notification-implementation}. First, we'll describe
+the interface, and then discuss its implementation. 
+
+The interface exposes two basic abstract data types, $\ctext{cell}$
+and $\ctext{code}$.
+
+The type $\celltype{A}$ is the type of dynamic data values. A cell
+contains a reference to a piece of code, a possible memoized value,
+plus enough information to correctly invalidate its memoized value
+when the cell's dependencies change. We can create a new cell by
+calling $\newcell e$, which returns a brand new cell with the
+code expression $e$ inside it. We can also modify a cell with 
+the command $\updatecell\;cell\;exp$, which modifies the cell
+$cell$ by installing the new expression $exp$ in it. 
+
+The type $\codetype{A}$ is a monadic type, representing the type of
+computations that can read cells. It supports the usual operations
+$\return e$ and $\bind e\; (\semfun{x}{e'})$, which embed a pure value
+into the $\ctext{code}$ type and implement sequential composition,
+respectively. In addition, the primitive operations on this monad 
+include reading a cell with the $\readcell cell$ function call, and 
+reading and modifying local state with the $\getref r$ and $\setref r\;v$
+operations. 
+ 
+The actual implementation is also given in
+Figure~\ref{notification-implementation}. The abstract type of code is
+implemented using the underlying monad of imperative commands, so that
+$\codetype{A}$ is implemented with the type $\monad{(A \times
+  \cellset)}$.  The intuition is that when we evaluate a term we are
+allowed to read some cells along the way, and so must return a set of
+all the cells that we read in order to do proper dependency
+management. So, $\cellset$ is a type representing sets of
+(existentially-quantified) cells.  (The precise specification of
+$\cellset$ is given in Appendix A, since describing it is a
+distraction from the main development.)
+
+Cells are represented with a 5-tuple. There is a reference pointing to
+the code expression, as well as a value field pointing to an optional
+value. The value field will be set to $\ctext{None}$ if the cell is in
+an unready, un-memoized state, and will be $\ctext{Some}\;v$ if the
+cell's code has already been evaluated to a value $v$. In addition there are
+two fields representing the dependencies. If the code expression has
+been evaluated and a memoized value generated, then the $reads$ field
+will point to the set of cells that the computation directly read
+while computing its value. Otherwise it will point to the empty
+set. Conversely, the field $obs$ contains the cell's observers --- the
+set of cells that have read the current cell as part of their own
+computations. Obviously, this is only non-empty when the cell has been
+evaluated. Finally, each cell also has an integer id field, which is a
+unique numeric identifier for every cell that is created by the
+library. It allows us to compare cells (even of different type) for
+equality, which is needed for dependency management.
+
+The $\return$ operation for the library simply returns its argument
+value and the empty set, since it doesn't read any cells. Likewise,
+$\bind e\;f$ will evaluate the first argument and pass the returned
+value to the function $f$. It will return the function's return value,
+together with the union of the two read sets. $\getref r$ and $\setref r\;v$
+simply read and update the reference, and return empty read sets, since
+neither of them read any cells. 
+
+Interesting things first happen with the $\readcell e$ operation. This
+function will first check to see if the cell has a memoized value
+ready. If it does, we return that immediately. Otherwise, we evaluate
+the cell's code, and update the current cell's value and read set. In
+addition, each cell that was read in the evaluation of the code (i.e.,
+the set returned as the second component of the monadic type's return
+value) also has its observer set updated with the newly-ready current
+cell. Now, if any of the dependencies change, they will be able to
+invalidate the current cell, which observes them. Note that the
+dependencies between cells are all dynamic --- we cannot examine the
+inside of a code expression to find its ``free cells'', and so we rely
+upon the invariant that a code expression will return every cell it
+read, in addition to its return value.
+
+Further interesting things happen with the $\newcell\;cmd$
+operation.  It creates a new cell value, setting the code field with
+the argument $cmd$, and generating an id by dereferencing and
+incrementing the variable $counter$. The $counter$ variable occurs
+freely in this definition, because it is a piece of state global to
+this module, and must be initialized by whatever initialization
+routine first constructs the whole module as an existential package.
+Since $counter$ is otherwise private, we can generate unique
+identifiers by incrementing it as we create new cells. 
+
+Finally, the $\updatecell\;cell\;cmd$ operation updates a cell
+$cell$ with a new code expression $cmd$. (As an aside, it's worth
+noting that this is a genuine, unavoidable, use of higher-order store:
+we make use of pointers to code, including the ability to dynamically
+modify them.) Once we modify a cell, any memoized value it has is no
+longer necessarily correct.
+
+Therefore, we have to drop the memoized value of the cell, and any
+cell that transitively observes the cell. This is what the
+$\ctext{mark\_unready}$ function does. Given a cell, it takes all of the
+observers of the current cell and recursively makes all of
+them unready. Then it removes the current cell from the observer sets of
+all the cells it reads, and then it nulls out the current cell's
+memoized value, as well as setting its read and observer sets to
+empty. Notice that there is no explicit base case to the recursive
+call; if there are any cycles in the dependency graph, invalidation
+could go into an infinite loop. 
+
+So far, we have described the implementation invariants incrementally.
+Before proceeding to describe them formally, we will state them again
+informally, all in one place:
+
+\begin{itemize}
+  \item Every cell must have a unique numeric identifier
+  \item Every cell is either ready, or unready. 
+  \item Every ready cell has a memoized value, and maintains 
+    two sets, one containing every cell that it reads, and the
+    other containing every cell it is observed by. 
+  \item Every unready cell has no memoized value, and has 
+    both an empty read set and an empty observer set. 
+  \item The overall dependency graph among the valid cells must form a
+    directed acyclic graph. 
+  \item The reads and the observers must be the same, only 
+    pointing in opposite directions.
+\end{itemize}
+
+Formalizing these constraints is relatively straightforward, but we
+have the problem that these constraints are global in nature:
+we can't be sure that the dependency graph is acyclic without having
+it all available to examine, and likewise we can't in general know
+that a cell is in the read set of everything in its observed set
+without knowing the whole graph. Handling this difficultly is one of
+the primary contributions of this work. 
+
+\section{The Abstract Semantics of Notifications}
+
+\subsection{The Structure of the Global Invariant}
+
+The key to getting around our difficulties lies in the difference
+between the implementation of $\updatecell$, and of $\ctext{read}$.
+$\updatecell$ calls $\ctext{mark\_unready}$, which recursively follows
+the observers. The $\ctext{read}$ function, on the other hand,
+proceeds in the opposite direction --- it evaluates code expressions,
+recursively descending into the footprint of its command. The opposite
+direction these two functions look is why we end up needing a global
+invariant: we need to know that these two directions are in harmony
+with one another.
+
+Now, note that the type of $\ctext{mark\_unready}$ is simply the monadic
+type $\monad{\unittype}$, which precludes it from being called from within
+a $\codetype{A}$. This means that when we are evaluating a code
+expression, we will never actually follow the observer fields --
+we'll only patch them as needed, whenever we evaluate a
+cell and change it from unready to ready.  As a result, an abstract
+description of the heap which \emph{does not explicitly mention
+the observer sets} will prove sufficient for reasoning about
+the behavior of $\codetype{A}$ expressions.
+
+With this plan, we introduce \emph{abstract heap formulas}, which are
+syntactic descriptions of the state of part of the cell heap. These
+syntactic expressions are given by the following grammar:
+\begin{displaymath}
+  \begin{array}{lcl}
+    \phi & ::= & I \bnfalt \phi \otimes \psi \bnfalt \cellpos{a}{e}{v}{r} \bnfalt \cellneg{a}{e}\\
+         &  |  & \localref{r}{v} 
+  \end{array}
+\end{displaymath}
+
+Informally, a formula $I$ represents an empty abstract heap, and a
+formula $\phi \otimes \psi$ represents an abstract heap that can be
+broken into two disjoint parts $\phi$ and $\psi$. We will only
+consider formulas modulo the associativity and commutativity of
+$\otimes$, and take $I$ to be the unit of this binary operator.
+
+The atomic form $\localref{r}{v}$ says that $r$ is a piece of local
+state owned by the network, currently with value $v$. There are two
+atomic forms representing cells. $\cellneg{a}{e}$ says that $a$ is a
+cell with code $e$, which is unready to deliver a value --- it needs
+to be re-evaluated before it can yield a value. $\cellpos{a}{e}{v}{r}$
+says that $a$ is a cell with code $e$, and that may be ready to deliver
+the value $v$, assuming that all the cells in its read set $r$ are themselves
+ready. If anything it reads is known to be unready, then it is unready
+itself. (We will sometimes write $\celleither{a}{e}$ when we do not care
+whether $a$ is ready or not.)
+
+First, notice the must/may flavor of this reading. The formula
+$\cellneg{a}{e}$ says that $a$ \emph{must} be unready.  The formula
+$\cellpos{a}{e}{v}{r}$ says that $a$ \emph{may} have be ready,
+conditional on the readiness of the elements of its read set
+$r$. Second, notice that the backwards dependencies are entirely
+missing from these formulas. We have simply left out the other half of
+the dependency graph from this description. Forgetting this
+information will be critical for local reasoning.
+
+We have emphasized that the straightforward invariant is not obviously
+modular. Before we can elaborate any further on this point, we will
+need to look at the formal statement of the heap invariant. We
+introduce the predicate $G(\phi)$, which describes the entire heap of
+cells allocated by our library, and which satisfy both the conditions
+described in the previous section, and the additional constraint that
+the cell heap agree with $\phi$.\footnote{This is why we insisted that
+  the abstract heap formulas are syntactic objects --- this permits us
+  to define predicates on them by induction over the structure of the
+formula.}
+
+
+\begin{tabbing}
+    $G(\phi) \triangleq \exists H \in CellHeap.\; Inv(H, \phi)$ \\ [1em]
+
+$Inv(H, \phi) \triangleq $ \\
+\;\;\= $$\=$ R_H^\dagger = O_H \land R_H^+ \mbox{ strict partial order }$ \\
+    \> \> $\land\; R_H \subseteq V_H \times V_H \land unique(H)$ \\
+    \> \> $\land\; \satisfies{H}{\phi} \land heap(H)$ \\
+\end{tabbing}
+
+The auxiliary definitions we used in this definition are all given in
+Figure~\ref{heap-invariant}. 
+
+We first assert the existence of a cell heap $H$, which is a
+collection of cells, together with a function mapping each cell to a
+code expression, a possible value, a read set, an observed set, and an
+identifier, which satisfies the overall invariant $Inv$.
+
+In the first two lines of $Inv(H, \phi)$, we assert all of the global 
+conditions in terms of the mathematical cell heap $H$. First, we assert that 
+the relational transpose $(\cdot)^\dagger$ of the reads relation $R_H$ is the
+observes relation $O_H$, which enforces the condition that the reads
+and observe relations be the same, only pointing in opposite
+directions (i.e., if $a$ reads $b$, then $b$ is observed by
+$a$). Then, we require that the transitive (but not reflexive) closure
+of the reads relation, $R^+_H$ form a strict partial order. Strictness
+enforces the condition that there be no cycles in the dependence graph
+(because otherwise there would be elements $a$, such that $(a, a) \in
+R^+_H$).  Next, we require that the reads relation $R_H$ is a subset of
+the Cartesian product $V_H \times V_H$ of the set of cells with values
+$V_H$. This ensures that a) there are no dependencies on unready
+cells, and b) all unready cells have empty read and observe
+sets. Finally, we ask that all of the cells in $H$ have unique
+identifiers -- $unique(H)$ asserts that the identifier field is one
+half of an isomorphism between the cells in $H$, and the natural
+numbers from 0 to the size of $H$.
+
+In the third line, we begin by requiring that the cell heap $H$ satisfy
+the abstract heap formula $\phi$, which formalizes the informal
+reading of the abstract heap formulas given earlier. This satisfaction
+relation follows the general style of separation logic quite closely; 
+in a sense, our abstract heap formulas are giving a domain-specific
+version of separation logic.
+
+The last clause $heap(H)$ finally connects the cell heap, which is a purely
+mathematical object, to the actual low-level heap the implementation
+uses. We ask that the global counter reference $counter$ point to an integer
+field equal to the size of the cell heap, and then use the iterated
+separating conjunction $\forall^*$ to require that for each cell in
+the cell heap, we have pointers to the appropriate code, value, read
+and observer fields. The read and observer fields point to values of
+type $\cellset$, each of which represent the appropriate sets of cells. 
+
+
+\begin{figure}
+
+\begin{tabbing}
+$CellHeap = \Sigma$\=$ D \in \powersetfin{ecell}.$ \\
+               \>$(\Pi (\pack{\alpha}{\_}) \in D. ($\=${\codetype{\alpha}} \;\times$
+                                         ${\opttype{\alpha}} \;\times$ 
+                                         ${\powersetfin{ecell}} \;\times$ 
+                                         ${\powersetfin{ecell}} \;\times$ 
+                                         $\N)$ \\[1em]
+       
+
+$code = \pi_1$ \\
+$value = \pi_2$ \\
+$reads = \pi_3$ \\
+$obs = \pi_4$ \\
+$identity = \pi_5$ \\[1em]
+
+$V_{(D, h)} = \comprehend{c \in D}{\exists v.\; value(h(c)) = \ctext{Some}(v)}$ \\
+$R_{(D, h)} = \comprehend{(c,c') \in D}{ c' \in reads(h(c)) }$ \\
+$O_{(D, h)} = \comprehend{(c,c') \in D}{ c' \in obs(h(c)) }$ \\[1em]
+
+$unique(D,h) = \exists$\=$i : Fin(|D|) \to D.$\\
+                       \>$i \circ (identity \circ h) = id \; \land (identity \circ h) \circ i = id$ \\[1em]
+
+$\satisfies{(D,h)}{\phi} = sat((D,h), D, h)$ \\[1em]
+
+$sat(H, D, \localref{r}{v}) = \top$ \\
+$sat(H, D, I) = \top$ \\
+$sat(H, D, \phi \otimes \psi) = \exists D_1, D_2.\;$\=$D = D_1 \uplus D_2 
+                                                      \land sat(H, D_1, \phi) 
+                                                      \land sat(H, D_2, \psi)$ \\
+$sat(H, D, \cellneg{a}{e}) = a \in D \land code(h(a)) = e \land a \not \in V_H$ \\
+$sat(H, D, \cellpos{a}{e}{v}{r}) =\; $\=$ a \in D \land code(h(a)) = e \;\land$ \\
+      \>$\mathrm{if}($\=$r \cap V_H = r,$ \\
+      \>     \>$value(h(a)) = \ctext{Some}\;v \land reads(h(a)) = r,$ \\
+      \>     \>$a \not\in V_H)$\\[1em]
+ 
+
+$heap(D,h) = $ \\
+\;\;$counter \pointsto |D| \;* $ \\
+\;\;$\forall^* c \in D.\;$\=$\exists v_r, v_o : \cellset.\;$ \\
+                         \>$c.code \pointsto code(h(c))   \;* $ \\
+                         \>$c.value \pointsto value(h(c)) \;* $ \\
+                         \>$c.reads \pointsto v_r \;* $ \\
+                         \>$c.obs   \pointsto v_o \;* $ \\
+                         \>$c.id    = identity(h(c)) \;\land$ \\
+                         \>$set(D, v_r, reads(h(c))) \;\land$ \\
+                         \>$set(D, v_o, obs(h(c)))$ 
+\end{tabbing}
+
+\caption{Definitions for Heap Invariant}
+\label{heap-invariant}
+\end{figure}
+
+
+The global character of this invariant should be evident; we need to
+talk about \emph{all} of the cells in the heap in order to state our
+invariants. So it is not immediately clear that we have made much
+progress towards a modular proof technique. However, we are actually
+very close: with just two more ideas, we will be able to give a
+solution to this problem.
+
+\subsection{Frame Properties via Polymorphism}
+
+As we mentioned earlier, our abstract heap formulas essentially give
+us a small domain-specific separation logic. This means that in order
+to reason locally over cell heaps, we need to find an
+application-specific version of the frame rule for our library. 
+
+To do this, we will adapt some ideas proposed by
+Benton~\cite{benton}, and Birkedal and Yang~\cite{birkedal-yang}. They
+suggested interpreting the frame rule of separation logic as a form of
+quantification -- instead of having a separate frame rule that allows
+adding a frame to any triple, they proposed that all of the atomic
+rules of the program logic be replaced with rules possessing an extra
+quantifier ranging over ``the rest of the heap'':
+
+\begin{mathpar}
+  \inferrule*[right=Example]
+          { }
+          { \forall R.\; \setof{ (e \pointsto v) * R } \;e := v'\; \setof{ (e \pointsto v') * R}}
+\end{mathpar}
+
+This quantifier is propagated through the proof, and any use of the
+frame rule can be interpreted as instantiating the universal
+quantifier appropriately. The reason this idea is fruitful for us is
+that it will allow us to give a frame rule, even though the underlying
+semantics of our library does not actually satisfy any analogues of
+the traditional safety monotonicity and frame lemmas. For example, the
+$\updatecell$ operation certainly does not act locally -- it
+recursively traverses the observers set, possibly mutating a very
+large part of the cell graph.
+
+Nonetheless, we can prove the soundness of the following triple
+specifying $\updatecell$.
+
+\begin{prop}{(Update Rule)}
+For all cells $o$ and code expressions $e$ and $e'$, the following
+triple is provable: 
+
+\begin{tabbing}
+$\forall \psi:\formula.\; $\=$\setof{G(\celleither{o}{e} \otimes \psi)}$ \\
+                           \>$\runcmd {\updatecell\;o\;e}$ \\
+                           \>$\setof{a:1.\; G(\cellneg{o}{e} \otimes \psi)}$
+\end{tabbing}
+\end{prop}
+
+\begin{proof}
+The key to this proof is the conditional interpretation of the
+$\cellpos{c}{e}{v}{r}$ formula. When we evaluate the $\updatecell$
+command, we recursively find every cell which depends on $o$, and
+modify it to be unready.
+
+Now consider any positive cell formula in $\psi$ which reads $o$,
+directly or indirectly. The satisfaction relation for $\phi$ tells us
+that a positive formula must have everything in its read set be
+ready, in order to represent a ready cell. So by changing $o$'s
+formula to the unready state, we no longer require that positive
+formula to represent a ready cell. As a result, we can leave the
+entire frame $\psi$ untouched, even though the physical heap it
+represents may have been (quite drastically) modified. 
+\end{proof}
+
+We can prove the soundness of a similar specification for $\newcell$ as
+well:
+
+\begin{prop}{(New Cell Rule)}
+For all code expressions $e$, the following specification is provable: 
+\begin{tabbing}
+$\forall \psi:\formula.\; $\=$\setof{G(\psi)}$ \\
+                           \>$\run {\newcell\;e}$ \\
+                           \>$\setof{a:\celltype{A}.\; G(\cellneg{a}{e} \otimes \psi)}$
+\end{tabbing}
+\end{prop}
+
+\begin{proof}
+This is much easier than $\updatecell$: we just need to allocate a new
+numeric id for the new cell, and show that the extended cell heap
+continues to satisfy all of the expected properties.
+\end{proof}
+
+\begin{figure}
+\begin{mathpar}
+  \inferrule*[right=AUnit]
+            { }
+            {\astep{I}{\return v}{I}{v}{\emptyset}{\emptyset}}
+\and
+  \inferrule*{\astep{\phi}{e}{\phi'}{v'}{r_1}{u_1} \\
+              \astep{\phi'}{f\;v'}{\phi''}{v''}{r_2}{u_2}}
+             {\astep{\phi}{\bind e\; f}{\phi''}{v''}{r_1 \cup r_2}{u_1 \cup u_2}}
+\\
+\\
+  \inferrule*[right=AReady]
+            {\ready{\phi}{a}{v}}
+            {\astep{\phi}{\readcell a}{\phi}{v}{\setof{a}}{\emptyset}}
+\and
+  \inferrule*[right=AUnready]
+            {\unready{\celleither{a}{e} \otimes \phi}{a} \;\;
+             \astep{\phi}{e}{\phi'}{v}{r}{u}}
+            {\aconfig{\celleither{a}{e} \otimes \phi}
+                     {\readcell a} \Downarrow \\
+             \aconfig{\cellpos{a}{e}{v}{r} \otimes R(\setof{a},\phi')}
+                     {v}
+             \aeffect{\setof{a}}
+                     {u \cup \setof{a}}}
+\\
+\\
+  \inferrule*[right=AGetRef]
+            { } 
+            {\astep{\localref{r}{v}}{\getref r}
+                   {\localref{r}{v}}{v}{\emptyset}{\emptyset}}
+\and
+  \inferrule*[right=ASetRef]
+            { } 
+            {\astep{\localref{r}{v}}{\setref r\;v'}
+                   {\localref{r}{v'}}{\unit}{\emptyset}{\emptyset}}
+\\
+\\
+  \inferrule*[right=AbstractFrame]
+            {\astep{\phi}{e}{\phi'}{v}{r}{u}}
+            {\astep{\phi \otimes \psi}{e}{\phi' \otimes R(u, \psi)}{v}{r}{u}}
+\end{mathpar}
+\caption{Abstract Semantics of Notifications}
+\label{abs-semantics}
+\end{figure}
+
+\begin{figure}
+\begin{mathpar}
+  \inferrule*[right=Ready]
+            {\forall a' \in r.\; \exists v.\; \ready{\phi}{a'}{r}}
+            {\ready{\phi \otimes \cellpos{a}{e}{v}{r}}{a}{v}}
+  \\
+  \\
+  \inferrule*[right=UnreadyPos]
+            {\exists a' \in r.\; \unready{\phi}{a}}
+            {\unready{\phi \otimes \cellpos{a}{e}{v}{r}}
+                     {a}}
+  \and
+  \inferrule*[right=UnreadyNeg]
+            { }
+            {\unready{\phi \otimes \cellneg{a}{e}}{a}}
+\end{mathpar}
+\caption{Ready and Unready Judgments}
+\label{readiness}
+\end{figure}
+
+\begin{figure}
+  \begin{displaymath}
+    \begin{array}{lcl}
+      closed(I, s) & = & \top \\
+      closed(\phi \otimes \psi, s) & = & closed(\phi, s) \land closed(\psi, s) \\ 
+      closed(\localref{r}{v}, s) & = & \top \\
+      closed(\cellneg{a}{e}, s) & = & \top \\
+      closed(\cellpos{a}{e}{v}{r}, s) & = & r \subseteq s \\
+    \end{array}
+  \end{displaymath}
+\caption{Closedness predicate}
+\label{closedness}  
+\end{figure}
+
+\begin{figure}
+  \begin{displaymath}
+    \begin{array}{lcl}
+      R(s, I)                 & = & I \\
+      R(s, \phi \otimes \psi) & = & R(s, \phi) \otimes R(s, \psi) \\
+      R(s, \localref{r}{v})   & = & \localref{r}{v} \\
+      R(s, \cellneg{a}{e})    & = & \cellneg{a}{e} \\
+      R(s, \cellpos{a}{e}{v}{r}) & = & \left\{\begin{array}{ll}
+                                                \cellpos{a}{e}{v}{r} 
+                                              & \mbox{if } s \cap r = \emptyset \\
+                                                \cellneg{a}{e}
+                                              & \mbox{otherwise}
+                                              \end{array}
+                                       \right.
+    \end{array}
+  \end{displaymath}
+\caption{Definition of the Ramification Operator $R$}
+\label{ramify-def}
+\end{figure}
+
+\subsection{Ramified Frame Properties}
+
+Ironically, this strategy is sufficient for $\newcell$and
+$\updatecell$, but is not adequate for defining a frame property
+for $\codetype{A}$ expressions. 
+
+As an example, suppose that we want to evaluate the formula $\readcell
+a$, in a cell heap described by $\cellneg{a}{\return 5}$.  Clearly,
+this is a sufficient footprint, and we expect to a) get the return
+value 5, and b) see the cell formula change to $\cellpos{a}{\return
+  5}{5}{\emptyset}$.  However, the fact that we are now changing cells
+from negative to positive means that the conditional character of
+readiness, which worked in our favor with $\updatecell$ and
+$\newcell\!\!$, now works against us.
+
+In particular, suppose that we run this command with a framed abstract heap
+formula $\psi = \cellpos{b}{\readcell a}{17}{\setof{a}}$. Now, the
+whole starting heap will be:
+\begin{displaymath}
+\cellneg{a}{\return 5} \otimes \cellpos{b}{\readcell a}{17}{\setof{a}}  
+\end{displaymath}
+In any heap satisfying this formula, $b$ will be unready, because it depends 
+on an unready cell. But when we execute $\readcell a$, simply copying $\psi$ 
+into the post-state will give us the cell formula:
+\begin{displaymath}
+\cellpos{a}{\return 5}{5}{\emptyset} \otimes \cellpos{b}{\readcell a}{17}{\setof{a}}
+\end{displaymath}
+That is, our satisfaction relation now expects $b$ to be ready and have the 
+value 17, even though $\readcell a$ never touches $b$ at all!
+
+Clearly, we cannot expect to be able simply copy the same frame formula into 
+the pre- and the post-condition states in the specification of commands like 
+$\readcell a$. 
+
+To deal with this problem, we look back to McCarthy's original paper
+introducing the frame problem~\cite{mccarthy}. There, he described the
+frame problem as the problem of how to specify what parts of a state
+were \emph{unaffected} by the action of a command, which inspired the
+name of the frame rule in separation logic. In that paper, he also
+described the \emph{qualification problem}. He observed that many
+commands (such as a flipping a light switch turning on a light bulb)
+have numerous implicit preconditions (such as there being a bulb in
+the light socket), and dubbed the problem of identifying these
+implicit preconditions the qualification problem. 
+
+Some years later, \citet{finger} observed that the qualification
+problem has a dual: actions can have indirect effects that are not
+explicitly stated in their specification (e.g., turning on the light can
+startle the cat). He called the problem of deducing these implicit
+consequences the ``ramification problem'' --- is there a simple way to
+represent all of the indirect consequences of an action?
+
+We can understand our difficulty as an instance of the ramification
+problem. When we evaluate a code expression, we may read some unready
+cells and send them from an unready state in the precondition to a ready
+state in the postcondition. However, we may have had some cell formulas in
+our frame which claimed their corresponding cells were unready purely
+because one of the cells in our footprint was unready. Therefore, when
+we update the footprint, we must modify the frame formula to account
+for the ramifications of our update in the footprint. So even though
+the actual physical storage representing the frame doesn't change at all, 
+we need to modify our abstract formula to reflect our updated state
+of knowledge. 
+
+In our case, \emph{all} of the effects on the frame will arise from
+the cells we flip from unready to ready. Thus, given the set of cells
+which became ready, we can repair the framing formula by taking each
+positive cell formula, and setting it to a negative state if its read
+set includes anything that went from unready to ready. We define the
+ramification operator $R(s, \psi)$ in Figure~\ref{ramify-def}.  It is
+a simple structural induction over a framing formula, whose only
+action is to replace the positive cell formulas in $\psi$ whose read
+sets intersect with $s$ with a corresponding negative cell formula.
+The ramification operator has a number of useful properties, which are
+most easily expressed after we have introduced a few auxiliary
+judgments and predicates.
+
+In Figure~\ref{readiness} we define the two judgments $\unready{\phi}{o}$
+and $\ready{\phi}{o}{v}$, which establish whether a cell is ready or
+unready, from the syntactic structure of $\phi$. 
+
+\begin{prop}{(Soundness of $\ready{\phi}{o}{v}$ and $\unready{\phi}{o}$)}
+For all $\phi, o,$ and $H$ such that $H = (D,h)$:
+
+\begin{itemize}
+\item $(Inv(H, \phi) \land \ready{\phi}{o}{v}) \implies value(h(o)) = \ctext{Some}\;v$
+\item $(Inv(H, \phi) \land \unready{\phi}{o}) \implies o \not\in V_H$
+\end{itemize}
+\end{prop}
+
+In Figure~\ref{closedness}, we define the $closed(\phi, s)$ predicate,
+which asserts that every cell formula in $\phi$ reads at most the
+cells in $s$. Now, we can summarize the interactions between the 
+ramification operator $R$ and abstract heap formulas as follows: 
+
+\begin{prop}{(Interaction Properties)}
+Given sets of cells $s$ and $u$, cell $o$, value $v$, and formula $\phi$, we have
+that:
+\begin{itemize}
+\item $R(s, R(u, \phi)) = R(s \cup u, \phi)$
+\item If $\unready{\phi}{o}$, then $\unready{R(u, \phi)}{o}$ 
+\item If $\ready{R(u, \phi)}{o}{v}$, then $\ready{phi}{o}{v}$ 
+\item If $R(u, \phi)$ and $closed(\phi, s)$, then $R(u, \phi) = R(u \cap s, \phi)$ 
+\end{itemize}
+\end{prop}
+
+All of these facts can be proved with simple inductive arguments. 
+
+The first property means that if we evaluate two expressions, we can
+simply combine their ramification effects without having to worry
+about the order that they were evaluated in. The second and third let
+us know that a ramification cannot make us forget a cell is unready,
+nor can it make anything ready that was not ready before. The last
+property permits us to constrain the effect of a ramification --- if we
+know that two parts of the abstract heap formula do not read each
+other at all, we can deduce that ramifications from one will not
+affect the other.
+
+We can finally define the abstract semantics of the code expression
+monad. We introduce the ``judgment''
+$\astep{\phi}{e}{\phi'}{v}{r}{u}$, which is read as ``from an initial
+state $\phi$, evaluating the $\codetype{A}$ expression $e$ will result
+in a modified state $\phi'$ and a return value $v$ of type $A$. The
+expression $e$ will have directly read the cells in $r$, and will have
+updated the cells in $u$ from an unready to a ready state.'' 
+
+\begin{figure}
+\begin{tabbing}
+$\astep{\phi}{e}{\phi'}{v}{r}{u} \triangleq$ \\[0.5em]
+\;\;\= $\forall \psi.\;$\=$\setof{G(\phi \otimes \boxed{\psi})}$ \\
+    \>                  \>${\runcmd e}$ \\
+    \>                  \>$\setof{a.\;
+                             G(\phi' \otimes \boxed{R(u, \psi)})
+                             \land \exists z.\; a = (v, z) \land set(u, z, u)}$ \\
+    \>                  \>$\!\!\specand$ \\
+    \>                  \>$\{\forall o.\;$\=$(\unready{\phi \otimes \psi}{o} \land o \in \domain{\psi})$ \\
+    \>                  \> \> $\implies \unready{\phi' \otimes R(u, \psi)}{o}\}$ \\
+\>$\!\!\specand$ \\ 
+\>$\{\forall c \in r \cup u.\; \exists v.\; \ready{\phi'}{c}{v} \;\land \forall c \in u.\; \unready{\phi}{c}\}$ 
+\end{tabbing}
+\caption{Definition of the Abstract Semantics}
+\label{abstract-semantics}
+\end{figure}
+
+We define the meaning of the abstract semantics in
+Figure~\ref{abstract-semantics}, where our ``judgment'' is revealed to 
+be a notational abbreviation for a formula in our logic of specifications.
+
+As before, we describe the effect of a command with a Hoare triple,
+prefixed with a quantification over all possible frames $\psi$. Then
+we assert that from a state $G(\phi \otimes \psi)$, running $e$ will
+give us a state $G(\phi' \otimes R(u, \psi))$ --- that is, we must
+update the frame with the ramification $u$. The frames have been put
+into boxes, to highlight the fact that the framing formulas are
+\emph{different} in the pre- and the post-condition.
+
+Then, there are some extra conditions which constrain how the
+expression might have modified the state. We assert that anything
+unready in the frame will stay unready, and that the cells in the
+update set were unready before running the command and ready afterward,
+and that everything the read set is also ready. 
+
+The reason we have to explicitly maintain these conditions is in order
+to prove the rules given in Figure~\ref{abs-semantics}. Here, we
+present a number of implications over specifications in inference rule
+format, mimicking the structure of a big-step operational semantics. 
+In rule \textsc{AUnit}, we give a specification for the $\return v$ command, 
+which simply returns its argument and neither reads nor updates any 
+cells or state. The \textsc{ABind} rule explains how sequential composition 
+works --- as expected, we evaluate the first monadic argument, and pass
+the result to the functional argument, and evaluate that. The read and
+update sets are simply the union of the two executions. Reading a cell
+comes in two variants, \textsc{AReady} and \textsc{AUnready}. If a cell is ready, we
+simply return its memoized value without any further computation. If
+a cell is unready, we need to evaluate its code body, and then update
+the cell with its new value. Note that we have to apply the ramification
+operator in \textsc{AUnready}, because the cell we're reading goes from unready
+to ready itself. We can also read and write local state, which do not have any
+effect on the cells. 
+
+Finally, we have the \textsc{AbstractFrame} rule, which allows us to
+extend the abstract heap formulas in the style of the frame rule of 
+separation logic --- the signal difference being that we have to apply 
+the ramification operator $R$ to the frame in the post-state. 
+
+\begin{prop}{(Soundness of Abstract Semantics)}
+
+All of the rules of the abstract semantics in Figure~\ref{abs-semantics} are
+provable within our specification logic. 
+\end{prop}
+
+At this point, we can now reason about the behavior of the imperative
+notification library in terms of its action on the abstract heap. The
+combination of quantification and ramification give us a domain-specific 
+frame property, which allow us to modularly prove the correctness of programs 
+that construct and produce notifications.
+
+\section{Verifying an Imperative Implementation of Functional Reactive Programming}
+
+In this section, we will see how to verify an imperative
+implementation of a simple synchronous functional reactive programming
+system.
+
+\subsection{Specifying Functional Reactive Programs}
+
+\emph{Functional Reactive Programming}~\cite{frp} is a style of
+writing interactive programs based on the idea of \emph{stream
+  transducers}.  The idea is to model a time-varying input signal of
+type $A$ as an infinite stream of $A$'s, and to model an interactive
+system as a function that takes a stream of inputs $\stream{A}$ and
+yields a stream of outputs $\stream{B}$. Note that a stream can be
+viewed either as an infinite sequence of values, or isomorphically as
+a function from natural numbers to values (i.e., a function from times
+to values). In our discussion, we'll switch freely between these two
+views, using the most convenient viewpoint.\footnote{Given an infinite stream $vs$, we will use use $take\;n\;vs$ to denote
+the finite list consisting of the first $n$ elements of the stream
+$vs$. Correspondingly, $drop\;n\;vs$ is the infinite stream with $vs$
+with its first $n$ elements cut off. With a function $f$, $map\;f\;vs$
+maps $f$ over the elements of $vs$, and given another infinite stream
+$us$, the call $zip\;us\;vs$ returns the infinite stream of pairs of
+elements of $us$ and $vs$. If $v$ is an element, $v \cdot vs$ will 
+denote consing $v$ to the front of $vs$, and if $xs$ is a finite list, then
+$xs \cdot vs$ will denote appending the finite sequence $xs$ to the
+front of $vs$. Finally, we will write $vs_n$ to denote the $n$-th element
+of the stream $vs$.}
+
+However, not all functions $\stream{A} \to \stream{B}$ are legitimate
+stream transducers; we need to restrict our attention to \emph{causal}
+stream transducers. A transducer is causal if we can compute the first
+$n$ elements of the output after having read at most $n$ elements of
+the input. 
+
+\begin{tabbing}
+$causal(f : \stream{A} \to \stream{B}) \equiv$ \\
+\;\;\= $\exists \hat{f} : \listtype{A} \to \listtype{B}.\;\forall as:\stream{A}, n:\N.$ \\
+    \> \;\;$take\;n\;(f\;as) = \hat{f}\;(take\;n\;as)$ 
+\end{tabbing}
+
+If we are given a causal transducer $p$, we will write $\hat{p}$ to
+indicate the corresponding list function which computes its finite
+approximations. Then, we can define a family of combinators acting on
+causal transducers, which we give in Figure~\ref{transducer-semantics}.
+
+\begin{figure}
+\begin{tabbing}
+$\ST{A}{B} = \comprehend{f \in \stream{A} \to \stream{B}}{causal(f)}$\\[1em]
+
+$lift : (A \to B) \to \ST{A}{B}$ \\
+$lift\;f\;as = map\;f\;as$ \\[1em]
+
+$seq  : \ST{A}{B} \to \ST{B}{C} \to \ST{A}{C}$ \\
+$seq\;p\;q = q \circ p$ \\[1em]
+
+$par  : \ST{A}{B} \to \ST{C}{D} \to \ST{A \times C}{B \times D}$ \\
+$par\; p\;q\;abs = zip\; (p\;(map\;\pi_1\;abs))\;(q\;(map\;\pi_2\;abs))$\\[1em]
+
+$switch : \N \to \ST{A}{B} \to \ST{A}{B} \to \ST{A}{B}$ \\
+$switch\;k\;p\;q = \semfun{as}{(take\;k\;(p\;as))\cdot(q\;(drop\;k\;as))}$ \\[1em]
+
+$loop : A \to \ST{A\times B}{A \times C} \to \ST{B}{C}$ \\
+$loop\;a_0\;p = (map\;\pi_2) \circ (cycle\;a_0\;p)$ \\[1em]
+
+$cycle : A \to \ST{A\times B}{A \times C} \to \ST{B}{A \times C}$ \\
+$cycle\;a_0\;p = \lambda bs.\;\lambda n.\;last(gen\;a_0\;p\;v\;n)$ \\[1em]
+
+$gen : A \to \ST{A\times B}{A \times C} \to \listtype{(A \times C)}$\\
+$gen\;a_0\;p\;bs\;0 \;\;\; = \hat{p}\; [(a_0, bs_0)]$ \\
+$gen\;a_0\;p\;bs\;(n+1) = $ \\
+\;\;$\hat{p}\;(zip (a_0 \cdot (map\;\pi_1\;(gen\;a_0\;p\;bs\;n)))\;
+                                        (take\;(n+2)\;bs))$ 
+\end{tabbing}
+\caption{Semantics of Stream Transducers}
+\label{transducer-semantics}
+\end{figure}
+
+The operation $lift\;f$ creates a stream transducer that simply maps
+the function $f$ over its input. Calls to $seq\;p\;q$ are sequential
+composition: it feeds the output of $p$ into the input of $q$. The
+operator $par\;p\;q$ defines parallel composition --- it takes a
+stream of pairs, and feeds each component to its arguments,
+respectively, and then merges the two output streams to produce the
+combined output stream. The function $switch\;k\;p\;q$ is a very
+simple ``switching combinator''.  It behaves as if it were $p$ for the
+first $k$ time steps, and then behaves as if it were $q$, only
+starting with the input stream beginning at time $k$.
+
+The combinator $loop\;a_0\;p$ is a feedback operation. It acts
+upon a transducer $p$ which takes pairs of $A$s and $B$s, and yields
+pairs of $A$s and $C$s. It turns it into a combinator that takes $B$s
+to $C$s, by giving $p$ the value $a_0$ (and its $B$-input) on the
+first time step, and uses the output $A$ at time $n$ as the input $A$
+at time $n+1$. This is useful for constructing transducers that do
+things like sum their inputs over time, and other stateful operations. 
+
+Because this function involves feedback, it should not be surprising
+that it makes use of the causal nature of its argument operation. The
+$loop$ function is defined in terms of $cycle$, which also returns the
+sequence of output $A$s, and $cycle$ is defined in terms of $gen$,
+which is a function that given an argument $n$ returns a list of
+outputs for the time steps from $0$ to $n$. Notice that
+$gen\;a_0\;p\;bs\;n$ will always return $n+1$ elements (e.g., at
+argument 0, it will return a 1 element list containing the output at
+time step 0), which means that the call to $last$ in $cycle$ is
+actually safe. In order to calculate $gen$, we need to recursively
+calculate the outputs for all smaller time steps, and this is what
+$\hat{p}$ is needed for --- it is what lets us know that $p$ has a good
+finite approximation.
+
+All of these definitions are familiar to functional programmers, and
+there are many techniques to prove properties of these functions ---
+coinductive proofs, the $take$-lemma of \citet{bird-wadler}, arguments based on
+the isomorphism between streams and functions from natural
+numbers. All of these serve to make proving properties about stream
+transducers very pleasant. For example, one property we will need in
+the next section is the following:
+
+\begin{lemma}{(Loop Unrolling)} We have that 
+  \begin{displaymath}
+    cycle\;a_0\;p\;bs = f\;(zip\;(a_0\cdot(map\;\pi_1\;(cycle\;a_0\;p\;bs)))\;bs)
+  \end{displaymath}
+\end{lemma}
+
+\begin{proof}
+  This is easily proved using Bird and Wadler's $take$-lemma, which
+  says that two streams are equal if all their finite prefixes are
+  equal.
+\end{proof}
+
+
+\subsection{Realizing Stream Transducers with Notifications}
+
+\begin{figure}
+\begin{tabbing}
+$\ST{A}{B} \equiv \celltype{A} \to \monad{\celltype{B}}$ \\[1em]
+
+$\liftop : (A \to B) \to \ST{A}{B}$ \\
+$\liftop\;f\;input = $ \\
+\;\; $\newcell\; (\bind\;(\readcell input)\; (\fun{x}{A}{\return (f\;x)}))$ \\[1em]
+
+$\composeop : \ST{A}{B} \to \ST{B}{C} \to \ST{A}{C}$ \\
+$\composeop p\;q\;input = [$\=$\letv{middle}{p\;input}$ \\
+                            \>$\letv{output}{q\;middle}$ \\ 
+                            \>$\;output]$ \\[1em]
+
+$\parop : \ST{A}{B} \to \ST{C}{D} \to \ST{A \times C}{B \times D}$ \\
+$\parop p \; q \; input = $ \\
+\;\;$[$\=$\ctext{letv}\;a = \newcell\; (\bind$\=$(\readcell\;input)$ \\
+     \>                                   \>$(\fun{x}{A\times B}{\return (\fst{x})}))$ \\
+     \>$\ctext{letv}\;b = {p\;a}{}$ \\
+     \>$\ctext{letv}\;c = \newcell\; (\bind$\=$(\readcell\;input)\;$\\ 
+     \>                                   \>$(\fun{x}{A\times B}{\return (\snd{x})}))$ \\
+     \>$\ctext{letv}\;d = {q\;b} = $ \\
+     \>$\ctext{letv}\;output = \newcell\; ($\=$\bind (\readcell b)\; (\lambda b:B.$ \\
+     \>                                   \>$\bind (\readcell d)\; (\lambda d:D.$ \\
+     \>                                   \>$\;\;\return \pair{b}{d})))] \;\ctext{in}$ \\
+     \>$\;output]$ \\[1em]
+
+$\switchop : \N \to \ST{A}{B} \to \ST{A}{B} \to \ST{A}{B}$ \\
+$\switchop k\;p\;q\; input =  $ \\
+\;\;$[$\=$\letv{r}{\newref{\N}{0}}{}$ \\
+    \>$\letv{a}{p\;input}$ \\
+    \>$\letv{b}{p\;input}$ \\
+    \>$\ctext{letv}\; out = \newcell\; ($\=$\bind (\getref r) \;(\lambda i:\N.\;$ \\
+    \>                                 \>$\bind (\setref r\;(i+1)) \; (\lambda q:\unittype.$ \\
+    \>                                 \>$\;\;\ctext{if}(i < k, \readcell a, \readcell b)))) \;\ctext{in}$ \\
+    \>$\;\;out]$\\[1em]
+
+$\loopop : A \to \ST{A\times B}{A\times C} \to \ST{B}{C}$ \\
+$\loopop a_0\; p \; input = $ \\
+\;\;$[$\=$\letv{r}{\newref{A}{a_0}}{}$ \\
+    \>$\ctext{letv}\; ab = \newcell\; ($\=$\bind (\readcell input)\; (\lambda b:B.$ \\
+    \>                                \>$\bind (\getref r)\;       (\lambda a:A.$ \\
+    \>                                \>$\;\; \return \pair{a}{b}))) \;\ctext{in}$ \\
+    \>$\letv{ac}{p\;ab}{}$ \\
+    \>$\ctext{letv}\;c = \newcell\; ($\=$\bind (\readcell ac) \;(\lambda v:A \times C.$ \\
+    \>                              \>$\bind (\setref r\;(\fst{v})) \;(\lambda q:\unittype.$ \\
+    \>                              \>$\;\;\return (\snd{v}))))\;\ctext{in}$ \\
+    \>$\;\;c]$ 
+\end{tabbing}
+\caption{Imperative Stream Transducers}
+\label{imperative-transducer-semantics}
+\end{figure}
+
+While the definitions in the previous subsection yield very clean
+proofs, they are not suitable as implementations --- for example,
+$loop$ recomputes an entire history at each time step! We can derive
+better implementations by thinking about how imperative, event-driven
+programming works.
+
+The intuition underlying event-driven programming is that a stream
+transducer is implemented with the combination of a notification
+network, and an \emph{event loop}.  The event loop is a
+(possibly-infinite) loop which updates an input cell at teach time
+step, to reflect the events that occurred on that time step, and then
+it reads the output cell of the network. When the input cell is
+updated, invalidations are propagated throughout the dependency
+network, and when the outputs are read, exactly the necessary
+re-computations are performed.
+
+We will shortly formalize exactly this idea, but we will first discuss
+the implementation given in
+Figure~\ref{imperative-transducer-semantics} in informal terms. Here,
+we define the type of imperative stream transducers as a function type
+$\celltype{A} \to \monad{(\celltype{B})}$. This type should be read as
+saying that the implementation is a function that, given an input cell
+of type $A$, will \emph{construct} a dataflow notification network
+realizing the corresponding transducer, and whose return value is the
+output cell of type $B$ that the event loop should read. 
+
+The simplest example of this is $\liftop\;f$. It will take an input
+cell $input$, and build a new cell which reads $input$, and return $f$
+applied to that value. Likewise, given two imperative implementations $p$
+and $q$, $\composeop\;p\;q$ will take an input cell, and feed the
+input to $p$ to build a network whose output is named $middle$, and
+will then give $middle$ to $q$ to get the final output cell. The
+overall network will be network built by the calls to both $p$ and
+$q$, which interact through $p$'s network putting a value in $middle$,
+and $q$'s network reading it.
+
+The operation $\switchop\;k\;p\;q$ is the first example that uses 
+local state. Given an $input$ cell, we first build networks corresponding
+to $p$ and to $q$ (with outputs $a$ and $b$, respectively). Then we
+create a local reference $r$, initialized to $0$. Then we build a cell $out$,
+whose code reads and increments $r$, and which will read $a$ or $b$ depending
+on whether the reference's contents are less than or equal to $k$. Notice
+that the demand-driven nature of evaluation means that we never redundantly
+evaluate $p$ or $q$'s networks --- we only ever execute one of them. 
+
+Finally, the operation $\loopop a_0\;p$ builds a feedback network by
+explicitly creating a reference to hold an accumulator parameter. It
+constructs a local reference initialized to $a_0$, and then constructs
+a cell $ab$ which reads the input and the local reference to produce a
+pair of type $A \times B$. This cell is given to $p$, to construct a
+network with an output cell $ac$, yielding pairs of type $A \times
+C$. Finally, we construct the overall output cell $c$, which reads
+$ac$ and updates the local reference with a new value of type $A$, and
+returns a value of type $C$. The use of a local reference (rather than
+a cell) to store the current state of $A$ is essential, because we need
+to maintain the acyclicity of the dataflow graph. 
+
+Now, with these ideas in mind, we come to the definition of what it
+means for a dataflow network to realize a stream transducer. This
+property is (unavoidably) quite large, but despite its size is quite
+pleasant to work with.
+\begin{tabbing}
+$Realize(i, \Phi, o, f) \triangleq$ \\
+\;\;\= $\forall v:$\=$\,\stream{A}.\;$ \fbox{$\exists \phi:\stream{\formula}, u:\stream{\powersetfin{ecell}}.$} \\
+\>\> $\{\forall n:\N.\;$\=$\closed{\phi_n}{\domain{\phi_n} \cup \setof{i}} \;\land$ \\
+\>\>\>$\domain{\phi_n} = \domain{\phi_{n+1}}\; \land$ \\
+\>\>\>$\forall \psi.\; \unready{\psi}{i} \implies \unready{\psi \otimes \phi_n}{o}\}$ \\
+\>\> $\specand \; \{\Phi = \phi_0\}$ \\
+\>\> $\specand \;  Transduce(i, \phi, o, u, f, v)$ \\[1em]
+
+
+$Transduce(i, \phi, o, u, f, v) \triangleq$ \\
+\> $\forall $\=$ n:\N, \phi_i, \phi'_i, u_i.$ \\
+\>\> \fbox{$\astep{\phi_i}{\readcell i}{\phi'_i}{v_n}{\setof{i}}{u_i}$} $\; \land$ \\
+\>\> $\{$\=$\domain{\phi_i} = \domain{\phi'_i} \;\land $ \\
+\>\>     \>$\closed{\phi_i}{\domain{\phi_i}} \land 
+            \closed{\phi_i}{\domain{\phi'_i}} \land $ \\
+\>\>     \>$\unready{\phi_i}{i} \land
+            i \in u_i\}$ \\
+\>\> $\Longrightarrow$ \\
+\>\> \fbox{$\astep{\phi_i \otimes \phi_n}{\readcell o}
+              {\phi'_i \otimes \phi_{n+1}}{(f\;v)_n}
+              {\setof{o}}{u_i \cup u_n}$} \\
+\>\> $\specand\; \{u \subseteq \domain{\phi_n} \land o \in u\}$ \\
+\end{tabbing}
+
+We read $Realize(i, \Phi, o, f)$ as saying ``the dataflow network
+$\Phi$ realizes the stream transducer $f$, when the event loop writes
+inputs into $i$ and reads outputs from $o$''. We have highlighted the
+key pieces of this definition with boxes. First, given some input
+stream $v$, we existentially assert the existence of a \emph{stream}
+of abstract heap formulas $\phi$. This stream represents the evolving
+state of the network over time --- because our notification networks
+contain local state, that state can potentially have a different value
+at each time step. Then, in the unboxed formulas, we assert some
+well-formedness properties, such as 1) the initial value of the stream
+matching our $\Phi$, 2) the domain of the network (i.e., the cells whose
+atomic formulas are in that formula) remaining constant
+over time, 3) that the output is unready if the input is, and 4) that
+the network reads only the specified input cell. (All of these
+conditions could be relaxed, but for the basic FRP combinators we
+consider in this paper there is no need. It \emph{would} become
+necessary if we added combinators that dynamically created new
+transducers as the program ran, since at that point we would need to
+create new cells at each time step.)
+
+We state the stream property with the $Transducer$ sub-predicate. It
+asserts for all time $n$, that if we have input state $\phi_i$ which
+yields $v_i$ when $i$ is read (the second boxed formula), then 
+reading $o$ in a larger state containing both the input $phi_i$ and the
+$n$-th transducer state $\phi_n$ will 1) return the $n$-th output
+value $(f\;v)_n$, and 2) will update the state of the network to 
+the next time step $\phi_{n+1}$ (the third boxed formula). 
+
+With this property in hand, we can prove the following specifications: 
+
+\begin{prop}{(FRP Correctness)}
+We define the $Relate$ predicate:
+\begin{tabbing}
+$Relate_{A,B}(p, f) \triangleq$ \\
+\;\; $\forall \psi:\formula, i:\celltype{A}.$ \\ 
+\qquad $\setof{G(\psi)}\;p\;i\;\{o:\celltype{B}.\;
+               \exists \Phi.\;$\=$G(\Phi \otimes \psi) \;\land$ \\
+                               \>$ Realize(i, \Phi, o, f) \valid\}$
+\end{tabbing}
+\noindent Then, the following specifications are provable: 
+\begin{tabbing}
+$\forall f:A\to B.\; Relate(\liftop f, lift\;f)$ \\[1em]
+
+$\forall p, f, q, g.\;$\=$Relate(p, f) \specand Relate(q, g)$ \\
+                       \>$\specimp Relate(\composeop p\;q, compose\;f\;g)$ \\[1em]
+
+$\forall p, f, q, g.\;$\=$Relate(p, f) \specand Relate(q, g)$ \\
+                       \>$\specimp Relate(\parop p\;q, par\;f\;g)$ \\[1em]
+
+$\forall k, p, f, q, g.\;$\=$Relate(p, f) \specand Relate(q, g)$ \\
+                          \>$\specimp Relate(\switchop k\;p\;q, switch\;k\;f\;g)$ \\[1em]
+
+$\forall a_0, p, f.\; 
+  Relate(p, f) \specimp Relate(\loopop\;a_0\;p, loop\;a_0\;f)$
+\end{tabbing}
+\end{prop}
+
+These lemmas permit us to reason about our transducer implementation
+as if it were a pure implementation --- for each combinator in the
+interface, we have a proof that shows the corresponding implementation
+combinator lifts related arguments to related results. As a result, 
+we can show that, for example, $\composeop (\liftop f) \;(\liftop g)$
+and $\liftop (g \circ f)$ both realize the same function $lift\;(g\circ f)$. 
+
+\section{Future Work}
+
+Now that we have introduced the idea of ramifications, we see many
+possible applications for them. 
+
+First, there are numerous algorithms --- such as unification, the
+union-find algorithm, and the chaotic iteration constraint propagation
+algorithm used in dataflow analysis --- which rely on using mutation
+and assignment as a way of globally broadcasting information to the
+rest of the program state. These algorithms have all been naturally
+resistant to modular proofs, because of the apparent need to know
+``the rest of the world'' in the program invariant. It would be
+interesting to see if ramifications can help.
+
+Second, we would like to investigate the relationship between
+ramification operators and methods based on
+rely-guarantee~\cite{rely-guarantee-jones}. Rely-guarantee works by
+imposing a mutual contract between a piece of code and the rest of the
+world, which is at least conceptually similar to the idea of a
+ramification, though we see no obvious direct relationship.
+
+Third, in this work we have presented ramifications as a style of
+specification useful for verifying a particular library. Might it be
+sensible or useful to bake ramification operators into the basic
+logical framework? If so, what are their logical properties --- $R(u,
+\phi)$ looks like a family of modal operators on the formula $\phi$, but
+even in our first example we needed a number of auxiliary interaction
+lemmas to make them truly useful.
+
+\section{Related Work}
+
+Versions of separation logic~\cite{sep-logic} supporting higher-order
+languages and quantification over predicates have been proposed by
+\citet{htt} with Hoare Type Theory, and by
+\citet{parkinson-bierman}. It would be interesting to study how the
+proof techniques in this paper could be adapted to their setting.
+
+Prior work on verifying callbacks using separation logic includes work
+by \citet{tldi09,ftfjp07} work by
+\citet{parkinson-iwaco-07}. The approach in both of these
+papers was similar; each subject predicate was equipped with a list of
+observers, rather than maintaining them implicitly in the
+invariant. These approaches were not modular, because the observers
+had to be explicitly named. Worse still, this approach broke down when
+faced with chains of subjects and observers, because separation logic
+is a resource-based logic, and the existence of multiple paths to an
+object meant that ownership of observer state became ambiguous.
+
+citet{shaner-leavens-naumann} studied using gray-box model
+programs to model higher-order method calls (which can be understood
+as a a variant of refinement calculus-based methods) in JML, and 
+\citet{history-invariants} have applied Liskov and Wing's
+idea of history invariants~\cite{liskov-wing} to model observers. As
+before, both of these methods are also non-modular, since they require
+knowing what all of the observers are, and furthermore both of these
+methods sharply restrict the kinds of invariants that can be used,
+making it very difficult to model the code-update-based protocol seen
+in our FRP example.
+
+\citet{self-adjusting} have proposed
+\emph{self-adjusting computation} as a technique for using change
+propagation to write programs that incrementally
+recompute answers as the inputs are adjusted. It would be worth 
+studying if our techniques could help verifying implementations of this
+idea.
+
+Functional reactive programming (FRP) was proposed by \citet{frp} as a
+declarative formalism for interactive programming. The API in our
+paper differs from theirs in two ways. First, our interface is a
+variation of the \emph{arrowized FRP} interface proposed in
+\cite{afrp}, and secondly, we use a discrete model of time, rather
+than a continuous model of time --- though we found the core idea of
+using a declarative semantics as a specification for the interface an
+inspiring one.
+
+Furthermore, our work could also serve as a bridge between the work on
+purely functional reactive programming, and more imperative
+implementations, such as the work done by \citet{superglue} on
+SuperGlue and by \citet{frtime} on the FrTime system.
+
+
+\section{Appendix: The $\cellset$ Interface}
+
+In this section, we'll describe the interface to the $\cellset$ type,
+which is intended to be used to represent pure collections of
+existentially quantified cells. Specifying this interface is not
+entirely trivial, because of the way equality works for this
+type. Ordinarily, we would simply give a two-place predicate $set(v,
+elts)$ relating a value $v$, and the mathematical set of elements
+$elts$ it represents.
+
+However, this approach is not sufficient in our case. In order to
+manage dependencies, we need to be able to test cells of
+\emph{different} concrete type for equality, and the natural equality
+for references only permits testing references of the same type. As a
+result, we can't unpack an existentially-quantified cell and compare
+the elements in its tuple, because we don't know that the two cells
+are of the same type (and indeed, they might not be). 
+
+To get around this problem, we generate a unique integer identifier
+for each cell we create, and then compare those identifiers to
+establish equality. Since these identifiers are all generated
+dynamically along with the cells, this means that the precise partial
+equivalence relation we need to use is determined dynamically as
+well. So we add an additional index to the set predicate $set(W, v,
+elts)$. The extra parameter $W$ is the \emph{world}, the set of all
+the cells allocated so far, which must collectively satisfy the
+constraint that they are equal if and only if their identifier fields
+match. 
+
+All of the usual set operations exist. We have an $\ctext{emptyset}$,
+representing an empty set of cells. We have $\ctext{addset}\;v\;x$,
+which adds the element $x$ to the set $v$ represents, and
+$\ctext{removeset}\;v\;x$, which removes $x$ from the set $v$
+represents. We also have $\ctext{iterset}\;f\;v$, which iterates over
+the elements of $v$'s set and applies $f$ to each element in some
+sequential order. (Observe that the specification makes use of two 
+auxiliary predicates: $matches$, which assert that a
+set and a list have the same elements; and $iterseq$, which constructs
+a command representing the sequential execution of those elements.) 
+
+We have three axioms that our implementation must satisfy. First, if a
+$\cellset$ value $v$ represents a set in a world $W$, it will also
+represent a set in any larger world $W'$. Second, the values in a set
+are always a subset of the world $W$. Finally, we require that
+$set(W,v,elts)$ is a pure predicate (i.e., is not heap-dependent),
+which implies that it have a purely functional implementation (for
+example, as a binary tree). 
+
+
+\begin{tabbing}
+$World = $ \\
+\;\;\;\;\=$\{D \in \powersetfin{ecell}\;|\;\forall c,d \in D.\;$\=$identity(c) = identity(d)$\\
+        \>                                                      \>$\iff c = d\}$\\[1em]
+
+$\exists \cellset : \star.$ \\
+$\exists set : World \To \cellset \To \powersetfin{ecell} \To \assert.$ \\
+$\exists \ctext{emptyset}    : cellset.$ \\
+$\exists \ctext{addset}      : \cellset \to ecell \to \cellset.$ \\
+$\exists \ctext{removeset}   : \cellset \to ecell \to \cellset.$ \\
+$\exists \ctext{iterset}     : \cellset \to (ecell \to \monad{\unittype}) \to \unittype.$\\[1em]
+
+$\forall W \in World.\; set(W, \ctext{emptyset}, \emptyset)$ \\[1em]
+
+
+$\forall W \in World, v : \cellset, x : ecell, elts \in \powersetfin{ecell}.$ \\ 
+\> $set(W, v, elts) \land x \in W \implies set(W, \ctext{addset}\;v\;x, elts \cup \setof{x})$ \\[1em]
+
+
+$\forall W \in World, v : \cellset, x : ecell, elts \in \powersetfin{ecell}.$ \\ 
+\> $set(W, v, elts) \land x \in W \implies set(W, \ctext{removeset}\;v\;x, elts - \setof{x})$ \\[1em]
+
+
+$\forall W \in World, v : \cellset, elts \in \powersetfin{ecell}, 
+         f : (ecell \to \monad{\unittype}).$ \\ 
+\> $set(W, v, elts) \implies \exists L : \seqsort{ecell}.\;$\=$matches\;elts\;L\; \land$ \\
+\>                                \>$\ctext{iterset}\;f\;v = iterseq\;f\;L$ \\[1em]
+
+
+$\forall W, W' \in World, v, elts.$ \\
+\>$set(W,v,elts) \land W \subseteq W' \implies set(W',v, elts)$\\[1em]
+
+$\forall W, W' \in World, v, elts.$ \\
+\>$set(W, v, elts) \implies elts \subseteq W$ \\[1em]
+
+$\forall W, v, elts.\; pure(set(W,v,elts))$ \\[1em]
+  
+
+$matches\;elts\;[] \qquad\;\;\; = elts = \emptyset$ \\
+$matches\;elts\;(v :: vs) = v \in elts \land matches\;(elts - \setof{v})\;vs$\\[1em]
+
+$iterseq\; f\; [] \qquad\;\;\;\;$\=$= \comp{\unit}$ \\
+$iterseq\; f\; (v :: vs)$\>$= \comp{\letv{\unit}{f\;v}{\ctext{run}\;iterseq\;f\;vs}}$ \\
+\end{tabbing}
+
+
+\paragraph{Acknowledgements}
+
+We would like to thank Peter O'Hearn for pointing out the connection
+of our work with the ramification problem of AI.
+
