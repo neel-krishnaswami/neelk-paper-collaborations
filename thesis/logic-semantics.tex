@@ -13,10 +13,11 @@ construct a BI-algebra from sets of elements of an arbitrary partial
 commutative monoid, proving that we can satisfy each of the axioms of
 a BI algebra.
 
-Then, we'll conclude show that our predomain of heaps actually forms a
+Then, we will show that our predomain of heaps actually forms a
 partial commutative monoid, which means that we can now apply the
-theorems and definitions of the previous sections to immediately get the
-heap model we want. 
+theorems and definitions of the previous sections to immediately get
+the heap model we want.
+
 
 \section{BI Algebras}
 
@@ -36,7 +37,7 @@ $(\top, \land, \implies, \bot, \vee, I, *, \wand)$ satisfying:
       $p \vee q \leq p$ and $p \vee q \leq q$.
 \item $\forall p, q, r.\; p \land q \leq r \iff p \leq q \implies r$
 \item $\forall p.\; p * I = p$
-\item $\forall p, q.\; p * q = q * r$
+\item $\forall p, q.\; p * q = q * p$
 \item $\forall p, q, r.\; (p * q) * r = p * (q * r)$
 \item $\forall p, q, r.\; p * q \leq r \iff p \leq q \wand r$
 \end{enumerate}
@@ -69,28 +70,23 @@ possibly-infinitary conjunctions or disjunctions.
 
 \subsection{Partial Commutative Monoids}
 
-A partial commutative monoid is a triple $(M, e, \cdot)$, where 
-$e \in M$, and $(\cdot)$ is a partial operation from $M \times M$ to 
-$M$. We write $m \# m'$ to mean that $m$ and $m'$ are compatible -- 
-that is, $\exists m''.\; m \cdot m' = m''$. Furthermore, the following
-properties hold: 
+A partial commutative monoid is a triple $(M, e, \cdot)$, where $e \in
+M$, and $(\cdot)$ is a partial operation from $M \times M$ to $M$. We
+will write $m \# m'$ to mean that $m \cdot m'$ is defined. 
+
+Furthermore, the following properties must hold:
 
 \begin{itemize}
-\item $e$ is a unit, so that $e \cdot m = m$. 
-\item $\cdot$ is commutative. $m \cdot m' = m' \cdot m$, if defined.
-\item $\cdot$ is associative. $m \cdot (m' \cdot m'') = (m \cdot m') \cdot m''$, if defined.
+\item $e$ is a unit, so that $e \cdot m = m$ and $e \# m$. 
+\item $(\cdot)$ is commutative. If $m_1 \# m_2$, then $m_2 \# m_1$ and $m_1 \cdot m_2 = m_1 \cdot m_2$. 
+\item $(\cdot)$ is associative. 
+  \begin{itemize}
+  \item If $m_1 \# m_2$ and $(m_1 \cdot m_2) \# m_3$, then $m_2 \# m_3$ and $m_1 \# (m_2 \cdot m_3)$ and $(m_1 \cdot m_2) \cdot m_3 = m_1 \cdot (m_2 \cdot m_3)$.
+  \item If $m_2 \# m_3$ and $m_1 \# (m_2 \cdot m_3)$, then $m_1 \# m_2$ and $(m_1 \cdot m_2) \# m_3$ and $(m_1 \cdot m_2) \cdot m_3 = m_1 \cdot (m_2 \cdot m_3)$.
+  \end{itemize}
+  
+  
 \end{itemize}
-
-\begin{lemma}{(Disjointness Distributes)}
-If $(m_1\cdot m_2) \# m_3$, then $m_1 \# m_3$ and $m_2 \# m_3$
-\end{lemma}
-\begin{proof}
-Suppose $(m_1\cdot m_2) \# m_3$. Then, we know there is some $m = (m_1 \cdot m_2) \cdot m_3$. 
-Then, by associativity and commutativity, we know that $m = (m_1 \cdot m_3) \cdot m_2$. If
-it were the case that $m_1 \cdot m_3$ was not defined, then $m$ would not be defined, which
-is a contradiction. Therefore $m_1 \# m_3$. Similarly, $m_2 \# m_3$. 
-\end{proof}
-
 
 \subsubsection{BI-Algebras over Partial Commutative Monoids}
 
@@ -110,7 +106,7 @@ with the following operations:
 \item $p \vee q = p \cup q$
 \item $I = \setof{e}$
 \item $p * q = \setof{m \in M\;|\; \exists m_1, m_2.\; 
-                       m_1 \# m_2 \land m_1 \in p \land m_2 \in q \land m_1\cdot m_2 = m}$
+                       m_1 \# m_2 \mbox{ and } m_1 \in p \mbox{ and } m_2 \in q \mbox{ and } m_1\cdot m_2 = m}$
 \item $p \wand q = \{ m \in M \;|\; \forall m' \in p.\; \mbox{if } m \# m' \mbox{ then } m \cdot m' \in q \}$
 \item $\bigwedge P = \bigcap P$ 
 \item $\bigvee P = \bigcup P$
@@ -205,24 +201,31 @@ with the following operations:
   \end{tabbedproof}
 
 \item We want to show $\forall p \in \powerset{M}.\; p * I = p$
-
-  \begin{eqnproof}[\mbox{Assume } p \in \powerset{M}]
-    \eline[p * I]
-          {\setof{m \in M\;|\; \exists m_1 \in p, m_2 \in I.\;
-                                    m_1 \# m_2 \land m_1\cdot m_2 = m}}
-          {}
-    \eline{\setof{m \in M\;|\; \exists m_1 \in p, m_2 \in \setof{e}.\;
-                                    m_1 \# m_2 \land m_1\cdot m_2 = m}}
-          {}
-    \eline{\setof{m \in M\;|\; \exists m_1 \in p.\; m_1 \# e \land m_1 \cdot e = m}}
-          {Simplification}
-    \eline{\setof{m \in M\;|\; \exists m_1 \in p.\; m_1 = m}}
-          {Monoid axioms}
-    \eline{\setof{m \in M\;|\; m \in p}}
-          {Simplification}
-    \eline{p}
-          {}
-  \end{eqnproof}
+  \begin{tabbedproof}
+    \oo Assume $p \in \powerset{M}$ \\
+    \ooo We want to show $p * I = p$ \\ 
+    \ooo This is equivalent to showing for all $m \in M$, that $m \in p * I$ if and only if $m \in p$ \\
+    \ooo Assume $m \in M$ \\
+    \oooo $\To$ direction: \\
+    \ooooo Assume $m \in p * I$ \\
+    \ooooo Therefore $\exists m_1, m_2 \in M$ such that $m_1 \# m_2$ and $m_1 \in p$ and $m_2 \in I$ and $m = m_1 \cdot m_2$\\
+    \ooooo Let $m_1, m_2$ be witnesses, so that \\
+    \oooooo $m_1 \# m_2$ and $m_1 \in p$ and $m_2 \in I$ and $m = m_1 \cdot m_2$\\
+    \oooooo Since $I = \setof{e}$, we know $m_2 = e$ \\
+    \oooooo By unit property, $m = m_1 \cdot e = m_1$ \\
+    \oooooo Since $m_1 \in p$, we know $m \in p$ \\
+    \ooo $\From$ direction: \\
+    \oooo Assume $m \in p$ \\
+    \ooooo We want to show $m \in p * I$ \\ 
+    \ooooo So we want to show there are $m_1, m_2$ \\
+    \ooooox such that $m_1 \# m_2$ and $m_1 \in p$ and $m_2 \in I$ and $m = m_1 \cdot m_2$ \\
+    \ooooo Choose $m_1$ to be $m$, and $m_2$ to be $e$ \\
+    \ooooo So we want to show $m \# e$ and $m \in p$ and $e \in I$ and $m = m \cdot e$ \\
+    \ooooo By properties of unit, $m \# e$ and $m = m \cdot e$ \\
+    \ooooo By definition of $I$, we know $e \in I$ \\
+    \ooooo We know $m \in p$ by hypothesis \\
+    \ooooo Therefore goal in line 16 met. \\ 
+  \end{tabbedproof}
 
 \item We want to show $\forall p, q \in \powerset{M}.\; p * q = q * r$
 
@@ -243,45 +246,42 @@ with the following operations:
 
 \item We want to show $\forall p, q, r \in \powerset{M}.\; (p * q) * r = p * (q * r)$
 
-  \begin{eqnproof}
-     \eline[p * q]
-           {\setof{m_1 \;|\; \exists m_p \in p, m_q \in q.\; 
-                             m_p \# m_q \land m_p \cdot m_q = m_1}}
-           {Definition}
-     \eline[(p * q) * r]
-           {\setof{m \;|\; \exists m_1 \in p * q, m_r \in r.\; 
-                             m_1 \# m_r \land m_1 \cdot m_r = m}}
-           {Definition}
-     \elines{\{ m\;|\; \exists m_1 \in p * q, m_p \in p, m_q \in q, m_r \in r. \\ 
-             \qquad m_p \# m_q \land m_p \cdot m_q = m_1 \\
-             \qquad m_1 \# m_r \land m_1 \cdot m_r = m \}\\ }
-            {Comprehension}
-     \elines{\{ m\;|\; \exists m_p \in p, m_q \in q, m_r \in r. \\ 
-             \qquad m_p \# m_q \land 
-                   (m_p\cdot m_q) \# m_r \land (m_p \cdot m_q) \cdot m_r = m \}\\ }
-            {Simplification}
-     \elines{\{ m\;|\; \exists m_p \in p, m_q \in q, m_r \in r. \\ 
-             \qquad m_p \# m_q \land 
-                   m_p \# m_r \land m_q \# m_r \land (m_p \cdot m_q) \cdot m_r = m \}\\ }
-            {Distribute $\#$}
-     \elines{\{ m\;|\; \exists m_p \in p, m_q \in q, m_r \in r. \\ 
-             \qquad m_p \# m_q \land 
-                   m_p \# m_r \land m_q \# m_r \land m_p \cdot (m_q \cdot m_r) = m \}\\ }
-            {Associativity}
-     \elines{\{ m\;|\; \exists m_p \in p, m_q \in q, m_r \in r. \\ 
-             \qquad m_p \# (m_q \cdot m_r) \land 
-                    m_q \# m_r \land m_p \cdot (m_q \cdot m_r) = m \}\\ }
-            {Redistributing $\#$}
-     \elines{\{ m\;|\; \exists m_p \in p, m_q \in q, m_r \in r, m_2 \in q * r \\ 
-             \qquad m_p \# (m_q \cdot m_r) \land m_2 = m_q \cdot m_r \\
-             \qquad m_q \# m_r \land m_p \cdot (m_q \cdot m_r) = m \}\\ }
-            {Introducing $m_2$}
-     \elines{\{m \;|\; \exists m_p \in p, m_2 \in q * r.\;
-              m_p \# m_2 \land m_p \cdot m_2 = m \}\\ }
-            {Comprehension}
-     \elines{p * (q * r)}
-            {Definition}
-  \end{eqnproof}
+  \begin{tabbedproof}
+    \oo Assume $p, q, r \in \powerset{M}$ \\
+    \oo We want to show $(p * q) * r = p * (q * r)$ \\
+    \oo This is equivalent to showing for all $m \in M$, that $m \in (p * q) * r$ if and only if $ m \in p * (q * r)$ \\
+    \oo Assume $m \in M$ \\
+    \ooo $\To$ direction: \\
+    \oooo Assume $m \in (p * q) * r$ \\
+    \ooooo Therefore there are $m_{pq}, m_r$ such that \\
+    \ooooox $m_{pq} \# m_r$ and $m = m_{pq} \cdot m_r$ and $m_{pq} \in p * q$ and $m_r \in r$ \\
+    \ooooo From $m_{pq} \in p * q$, we know there are $m_p$, $m_q$ such that \\
+    \ooooox $m_p \# m_q$ and $m_{pq} = m_p \cdot m_q$ and $m_p \in p$ and $m_q$ in $r$ \\
+    \ooooo By $m_{pq} = m_p \cdot m_q$, we know $m = (m_p \cdot m_q) \cdot m_r$ and $(m_p \cdot m_q) \# m_r$\\
+    \ooooo Since $m_p \# m_q$ and $(m_p \cdot m_q) \# m_r$, by associativity we know \\
+    \ooooox $m_q \# m_r$ and $m_p \# (m_q \cdot m_r)$ and 
+            $m = (m_p \cdot m_q) \cdot m_r = m_p \cdot (m_q \cdot m_r)$ \\
+    \ooooo Since $m_q \# m_r$ and $m_q \cdot m_r = m_q \cdot m_r$ and $m_q \in q$ and $m_r \in r$, \\
+    \ooooox we know $m_q \cdot m_r \in q * r$ \\
+    \ooooo Since $m_p \# (m_q \cdot m_r)$ and $m_p \cdot (m_q \cdot m_r) = m_p \cdot (m_q \cdot m_r)$ and $m_p \in p$ and $m_q \cdot m_r \in q * r$ \\
+    \ooooox we know $m_p \cdot (m_q \cdot m_r) \in p * (q * r)$ \\
+    \ooooo Therefore $m \in p * (q * r)$ \\
+    \ooo $\From$ direction: \\
+    \oooo Assume we have $m_p, m_{qr}$ such that \\
+    \oooox $m_p \# m_{qr}$ and $m = m_p \cdot m_{qr}$ and $m_p \in p$ and $m_{qr} \in q * r$ \\
+    \ooooo Therefore we have $m_q, m_r$ such that \\
+    \ooooox $m_q \# m_{r}$ and $m_{qr} = m_q \cdot m_r$ and $m_q \in q$ and $m_r \in r$ \\
+    \ooooo From $m_{qr} = m_q \cdot m_r$ we have \\
+    \ooooox $m = m_p \cdot (m_q \cdot m_r)$ and $m_p \# (m_q \cdot m_r)$ \\
+    \ooooo By associativity with $m_q \# m_{r}$ and $m_p \# (m_q \cdot m_r)$, we have \\
+    \ooooox $m_p \# m_q$ and $(m_p \cdot m_q) \# m_r$ and 
+            $m = m_p \cdot (m_q \cdot m_r) = (m_p \cdot m_q) \cdot m_r$ \\
+    \ooooo Since $m_p \# m_q$ and $m_p \in p$ and $m_q \in q$, we know \\
+    \ooooox $(m_p \cdot m_q) \in p * q$ \\
+    \ooooo Since $(m_p \cdot m_q) \# m_r$ and $(m_p \cdot m_q) in p * q$ and $m_r \in r$, we have \\ 
+    \ooooox $(m_p \cdot m_q) \cdot m_r \in (p * q) * r$ \\
+    \ooooo Therefore $m \in (p * q) * r$ \\
+  \end{tabbedproof}
 
 \item We want to show that for all $p, q, r \in \powerset{M}$, $p * q \leq r$ if and
 only if $p \leq q \wand r$. 
@@ -290,34 +290,34 @@ only if $p \leq q \wand r$.
     Assume $p, q, r \in \powerset{M}$. \\
     \oo First, we'll give the $\To$ direction. \\
     \ooo Assume $p * q \leq r$ \\
-    \ooo Expanding definitions, 
-          $\comprehend{m}{\exists m_1, m_2.\; m_1 \# m_2 \land m_1 \in p \land m_2 \in q 
-                                             \land m_1 \cdot m_2 = m}
+    \ooo So we know 
+          $\comprehend{m}{\exists m_1, m_2.\; m_1 \# m_2 \mbox{ and } m_1 \in p \mbox{ and } m_2 \in q 
+                                             \mbox{ and } m_1 \cdot m_2 = m}
            \subseteq r$ \\
-    \ooo Thus, $\forall m.\; (\exists m_1, m_2.\; m_1 \# m_2 \land m_1 \in p \land m_2 \in q 
-                                             \land m_1 \cdot m_2 = m)$ implies $m \in r$. \\
+    \ooo Thus, $\forall m.\; (\exists m_1, m_2.\; m_1 \# m_2 \mbox{ and } m_1 \in p \mbox{ and } m_2 \in q 
+                                             \mbox{ and } m_1 \cdot m_2 = m)$ implies $m \in r$. \\
     \ooo By turning existentials on the left into universals, and instantiating $m$, \\
     \oooo
-             $\forall m_1, m_2.\; (m_1 \# m_2 \land m_1 \in p \land m_2 \in q) \implies (m_1 \cdot m_2) \in r$ [HYP1] \\
+             $\forall m_1, m_2.\; (m_1 \# m_2 \mbox{ and } m_1 \in p \mbox{ and } m_2 \in q) \mbox{ implies } (m_1 \cdot m_2) \in r$ [HYP1] \\
     \ooo Now, to show $p \leq q \wand r$, we must show
          for all $m$, if $m \in p$, that $m \in q \wand r$. \\
     \ooo Assume $m$, $m \in p$. [HYP2] \\
-    \oooo Now, we want to show $m \in \comprehend{m}{\forall m' \in q.\; m\# m' \land m' \implies (m \cdot m') \in r}$ \\
-    \oooo This is equivalent to showing $\forall m' \in q.\; m\# m' \land m' \implies (m \cdot m') \in r$ \\
+    \oooo Now, we want to show $m \in \comprehend{m}{\forall m' \in q.\; m\# m' \mbox{ and } m' \mbox{ implies } (m \cdot m') \in r}$ \\
+    \oooo This is equivalent to showing $\forall m' \in q.\; m\# m' \mbox{ and } m' \mbox{ implies } (m \cdot m') \in r$ \\
     \oooo Assume $m'$, $m' \in q$, $m \# m'$. [HYP3] \\ 
     \ooooo Instantiating [HYP1] with $m$ and $m'$ and the hypotheses in [HYP2] and [HYP3], \\
     \ooooo we can conclude $(m \cdot m') \in r$.  \\
 
     \oo Now, we'll show the $\Leftarrow$ direction. \\
     \ooo Assume $p \leq q \wand r$. \\
-    \oooo Expanding definitions, $p \subseteq \comprehend{m}{\forall m' \in q. m \# m' \land m' \in q \implies (m \cdot m') \in r}$ \\
-    \oooo This is equivalent to $\forall m. m \in p \implies \forall m' \in q.\; m \# m' \land m' \in q \implies (m \cdot m') \in r$.  \\
-    \oooo This is equivalent to $\forall m, m'.\; m \in p \land m' \in q \land m \# m' \implies (m \cdot m') \in r$ \\
-    \oooo This is equivalent to $\forall m_o, m, m'.\; m \in p \land m' \in q \land m \# m' \land m_o = m\cdot m' \implies m_o \in r$ \\
-    \oooo This is equivalent to $\forall m_o, (\exists m, m'.\; m \in p \land m' \in q \land m \# m' \land m_o = m\cdot m') \implies m_o \in r$ \\
-    \oooo This is equivalent to $\forall m_o, m_o \in (p * q) \implies m_o \in r$ \\
-    \oooo This is equivalent to $p * q \subseteq r$ \\
-    \oooo This is equivalent to $p * q \leq r$ \\
+    \oooo So we know, $p \subseteq \comprehend{m}{\forall m' \in q. m \# m' \mbox{ and } m' \in q \mbox{ implies } (m \cdot m') \in r}$ \\
+    \oooo Therefore $\forall m. m \in p \mbox{ implies } \forall m' \in q.\; m \# m' \mbox{ and } m' \in q \mbox{ implies } (m \cdot m') \in r$.  \\
+    \oooo Therefore $\forall m, m'.\; m \in p \mbox{ and } m' \in q \mbox{ and } m \# m' \mbox{ implies } (m \cdot m') \in r$ \\
+    \oooo Therefore $\forall m_o, m, m'.\; m \in p \mbox{ and } m' \in q \mbox{ and } m \# m' \mbox{ and } m_o = m\cdot m' \mbox{ implies } m_o \in r$ \\
+    \oooo Therefore $\forall m_o, (\exists m, m'.\; m \in p \mbox{ and } m' \in q \mbox{ and } m \# m' \mbox{ and } m_o = m\cdot m') \mbox{ implies } m_o \in r$ \\
+    \oooo Therefore $\forall m_o, m_o \in (p * q) \mbox{ implies } m_o \in r$ \\
+    \oooo Therefore $p * q \subseteq r$ \\
+    \oooo Therefore $p * q \leq r$ \\
 
   \end{tabbedproof}
 
@@ -515,21 +515,21 @@ which crash if the heap is larger than a certain size. Obviously,
 safety monotonicity property cannot hold for such programs, because
 extending the heap enough will cause these programs to crash.  
  
-On the other hand, we don't actually want to prove the correctness of
+On the other hand, we do not actually want to prove the correctness of
 any of these pathological programs: all the programs we actually want
 to write and prove correct are actually well-behaved.
 
-To operationalize this idea, we will adopt an idea of Birkedal and
-Yang's. They proposed changing the interpretation of program
-specifications from a boolean semantics (in which each specification
-is either true or false) into a Kripke interpretation.
+To do this, we will adopt an idea of Birkedal and Yang's. They
+proposed changing the interpretation of program specifications from a
+boolean semantics (in which each specification is either true or
+false) into a Kripke interpretation.
 
-The modal frame they proposed was one in which worlds were sets of
-assertions of separation logic (i.e., elements of a BI algebra). 
+The modal frame they proposed was one in which worlds are sets of
+assertions of separation logic (i.e., elements of a BI algebra).
 Intuitively, we can think of each world as ``the set of assertions
 that can be safely framed onto this specification''. A specification
-is then true when all assertions can be framed onto it, which is 
-how we will end up justifying the frame rule.
+is then true when all assertions can be framed onto it, which is how
+we will end up justifying the frame rule.
 
 As we did for assertions, we'll give this semantics in a modular
 way. We'll first define a preorder on elements of a BI algebra --- the
@@ -538,47 +538,47 @@ values as upwards-closed sets of assertions.
 
 \section{World Preorders}
 
-We can define a world preorder $W(B)$ over a BI algebra $B$ as
-follows.  The elements of $W(B)$ are the elements of $B$, and for any
-two elements $p$ and $q$, the ordering $p \sqsubseteq q$ is defined as
+We can define a world preorder $W(B, \worldleq)$ over a BI algebra $B$ as
+follows.  The elements of $W(B, \leq)$ are the elements of $B$, and for any
+two elements $p$ and $q$, the ordering $p \worldleq q$ is defined as
 follows:
 
 \begin{displaymath}
-p \sqsubseteq q \iff \exists r.\; p * r = q
+p \worldleq q \iff \exists r.\; p * r = q
 \end{displaymath}
 
-To verify the relation $\sqsubseteq$ is a preorder, we need to 
+To verify the relation $\worldleq$ is a preorder, we need to 
 show it is reflexive and transitive. 
 
-$p \sqsubseteq p$ holds because we can take $r$ to be $I$. 
+$p \worldleq p$ holds because we can take $r$ to be $I$. 
 
 
-To show transitivity, we must show that $p_1 \sqsubseteq p_3$, given
-that $p_1 \sqsubseteq p_2$ and $p_2 \sqsubseteq p_3$.
+To show transitivity, we must show that $p_1 \worldleq p_3$, given
+that $p_1 \worldleq p_2$ and $p_2 \worldleq p_3$.
 
 \begin{tabbedproof}
-\oo Assume $p_1 \sqsubseteq p_2$  \\
-\oo Assume $p_2 \sqsubseteq p_3$  \\
-\ooo By definition of $\sqsubseteq$, $\exists r.\; p_1 * r = p_2$ \\
-\ooo By definition of $\sqsubseteq$, $\exists r'.\; p_2 * r' = p_3$ \\
+\oo Assume $p_1 \worldleq p_2$  \\
+\oo Assume $p_2 \worldleq p_3$  \\
+\ooo By definition of $\worldleq$, $\exists r.\; p_1 * r = p_2$ \\
+\ooo By definition of $\worldleq$, $\exists r'.\; p_2 * r' = p_3$ \\
 \ooo Let $r$ and $r'$ be the witnesses in lines 3 and 4, so we have \\
 \oooo $p_1 * r = p_2$ \\
 \oooo $p_2 * r' = p_3$ \\
 \oooo Substituting for $p_2$, we get $p_1 * r * r' = p_3$ \\
 \oooo Taking as witness $r'' = r * r'$, we show $\exists r''.\; p_1 * r'' = p_3$ \\
-\ooo By definition of $\sqsubseteq$, $p_1 \sqsubseteq p_3$ \\
+\ooo By definition of $\worldleq$, $p_1 \worldleq p_3$ \\
 \end{tabbedproof}
 
 \section{Heyting Algebras over Preorders}
 
-Given any preorder $(P, \sqsubseteq)$, we can construct a complete
+Given any preorder $(P, \worldleq)$, we can construct a complete
 Heyting algebra by considering the set of its upward-closed subsets
-$\upset{P}$:
+$(\upset{P}, \subseteq)$:
 
 \begin{displaymath}
 \upset{P} = 
   \{ S \in \mathcal{P}(P) \;|\;
-     \forall p \in S, \forall q \in B. \mbox{ if } p \sqsubseteq q \mbox{ then } q \in S 
+     \forall p \in S, \forall q \in B. \mbox{ if } p \worldleq q \mbox{ then } q \in S 
   \}
 \end{displaymath}
 
@@ -592,9 +592,14 @@ the operations are:
 \item $S \vee S' = S \cup S'$
 \item $\bigwedge_{i \in I} S_i = \bigcap_{i \in I} S_i$
 \item $\bigvee_{i \in I} S_i = \bigcup_{i \in I} S_i$
-\item $S \implies S' = \{ r \in P \;|\; \forall r' \sqsupseteq r.\; 	
+\item $S \implies S' = \{ r \in P \;|\; \forall r' \worldgeq r.\; 	
                           \mbox{if } r' \in S \mbox{ then } r' \in S' \}$
 \end{itemize}
+
+The idea here is that we will take the world preorder over assertions
+(ordered by the extension order $\worldleq$) and use it to define a 
+Heyting algebra, whose elements will become the semantics of specifications.
+
 
 To show that these operations actually form a Heyting algebra, we need
 to show that they satisfy the Heyting algebra axioms. First, we need
@@ -616,14 +621,14 @@ upwards-closed subset.
 \begin{tabbedproof}
 \oo Assume $\forall i \in I.\; S_i \in \upset{P}$ \\
 \ooo We want to show $\bigwedge_{i \in I} S_i \in \upset{P}$ \\ 
-\ooo So we want to show $\forall x \in \bigwedge_{i \in I} S_i$ and for all $y \in P$, if $x \sqsubseteq y$ then $y \in \bigwedge_{i \in I} S_i$ \\
-\ooo Assume $x$, $x \in \bigwedge_{i \in I} S_i$, $y$, $y \in P$, $x \sqsubseteq y$ \\
+\ooo So we want to show for all $x \in \bigwedge_{i \in I} S_i$ and for all $y \in P$, if $x \worldleq y$ then $y \in \bigwedge_{i \in I} S_i$ \\
+\ooo Assume $x$, $x \in \bigwedge_{i \in I} S_i$, $y$, $y \in P$, $x \worldleq y$ \\
 \oooo Since $\bigwedge_{i \in I} S_i = \bigcap_{i \in I} S_i$, we know 
       $\forall i \in I.\; x \in S_i$ \\
 \oooo Assume $i \in I$ \\
-\ooooo Since $x \in S_i$, $x \sqsubseteq y$, and $S_i$ is upwards-closed, $y \in S_i$ \\
+\ooooo Since $x \in S_i$, $x \worldleq y$, and $S_i$ is upwards-closed, $y \in S_i$ \\
 \oooo Therefore, $\forall i \in I$, $y \in S_i$ \\
-\ooo Therefore $\forall x \in \bigwedge_{i \in I} S_i$ and for all $y \in P$, if $x \sqsubseteq y$ then $y \in \bigwedge_{i \in I} S_i$ \\
+\ooo Therefore for all $x \in \bigwedge_{i \in I} S_i$ and for all $y \in P$, if $x \worldleq y$ then $y \in \bigwedge_{i \in I} S_i$ \\
 \ooo Which means $\bigwedge_{i \in I} S_i \in \upset{P}$ \\ 
 \end{tabbedproof}
 
@@ -663,7 +668,7 @@ this is $\forall S \in \upset{P}$, if $X \subseteq
 If $X \subseteq \upset{P}$, then $\bigvee X$ defines an arbitrary join. 
 \end{lemma}
 \begin{proof}
-First, we need to verify the join we defined actually gives us an upwards-closed set.
+First, we need to verify the join we defined actually gives us an upward closed set.
 So we first need to show that if $X \subseteq \upset{P}$, then $\bigvee{X} \in \upset{P}$
 
 \vspace{0.5em}
@@ -671,11 +676,11 @@ So we first need to show that if $X \subseteq \upset{P}$, then $\bigvee{X} \in \
 \begin{tabbedproof}
 \oo Assume  $X \subseteq \upset{P}$ \\
 \ooo We want to show $\bigvee{X} \in \upset{P}$ \\
-\ooo This means $\forall x \in \bigvee{X}, y \in P,$ if $x \sqsubseteq y$ then $y \in \bigvee{X}$\\
-\ooo Assume $x \in \bigvee X$, $y \in P$, $x \sqsubseteq y$ \\
+\ooo This means for all $x \in \bigvee{X}, y \in P,$ if $x \worldleq y$ then $y \in \bigvee{X}$\\
+\ooo Assume $x \in \bigvee X$, $y \in P$, $x \worldleq y$ \\
 \oooo Since $x \in \bigvee X$, we know $\exists S \in X.\; x \in S$ \\
 \oooo Let $S$ be the witness of the existential, so $S \in X$ and $x \in S$ \\ 
-\ooooo  Since $S$ is upwards-closed, $x \in S$, and $x \sqsubseteq y$, we know $y \in S$ \\
+\ooooo  Since $S$ is upward closed, $x \in S$, and $x \worldleq y$, we know $y \in S$ \\
 \ooo Therefore we can conclude $\exists S \in X.\; y \in S$ \\
 \ooo Therefore $y \in \bigvee X$ \\
 \end{tabbedproof}
@@ -720,22 +725,23 @@ $S_1 \implies S_2 \in \upset{P}$.
 \end{lemma}
 
 \begin{proof}
-First, we'll check that the definition gives us an upwards-closed set.
+First, we'll check that the definition gives us an upward closed set.
 
 \vspace{0.5em}
 
 \begin{tabbedproof}
-\oo Assume $x \in S_1 \implies S_2$, and that $y \sqsupseteq x$ \\
-\ooo From this, we know $\forall r' \sqsupseteq x, $ if $r' \in S_1$ then $r' \in S_2$ \\
-\ooo We want to show $\forall r' \sqsupseteq y, $ if $r' \in S_1$ then $r' \in S_2$ \\
-\ooo Assume $r' \sqsupseteq y$ and $r' \in S_1$ \\
-\oooo Since $r' \sqsupseteq y$ and $r' \sqsupseteq x$, we know $r' \sqsupseteq x$ \\
+\oo Assume $x \in S_1 \implies S_2$, and that $y \worldgeq x$ \\
+\ooo From this, we know $\forall r' \worldgeq x, $ if $r' \in S_1$ then $r' \in S_2$ \\
+\ooo We want to show $\forall r' \worldgeq y, $ if $r' \in S_1$ then $r' \in S_2$ \\
+\ooo Assume $r' \worldgeq y$ and $r' \in S_1$ \\
+\oooo Since $r' \worldgeq y$ and $r' \worldgeq x$, we know $r' \worldgeq x$ \\
 \oooo From this  and $r' \in S_1$, we can use the hypothesis in line 2 to get $r' \in S_2$ \\
-\ooo Therefore $\forall r' \sqsupseteq y, $ if $r' \in S_1$ then $r' \in S_2$ \\
+\ooo Therefore $\forall r' \worldgeq y, $ if $r' \in S_1$ then $r' \in S_2$ \\
 \end{tabbedproof}
 
 \noindent Now that we know that $\implies$ has the correct codomain, we need to
-verify that it satisfies the following axiom: 
+verify that it satisfies the adjoint relationship between conjunction and 
+implication: 
 \begin{displaymath}
 S_1 \land S_2 \subseteq R \iff S_1 \subseteq S_2 \implies R
 \end{displaymath}
@@ -751,7 +757,7 @@ S_1 \land S_2 \subseteq R \iff S_1 \subseteq S_2 \implies R
 \\
 
 \begin{tabular}{ll}
-Assume $\forall x.\; x \in S_1 \land S_2 \Rightarrow x \in R$ &
+Assume for all $x.\; x \in S_1 \land S_2 \Rightarrow x \in R$ &
 (1)
 \\
 
@@ -759,7 +765,7 @@ Assume $x \in S_1$ &
 (2)
 \\
 
-Assume $r' \sqsupseteq x$ &
+Assume $r' \worldgeq x$ &
 (3)
 \\
 
@@ -768,7 +774,7 @@ Assume $r' \in S_2$ &
 \\
 
 $r' \in S_1$ & 
-Since $x \in S_1$ and $r' \sqsupseteq x$ \\
+Since $x \in S_1$ and $r' \worldgeq x$ \\
 
 $r' \in S_1 \cap S_2$ & 
 Since $r' \in S_1$ and $r' \in S_2$ \\
@@ -779,10 +785,10 @@ By assumption (1) \\
 $r' \in S_2 \Rightarrow r' \in R$ &
 Implication intro (4) \\
 
-$\forall r' \sqsupseteq x.\; r' \in S_2 \Rightarrow r' \in R$ &
+$\forall r' \worldgeq x.\; r' \in S_2 \Rightarrow r' \in R$ &
 Universal intro (3) \\
 
-$x \in \{ r \in P \;|\; \forall r' \sqsupseteq r.\; r' \in S_2 \Rightarrow r' \in R$ &
+$x \in \{ r \in P \;|\; \forall r' \worldgeq r.\; r' \in S_2 \Rightarrow r' \in R$ &
 Comprehension intro \\
 
 $x \in S_2 \implies R$ &
@@ -815,13 +821,13 @@ Since $x \in S_1 \land S_2$ (3) \\
 $x \in S_2 \implies R$ & 
 By (2) and (1) \\
 
-$x \in \{ r \in P \;|\; \forall r' \sqsupseteq r.\; \mbox{if } r' \in S_2 \mbox{ then } r' \in R \}$ &
+$x \in \{ r \in P \;|\; \forall r' \worldgeq r.\; \mbox{if } r' \in S_2 \mbox{ then } r' \in R \}$ &
 Definition of $\implies$ \\
 
-$\forall r' \sqsupseteq x.\; \mbox{if } r' \in S_2 \mbox{ then } r' \in R$ &
+$\forall r' \worldgeq x.\; \mbox{if } r' \in S_2 \mbox{ then } r' \in R$ &
 Comprehension instantiation (4) \\
 
-$x \sqsupseteq x$ & 
+$x \worldgeq x$ & 
 Reflexivity (5) \\
 
 $\mbox{if } x \in S_2 \mbox{ then } x \in R$ & 
@@ -1144,7 +1150,7 @@ $x,y$, if $x \in S \otimes p$ and $y \sqsupseteq x$, then $y \in S \otimes p$.
 \ooo From $x \in S \otimes p$, we know $x * p \in S$ \\
 \ooo From $y \sqsupseteq x$, we know $\exists r.\; y = x * r$ \\
 \ooo Let $r$ be the witness so that $y = x * r$ \\
-\oooo Since $S$ is upwards-closed, $x * p * r \in S$ \\
+\oooo Since $S$ is upward closed, $x * p * r \in S$ \\
 \oooo Since $x * p * r = (x * r) *p$, we know  $y * p \in S$ \\
 \oooo Therefore $y \in S \otimes p$ \\
 \end{tabbedproof}
@@ -1154,7 +1160,7 @@ To show $S \subseteq S \otimes p$, we need to show that if $x \in S$, then $x \i
 \begin{tabbedproof}
 \oo Assume $x \in S$ \\
 \ooo Since $\sqsubseteq$ is the extension ordering, $x \sqsubseteq x * p$ \\   
-\ooo Since $S$ is upwards-closed, $x * p \in S$\\
+\ooo Since $S$ is upward closed, $x * p \in S$\\
 \ooo Therefore $x \in S \otimes p$ \\
 \end{tabbedproof}
 
@@ -1718,7 +1724,7 @@ Now, we'll consider the interpretation of the syntax.
 
 We'll start by explaining how to interpret the sorts. Ultimately,
 we're going to define assertions to be the powerset of heaps, and
-specifications to be upwards-closed sets of assertions, but because we
+specifications to be upward closed sets of assertions, but because we
 allow types as sorts, and types may have free type variables, we will
 need to give an indexed, recursive definition in order to make
 everything work properly.
@@ -4038,34 +4044,38 @@ specification $S$ is true.
 
 \subsection{Soundness of Axioms}
 
-\begin{lemma}{(Validity Distributes Through Implication)}
-$\judgeS{S_1 \specimp S_2}$ is valid is logically equivalent to: if
-$\judgeS{S_1}$ is valid, then $\judgeS{S_2}$ is valid.
+\begin{lemma}{(Validity and Classical and Intuitionistic Implication)}
+The statement that $\judgeS{S_1 \specimp S_2}$ is valid is logically equivalent to: if
+for all $\delta$ and $r$, if $r \in \interp{\judgeS{S_1}}\;\delta$ then $r \in \interp{\judgeS{S_2}}\;\delta$  
 \end{lemma}
 
 \begin{proof}
   \begin{tabbedproof}
-    \oo $\To$ direction: \\
-    \ooo Assume $\judgeS{S_1 \specimp S_2}$ is valid \\
-    \ooo Assume $\judgeS{S_1}$ is valid \\
-    \ooo Assume $\delta \in \interp{\judgeACtx{\Delta}}$ \\
-    \oooo We want to show $\interp{\judgeS{S_2}}\delta = \top$ \\
-    \oooo This is equivalent to showing $\forall p.\; p \in \interp{\judgeS{S_2}}\delta$ \\
-    \oooo Assume $p$ \\ 
-    \ooooo From $\judgeS{S_1}$ is valid, we know that $p \in \interp{\judgeS{S_1}}\;\delta$ \\
-    \ooooo From $\judgeS{S_1 \specimp S_2}$ is valid, we know 
-          $\forall p, q, \sqsupseteq p.\; q \in \interp{S_1}\delta \implies q \in \interp{S_2}\delta$ \\
-    \ooooo Instantiating both quantifiers with $p$, and discharging the hypotheses \\
-    \ooooo with $p \sqsupseteq p$ and line 7, we learn $p \interp{S_2}\delta$\\
-    \oo $\From$ direction: \\
-    \ooo Assume if $\judgeS{S_1}$ is valid, then $\judgeS{S_2}$ is valid. \\
-    \oooo We want to show that $\judgeS{S_1 \specimp S_2}$ is valid\\
-    \oooo So we want to show $\forall \delta, \interp{\judgeS{S_1 \specimp S_2}}\delta = \top$ \\
-    \oooo Assume $\delta$ \\
-    \ooooo So we want to show 
+    \oo $\To$ direction:\\
+    \ooo Assume $\judgeS{S_1 \specimp S_2}$ is valid\\
+    \oooo We want to show for all $\delta$ and $r$, if $r \in \interp{\judgeS{S_1}}\;\delta$, then 
+          $r \in \interp{\judgeS{S_2}}\;\delta$ \\
+    \oooo Assume $\delta$ is an appropriate substitution, and $r$ such that $r \in \interp{\judgeS{S_1}}\;\delta$ \\
+    \ooooo We want to show $r \in \interp{\judgeS{S_2}}\;\delta$ \\
+    \oooooo From the hypothesis we know that $\interp{\judgeS{S_1 \specimp S_2}}\;\delta = \top$ \\
+    \oooooo So we know for all $r$ and $s \worldgeq r$, that \\
+    \oooooox if $s \in \interp{\judgeS{S_1}}\;\delta$ then $s \in \interp{\judgeS{S_2}}\;\delta$ \\
+    \oooooo Since $r \worldgeq r$, we know if $r \in \interp{\judgeS{S_1}}\;\delta$ then $s \in \interp{\judgeS{S_2}}\;\delta$ \\
+    \oooooo Since $r \in \interp{\judgeS{S_1}}\;\delta$, we know that $r \in \interp{\judgeS{S_2}}\;\delta$ \\
+    \oo $\From$ direction:\\
+    \ooo Assume for all $\delta$ and $r$, if $r \in \interp{\judgeS{S_1}}\;\delta$, then 
+          $r \in \interp{\judgeS{S_2}}\;\delta$ \\
+    \oooo We want to show for all $\delta$ that $\interp{\judgeS{S_1 \specimp S_2}}\;\delta = \top$ \\
+    \oooo Assume $\delta$ is a suitable substitution \\
+    \ooooo So we want to show $\interp{\judgeS{S_1 \specimp S_2}}\;\delta = \top$ \\
+    \ooooo So we want to show for all $r$ and $s \worldgeq r$, that \\
+    \ooooox if $s \in \interp{\judgeS{S_1}}\;\delta$ then $s \in \interp{\judgeS{S_2}}\;\delta$ \\
+    \ooooo Assume $r$ and $s$ such that $s \worldgeq r$ and $s \in \interp{\judgeS{S_1}}\;\delta$ \\
+    \oooooo Instantiate the quantifier in the hypothesis with $\delta$ and $s$, so we learn \\
+    \oooooox if $s \in \interp{\judgeS{S_1}}\;\delta$ then $s \in \interp{\judgeS{S_2}}\;\delta$ \\
+    \oooooo Since $s \in \interp{\judgeS{S_1}}\;\delta$ we can conclude $s \in \interp{\judgeS{S_2}}\;\delta$ \\
   \end{tabbedproof}
 \end{proof}
-
 
 \begin{lemma}{(Assignment Axiom)}
 $\judgeS{\spec{e \pointsto_A -}{e := e'}{a:\unittype}{e \pointsto_A e'}}$ is valid  
@@ -4298,26 +4308,282 @@ Suppose $\judgeS{\mspec{p}{e}{x:A}{q}}$ is valid, and $\judgeS[\Delta,x:A]{\spec
 \end{proof}
 
 \begin{lemma}{(Fixed Point Induction)}
-We have that
+We have that if 
 \begin{displaymath}
    S \triangleq 
-   \judgeS{(\forall x:\monad{A}.\; \mspec{p}x{a:A}{q(a)} \specimp \mspec{p}{e}{a:A}{q})
-    \specimp \mspec{p}{\fix{x:\monad{A}}{e}}{a:A}{q}}
+   \judgeS{(\forall x:\monad{A}.\; \mspec{p}x{a:A}{q(a)} \specimp \mspec{p}{e}{a:A}{q})}
 \end{displaymath}
-\noindent is valid.
+\noindent is valid, then 
+\begin{displaymath}
+  S' \triangleq \judgeS{\mspec{p}{\fix{x:\monad{A}}{e}}{a:A}{q}}
+\end{displaymath}
+is valid.
 \end{lemma}
 
 \begin{proof}
   \begin{tabbedproof}
-    \oo Let $S_1 = \forall x:\monad{A}.\; \mspec{p}x{a:A}{q(a)} \specimp \mspec{p}{e}{a:A}{q}$\\
-    \oo Let $S_2 = \mspec{p}{\fix{x:\monad{A}}{e}}{a:A}{q}$ \\
+    \oo Let $S = \forall x:\monad{A}.\; \mspec{p}x{a:A}{q(a)} \specimp \mspec{p}{e}{a:A}{q}$\\
+    \oo Let $S = \mspec{p}{\fix{x:\monad{A}}{e}}{a:A}{q}$ \\
     \oo Assume $\delta \in \interp{\judgeACtx{\Delta}}$ \\
-    \ooo Next, we want to show $\interp{S}\;\delta = \top$ \\
-    \ooo So we want to show $\interp{S_1}\;\delta \implies \interp{S_2}\;\delta = \top$ \\
-    \ooo So we want to show $\forall t, \forall u \sqsupseteq t.$ if $u \in \interp{S_1}\;\delta$ then $u \in \interp{S_2}\;\delta$ \\
-    \ooo This is equivalent to $\forall t.$ if $t \in \interp{S_1}\;\delta$ then $t \in \interp{S_2}\;\delta$ \\
-    \ooo Assume $t$, and $t \in \interp{S_1}\;\delta$ \\
-    \ooo 
+    \ooo So we want to show $\interp{S'}\;\delta = \top$ \\
+    \ooo Let $P = \interp{\judgeA{P}{\assert}}\;\delta$ \\
+    \ooo Let $C = \interp{\judgeA{\fix{x:\monad{A}}{e}}{\monad{A}}}\;\delta$ \\
+    \ooo Let $Q = \semfun{v}{\interp{\judgeA[\Delta,a:A]{q}{\assert}}\;(\delta,v)}$ \\
+    \ooo Let $F(v) = \interp{\judgeA[\Delta,a:A]{e}{\monad{A}}}\;(\delta,v)$ \\
+    \ooo So we want to show $\spec{P}{C}{a:A}{Q(a)} = \top$ \\
+    \ooo We know $\interp{S}\;\delta = \top$ \\
+    \ooo Thus for all $v$, we know $\interp{\mspec{p}x{a:A}{q(a)} \specimp \mspec{p}{e}{a:A}{q}}\;(\delta,v) = \top$ \\
+    \ooo Thus we know for all $v$, $r$, and $s \sqsupseteq r$, \\
+    \ooox if $s \in \interp{\mspec{p}x{a:A}{q(a)}}\;(\delta,v)$ then $s \in \interp{\mspec{p}{e}{a:A}{q}}\;(\delta,v)$ \\
+    \ooo Since $x \not\in \FV{p}$, we know for all $v$, 
+         $\interp{\judgeA[\Delta,x:\monad{A}]{p}{\assert}}\;(\delta,v) = P$ \\
+    \ooo Since $x \not\in \FV{q}$, we know for all $v$, 
+         $\semfun{v'}{\interp{\judgeA[\Delta,x:\monad{A}, a:A]{q}{\assert}}\;(\delta,v,v')} = Q$ \\
+    \ooo Thus we know for all $v$, $r$, and $s \sqsupseteq r$, \\
+    \ooox if $s \in  \spec{P}{v}{a:A}{Q(a)}$ then 
+             $s \in \spec{P}{F(v)}{a:A}{Q(a)}$ \\
+    \ooo This implies that for all $v$, if $\spec{P}{F(v)}{a:A}{Q(a)} = \top $ 
+                                        then $\spec{P}{F(v)}{a:A}{Q(a)} = \top$ \\
+    \ooo Then by the semantic fixed point theorem, 
+          $\spec{P}{fix(F)}{a:A}{Q(a)} = \top$ \\
+    \ooo So $\spec{P}{C}{a:A}{Q(a)} = \top$ \\
+    \ooo Therefore $\interp{S'}\;\delta = \top$ \\
   \end{tabbedproof}
 \end{proof}
+
+\begin{lemma}{(Weakening from Preconditions)}
+If we know that $\judgeS{\setof{r} \specimp \spec{p}{c}{a:A}{q}}$ is
+valid, $r$ is a pure formula of separation logic, and we know that $p
+\implies r$ is a valid truth of separation logic, then
+$\judgeS{\spec{p}{c}{a:A}{q}}$ is valid.
+\end{lemma}
+
+\begin{proof}
+  \begin{tabbedproof}
+    \oo Assume $\judgeS{\setof{r} \specimp \spec{p}{c}{a:A}{q}}$ is valid \\
+    \oo Assume $p \implies r$ is a valid truth of separation logic \\
+    \ooo Now, we know that for all $\delta$, $\interp{\judgeS{\setof{r} \specimp \spec{p}{c}{a:A}{q}}}\;\delta$ is $\top$\\
+    \ooo Now, we want to show for all $\delta$, that $\interp{\judgeS{\spec{p}{c}{a:A}{q}}}\;\delta = \top$ \\
+    \ooo Assume $\delta$ is an environment \\
+    \oooo So we want to show for all $r$, and all $s \worldgeq r$, that $\basicspec{P*s}{C}{a}{Q(a) * s}$ holds\\
+    \ooox where \\
+    \oooox $R = \interp{\judgeA{r}{\assert}}\;\delta$ \\
+    \oooox $P = \interp{\judgeA{p}{\assert}}\;\delta$ \\
+    \oooox $C = \interp{\judgeC[\restrictkind{\Delta}]{\restricttype{\Delta}}{c}{A}}\;\theta\;\gamma$ \\
+    \oooox $Q = \semfun{v}{\interp{\judgeA[\Delta,a:A]{q}{\assert}}\;(\delta,v)}$ \\
+    \oooox $\theta = \restricttyenv{\Delta}{\delta}$ \\
+    \oooox $\gamma = \restrictvals{\Delta}{\delta}$ \\
+    \oooo To show $\basicspec{P*s}{C}{a}{Q(a)*s}$, we must show 
+          $\forall h \in P * s.\; c\; (Best(\semfun{a}{Q(a)*s}))\;h = \bot$ \\
+    \oooo Assume $h \in P * s$ \\
+    \ooooo Since $p \implies r$ is a valid truth, we know $P \implies R$ and so $h \in R * s$ \\
+    \ooooo Since $R$ is pure, we know $h \in R \land s$ \\
+    \ooooo So we know $h \in R$ \\
+    \ooooo Since $R$ is pure it is either $\emptyset$ or $H$, and since we know $h \in R$, $R = H$ \\
+    \ooooo Therefore we know that $\interp{\judgeS{\setof{r}}}\;\delta = \top$ \\
+    \ooooo Therefore we know that $\interp{\judgeS{\spec{p}{c}{a:A}{q}}}\;\delta = \top$ \\
+  \end{tabbedproof}
+\end{proof}
+
+\begin{lemma}{(Getting Specs Out of Assertions)}
+We have that $\judgeS{\setof{\validprop{S}} \specimp S}$ is valid.
+\end{lemma}
+\begin{proof}
+  \begin{tabbedproof}
+    \oo We want to show $\judgeS{\setof{\validprop{S}} \specimp S}$ is valid \\
+    \oo Equivalently, we need for all $\delta$ and $r$, if $r \in \interp{\judgeS{\setof{\validprop{S}}}}\;\delta$\\
+    \ox    then $r \in \interp{\judgeS{S}}\;\delta$ \\
+    \oo Assume we have a suitable $\delta$ and $r$ such that $r \in \interp{\judgeS{\setof{\validprop{S}}}}\;\delta$ \\
+    \ooo From the semantics, we know $\interp{\judgeS{\setof{\validprop{S}}}}\;\delta$ is either $\top$ or $\bot$ \\
+    \ooo Since $r \in \interp{\judgeS{\setof{\validprop{S}}}}\;\delta$, we know it is non-empty, hence \\
+    \ooox $\interp{\judgeS{\setof{\validprop{S}}}}\;\delta = \top$ \\
+    \ooo Therefore, we know that $\interp{\judgeA{\validprop{S}}{\assert}}\;\delta = H$ \\
+    \ooo Therefore, we know that $\interp{\judgeS{S}}\;\delta = \top$ \\
+  \end{tabbedproof}
+\end{proof}
+
+\begin{lemma}{(Existential Dropping)}
+If $\judgeS{\spec{\exists u:\omega.\;p}{c}{a:A}{q}}$ is valid, then 
+   $\judgeS[\Delta, u:\omega]{\spec{p}{c}{a:A}{q}}$ is valid. 
+\end{lemma}
+
+\begin{proof}
+  \begin{tabbedproof}
+    \oo Assume $\judgeS{\spec{\exists u:\omega.\;p}{c}{a:A}{q}}$ is valid \\
+    \ooo We want to show $\judgeS[\Delta, u:\omega]{\spec{p}{c}{a:A}{q}}$ is valid \\
+    \ooo So we want to show for all $\delta' = (\delta, v)$, that $\interp{\judgeS[\Delta, u:\omega]{\spec{p}{c}{a:A}{q}}}\;\delta' = \top$ \\
+    \ooo Assume we have a suitable $\delta' = (\delta, v)$ \\ 
+    \oooo We want to show for all $r$, that $r \in \spec{P}{C}{a}{Q(a)}$ \\
+    \oooo where \\
+    \oooox $P = \interp{\judgeA[\Delta, u:\omega]{p}{\assert}}\;\delta'$ \\
+    \oooox $C = \interp{\judgeC[\restrictkind{\Delta, u:\omega}]{\restricttype{\Delta, u:\omega}}{c}{A}}\;\theta'\;\gamma'$ \\
+    \oooox $Q = \semfun{v'}{\interp{\judgeA[\Delta, u:\omega]{q}{\assert}}\;(\delta',v')}$\\
+    \oooox $\theta' = \restricttyenv{\Delta, u:\omega}{\delta'}$ \\
+    \oooox $\gamma' = \restricttyenv{\Delta, u:\omega}{\delta'}$ \\
+    \oooox $\theta = \restricttyenv{\Delta}{\delta}$ \\
+    \oooox $\gamma = \restrictvals{\Delta}{\delta}$ \\
+    \oooo We also know that $C = \interp{\judgeC[\restrictkind{\Delta}]{\restricttype{\Delta}}{c}{A}}\;\delta$ \\
+    \oooo and that $Q = \semfun{v'}{\interp{\judgeA{q}{\assert}}\;(\delta,v')}$\\
+    \oooo So now we must show for all $s \worldgeq r$, that $\basicspec{P * s}{C}{a}{Q(a) * s}$ holds\\
+    \oooo Now assume $s$ such that $s \worldgeq r$ \\
+    \ooooo We need for all $h \in \basicspec{P * s}{C}{a}{Q(a) * s}$, that 
+             $C\;Best(\semfun{a}{Q(a) * s})\;h = \bot$ \\
+    \ooooo We know $\spec{\exists u:\omega.\;p}{c}{a:A}{q}$ is valid \\
+    \ooooo So we know for all $r$, that $r \in \spec{P'}{C}{a}{Q(a)}$ \\
+    \oooox where $P' = \bigvee_{v \in \interp{\judgeSort{\omega}}\;\delta} \interp{\judgeA[\Delta, u:\omega]{p}{\assert}}\;(\delta, v)$ \\
+    \ooooo Since $P = \interp{\judgeA[\Delta,u:\omega]{p}{\assert}}\;(\delta, v)$, we know $P \subseteq P'$ \\
+    \ooooo Therefore $h \in P' * s$, and so $C\;Best(\semfun{a}{Q(a) * s})\;h = \bot$ \\
+    
+  \end{tabbedproof}
+\end{proof}
+
+\subsection{The Syntactic Frame Property}
+
+Now, we can define a \emph{syntactic} frame operator $\Frame{S}{r}$
+on specifications. 
+
+\begin{displaymath}
+  \begin{array}{lcl}
+    \Frame{\spec{p}{c}{a:A}{q}}{r}    & = & \spec{p * r}{c}{a:A}{q * r} \\
+    \Frame{\mspec{p}{c}{a:A}{q}}{r}   & = & \mspec{p * r}{c}{a:A}{q * r} \\
+    \Frame{\setof{p}}{r}              & = & \setof{p} \\
+    \Frame{(S_1 \specand S_2)}{r}      & = & \Frame{S_1}{r} \specand \Frame{S_2}{r} \\
+    \Frame{(S_1 \specor S_2)}{r}       & = & \Frame{S_1}{r} \specor \Frame{S_2}{r} \\
+    \Frame{(S_1 \specimp S_2)}{r}      & = & \Frame{S_1}{r} \specimp \Frame{S_2}{r} \\
+    \Frame{(\forall x:\omega.\; S)}{r} & = & \forall x:\omega.\; (\Frame{S}{r}) \\
+    \Frame{(\exists x:\omega.\; S)}{r} & = & \exists x:\omega.\; (\Frame{S}{r}) \\
+  \end{array}
+\end{displaymath}
+
+\begin{prop}{(Syntactic Well-Formedness of Frame Operator)}
+If $\judgeS{S}$ and $\judgeA{p}{\assert}$, then
+we define $\judgeS{\Frame{S}{p}}$.  
+\end{prop}
+\begin{proof}
+  By structural induction on specifications.
+\end{proof}
+
+More interesting than the syntactic well-formedness of the frame
+operator is its semantic well-formedness. 
+
+\begin{lemma}{(Syntactic Framing is Semantic Framing)}
+If $\judgeS{S}$ and $\judgeA{r}{\assert}$, then for all $\delta \in \interp{\Delta}$, 
+$\interp{\judgeS{\Frame{S}{r}}}\;\delta = 
+\Frame{\interp{\judgeS{S}}\;\delta}{\interp{\judgeA{r}{\assert}}\;\delta}$ \\
+\end{lemma}
+
+\begin{proof}
+  This proof proceeds by induction on the derivation of $S$. 
+
+  \begin{itemize}
+  \item Case \textsc{SpecTriple}: 
+    \begin{tabbedproof}
+      \oo We know $\judgeS{\spec{p}{c}{a:A}{q}}$ \\
+      \oo By the semantics of triples, we know that 
+          $\interp{\judgeS{\spec{p}{c}{a:A}{q}}}\;\delta = \spec{P}{C}{a}{Q(a)}$ \\ 
+          % $\spec{p}[c}{a:A}{q}\;\delta = \spec{P}{C}{a}{Q(a)}$ \\
+      \ox where \\
+      \oox $P = \interp{\judgeA{p}{\assert}}\;\delta$ \\
+      \oox $C = \interp{\judgeC[\restrictkind{\Delta}]{\restricttype{\Delta}}{c}{A}}\;\theta\;\gamma$ \\
+      \oox $Q = \semfun{v}{(\interp{\judgeA[\Delta, a:A]{q}{\assert}}\;(\delta, v))}$ \\
+      \oox $\theta = \restricttyenv{\Delta}{\delta}$ \\
+      \oox $\gamma = \restrictvals{\Delta}{\delta}$ \\
+      \oo Now from the definition of syntactic framing, we know that $\Frame{S}{r} = \spec{p * r}{c}{a:A}{q(a) * r}$ \\
+      \oo By semantics of triples, we know that \\
+      \oox $\interp{\judgeS{\spec{p * r}{c}{a:A}{q * r}}}\;\delta = \spec{P * R}{C}{a}{Q(a) * R}$ \\ 
+      \ox where $R = \interp{\judgeA{r}{\assert}}\;\delta$ \\
+      \oo By lemma we know that $\spec{P * R}{C}{a}{Q(a) * R} = \Frame{\spec{P}{C}{a}{Q(a)}}{R}$ 
+          semantically \\
+      \oo Therefore $\interp{\judgeS{\Frame{\spec{p}{c}{a:A}{q}}{r}}}\;\delta = 
+                     \Frame{\interp{\judgeS{\spec{p}{c}{a:A}{q}}}\;\delta}{(\interp{\judgeA{r}{\assert}}\;\delta)}$
+    \end{tabbedproof}
+
+  \item Case \textsc{SpecMTriple}
+    \begin{tabbedproof}
+      \oo We know $\judgeS{\mspec{p}{e}{a:A}{q}}$ \\
+      \oo By the semantics of triples, we know that 
+          $\interp{\judgeS{\mspec{p}{e}{a:A}{q}}}\;\delta = \mspec{P}{E}{a}{Q(a)}$ \\ 
+      \ox where \\
+      \oox $P = \interp{\judgeA{p}{\assert}}\;\delta$ \\
+      \oox $E = \interp{\judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}{e}{\monad{A}}}\;\theta\;\gamma$ \\
+      \oox $Q = \semfun{v}{(\interp{\judgeA[\Delta, a:A]{q}{\assert}}\;(\delta, v))}$ \\
+      \oox $\theta = \restricttyenv{\Delta}{\delta}$ \\
+      \oox $\gamma = \restrictvals{\Delta}{\delta}$ \\
+      \oo Now from the definition of syntactic framing, we know that $\Frame{S}{r} = \mspec{p * r}{e}{a:A}{q(a) * r}$ \\
+      \oo By semantics of triples, we know that \\
+      \oox $\interp{\judgeS{\mspec{p * r}{e}{a:A}{q * r}}}\;\delta = \mspec{P * R}{e}{a}{Q(a) * R}$ \\ 
+      \ox where $R = \interp{\judgeA{r}{\assert}}\;\delta$ \\
+      \oo By lemma we know that $\mspec{P * R}{E}{a}{Q(a) * R} = \Frame{\mspec{P}{E}{a}{Q(a)}}{R}$ 
+          semantically \\
+      \oo Therefore $\interp{\judgeS{\Frame{\mspec{p}{c}{a:A}{q}}{r}}}\;\delta = 
+                     \Frame{\interp{\judgeS{\mspec{p}{c}{a:A}{q}}}\;\delta}{(\interp{\judgeA{r}{\assert}}\;\delta)}$
+    \end{tabbedproof}
+
+    \item Case \textsc{SpecAssert}
+      \begin{tabbedproof}
+        \oo We know $\judgeS{\setof{p}}$ \\
+        \oo So we also know that $\Frame{\setof{p}}{r} = \setof{p}$ \\
+        \oo Therefore, $\interp{\judgeS{\setof{p}}}\;\delta$ is either $\top$ or $\bot$, depending on
+            whether $\interp{\judgeA{p}{\assert}}\;\delta$ is $H$ or $\emptyset$ \\
+        \oo Now, we'll do a case analysis on the meaning of $\setof{p}$ \\
+        \ooo If $\interp{\judgeS{\setof{p}}}\;\delta = \top$ \\
+        \oooo Then, since $S \subseteq \Frame{S}{R}$ for all $S$ and $R$, and $\top$ is maximal, we know that \\
+        \oooox $\top = \Frame{\top}{(\interp{\judgeA{r}{\assert}}\;\delta)}$ \\
+        \oooo So $\interp{\judgeS{\Frame{\setof{p}}{r}}}\;\delta = \Frame{\interp{\judgeS{\setof{p}}}\;\delta}{(\interp{\judgeA{r}{\assert}}\;\delta)}$ \\
+        \ooo If $\interp{\judgeS{\setof{p}}}\;\delta = \bot$ \\
+        \oooo Then, since $\bot$ is the empty set, and since $\Frame{S}{r} = \comprehend{p}{p * r \in S}$, \\
+        \ooooo we know $\bot = \Frame{\bot}{\interp{\judgeA{r}{\assert}}\;\delta}$ \\
+        \oooo  So we know $\interp{\judgeS{\Frame{\setof{p}}{r}}}\;\delta = \Frame{\interp{\judgeS{\setof{p}}}\;\delta}{(\interp{\judgeA{r}{\assert}}\;\delta)}$ \\
+      \end{tabbedproof}
+
+    \item Case \textsc{SpecBinary}
+      \begin{tabbedproof}
+        \oo We know $\judgeS{S_1 \otimes S_2}$, where $\oplus \in \setof{\specand, \specor, \specimp}$ \\
+        \oo We also know that $\Frame{(S_1 \oplus S_2)}{r} = (\Frame{S_1}{r}) \oplus (\Frame{S_2}{r})$ \\
+        \oo By the semantics, we know \\
+        \oox $\interp{\judgeS{S_1 \oplus S_2}}\;\delta = \interp{\judgeS{S_1}}\;\delta \interp{\oplus} \; \interp{\judgeS{S_2}}\;\delta$ \\
+        \oo By the semantics, we know that \\
+        \oox $\interp{\judgeS{\Frame{(S_1 \oplus S_2)}{r}}}\;\delta = 
+                                            (\interp{\judgeS{\Frame{S_1}{r}}}\;\delta) \interp{\oplus}
+                                            (\interp{\judgeS{\Frame{S_2}{r}}}\;\delta)$ \\
+        \oo By induction, we know $\interp{\judgeS{\Frame{S_1}{r}}}\;\delta = 
+                                   \Frame{\interp{\judgeS{S_1}}\;\delta}{(\interp{\judgeA{r}{\assert}}\;\delta)}$ \\
+        \oo By induction, we know $\interp{\judgeS{\Frame{S_2}{r}}}\;\delta = 
+                                   \Frame{\interp{\judgeS{S_2}}\;\delta}{(\interp{\judgeA{r}{\assert}}\;\delta)}$ \\
+
+        \oo Therefore, we know $\interp{\judgeS{\Frame{(S_1 \oplus S_2)}{r}}}\;\delta = $ \\
+        \oox                   $(\Frame{\interp{\judgeS{S_1}}\;\delta}{(\interp{\judgeA{r}{\assert}}\;\delta)}) 
+                                 \interp{\oplus} 
+                                (\Frame{\interp{\judgeS{S_2}}\;\delta}{(\interp{\judgeA{r}{\assert}}\;\delta)})$ \\
+        \oo Therefore we know $\interp{\judgeS{\Frame{(S_1 \oplus S_2)}{r}}}\;\delta = $ \\
+        \oox $\Frame{(\interp{\judgeS{S_1}}\;\delta \;\interp{\oplus}\; \interp{\judgeS{S_2}}\;\delta)}
+                    {(\interp{\judgeA{r}{\assert}}\;\delta)}$ \\
+        \oo Therefore we know $\interp{\judgeS{\Frame{(S_1 \oplus S_2)}{r}}}\;\delta = $ \\
+        \oox $\Frame{\interp{\judgeS{S_1 \oplus S_2}}\;\delta}{(\interp{\judgeA{r}{\assert}}\;\delta)}$ \\
+      \end{tabbedproof}
+
+    \item Case \textsc{SpecQuantify}:
+      \begin{tabbedproof}
+        \oo We know $\judgeS{Q u:\omega.\; S}$, where $Q \in \setof{\forall, \exists}$ \\
+        \oo We also know that $\Frame{(Q u:\omega.\; S)}{r} = Q u:\omega.\; (\Frame{S}{r})$ \\
+        \oo By the semantics, we know that $\interp{\judgeS{Q u:\omega.\; (\Frame{S}{r)}}}\;\delta = $ \\
+        \oox $\interp{Q}_{v \in \interp{\judgeSort{\omega}}\;\delta} \interp{\judgeS[\Delta, u:\omega]{\Frame{S}{r}}}\;(\delta, v)$\\
+        \oo By induction, we know that for all appropriate $\delta'$, 
+               $\interp{\judgeS[\Delta, u:\omega]{\Frame{S}{r}}}\;\delta' = $ \\
+        \oox $\Frame{\interp{\judgeS[\Delta, u:\omega]{S}}\;\delta'}{\interp{\judgeA[\Delta, u:\omega]{r}{\assert}}\;\delta'}$ \\
+        \oo Now, if $\delta' = (\delta, v)$, then $\interp{\judgeA[\Delta, u:\omega]{r}{\assert}}\;\delta' = 
+                                                   \interp{\judgeA{r}{\assert}}\;\delta$ since $u \not\in \FV{r}$ \\
+        \oo So we know $\interp{\judgeS{Q u:\omega.\; (\Frame{S}{r)}}}\;\delta = $ \\
+        \oox $\interp{Q}_{v \in \interp{\judgeSort{\omega}}\;\delta} (\Frame{\interp{\judgeS[\Delta, u:\omega]{S}}\;(\delta,v)}{\interp{\judgeA{r}{\assert}}\;\delta})$ \\
+        \oo Since framing distributes through meets, we know $\interp{\judgeS{Q u:\omega.\; (\Frame{S}{r)}}}\;\delta = $ \\
+        \oox $\Frame{(\interp{Q}_{v \in \interp{\judgeSort{\omega}}\;\delta} \interp{\judgeS[\Delta, u:\omega]{S}}\;(\delta,v))}{\interp{\judgeA{r}{\assert}}\;\delta})$ \\
+        \oo So we know $\interp{\judgeS{Q u:\omega.\; (\Frame{S}{r)}}}\;\delta = $ \\
+        \oox $\Frame{\interp{\judgeS{Q u:\omega.\;S}}\;\delta}{(\interp{\judgeA{r}{\assert}}\;\delta)}$ \\
+        \oo So we know $\interp{\judgeS{\Frame{(Q u:\omega.\; S)}{r}}}\;\delta = $ \\
+        \oox $\Frame{\interp{\judgeS{Q u:\omega.\;S}}\;\delta}{(\interp{\judgeA{r}{\assert}}\;\delta)}$ \\
+        
+      \end{tabbedproof}
+  \end{itemize}
+\end{proof}
+
 

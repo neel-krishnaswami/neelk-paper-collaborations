@@ -36,8 +36,8 @@ continuations. Its syntax is given in figure~\ref{lang-type-syntax}.
       A & ::= & 
          \unittype \bnfalt 
          A \times B \bnfalt 
-         A + B \bnfalt
          A \to B \bnfalt 
+         A + B \bnfalt
          \N \bnfalt  \\
     &&&  \reftype{A} \bnfalt
          \monad{A} \bnfalt 
@@ -50,7 +50,7 @@ continuations. Its syntax is given in figure~\ref{lang-type-syntax}.
       \Theta & ::= & \cdot \bnfalt \Theta, \alpha:\kappa \\
   \end{array}
 \end{displaymath}
-\caption{Syntax of the Core Programming Language}
+\caption{Syntax of the Types and Kinds of the Programming Language}
 \label{lang-type-syntax}
 \end{figure}
 
@@ -84,13 +84,13 @@ and existential quantifiers range over the kinds $\kappa$, it is
 impossible to instantiate them with a polytype, thereby limiting us to
 predicative polymorphism.
 
-The kinding judgements $\judgeWK{\tau}{\kappa}$ and
-$\judgeWK{A}{\bigstar}$ determine whether a monotype or polytype
-(respectively). Notice that we use two judgements, because we do not
-give polytypes their own first-class kind $\bigstar$ -- this means
-that we can syntactically enforce the restriction that the context
-$\Theta$, which is a collection of type variables and their kinds, 
-can only range over kinds which can contain only monotypes. 
+The kinding judgments $\judgeWK{\tau}{\kappa}$ and
+$\judgeWK{A}{\bigstar}$ determine well-formedness of monotypes and
+polytypes, respectively. Notice that we use two judgments, because we
+do not give polytypes their own first-class kind $\bigstar$ -- this
+means that we can syntactically enforce the restriction that the
+context $\Theta$, which is a collection of type variables and their
+kinds, can only range over kinds which can contain only monotypes.
 
 We give the kinding rules for the monotypes in
 figure~\ref{monotype-kinding}, and the kinding rules for polytypes
@@ -210,14 +210,15 @@ in figure~\ref{polytype-kinding}.
 
 \subsection{The Syntactic Theory of Kinds}
 
-Types also support a pair of equality judgements
-$\judgeKeq{\tau}{\tau'}{\kappa}$ and $\judgeKeq{A}{B}{\bigstar}$.  The
-equality judgement for monotypes implements the $\beta$- and
+Types also support a pair of equality judgments
+$\judgeKeq{\tau}{\tau'}{\kappa}$ and $\judgeKeq{A}{B}{\bigstar}$, shown
+in Figures \ref{monotype-equality} and \ref{polytype-equality}.  The
+equality judgment for monotypes implements the $\beta$- and
 $\eta$-equality principles of the lambda calculus, along with
 congruence rules for all of the type constructors of our language.
-The only rules we have for the equality judgement for polytypes are
+The only rules we have for the equality judgment for polytypes are
 simple congruence rules, plus a recursive call back to the other
-equality judgement whenever we need to compare monotyped terms.
+equality judgment whenever we need to compare monotyped terms.
 
 \begin{figure}[h]
 \begin{mathpar}
@@ -385,10 +386,7 @@ This follows from structural induction on the derivation of
 $\judgeKeq{\tau}{\sigma}{\kappa}$.
 \end{proof}
 
-
-
-
-\begin{prop}{(Substitutivity)}
+\begin{prop}{(Substitution into Equality)}
   If we have that $\judgeKeq{\sigma}{\sigma'}{\kappa_1}$, then 
   \begin{itemize}
     \item If $\judgeKeq[\Theta, \alpha:\kappa_1]{\tau}{\tau'}{\kappa_2}$, then
@@ -398,18 +396,67 @@ $\judgeKeq{\tau}{\sigma}{\kappa}$.
   \end{itemize}
 \end{prop}
 
+\subsection{Semantics of Kinds}
+
 Because types and kinds form an instance of the simply typed lambda
 calculus, we know that there is a unique $\beta$-normal, $\eta$-long
 form for each well-kinded type expression, both for the monotypes and
 the polytypes. This means that when we quotient the set of well-kinded
-terms by the equality judgement, we know that each equivalence class
+terms by the equality judgment, we know that each equivalence class
 contains a single long normal term, which we can take as the canonical
-representative of that class.
+representative of that class. We can formalize this by giving the
+set-theoretic semantics of the kinds as follows.
 
+\begin{displaymath}
+  \begin{array}{l}
+    \interp{\kappa} = \comprehend{\tau}{\tau \mbox{ is $\beta$-normal, $\eta$-long} 
+                                        \mbox{ and } \judgeWK[\cdot]{\tau}{\kappa} } \\
+    \interp{\bigstar} = \comprehend{A}{A \mbox{ is $\beta$-normal, $\eta$-long} 
+                                       \mbox{ and } \judgeWK[\cdot]{A}{\bigstar} }
+  \end{array}
+\end{displaymath}
 
+So we take the meaning of a kind $\kappa$ to be exactly the closed,
+$\beta$-normal, $\eta$-long terms of that kind. Then, we can give a semantics of
+typing derivations as follows. First, we define the interpretation of kinding 
+contexts to be a tuple of kinds, in the usual way:
 
+\begin{displaymath}
+  \begin{array}{lcl}
+    \interp{\cdot} & = & \unittype \\
+    \interp{\Theta, \alpha:\kappa} & = & \interp{\Theta} \times \interp{\kappa} \\
+  \end{array}
+\end{displaymath}
 
+Then, the meaning of a derivation $\judgeWK{\tau}{\kappa}$ is a set-theoretic
+function taking the environment into the interpretation of kinds: 
 
+\begin{displaymath}
+  \begin{array}{lcl}
+    \interp{\judgeWK{\tau}{\kappa}} & \in & \interp{\Theta} \to \interp{\kappa} \\
+    \interp{\judgeWK{\tau}{\kappa}} & = & \semfun{\theta \in \interp{\Theta}}{\normalize{\theta(\tau)}} \\
+    \interp{\judgeWK{A}{\bigstar}} & = & \semfun{\theta \in \interp{\Theta}}{\normalize{\theta(A)}} \\
+  \end{array}
+\end{displaymath}
+
+Here, $\theta(\tau)$ takes a substitution $\theta$ and substitutes for
+each of the free variables in $\tau$, and $\normalize{\tau}$ computes
+the normal form of the type constructor $\tau$. 
+
+This means that the following theorems about the equality theory on
+type constructors are true: 
+
+\begin{prop}{(Equality Judgement is Sound)}
+We have that 
+\begin{enumerate}
+\item If $\judgeKeq{\tau}{\tau'}{\kappa}$, then $\tau =_{\beta\eta} \tau'$ 
+\item If $\judgeKeq{A}{A'}{\bigstar}$, then $A =_{\beta\eta} A'$ 
+\end{enumerate}
+\end{prop}
+
+\begin{proof}
+This proof is an easy structural induction on the equality judgement. 
+\end{proof}
 
 \section{Semantics of Types}
 
@@ -446,7 +493,7 @@ bottom element.
 In figure~\ref{interp-monotypes}, we give an interpretation of the
 closed, canonical monotypes (i.e., monotypes of kind $\star$, with no
 free occurrences of type variables within them, and no $\beta$-redexes
-within them).  This semantics is additionally parameterized with two
+within them).  This semantics is additionally parametrized with two
 arguments $K^+$ and $K^-$, whose purpose I will explain shortly.
 
 \begin{figure}
@@ -455,6 +502,7 @@ arguments $K^+$ and $K^-$, whose purpose I will explain shortly.
 \end{displaymath}
 \begin{displaymath}
 \begin{array}{lcl}
+\mbox{Monotype} & = & \interp{\star} \\
 Loc(A) & = & \N \times \setof{A} \\
 Loc    & = & \bigcup \setof{X \;|\; \exists A.\; (\judgeWK[\cdot]{A}{\bigstar}) \;\land\;X = Loc(A)} \\[1em]
 
@@ -498,15 +546,15 @@ application, because there will be room for further beta-reduction in
 this case, and by hypothesis we are only considering the normal forms.
 
 This means we cover all of the possibilities in this definition, and
-furthermore we know it is well-founed, because all of the recursive
+furthermore we know it is well-founded, because all of the recursive
 calls to $\interpmono{-}$ are always on immediate subterms of the
 type.
 
 This definition defines a functor -- because the category Cat of
-categories and functors is itself cartesian closed, we can take the
+categories and functors is itself Cartesian closed, we can take the
 liberty of writing it as a lambda-expression. Most of the clauses of
 this definition should be relatively straightforward --- the main
-mystery is that we have parameterized this interpretation by two
+mystery is that we have parametrized this interpretation by two
 arguments $K_+$ and $K_-$, which I will explain when we reach the
 continuation and monadic type constructors.  We interpret the unit
 type as the one-element, discretely ordered predomain, the natural
@@ -515,19 +563,21 @@ categorical products of $CPO$, sums as coproducts, and functions via
 the exponentials of $CPO$.
 
 Reference types $\reftype{A}$ are interpreted as pairs consisting of
-natural numbers and the syntactic object $A$. The intuition is that
-references are just numbers, together with a type tag saying what
-type of value the reference will point to. It's important that we do 
-\emph{not} interpret the type tag $A$ in this definition --- a ref cell
-is a number plus the purely syntactic object $A$, acting as a label. 
-To do otherwise would make our definition circular. 
+natural numbers and the syntactic object $A$. The intuition is that a
+reference is just a number, together with a type tag saying what type
+of value the reference will point to. It's important that we do
+\emph{not} interpret the type tag $A$ in this definition --- a ref
+cell is a number plus the purely syntactic object $A$, acting as a
+label. This is because we have no interpretation function that can 
+interpret the quantifiers yet; the current definition interprets only
+the monotypes. 
 
 The first time we use $K$ is when we interpret the type $\cont{\tau}$.
 Now, the $K_+$ and $K_-$ arguments are revealed as the positive and
-negative occurences of the ``answer type'' of a continuation. That is,
+negative occurrences of the ``answer type'' of a continuation. That is,
 we interpret $\cont{\tau}$ as the function space
 $\interpmono{\tau}(K_-, K_+) \to K_+$.  Notice that the positive and
-negative occurences trade places on the recursive call, because it
+negative occurrences trade places on the recursive call, because it
 occurs on the left-hand-side of a function space. Likewise, the
 monadic type $\monad{\tau}$ is interpreted as a sort of
 double-negation: $(\interpmono{\tau}(K_+, K_-) \to K_-) \to K_+$.
@@ -538,22 +588,22 @@ is that we will interpret continuations as functions from heaps to the
 two-point Sierpinski lattice $O = \setof{\top, \bot}$. However, since
 heaps can contain references to values of polymorphic type, and since
 we have not yet defined how the semantics of polymorphic types work, we
-have carefully parameterized our functorial semantics of monotypes so
+have carefully parametrized our functorial semantics of monotypes so
 that we do not needed to mention them explicitly. 
 
-To fix this gap, we will give an interpretation of polymorphic types
-as an indexed function from a context of closed monokinded type
-constructors to a a CPO.  As before, we parameterize by the
+To close this gap, we will give an interpretation of polymorphic types
+as an indexed function from a context of closed mono-kinded type
+constructors to a CPO.  As before, we parametrize by the
 continuation arguments, and again define a functor.
 
 \begin{displaymath}
-\begin{array}{lcl}\interp{\judgeWK{A}{\bigstar}} &\in& \mathrm{Type Context} \to (CPO_\bot \times CPO^{op}_\bot) \to CPO 
+\begin{array}{lcl}\interp{\judgeWK{A}{\bigstar}} &\in& \interp{\Theta} \to (CPO_\bot \times CPO^{op}_\bot) \to CPO 
 \\[1em]
 \interp{\judgeWK{\alpha}{\bigstar}}\;\theta\;(K_+,K_-) & = & 
     \interpmono{\judgeWK[\cdot]{\theta(\alpha)}{\star}}(K_+, K_-) 
 \\
 \interp{\judgeWK{\tau\;\tau'}{\bigstar}}\;\theta\;(K_+,K_-) & = & 
-    \interpmono{\judgeWK[\cdot]{\theta(\tau)\;\theta(\tau')}{\star}}(K_+, K_-) 
+    \interpmono{\judgeWK[\cdot]{\normalize{\theta(\tau\;\tau')}}{\star}}(K_+, K_-) 
 \\
 \interp{\judgeWK{\forall \alpha:\kappa.\;A}{\bigstar}}\;\theta\;(K_+,K_-) & = & 
     \Pi \tau:\kappa.\; 
@@ -586,29 +636,30 @@ continuation arguments, and again define a functor.
 \interp{\judgeWK{\monad{A}}{\bigstar}}\;\theta\;(K_+,K_-) & = & 
    (\interp{\judgeWK{A}{\bigstar}}\;\theta\;(K_+,K_-) \to K_-) \to K_+
 \\
-\interp{\judgeWK{\reftype{A}}{\star}}\;\theta\;(K_+, K_-) & = & Loc([\theta(A)]) 
+\interp{\judgeWK{\reftype{A}}{\star}}\;\theta\;(K_+, K_-) & = & Loc(\normalize{\theta(A)}) 
 \\
 \end{array}
 \end{displaymath}
 
-Here, a $\mbox{TypeContext}$ is a tuple of the interpretations of
-each kind in the environment $\Theta$, which are just the closed 
-canonical forms of that kind. (So $\star$ are just the closed 
-monotypes, $\star \to \star$ the closed lambda-terms of that kind,
-and so on.)
+As explained earlier, the interpretation of the type constructor
+context $\interp{\Theta}$ are the tuples of the interpretations of
+each kind in the environment $\Theta$, which are in turn interpreted
+as merely the closed canonical forms of that kind. (So $\star$ are
+just the closed monotypes, $\star \to \star$ the closed lambda-terms
+of that kind, and so on.)
 
 This definition is also well-founded, since it is defined by a
-structural recursion over the canonical forms of the kinding
-derivation of $\judgeWK{A}{\bigstar}$. 
+structural recursion over the derivation of the kinding derivation of
+$\judgeWK{A}{\bigstar}$.
 
 Whenever we reach a variable or application case, we can apply the
-substitution and invoke the intepretation function for the
+substitution and invoke the interpretation function for the
 monotypes. Universal types $\forall \alpha:\kappa.\;A$ are interpreted
 as set-indexed predomains or dependent functions from the set of
-closed objects of the kind $\kappa$ into predodmains. Existential
-types $\exists \tau:\kappa.\;A$ are interpreted as pairs or dependent
-sums: we pair a syntactic monotype with the predomain interpreting the
-second component.
+closed canonical objects of the kind $\kappa$ into
+predomains. Existential types $\exists \tau:\kappa.\;A$ are
+interpreted as pairs or dependent sums: we pair a syntactic monotype
+with the predomain interpreting the second component.
 
 The remaining cases essentially repeat the clauses of the definitions
 for monotypes, to allow for the possibility that there may be
@@ -629,10 +680,10 @@ H(K_+,K_-) & = & \Sigma L \subseteq^{fin} Loc.\;
 \end{array}
 \end{displaymath}
 
-We use $H$ to define what heaps mean. A heap is a pair whose first
-component is a finite set of allocated locations, together with a map
-that takes each location in the set of allocated location and returns
-a value of the appropriate type.
+We use $H$ to define what heaps mean. A heap is a dependent sum whose
+first component is a finite set of allocated locations, together with
+a map that takes each location in the set of allocated location and
+returns a value of the appropriate type.
 
 The continuation type is defined by the solution to the equation
 $\mathcal{K}$, which of type $CPO^{op}_\bot \times CPO_\bot \to
@@ -655,7 +706,7 @@ induction over $\interp{-}$ and $\interpmono{-}$, and then at each
 case appeal to a series of lemmas showing that each construction we
 use preserves local continuity. 
 
-\section{Local Continuity and Pitts's Theorem}
+\section{Local Continuous Functors and the Inverse Limit Construction}
 
 \subsection{Local Continuity}
 
@@ -925,12 +976,12 @@ and that the mediating morphism is unique.
 \end{enumerate}
 \end{proof}
 
-\subsection{Pitts's Theorem and the Inverse Limit Construction}
+\subsection{The Inverse Limit Construction}
 
 Once we have a locally continuous functor, we'd like to find a
-solution to the fixed point equation it defines. 
+solution to the fixed point equation it defines.
 
-\begin{prop}{(Pitts's Theorem)}
+\begin{prop}{(Smyth and Plotkin)}
 Any locally-continuous functor $F : CPO_\bot \times CPO^{op}_\bot \to
 CPO_\bot$ has a solution to the equation $X \cong F(X)$. Moreover, there
 is also a \emph{minimal} isomorphism solving this equation. 
@@ -996,11 +1047,11 @@ and likewise we have for a projection followed by an embedding:
 \end{itemize}
 
 
-Now, consider the empty one-point domain $\emptyset_\bot =
-\setof{\bot}$, and the sequence of domains $X_i$, defined inductively
-by $X_0 = \emptyset_\bot$ and $X_{i+1} = F(X_i, X_i)$. Next, 
-we will define embeddings and projections $e_i : X_i \to X_{i+1}$ 
-and $p_i : X_{i+1} \to X_i$ as follows: 
+Now, consider the one-point domain $\emptyset_\bot = \setof{\bot}$,
+and the sequence of domains $X_i$, defined inductively by $X_0 =
+\emptyset_\bot$ and $X_{i+1} = F(X_i, X_i)$. Next, we will define
+embeddings and projections $e_i : X_i \to X_{i+1}$ and $p_i : X_{i+1}
+\to X_i$ as follows:
 
 \begin{displaymath}
   \begin{array}{llcl}
@@ -1169,7 +1220,7 @@ So, we have that
        \left\{ 
           \begin{array}{ll}
             p_{m,i}(x) & \mbox{if } m < i+1 \\
-            e_{i,m}(e_i\;x) & \mbox{if } m > i \\
+            e_{i,m}(x) & \mbox{if } m > i \\
           \end{array}
        \right. 
    \\[1em]
@@ -1179,7 +1230,7 @@ So, we have that
           \begin{array}{ll}
             p_{m,i}(x) & \mbox{if } m < i \\
             x             & \mbox{if } m = i \\
-            e_{i,m}(e_i\;x) & \mbox{if } m > i \\
+            e_{i,m}(x) & \mbox{if } m > i \\
           \end{array}
        \right. 
    \\[1em]
@@ -1209,9 +1260,6 @@ Now, we need to show that $\bigsqcup_i \hat{e}_i \circ \hat{p}_i = id$.
        \bigsqcup_i \lambda x:X.\; \hat{e}_i(x_i)
     \\
        & = & 
-       \bigsqcup_i \lambda x:X.\; \hat{e}_i(x_i)
-    \\
-       & = & 
        \bigsqcup_i \lambda x:X.\;\lambda m:\N.\; 
           \left\{ 
           \begin{array}{ll}
@@ -1235,7 +1283,7 @@ Now, we need to show that $\bigsqcup_i \hat{e}_i \circ \hat{p}_i = id$.
           \left\{ 
           \begin{array}{ll}
             x_m         & \mbox{if } m \leq i \\
-            e_{i,m}(p_{i,m}\;x_m) & \mbox{if } m > i \mbox{ (*)}\\
+            e_{i,m}(p_{i,m}\;x_m) & \mbox{if } m > i \mbox{\;\;\;}(*)\\
           \end{array}
        \right.
     \\
@@ -1247,9 +1295,12 @@ Now, we need to show that $\bigsqcup_i \hat{e}_i \circ \hat{p}_i = id$.
   \end{array}
 \end{displaymath}
 
-In (*), we use the definition of $X$ to see that the components greater than
-$i$ are smaller than $x$'s component at that index. So the limit is the 
-identity.
+In $(*)$, we use the definition of $X$ to see that the components
+greater than $i$ are smaller than $x$'s component at that index. So
+for each given $i$, the first $i$ components of $\hat{e}_i \circ
+\hat{p}_i$ are the identity function, and below the identity for
+anything bigger than that. Thus, the limit as $i$ goes to infinity is
+the identity function for all components. 
 
 
 \end{proof}
@@ -1272,7 +1323,7 @@ that they form an embedding-projection pair. We'll define $h_e : X \to Y =
 $h_p : Y \to X = \lambda y:Y.\; \lambda i:\N.\; q_i\; y$.
 
 Before we can proceed any further, we need to establish that $h_e$
-actually defines a function --- that is, we have to establish that
+actually defines a morphism --- that is, we have to establish that
 $f_i \circ \hat{p}_i$ is a chain in $i$. So, assume we have some
 arbitrary $i$, and some arbitrary $x : X$.
 
@@ -1285,18 +1336,16 @@ this means $f_{i+1}(e_i(p_i\;x_{i+1})) \sqsubseteq f_{i+1}(x_{i+1})$.
 means $f_i(p_i\;x_{i+1})
 \sqsubseteq f_{i+1}(x_{i+1})$. 
 \item By the
-definition of $X$, this means $f_i(p_i\;x_{i+1}) 
-\sqsubseteq f_{i+1}(x_{i+1})$. 
-\item By the definition of $\hat{p}$, this is 
+definition of $X$, this is 
 the same as showing $f_i(x_i) \sqsubseteq f_{i+1}(x_{i+1})$. 
 \item By the definition of $\hat{p}$, this is the same as 
    $f_i(\hat{p}_i\;x) \sqsubseteq f_{i+1}(\hat{p}_{i+1}\;x)$. 
-\item Since continuity for functions is pointwise, we have 
+\item Since this holds for all $x$, we have 
 shown $f_i \circ \hat{p}_i \sqsubseteq f_{i+1} \circ \hat{p}_{i+1}$. 
 \end{enumerate}
 
 Next, let's establish that $h_e$ and $h_p$ form an embedding-projection
-pair. To show that $h_e \circ h_p = id$, we use equational reasoning:
+pair. To show that $h_e \circ h_p \sqsubseteq id$, we use equational reasoning:
 
 \begin{displaymath}
   \begin{array}{lcl}
@@ -1307,25 +1356,25 @@ pair. To show that $h_e \circ h_p = id$, we use equational reasoning:
       & = & 
       \bigsqcup_i (f_i \circ \hat{p}_i \circ (\lambda y:Y.\; \lambda i:\N.\; (q_i\; y)) 
 \\      
-      & = & 
-      \bigsqcup_i \lambda y:Y.\;(f_i \circ \hat{p}_i \circ (\lambda y:Y.\; \lambda i:\N.\; (q_i\; y))\;y 
-\\
+%      & = & 
+%      \bigsqcup_i \lambda y:Y.\;(f_i \circ \hat{p}_i \circ (\lambda y:Y.\; \lambda i:\N.\; (q_i\; y))\;y 
+% \\
       & = & 
       \bigsqcup_i (\lambda y:Y.\;f_i(\hat{p}_i\;(\lambda i:\N.\; (q_i\; y))))
 \\
       & = & 
       \bigsqcup_i (\lambda y:Y.\;f_i(q_i\; y))
 \\
-      & = & 
+      & \sqsubseteq & 
       \bigsqcup_i \lambda y:Y.\;y
 \\
-      & = & 
+      & \sqsubseteq & 
       \lambda y:Y.\;y
 \\
   \end{array}
 \end{displaymath}
 
-In other direction, we need to show $h_p \circ h_e \sqsubseteq id$.
+In other direction, we need to show $h_p \circ h_e = id$.
 
 \begin{displaymath}
   \begin{array}{lcl}
@@ -1358,15 +1407,14 @@ it follows that:
   \begin{array}{lcl}
    q_j\; (f_i\;(\hat{p}_i\;x))
      & = & p_{j,i}(q_i\; (f_i\;(\hat{p}_i\;x))) \\
-     & \sqsubseteq & p_{j,i}(\hat{p}_i\;x) \\
-     & \sqsubseteq & \hat{p}_j\;x \\
-     & \sqsubseteq & x_j \\
+     & = & p_{j,i}(\hat{p}_i\;x) \\
+     & = & \hat{p}_j\;x \\
+     & = & x_j \\
   \end{array}
 \end{displaymath}
 
-Which means that the limit of the chain has to be less than 
-$\lambda x:X.\;\lambda j:\N.\;x_j$ -- which means that it is less
-than the identity.
+Which means that the least upper bound of the chain has to be 
+$\lambda x:X.\;\lambda j:\N.\;x_j$ -- which means that it is the identity.
 
 
 So we have established that $\left<h_e,h_p\right>$ is a morphism
@@ -1392,13 +1440,13 @@ get two proof obligations. First,
 \\
    & = & 
      \lambda x:X_n.\; \bigsqcup_i f_i 
-       (\left\{ 
+       \left(\left\{ 
           \begin{array}{ll}
             p_{i,n}(x) & \mbox{if } i < n \\
             x         & \mbox{if } i = n \\
             e_{n,i}(x) & \mbox{if } i > n \\
           \end{array}
-       \right.)
+       \right.\right)
 \end{array}
 \end{displaymath}
 
@@ -1484,8 +1532,136 @@ X)$ is itself a colimiting object.
 
 Since colimits are unique up to isomorphism, it follows that $F(X, X)
 \cong X$. 
-
 \end{proof}
+
+\section{Solving Our Recursive Domain Equation}
+
+Given that we know that the basic operations we use in our
+interpretation are locally continuous, we can show that our
+interpretation function gives rise to a locally continuous functor.
+
+\begin{lemma}{Functoriality of $\interpmono{-}$ and $\interp{-}$}
+  \begin{enumerate}
+  \item For all canonical derivations $\judgeWK[\cdot]{\tau}{\star}$, 
+    $\interpmono{\judgeWK[\cdot]{\tau}{\star}}$ is locally continuous. 
+  \item For all canonical derivations $\judgeWK[\cdot]{A}{\bigstar}$, 
+    $\interp{\judgeWK[\cdot]{A}{\bigstar}}$ is locally continuous. 
+  \item $H$ is a locally continuous functor
+  \item $\mathcal{K}$ is a locally continuous functor. 
+  \end{enumerate}
+\end{lemma}
+
+\begin{proof}
+ The proof of the first case follows by structural
+induction on the canonical derivations of monotypes. This is then used
+as a lemma in the proof of the second case, which is done via a
+structural induction on the canonical derivations of polytypes. This
+then lets us prove the third case, that $H$ is a locally-continuous
+functor, because we can work from the inside out, using the fact that
+set-indexed sums and products of locally-continuous functors are
+themselves locally continuous. Finally, since $\mathcal{K}$ is just 
+$H \to K_O$, we know it is locally continuous also. 
+\end{proof}
+
+\ \\\noindent Observe that $\mathcal{K}$, applied to any arguments,
+yields a pointed domain, since the Sierpinski domain is pointed, and a
+continuous function space into a pointed domain is itself
+pointed. Hence our functor $K$ is also a functor into $CPO_\bot$, the
+category of complete \emph{pointed} partial orders and continuous
+functions. Now, we can appeal to the existence of solutions to our
+recursive domain equation to solve for the solution to the equation 
+
+\begin{displaymath}
+K \cong \mathcal{K}(K, K)
+\end{displaymath}
+
+\subsection{Computations form a Monad}
+
+Most of the base type constructors are obviously interpreted in terms
+of the underlying categorical constructions: pair types are
+categorical products, sums are categorical sums, functions are
+exponentials, and natural numbers are interpreted as a natural numbers
+object. However, we will need to check that the type of computations
+actually forms a monad.
+
+\begin{lemma}{(Computations form a Monad)} 
+The functor $T(A) = (A \to K) \to K$ forms a monad in CPO. 
+\end{lemma}
+
+\begin{proof}
+We need to give a unit (a family of arrows $\eta_A : A \to T(A)$) and a lift
+operations (given $f : A \to T(B)$, we need to give $f^* : T(A) \to T(B)$, 
+such that the following equations hold:
+\begin{enumerate}
+\item $\eta_A^* = id_{T(A)}$
+\item $f^* \circ \eta_A = f$ 
+\item $f^* \circ g^* = (f^* \circ g)^*$
+\end{enumerate}
+(Technically, these conditions are the conditions for a Kleisli
+triple, which is equivalent to a monad.)  We can now define $\eta_A$
+and $f^*$ in terms of the internal language of CPO as follows:
+
+\begin{displaymath}
+  \begin{array}{lcl}
+    \eta_A(a) & = & \lambda k.\; k\;a \\
+    f^*       & = & \lambda a' : (A \to K) \to K. \lambda k_b : (B \to K).\;
+                         a' (\lambda a.\; f\;a\;k_b)
+  \end{array}
+\end{displaymath}
+
+\begin{enumerate}
+\item The proof of the first equation is as follows: 
+  \begin{displaymath}
+    \begin{array}{lcl}
+      \eta_A^* 
+        & = & \lambda a'.\;\lambda k_{A}.\; 
+                 a'(\lambda a.\; \eta_A\;a\;k_{A}) \\ 
+        & = & \lambda a'.\;\lambda k_{A}.\; 
+                 a'(\lambda a.\; k_A\;a) \\ 
+        & = & \lambda a'.\;\lambda k_{A}.\; a'\;k_A \\
+        & = & \lambda a'.\;a' \\
+        & = & id_{T(A)} \\
+    \end{array}
+  \end{displaymath}
+
+\item The proof of the second equation is as follows: 
+  \begin{displaymath}
+    \begin{array}{lcl}
+      f^* \circ \eta_A 
+        & = & \lambda a.\; f^*(\eta_A(a)) \\
+        & = & \lambda a.\; f^*(\lambda k.\;k\;a) \\
+        & = & \lambda a.\; \lambda k_a.\; 
+                (\lambda k.\;k\;a)\;(\lambda a.\;f\;a\;k_a) \\
+        & = & \lambda a.\;\lambda k_a.\;
+                  (\lambda a.\;f\;a\;k_a)\;a \\
+        & = & \lambda a.\;\lambda k_a.\; f\;a\;k_a \\
+        & = & \lambda a.\; f\;a \\
+        & = & f \\                       
+    \end{array}
+  \end{displaymath}
+
+\item The proof of the third equation is as follows: 
+  \begin{displaymath}
+    \begin{array}{lcl}
+      f^* \circ g^* 
+      & = & \lambda a''.\; f^*(g^*(a'')) \\
+      & = & \lambda a''.\; f^*(\lambda k.\;a''(\lambda a.\;g\;a\;k)) \\
+      & = & \lambda a''.\;\lambda k.\;
+              (\lambda k.\;a''(\lambda a.\;g\;a\;k))\;
+              (\lambda a_1.\; f\;a\;k) \\
+      & = & \lambda a''.\;\lambda k.\;
+              a''(\lambda a.\;g\;a\;(\lambda a_1.\;f\;a_1\;k)) \\
+      & = & \lambda a''.\;\lambda k.\;
+               a''(\lambda a.\;f^*\; (g a)\; k) \\
+      & = & \lambda a''.\;\lambda k.\;
+               a''(\lambda a.\;(f^* \circ g)\;a\;k) \\
+      & = & (f^* \circ g)^* \\       
+    \end{array}
+  \end{displaymath}
+\end{enumerate}
+\end{proof}
+
+
 
 
 \section{The Programming Language}
@@ -1532,7 +1708,8 @@ terms is given in figure~\ref{lang-syntax}.
     \Gamma & ::= & \cdot \bnfalt \Gamma, x:A 
 \\[1em]
   \mbox{Pointed Types} & 
-     D & ::= & \monad{A} \bnfalt A \to D \bnfalt \forall \alpha:\kappa.\; D \bnfalt D \times D 
+     D & ::= & \monad{A} \bnfalt A \to D \bnfalt \forall \alpha:\kappa.\; D 
+               \bnfalt \unittype \bnfalt D \times D \bnfalt \cont{A} 
 \\[1em] 
   \end{array}
 \end{displaymath}
@@ -1679,7 +1856,7 @@ figure~\ref{lang-typing-monadic}.
 \inferrule*[right=CLet]
           {\judgeE{\Gamma}{e}{\monad{A}} \\
            \judgeC{\Gamma, x:A}{c}{B}}
-          {\judgeE{\Gamma}{\letv{x}{e}{c}}{B}}
+          {\judgeC{\Gamma}{\letv{x}{e}{c}}{B}}
 \and
 \inferrule*[right=CGet]
           {\judgeE{\Gamma}{e}{\reftype{A}}}
@@ -1688,7 +1865,7 @@ figure~\ref{lang-typing-monadic}.
 \inferrule*[right=CSet]
           {\judgeE{\Gamma}{e}{\reftype{A}} \\
            \judgeE{\Gamma}{e'}{A}}
-          {\judgeE{\Gamma}{e := e'}{\unittype}}
+          {\judgeC{\Gamma}{e := e'}{\unittype}}
 \and
 \inferrule*[right=CNew]
           {\judgeE{\Gamma}{e}{A}}
@@ -1699,44 +1876,6 @@ figure~\ref{lang-typing-monadic}.
 \end{figure}
 
 \section{Denotational Semantics}
-
-Now that we know that the basic operations we use in our
-interpretation are locally continuous, we can show that our 
-interpretation function gives rise to a locally continuous
-functor. 
-
-\begin{lemma}{Functoriality of $\interpmono{-}$ and $\interp{-}$}
-  \begin{enumerate}
-  \item For all canonical derivations $\judgeWK[\cdot]{\tau}{\star}$, 
-    $\interpmono{\judgeWK[\cdot]{\tau}{\star}}$ is locally continuous. 
-  \item For all canonical derivations $\judgeWK[\cdot]{A}{\bigstar}$, 
-    $\interp{\judgeWK[\cdot]{A}{\bigstar}}$ is locally continuous. 
-  \item $H$ is a locally continuous functor
-  \item $\mathcal{K}$ is a locally continuous functor. 
-  \end{enumerate}
-\end{lemma}
-
-\begin{proof}
- The proof of the first case follows by structural
-induction on the canonical derivations of monotypes. This is then used
-as a lemma in the proof of the second case, which is done via a
-structural induction on the canonical derivations of polytypes. This
-then lets us prove the third case, that $H$ is a locally-continuous
-functor, because we can work from the inside out, using the fact that
-set-indexed sums and products of locally-continuous functors are
-themselves locally continuous. Finally, since $\mathcal{K}$ is just 
-$H \to K_O$, we know it is locally continuous also. 
-\end{proof}
-
-\ \\\noindent 
-Observe that $\mathcal{K}$, applied to any arguments, yields a pointed
-domain, since the Sierpinski domain is pointed, and a continuous
-function space into a pointed domain is itself pointed. Hence our
-functor $K$ is also a functor into $CPO_\bot$, the category of
-complete \emph{pointed} partial orders and continuous functions. Now,
-we can apply Pitts's theorem to solve the recursive domain equation $K
-\cong \mathcal{K}(K, K)$.
-
 
 Now, we give the semantics of the expression and command languages,
 with functions $\interpE{\judgeE{\Gamma}{e}{A}}$ and
@@ -1756,90 +1895,6 @@ and $\interpC{\Gamma}{c}{A}$, which interpret pure expressions and
 computations, whose definitions are given in
 figure~\ref{lang-pure-interp} and figure~\ref{lang-monadic-interp},
 respectively.
-
-Most of the base type constructors are interpreted in terms of the
-underlying categorical constructions: pair types are categorical
-products, sums are categorical sums, functions are exponentials, and
-natural numbers are interpreted as a natural numbers object. This
-means that we can give semantics for these types in terms of the 
-
-
-\begin{lemma}{(Computations form a Monad)} 
-The functor $T(A) = (A \to K) \to K$ forms a monad in CPO. 
-\end{lemma}
-
-\begin{proof}
-We need to give a unit (a family of arrows $\eta_A : A \to T(A)$) and a lift
-operations (given $f : A \to T(B)$, we need to give $f^* : T(A) \to T(B)$, 
-such that the following equations hold:
-\begin{enumerate}
-\item $\eta_A^* = id_{T(A)}$
-\item $f^* \circ \eta_A = f$ 
-\item $f^* \circ g^* = (f^* \circ g)^*$
-\end{enumerate}
-(Technically, these conditions are the conditions for a Kleisli
-triple, which is equivalent to a monad.)  We can now define $\eta_A$
-and $f^*$ in terms of the internal language of CPO as follows:
-
-\begin{displaymath}
-  \begin{array}{lcl}
-    \eta_A(a) & = & \lambda k.\; k\;a \\
-    f^*       & = & \lambda a' : (A \to K) \to K. \lambda k_b : (B \to K).\;
-                         a' (\lambda a.\; f\;a\;k_b)
-  \end{array}
-\end{displaymath}
-
-\begin{enumerate}
-\item The proof of the first equation is as follows: 
-  \begin{displaymath}
-    \begin{array}{lcl}
-      \eta_A^* 
-        & = & \lambda a'.\;\lambda k_{A}.\; 
-                 a'(\lambda a.\; \eta_A\;a\;k_{A}) \\ 
-        & = & \lambda a'.\;\lambda k_{A}.\; 
-                 a'(\lambda a.\; k_A\;a) \\ 
-        & = & \lambda a'.\;\lambda k_{A}.\; a'\;k_A \\
-        & = & \lambda a'.\;a' \\
-        & = & id_{T(A)} \\
-    \end{array}
-  \end{displaymath}
-
-\item The proof of the second equation is as follows: 
-  \begin{displaymath}
-    \begin{array}{lcl}
-      f^* \circ \eta_A 
-        & = & \lambda a.\; f^*(\eta_A(a)) \\
-        & = & \lambda a.\; f^*(\lambda k.\;k\;a) \\
-        & = & \lambda a.\; \lambda k_a.\; 
-                (\lambda k.\;k\;a)\;(\lambda a.\;f\;a\;k_a) \\
-        & = & \lambda a.\;\lambda k_a.\;
-                  (\lambda a.\;f\;a\;k_a)\;a \\
-        & = & \lambda a.\;\lambda k_a.\; f\;a\;k_a \\
-        & = & \lambda a.\; f\;a \\
-        & = & f \\                       
-    \end{array}
-  \end{displaymath}
-
-\item The proof of the third equation is as follows: 
-  \begin{displaymath}
-    \begin{array}{lcl}
-      f^* \circ g^* 
-      & = & \lambda a''.\; f^*(g^*(a'')) \\
-      & = & \lambda a''.\; f^*(\lambda k.\;a''(\lambda a.\;g\;a\;k)) \\
-      & = & \lambda a''.\;\lambda k.\;
-              (\lambda k.\;a''(\lambda a.\;g\;a\;k))\;
-              (\lambda a_1.\; f\;a\;k) \\
-      & = & \lambda a''.\;\lambda k.\;
-              a''(\lambda a.\;g\;a\;(\lambda a_1.\;f\;a_1\;k)) \\
-      & = & \lambda a''.\;\lambda k.\;
-               a''(\lambda a.\;f^*\; (g a)\; k) \\
-      & = & \lambda a''.\;\lambda k.\;
-               a''(\lambda a.\;(f^* \circ g)\;a\;k) \\
-      & = & (f^* \circ g)^* \\       
-    \end{array}
-  \end{displaymath}
-\end{enumerate}
-\end{proof}
 
 \begin{figure}
 \begin{displaymath}
@@ -1949,7 +2004,7 @@ and $f^*$ in terms of the internal language of CPO as follows:
    \interpE{\judgeE{\Gamma}{\pack{\tau}{e}}{\exists \alpha:\kappa.\;A}}
            \;\theta\;\gamma
    & = & 
-     ([\theta(\tau)], \interpE{\judgeE{\Gamma}{e}{A[\tau/\alpha]}}\;\theta\;\gamma)
+           ([\theta(\tau)], \interpE{\judgeE{\Gamma}{e}{A[\tau/\alpha]}}\;\theta\;\gamma)
    \\
    \interpE{\judgeE{\Gamma}{\unpack{\alpha}{x}{e}{e'}}{B}}\;\theta\;\gamma
    & = & 
