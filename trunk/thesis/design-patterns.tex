@@ -46,23 +46,18 @@ following programs:
   subject and the observers.
 \end{itemize}
 
-Finally, we give machine-verified proofs of the correctness of the
-iterator and flyweight patterns in the Ynot extension of Coq, and
-compare them with the paper proofs. We also see that proper treatment
-of the subject-observer pattern seems to call for the use of an
-impredicative type theory.
-
-
+% Finally, we give machine-verified proofs of the correctness of the
+% iterator and flyweight patterns in the Ynot extension of Coq, and
+% compare them with the paper proofs. We also see that proper treatment
+% of the subject-observer pattern seems to call for the use of an
+% impredicative type theory.
 
 \section{Iterators, Composites and Decorators}
-% % \vspace{-1em}
-% In this section, we show how to integrate the composite, decorator and
-% iterator patterns in a single module. 
-% \vspace{-1em}
+
 The iterator pattern is a design pattern for uniformly enumerating the
 elements of a collection. The idea is that in addition to a
 collection, we have an auxiliary data structure called the iterator,
-which has an operation $\ctext{next}$. Each time $\ctext{next}$ is
+which has an operation $\nextiter$. Each time $\nextiter$ is
 called, it produces one more element of the collection, with some
 signal when all of the elements have been produced. The iterators are
 mutable data structures whose invariants depend on the collection,
@@ -143,306 +138,613 @@ their documentation.
   iterators in its underlying state. 
 \end{itemize}
 
+\subsection{The Iterator Specification}
 
-Now, we will describe the specification in detail. The type of
-collections is just the type of mutable linked lists, consisting of
-pointers to list cells. (For simplicity, we only consider lists of
-natural numbers.) An iterator is an element of a recursive tree
-structure in the style of an ML datatype declaration. (In Java, we
-would have a class hierarchy for iterators.) If it is an iterator over
-a single collection, then it will be in the branch $\ctext{Coll }r$,
-where $r$ is a pointer to a linked list -- a finger into the middle of
-the collection. For filtering iterators, we use a constructor of the
-form $\ctext{Filter}(p, i)$, where $p$ is a boolean predicate function
-and $i$ is the iterator whose elements we are selectively yielding. We
-give pairwise mapping iterators via a constructor $\ctext{Map2}(f,
-i_1, i_2)$, which enumerates elements of $i_1$ and $i_2$ in parallel,
-and applies the binary function $f$ to those pairs to produce the
-yielded elements.
+Now, we will describe the specification, given in
+Figure~\ref{iterator-interface}, in detail. This whole specification
+follows the usual pattern of introducing abstract types, predicates,
+and operations with existential quantification, and then specifying
+the behavior of the operations with a conjunction of Hoare triples.
 
-{\small
-\begin{displaymath}
-\begin{array}{llcl}
-\mbox{Collection Type} & 
-A_c & = & \reftype{\listtype{\N}} \\
-\mbox{Iterator Type} &
-A_i & = & \ctext{Coll of }\reftype{A_c} \\
-&   & | & \ctext{Filter of }((\N \to \ctext{bool}) \times A_i) \\
-&   & | & \ctext{Map2 of }((\N \times \N \to \N) \times A_i \times A_i) \\
-\end{array}
-\end{displaymath}
-\begin{tabbing}
-1 \qquad \= $\exists coll : A_c \times \seqsort{\N} \times \assert \To \assert.$ \\
-2 \> 
-$\exists iter : A_i \times \mathcal{P}^{fin}(A_c \times \seqsort{\N} \times \assert) \times \seqsort{\N} \To \assert.$ \\
-3 \> 
-$\exists \ctext{newcoll} : \unittype \to \monad{A_c}, \;\;
-         \ctext{size} : A_c \to \monad{\N}, \;\;
-         \ctext{add} : A_c \times \N \to \monad{\unittype}.$\\
-4 \> 
-$\exists \ctext{newiter} : A_c \to \monad{A_i}, \;\;
-          \ctext{filter} : (\N \to \ctext{bool}) \times A_i  \to \monad{A_i}.$ \\
-5 \> 
-$\exists$\=$ \ctext{map2} : (\N \times \N \to \N) \times A_i \times A_i \to \monad{A_i}.$\\
-  \>$\exists$\=$\ctext{next} : A_i \to \monad{(\opttype{\N})}.$  \\[0.5em]
+In lines \ref{decl:colltype} and \ref{decl:itertype}, we introduce two
+abstract type constructors, $\colltype$ and $\itertype$. These are
+both type constructors of kind $\star \to \star$, and take an argument
+which describes their element type. So $\colltype(\N)$ represents a
+collection of natural numbers, and $\itertype(\bool)$ represents an
+iterator which will produce a sequence of boolean values.
 
-6 \>
-\> $\spec{\emp}{\run{\ctext{newcoll()}}}{a:A_c}{\exists P.\; coll(a, \epsilon,P)}$ \\
-\>
-\> $\specand$ \\
-7 \>
-\> $\forall c, P, xs.\;$\=
-         $\setof{coll(c, xs, P)}$\\
-\>\> \>  $\run{\ctext{size}(c)}$ \\
-\>\> \>  $\setof{a:\N.\; coll(c, xs, P) \land a = |xs|}$ \\
-\> 
-\> $\specand$ \\
-8 \> \> $\forall c, P, x, xs.\;$\=
-               $\setof{coll(c, xs, P)}$ \\
-\>\>\>         $\run{\ctext{add}(c, x)}$\\
-\>\>\>         $\setof{a:1.\; \exists Q.\; coll(c, x\cdot xs, Q)}$ \\
-\>
-\> $\specand$ \\
-9 \>
-\> $\forall c, P, xs.\;$\=
-      $\setof{coll(c, xs, P)}$ \\
-\>\>\>$\run{\ctext{newiter}(c)}$\\
-\>\>\>$\setof{a:A_i.\; coll(c, xs, P) * iter(a, \setof{(c, xs, P)}, xs)}$ \\
-\>
-\> $\specand$ \\
-10 \>
-\> $\forall p, i, S, xs.\;$\=
-         $\setof{iter(i, S, xs)}$ \\
-\>\>\>   $\run{\ctext{filter}(p, i)}$\\
-\>\>\>   $\setof{a:A_i.\; iter(a, S, filter\; p\;xs)}$ \\
- \> 
-\> $\specand$ \\
- \> 
-\> $\forall f, i, S,$\=$ xs, i', S', xs'.\;$ \\
-11 \> \> \> 
-     $\setof{iter(i, S, xs) * iter(i', S', xs') \land S \cap S' = \emptyset}$ \\
-12 \> \> \> $\run{\ctext{map2}(f, i, i')}$ \\
-13 \> \> \> $\setof{a:A_i.\; iter(a, S \cup S', map\;f\;(zip\;xs\;xs'))}$ \\
-\>
-\> $\specand$ \\
-14 \>
-\> $\forall i, S.\;$\=
-      $\setof{colls(S) * iter(i, S, \epsilon)}$\\  
-\>\>\>$\run{\ctext{next}(i)}$ \\
-\>\>\>$\setof{a:\opttype{\N}.\; colls(S) * iter(i, S, \epsilon) \land a = \ctext{None}}$ \\
-\>
-\> $\specand$ \\
-15 \> \> $\forall i,$\=$ S, x, xs.\;$ \= 
-      $\setof{colls(S) * iter(i, S, x \cdot xs)}$\\
-\>\>\>$\run{\ctext{next}(i)}$\\
-\>\>\>$\setof{a:\opttype{\N}.\; 
-              colls(S) * iter(i, S, xs) \land a = (\ctext{Some}\;x)}$ 
-\\[0.5em]
-$colls(\emptyset) \qquad\qquad\qquad\;\;$ \=$\equiv\;$\= $\emp$ \\
-$colls(\setof{(c,xs,P)} \cup S)$ \> $\equiv$ \> $coll(c, xs, P) * colls(S)$ \\
-\end{tabbing}
-}
+In lines \ref{decl:collpred} and \ref{decl:iterpred}, we give two
+abstract predicates $\collpred$ and $\iterpred$, to represent the
+state associated with a collection and iterator, respectively. The
+sort of the collection predicate is $\Pi \alpha:\star.\;
+\colltype(\alpha) \To \seqsort{\alpha} \To \assert \To \assert$, which
+we will write using an expression like $\collpred_\alpha(c, xs, P)$.
 
+The first argument is a type argument (e.g., $\alpha$), indexing the
+whole predicate by the element type of the collection. The second
+argument is an argument of collection type (in our example, $c$, of
+type $\colltype(\alpha)$) which indicates the value with which our
+state is associated. The third argument (here, $xs$) is the purely
+mathematical sequence (i.e., an element of the free monoid over
+$\alpha$) the collection $c$ represents.  The fourth, and final,
+argument is a proposition-valued \emph{abstract state} of the
+collection, which we use to track whether or not the collection has
+been modified or not.
 
-In this specification, the predicate $coll(c, xs, P)$ (on line 1) is a
-three place predicate describing the state of a collection. The first
-argument $c$ names the collection object that owns this state in the
-heap. The second argument, $xs$, is the abstract sequence that the
-collection $c$ currently represents. As $c$ is mutated, $xs$ can
-change. The final argument, $P$, represents the \emph{abstract state}
-of the collection. We use this argument to track whether an operation
-that uses $c$ makes any destructive changes to it. Since the iterator
-protocol asks that we not call any destructive operations, this field
-lets us track whether a function has made such a change, or not, without
-actually revealing the internal state of the collection to a client. 
+The appearance of this argument might be a little bit surprising:
+naively, we might suppose the mathematical sequence that collection
+represents constitutes a sufficient description of the collection, and
+so we might expect our predicates to take on the form
+$\collpred_\alpha(c, xs)$, with no state argument. However, this is
+\emph{not} sufficient, and the reason we need an abstract state is
+that the iterator contract forbids modifying the collection at all,
+while iterators are active upon it, and it turns out that the
+mathematical sequence a collection represents is not enough to decide
+whether a collection has been modified or not.
 
-The predicate $iter(i, S, xs)$ (on line 2) is the predicate describing
-the state of an iterator. The first argument $i$ is the iterator
-constructor which owns this heap state. The finite set $S$ is a set of
-triples describing the \emph{support} of the iterator -- the triples
-$(c,xs,P)$ in this set describe all the collections the iterator will
-examine in its enumeration. That is, the collections in the support
-are the collections that are in $i$'s underlying state. (We track the
-iterators in an underlying state by another mechanism, which we will
-describe subsequently.) The third argument, $xs$, is a sequence
-corresponding to the elements that the iterator has yet to produce.
+For example, suppose we have a collection $c$, which represents the
+mathematical sequence $\left<2, 3, 4, 5\right>$, which -might have the
+predicate $\collpred_\N(c, \left<2, 3, 4, 5\right>, P)$.  Now, suppose
+we first add the element $1$ to the front of the sequence (so that the
+collection $c$ now represents $\left<1, 2, 3, 4, 5\right>$), and then
+immediately remove the first element. Then, the collection $c$ will
+still represent the sequence $\left<2, 3, 4, 5\right>$, but it will
+have suffered an intervening modification.
 
-$\ctext{newcoll}$ (specified on line 6) creates a new, empty
-collection, unaliased with any other collection. The postcondition
-specifies that the collection is empty, and that it begin in some
-arbitrary abstract state. $\ctext{size}(c)$ (line 7) takes a
-collection $c$, and returns the number of elements in $c$. The
-abstract state $P$ of the $coll(c, xs, P)$ predicate is unchanged in
-the pre- and post-conditions, indicating that this function does not
-change the abstract state. $\ctext{add}(c, x)$ (line 8) takes a
-collection $c$, and imperatively adds the element $x$ to the
-collection. The abstract state is existentially quantified in the
-postcondition, indicating that it can be modified by the call to
-$\ctext{add}$. This ensures that clients cannot assume that the 
-abstract state is the same before and after a call to $\ctext{add}$. 
+This kind of change can be catastrophic for iterator implementations.
+As a concrete example, suppose that we had represented our collection
+with a balanced binary tree, and represent the iterator as a pointer
+into the middle of that tree. Adding and removing elements from the
+collection can cause a tree rebalancing, which can potentially leave
+the iterator pointer with a stale or dangling pointer.
 
-$\ctext{newiter}(c)$ (line 9) takes a collection $c$, and returns an
-iterator over it. The returned iterator predicate $iter(a,$
-$\setof{(c, xs, P)}, xs)$ states that $a$ is the iterator object,
-whose support is the collection $\setof{(c, xs, P)}$, and which will
-produce the elements $xs$ (the same as the elements of $c$).
+As a result, our specification has to have some way of establishing
+whether a collection has been modified or not, and this is what the
+abstract state field on the predicate is intended to track. Operations
+on a collection which do not change its underlying state will leave
+the abstract state unchanged from pre- to post-condition, whereas
+destructive operations (such as adding or removing elements) will
+change the abstract state.
 
-$\ctext{filter}(p, i)$ (line 10) takes a boolean function $p$ and an
-iterator $i$, and returns a new iterator which will enumerate only
-those elements which for which $p$ returns true. (We express this with
-a logical function $filter$ called on the sequence $xs$.) Note that
-$\ctext{filter}(p, i)$ consumes the original iterator state $iter(i,
-S, xs)$ -- the postcondition state only mentions the state associated
-with the return value of the the call to $\ctext{filter}$. This
-reflects the fact that the filtered iterator takes ownership of the
-underlying iterator, in order to prevent third parties from making
-calls to $\ctext{next}(i)$ and possibly changing the state of the
-filtered iterator. 
+On line \ref{decl:iterpred}, we assert the existence of the iterator predicate
+$\iterpred$.  It is also a four-place predicate, and has sort $\Pi
+\alpha:\star.\; \colltype(\alpha) \To \seqsort{\alpha} \To
+\powerset{\assert} \To \assert$, which we will write using an
+expression like $\iterpred_\alpha(i, xs, S)$.
 
-This is also why the support only needs to track the collections in
-each iterator's underlying state. When we take ownership of the
+The first argument (in our example, $\alpha$) is a type argument
+describing the type of elements the iterator will produce. The second
+argument (here, $i$) is the concrete iterator value to which the
+predicate is associated. Then, we have a sequence argument (here,
+$xs$) which describes the elements yet to be produced from this
+iterator -- if $xs = \left<5, 7, 9\right>$, then the next three
+elements the iterator will yield are 5, 7, and 9, in that order.
+Subsequently the iterator will be empty and unable to produce any
+more elements.
+
+Finally, we have a state argument for iterators, as well. In contrast
+to the case for collections, this argument is a set of propositions,
+representing an entire set of abstract states! The reason for this is
+that our interface will also support operations which allow building
+new iterators from old, and so an iterator might read many different
+collections to produce a single new element. As a result, we have to
+track the abstract state of each collection the iterator depends on,
+so that we can verify that we do not ever need to read a modified
+collection.
+
+\begin{figure}
+\mbox{}
+\begin{specification}
+\nextlinelabel{decl:colltype}
+$\exists \colltype : \star \to \star$  
+\nextlinelabel{decl:itertype}
+$\exists \itertype : \star \to \star$  
+\nextlinelabel[0.5em]{decl:collpred}
+$\exists \collpred : 
+        \Pi \alpha:\star.\; \colltype(\alpha) \To \seqsort{\alpha} \To \assert \To \assert.$ 
+\nextlinelabel{decl:iterpred}
+$\exists iter : 
+        \Pi \alpha:\star.\; \itertype(\alpha) \To \seqsort{\alpha} \To \powerset{\assert} \To \assert.$ 
+\nextlinelabel[0.5em]{decl:newcoll-type}
+$\exists \newcoll : 
+         \forall \alpha:\star.\; \monad{(\colltype(\alpha))}.$
+\nextlinelabel{decl:size-type}
+ $\exists \sizecoll : 
+         \forall \alpha:\star.\; \colltype(\alpha) \to \monad{\N}.$ 
+\nextlinelabel{decl:add-type}
+ $\exists \addcoll : 
+         \forall \alpha:\star.\; \colltype(\alpha) \times \alpha \to \monad{\unittype}.$
+\nextlinelabel{decl:remove-type}
+ $\exists \removecoll :
+         \forall \alpha:\star.\; \colltype(\alpha) \to \monad{(\opttype{(\alpha)})}$. 
+\nextlinelabel[0.5em]{decl:newiter-type}
+ $\exists \newiter : 
+         \forall \alpha:\star.\; \colltype(\alpha) \to \monad{(\itertype(\alpha))}.$ 
+\nextlinelabel{decl:filter-type}
+ $\exists \filteriter : 
+         \forall \alpha:\star.\; (\alpha \to \ctext{bool}) \times \itertype(\alpha) 
+                                 \to \monad{(\itertype(\alpha))}.$ 
+\nextlinelabel{decl:zip-type}
+$\exists$\=$ \mergeiter : 
+         \forall \alpha:\star.\; (\alpha \to \alpha \to \alpha) \times
+                                 \itertype(\alpha) \times \itertype(\beta) 
+                                   \to \monad{(\itertype(\alpha))}.$
+\nextlinelabel{decl:next-type}
+$\exists$\=$\nextiter : 
+         \forall \alpha:\star.\; \itertype(\alpha) \to \monad{(\opttype{(\alpha)})}.$  
+\nextlinelabel[0.5em]{decl:newcoll-spec}
+
+\> $\forall \alpha.\; \spec{\emp}{\run{\newcoll[\alpha]}}
+                                 {a:\colltype(\alpha)}{\exists P.\; \collpred_\alpha(a, \epsilon,P)}$ $\specand$ 
+\nextlinelabel[0.5em]{decl:size-spec}
+
+\> $\forall \alpha, c, P, xs.\;$\=
+         $\setof{\collpred_\alpha(c, xs, P)}$
+\nextline
+\> \>  $\run{\sizecoll[\alpha](c)}$ 
+\nextline
+\> \>  $\setof{a:\N.\; \collpred_\alpha(c, xs, P) \land a = |xs|}$  $\specand$ 
+\nextlinelabel[0.5em]{decl:add-spec}
+
+ \> $\forall \alpha, c, P, x, xs.\;$\=
+               $\setof{\collpred_\alpha(c, xs, P)}$ 
+\nextline
+\>\>         $\run{\sizecoll[\alpha](c, x)}$
+\nextline
+\>\>         $\setof{a:1.\; \exists Q.\; \collpred_\alpha(c, x\cdot xs, Q)}$ $\specand$ 
+
+\nextlinelabel[0.5em]{decl:remove-spec-1}
+
+\> $\forall \alpha, c, P.\; \spec{\collpred_\alpha(c, \epsilon, P)}
+                                        {\run{\removecoll[\alpha](c)}}
+                                        {a:\opttype{(\alpha)}}
+                                        {\collpred_\alpha(c, \epsilon, P) \land a = \None}$
+$\specand$ 
+\nextlinelabel{decl:remove-spec-2}
+\> $\forall \alpha, c, x, xs, P.$\=
+          $\setof{\collpred_\alpha(c, x\cdot xs, P)}$ 
+\nextline
+\>\> $\run{\removecoll[\alpha](c)}$ 
+\nextline
+\>\> $\setof{a:\opttype{(\alpha)}.\;
+             \exists Q.\;\collpred_\alpha(c, xs, Q) \land a = \Some(x)}$ 
+\nextlinelabel[0.5em]{decl:newiter-spec}
+
+\> $\specand \forall \alpha, c, P, xs.\;$\=
+            $\setof{\collpred_\alpha(c, xs, P)}$ 
+\nextline
+\>\>$\run{\newiter[\alpha](c)}$
+\nextline
+\>\>$\setof{a:A_i.\; \collpred(c, xs, P) * \iterpred(a, xs, \setof{P})}$ $\specand$ 
+\nextlinelabel[0.5em]{decl:filter-spec}
+
+ \> $\forall \alpha, p, i, S, xs.\;$\=
+         $\setof{\iterpred_\alpha(i, xs, S)}$ 
+\nextline
+\>\>   $\run{\filteriter[\alpha](p, i)}$
+\nextline
+\>\>   $\setof{a:A_i.\; \iterpred_\alpha(a, \mathit{filter}\; p\;xs, S)}$ $\specand$ 
+\nextlinelabel[0.5em]{decl:zip-spec}
+
+ \> $\forall \alpha, f, i, S,$\=$ xs, i', S', xs'.\;$ 
+\nextline
+ \> \> 
+     $\setof{\iterpred_\alpha(i, S, xs) * \iterpred_\beta(i', S', xs')}$ 
+\nextline
+ \> \> $\run{\mergeiter[\alpha](f, i, i')}$ 
+\nextline
+ \> \> $\setof{a:A_i.\; \iterpred_{\alpha}(a, S \cup S', \mathit{map2}\;f\;xs\;xs')}$ $\specand$ 
+\nextlinelabel[0.5em]{decl:next-spec-1}
+
+ \> $\forall i, C, S.\;$\=
+      $\setof{\mathit{colls}(C, S) * \iterpred_\alpha(i, S, \epsilon)}$
+\nextline  
+\>\>$\run{\nextiter(i)}$ 
+\nextline
+\>\>$\setof{a:\opttype{(\alpha)}.\; \mathit{colls}(S) * \collpred_\alpha(i, S, \epsilon) \land a = \None}$ $\specand$ 
+\nextlinelabel[0.5em]{decl:next-spec-2}
+
+ \> $\forall i,C, $\=$ S, x, xs.\;$ \= 
+      $\setof{\mathit{colls}(C, S) * \iterpred_\alpha(i, S, x \cdot xs)}$
+\nextline
+\>\>\>$\run{\nextiter(i)}$
+\nextline
+\>\>\>$\setof{a:\opttype{(\alpha)}.\; 
+              \mathit{colls}(C, S) * \iterpred_\alpha(i, S, xs) \land a = (\Some\;x)}$ 
+
+\end{specification}
+\caption{Interface to the Iterator Library}
+\label{iterator-interface}
+\end{figure}
+
+\begin{figure}
+\mbox{}
+\begin{specification}
+\nextline
+$\mathit{colls}(\emptyset, \emptyset) \qquad\qquad\qquad\qquad\;\;$ \=$\equiv\;$\= $\emp$ 
+\nextline
+$\mathit{colls}(\setof{(c,xs)} \cup C, \setof{P} \cup S)$ \> $\equiv$ \> $\collpred(c, xs, P) * \mathit{colls}(C, S)$ 
+
+\nextlinelabel[0.5em]{decl:mathfilter-impl}
+$\mathit{filter}\;p\;\epsilon \qquad\quad$\=$\equiv \epsilon$
+\nextline
+$\mathit{filter}\;p\;(x\cdot xs)$ \> $\equiv \ctext{if}\;p\;x = \ctext{true}\;\ctext{then}\;
+                                         x\cdot(\mathit{filter}\;p\;xs)\;
+                                      \ctext{else}\; \mathit{filter}\;p\;xs$ 
+
+\nextlinelabel[0.5em]{decl:map2-impl}
+$\mathit{map2}\;f\;\epsilon\;ys \qquad\qquad\qquad $\=$= \epsilon$ 
+\nextline
+$\mathit{map2}\;f\;xs\;\epsilon $\>$= \epsilon$ 
+\nextline
+$\mathit{map2}\;f\;(x\cdot xs)\;(y\cdot ys)$ \>$= (f\;x\;y)\cdot(\mathit{map2}\;f\;xs\;ys)$
+    
+\end{specification}
+\caption{Auxilliary Functions Used in the Iterator Specification}
+\label{iterator-interface-aux}
+\end{figure}
+
+The operation $\newcoll$ is declared on line \ref{decl:newcoll-type},
+and specified on line \ref{decl:newcoll-spec}. The specification
+asserts that the call $\newcoll[\alpha]$ may happen from any
+precondition state, and that it creates and adds a new, empty
+collection to the program state. The postcondition assertion $\exists
+P.\; coll_\alpha(a, \epsilon, P)$ says that the return value $a$ is a
+collection representing the empty sequence $\epsilon$, and that the
+collection begins its life in some arbitrary abstract state $P$.
+
+The $\sizecoll[\alpha](c)$ function, which is declared on line
+\ref{decl:size-type} and specified on line \ref{decl:size-spec}, takes
+a type argument $\alpha$ and a collection $c$, and returns the number
+of elements in $c$. To call this function, we must have access to the
+collection $\collpred_\alpha(c, xs, P)$ in our precondition, and it is
+returned to us unchanged in the postcondition, with the return value
+$a$ equal to the length of $xs$, the sequence $c$ represents. In
+particular, note that the abstract state $P$ of the $coll(c, xs, P)$
+predicate remains unchanged in the pre- and post-conditions,
+indicating that this function does not change the abstract state.
+
+The function call $\addcoll[\alpha](c, x)$, which adds an element $x$
+to a collection $c$, is declared on line \ref{decl:add-type} and is
+specified on line \ref{decl:add-spec}. We start with a precondition
+$\collpred_\alpha(c, xs, P)$ and move to a postcondition state
+$\exists Q.\; \collpred_\alpha(c, x\cdot xs, Q)$. Because we
+destructively modify the collection $c$ when we add $x$ to it, we also
+specify that the abstract state in the postcondition is existentially
+quantified. This ensures that clients cannot assume that the abstract
+state remains the same after a call to $\addcoll$ has been made. In
+this way, the abstract state behaves a bit like a time stamp, changing
+to some new state whenever a modification is made to the collection. 
+
+Similarly, the function call $\removecoll[\alpha](c)$ (declared on
+line \ref{decl:remove-decl}) removes an element from the collection
+$c$. We give this procedure two specifications, on lines
+\ref{decl:remove-spec-1} and \ref{decl:remove-spec-2}, corresponding
+to when the collection is empty, or not. 
+
+In the first specification (on line \ref{decl:remove-spec-1}), we
+begin with the precondition $\collpred_\alpha(c, \epsilon, P)$, and
+end in the postcondition $\collpred_\alpha(c, \epsilon, P) \land a =
+\None$. The fact that the abstract state remains $P$ means the
+collection is unchanged, and the return value $a$ equals $\None$, 
+an element of option type, indicating that there was no element to remove.
+
+In the second specification (on line \ref{decl:remove-spec-2}), we
+begin with the precondition $\collpred_\alpha(c, x\cdot xs, P)$, from
+which we can see that the collection is nonempty. Then, the postcondition
+is $\exists Q.\; \collpred_\alpha(c, xs, Q) \land a = \Some(x)$. 
+The value $\Some(x)$ is returned as the return value of the function,
+and the state of the collection changes to reflect that the element $x$
+has been removed --- including a change to the abstract state of the 
+collection. 
+
+As an aside, in practice it is usually more convenient to specify a
+procedure with a single Hoare triple, rather than multiple Hoare
+triples. However, in this example, I choose to give multiple
+specifications of the same procedure in order to illustrate that it is
+indeed possible within specification logic.
+
+The $\newiter[\alpha](c)$ function is declared on line
+\ref{decl:newiter-type}.  Its type is $\forall \alpha:\star.\;
+\colltype(\alpha) \to \monad{(\itertype(\alpha))}$.  This means that
+it is given a type and a collection of that type, and then it returns
+iterator over that type, possibly creating auxilliary data structures.
+
+A call $\newiter[\alpha](c)$ is specified on line
+\ref{decl:newiter-spec}, and beginning from a precondition state
+$\collpred_\alpha(c, xs, P)$, it goes to a postcondition state
+$\collpred_\alpha(c, xs, P) * \iterpred_\alpha(a, xs, \setof{P})$.
+This means that given access to a collection $c$, our function will
+return an iterator object (bound to $a$), which will enumerate the
+elements of $c$ (that is, it will produce the elements
+$xs$). Furthermore, the abstract state that it depends on is just the
+singleton set $\setof{P}$, since this iterator will read only $c$.
+Finally, the fact that $\collpred_\alpha(c, xs, P)$ occurs in both
+the pre- and the post-condition means that this function needs 
+access to $c$'s state, but does not modify its abstract state. 
+
+The $\filteriter[\alpha](p, i)$ (declared on line \ref{decl:filter-type})
+takes a boolean function $p$ and an iterator $i$, and returns a new
+iterator which will enumerate only those elements which for which $p$
+returns true. This function is specified on line \ref{decl:filter-spec}, 
+and it takes a precondition $\iterpred_\alpha(i, xs, S)$ to a postcondition
+$\iterpred_\alpha(a, \mathit{filter}\;p\;xs, S)$. 
+
+First, note that we use a mathematical function $\mathit{filter}$ to
+explain the filtering behavior in terms of sequences. Second, note
+that the original iterator state $\iterpred_\alpha(i, xs, S)$ vanishes
+from the postcondition -- it is consumed by the call the
+$\filteriter$.  This reflects the fact the filtered iterator takes
+ownership of the underlying iterator, in order to prevent third
+parties from making calls to $\nextiter(i)$ and possibly changing the
+state of the filtered iterator.
+
+This is also why the support set $S$ for an iterator only needs to
+track the abstract states of the collections, rather than tracking the
+state of both collections and iterators. When we take ownership of the
 argument's iterator state, we prevent third parties from being able to
 call functions on the argument after creating the new iterator. This
 takes advantage of the resource-conscious nature of separation logic:
 a specification must have access to its footprint, and so we can hide
-state inside a predicate to control which operations are allowed.  
+state inside a predicate to control which operations are allowed.
 
-$\ctext{map2}(f, i_1, i_2)$ (lines 11-13) takes a binary function $f$,
-and two iterators $i_1$ and $i_2$. From an initial state $iter(i_1, S,
-xs) * iter(i_2, S', ys)$, a call to $\ctext{map2}$ will return a new
-iterator, whose support is the union of each argument's support, and
-whose supply of values is the result of pairing the elements of $i_1$
-and $i_2$ and applying $f$ to them. As with $\ctext{filter}$,
-$\ctext{map2}$ takes ownership of the state of its argument iterators
-and consumes them in the postcondition.
+The $\mergeiter$ function is declared on line $\ref{decl:zip-type}$, and
+has type $\forall \alpha:\star.\; (\alpha \to \alpha \to \alpha) \times \itertype(\alpha) \times
+\itertype(\beta) \to \monad{(\itertype(\alpha \times \beta))}$.  Thus,
+a call $\mergeiter[\alpha](f, i_1, i_2)$ takes a function and two 
+iterators, and constructs a new iterator which steps over the two inputs in parallel,
+returning the result of $f$ applied to each pair of elements of $i_1$ and $i_2$. 
 
-$\ctext{next}(i)$ (lines 14-15) takes an iterator $i$ as an argument.
-In each precondition we ask for both an iterator predicate $iter(i, S,
--)$, and the collections $colls(S)$. $colls(S)$ iterates over the set
-$S$, joining each $(c,xs,P)$ in $S$ into a large separated conjunction
-$coll(c_1, xs_1, P_1) * \ldots * coll(c_k, xs_k, P_k)$. This expresses
-the requirement that we need \emph{all} of the collections $i$ depends
-on, all in the correct abstract state.
+We specify calls $\mergeiter[\alpha](f, i_1, i_2)$ on line
+$\ref{decl:zip-spec}$, and it takes a precondition
+$\iterpred_\alpha(i_1, xs, S_1) * \iterpred_\alpha(i_2, ys, S_2)$.
+This means that we have state associated with two separate iterators,
+which we take to the postcondition $\iterpred_{\alpha\times\beta}(a,
+\mathit{map2}\;f\;xs\;ys, S_1 \cup S_2)$. As with the $\filteriter$ function, 
+we consume the two input iterators to produce the return value iterator. 
+And also as with $\filteriter$, we use a mathematical function $\mathit{map2}$
+to specify the action on mathematical sequences. 
 
-If the iterator is exhausted, $\ctext{next}(i)$ returns $\ctext{None}$
-(line 14). If the iterator still has elements (i.e., is in a state
-$iter(i, S, x\cdot xs)$), it returns the first element as
-$\ctext{Some}\;x$, and sets the state to $iter(i, S, xs)$ in the
-postcondition (line 15). We give two specifications purely for
-readability; it lets us avoid giving a cumbersome combined
-specification.
+One point worth noting is that it is important that the two argument
+iterators are separate from one another. In a functional program,
+there is no difficulty with a program $\mathit{map2}\;f\;xs\;xs$, because
+we are free to re-traverse a list multiple times. However, since
+traversing an iterator is a destructive operation, a call like
+$\mergeiter[\tau]\;f\;i\;i$ could (if it were allowed) give the wrong answer,
+for example by pairing consecutive elements of the iterator.
 
-For space reasons, we cannot give the complete proof, so we give the
-implementation of this module and its predicates below:
-{\small
-\begin{tabbing}
-1 \qquad \= $list(c, \epsilon)$ \qquad\= $\equiv$ \= $c \pointsto \ctext{Nil}$ \\
-2 \> $list(c, x\cdot xs)$ \> $\equiv$ \> 
-   $\exists c'.\; c \pointsto \ctext{Cons}(x, c') * list(c', xs)$ 
-\\[0.5em]
-3\qquad \= $coll$\=$(c, xs, P) \equiv list(c, xs) \land P \land \mbox{exact}(P)$ \\[0.5em]
-4 \> $iter$\=$(\ctext{Map2}(f, i_1, i_2), S, xs)$\=$ \equiv$ \= \\ 
-\> \>         $\exists$\=$xs_1, xs_2, S_1, S_2.$ \\
-\> \>\>$xs = (map\; f\; (zip\; xs_1\; xs_2)) \land (S = S_1 \uplus S_2) \;\land$\\
-\> \>\>$iter(i_1, S_1, xs_1) * iter(i_2, S_2, xs_2)$ \\
-5 \> $iter$\=$(\ctext{Filter}(p, i), S, xs) \equiv$ \\
-\> \>\>      $\exists xs'.\;$\=$xs = filter\;p\;xs' \;\land\; iter(i, S, xs')$ \\
-6 \> $iter$\=$(\ctext{Coll}(l), \setof{(c, xs, P)}, zs) \equiv$ \= \\
-\> \> $\exists$\=$ c', ys.\; xs = ys \cdot zs \land l \pointsto c' * $ \\
-\> \> $(coll$\=$(c, xs, P) \wand\;$\\ 
-\> \> \> \!\!\!\!$[(coll(c, xs, P) \land (segment(c, c', ys) * list(c', zs)))]$
-\\[0.5em]
-7 \> $segment(c, c', \epsilon)$ \qquad\=$\equiv c = c' \land \emp$ \\
-8 \> $seg$\=$ment(c, c', x\cdot xs) \equiv \exists c''.\; c \pointsto \ctext{Cons}(x, c'') * segment(c'', c', xs)$
-\\[0.5em]
+The final operation in our interface is the $\nextiter$ function,
+declared on line \ref{decl:next-type}. The type of this function
+is $\forall \alpha:\star.\; \itertype(\alpha) \to
+\monad{(\opttype{(\alpha)})}$.  When invoked, it will return an
+option, with the $\None$ value if the iterator is exhausted,
+and $\Some$ of an element if the iterator still has elements to
+produce.
 
-9 \> $\ctext{newcoll}() \equiv \comp{\newref{\reftype{\listtype{\N}}}{\ctext{Nil}}}$ 
-\\[0.5em]
-10 \> $\ctext{size}(lst) \equiv$ \=  $[$\=$ \letv{cell}{\comp{!lst}}{}$ \\
-11 \> \> \> $\run{}\ctext{case}($\=$cell,$ \\
-12 \> \> \> \> $\ctext{Nil} \to \comp{0}, $ \\
-13 \> \> \> \> $\ctext{Cons}(h,t) \to \comp{\letv{n}{\ctext{size(t)}}{n + 1}})]$ 
-\\[0.5em]
+As with $\removecoll$, we specify this procedure with two
+specifications, one for the case when the iterator is empty and
+another for one it is non-empty. On line \ref{decl:next-spec-1}, we
+give the specification for when the iterator is exhausted, and
+on line \ref{decl:next-spec-2}, we give the specification for when
+the iterator is not exhausted.  
 
-14 \> $\ctext{add}(c, x) \equiv$ \=
-          $[$\= $\letv{cell}{\comp{!c}}{}$ \\
-15 \> \> \> $\letv{r}{\comp{\newref{\reftype{\listtype{\N}}}{cell}}}{}$ \\
-16 \> \> \> $c := \ctext{Cons}(x, r)]$
-\\[0.5em]
-17 \> $\ctext{new}\ctext{iter}(c) \equiv 
-   \comp{\letv{r}{\comp{\newref{\reftype{\reftype{\listtype{\N}}}}{(c)}}}{\ctext{Coll}\;r}}$ 
-\\[0.5em]
-18 \> $\ctext{filter}(p, i) \equiv \comp{\ctext{Filter}(p, i)}$ 
-\\[0.5em]
-19 \> $\ctext{map2}(f, i_1, i_2) \equiv \comp{\ctext{Map2}(f, i_1, i_2)}$ 
-\\[0.5em]
-20 \> $\ctext{next}(\ctext{Coll}\;r) \equiv$ \=
-       $[$\=$\letv{list}{\comp{!r}}{}$ \\
-21 \>\>\>$\letv{cell}{\comp{!list}}{}$ \\
-22 \>\> \>$\run{}\ctext{case}(cell,$\=
-            $\ctext{Nil} \to $\=$\comp{\ctext{None}},$ \\
-23 \>\>\>\> $\ctext{Cons}(x, t) \to $\\
-   \>\>\>\>                   \> $[$\=$\letv{dummy}{\comp{r := t}}{}$ \\
-   \>\>\>\>                   \>    \>${\ctext{Some}\;x}])]$ \\
-24 \> $\ctext{next}(\ctext{Filter}(p, i)) \equiv$ \= 
-        $[$\=$\letv{v}{\ctext{next}(i)}{}$ \\
-25 \>\>\>$\run{}\ctext{case}(v,$\=
-            $\ctext{None} \to \comp{\ctext{None}}$ \\
-26 \>\>\>\> $\ctext{Some}$\=$\;x \to $ \\
-   \>\>\>\> \>$\ctext{if}(p\;x,$\=$\comp{\ctext{Some}\; x},$ \\
-   \>\>\>\> \>\>                                   $\ctext{next}(\ctext{Filter}(p, i))))]$
-\\
-27 \> $\ctext{next}$\=$(\ctext{Map2}(f, i_1, i_2)) \equiv$ \\
-   \>\>$[$\=$\letv{v_1}{\ctext{next}\;i_1}{}$ \\
-28 \>\>\>$\letv{v_2}{\ctext{next}\;i_2}{}$ \\
-29 \>\>\>$\ctext{case}(v_1,$ \= 
-            $\ctext{None} \to \ctext{None},$ \\
-30 \>\>\>\> $\ctext{Some}\;x_1 \to \ctext{case}(v_2,$ \=
-              $\ctext{None} \to \ctext{None},$ \\
-31 \>\>\>\>\> $\ctext{Some}\;x_2 \to \ctext{Some}(f(x_1, x_2))))]$\\
-\end{tabbing}
-}
+In either case, the precondition for the function contains as one part
+the predicate $\mathit{colls}(C, S)$.  The assertion-level function
+$\mathit{colls}(C,S)$ is a function that iterates over a set of
+abstract states, and re-associates them with collection predicates
+(coming from the argument $C$) in the precondition, to form a
+predicate $\collpred_{\tau_1}(c_1, xs_1, S_1) * \ldots *
+\collpred_{\tau_n}(c_n, xs_n, S_n)$.  This expresses the requirement
+that we need \emph{all} of the collections $i$ depends on, all in the
+correct abstract state.
 
-The inductive predicate $list(c, xs)$ is defined on lines 1-2. It says
-that $c$ is an empty list if it is a pointer to the value
-$\ctext{Nil}$, and that is a non-empty list if $c$ points to
-$\ctext{Cons}(x, c')$, where $x$ is the first element of the sequence
-and $c'$ disjointly represents the tail of the list.
+This function is defined in Figure~\ref{iterator-interface-aux}.\footnote{Technically, 
+this is an abuse of notation, since primitive recursion is not well defined on
+sets, and so this ``function'' is nondeterministic.  The proper way
+to do this would be to introduce a three-place relation
+$\mathit{colls(C, S, R)}$ and put $R$ in the precondition
+state. However, as no confusion is possible I will retain the
+functional form.}
 
-The predicate $coll(c, xs, P)$ (line 3) is defined as the conjunction
-of a linked list predicate $list(c, xs)$ and an exact predicate
-$P$. An exact predicate is one that is true of exactly one heap, and
-the conjunction of $P$ with $list(c,xs)$ ensures that this linked list
-cannot be modified at all, without changing $P$. This is a relatively
-common idiom when verifying programs whose invariants depend on a
-notion of destructive update. It is necessary because the predicate
-$list(c, xs)$ can be maintained even when $c$ is modified. Concretely,
-suppose that $xs$ is nonempty. Then any modification of $c$ which
-changes $c$'s tail to some different physical list representing the
-same tail sequence will still satisfy the predicate $list(c, xs)$.
-However, if a predicate is known to be exact, then there is exactly
-one heap it can be, and so no other heaps can satisfy it. 
+In line \ref{decl:next-spec-1}, $\mathit{colls}(C, S)$ is joined with 
+the specification of the iterator, $\iterpred_\alpha(i, \epsilon, S)$. Note
+that the same $S$ is used, so that we are referring only to the collections
+the iterator may need to read.  As expected, $\nextiter[\alpha](i)$ returns 
+$\None$.  On the other hand, if the iterator still has elements (i.e., is in a state
+$iter_\alpha(i, x\cdot xs, S)$), we use the specification on line \ref{decl:next-spec-2}, 
+and see it returns the first element as
+$\Some\;x$, and sets the state to $iter(i, S, xs)$ in the
+postcondition (line 15). 
 
-The inductive definition of $iter$ is on lines 4-6. The base case
-(line 6) is the most complex. In essence, it says that the iterator's
-pointer is a finger into the middle of the list, $c'$.  
+\subsection{Example Implementation}
 
-We express this requirement with the clause $coll(c, xs, P) \land
-(segment(c,c',ys) * list(c',zs))$, which says that heap associated
-with the collection can be viewed in two ways, both as the collection
-itself, and as a partial list segment representing what has already
-been seen, together with the remainder of the list beginning at $c'$.
-%
-However, the iterator state does not own the collection; this clause
-will only hold if we have the collection state in addition to the
-iterator. We use the magic wand to say this: it means that when we
-supply the iterator with $coll(x, xs, P)$, then we can view the
-state in this way.
-So as a whole, the predicate $iter(\ctext{Coll}(l), \setof{(c,xs,P)},
-zs)$ can be read as ``the iterator is a pointer $l$ to some $c'$, such
-that if we are given the collection state $coll(c, xs, P)$, then $c'$
-is a pointer into the middle of the list, with $zs$ as the remaining
-elements''. 
+In this subsection, we describe one particular implementation of
+iterators, based on a simple linked list implementation. The type and
+predicate definitions are given in Figure~\ref{iterator-pred-impl},
+and the implementation of the procedures is given in
+Figure~\ref{iterator-implementation}. 
+
+
+\subsubsection{Definitions of the Types and Predicates}
+
+We'll begin by giving an intuitive explanation of the predicates,
+before giving correctness proofs for the operations.
+
+Starting on line \ref{decl:colltype-impl} of
+Figure~\ref{iterator-pred-impl}, we define the type of
+collections. Technically, these are recursive type definitions, which
+we did not define in our semantics in Chapter 1. Fortunately, there is
+no great difficulty in these definitions --- we are giving polynomial
+data types, and we can justify these definition via the fact that for
+every polynomial functor $F$, the category of $F$-algebras over CPO
+has an initial object (which means that the data type and primitive
+iteration over it are well-defined).
+
+The type of collections $\colltype(\tau)$ is a mutable linked list,
+consisting of a reference to a value of type $\Listcontent(\tau)$. A
+list content is either a $\Nil$ value, or a cons cell $\Cons(x, tl)$
+consisting of a value of type $\tau$ and a tail list of type
+$\colltype(\tau)$. Unlike the typical definition of purely functional
+linked lists in ML, the tails of a list are mutable references, rather
+than list values.
+
+The type of iterators, given in line \ref{decl:itertype-impl}, is very
+simple -- an iterator is just a pointer to a list. This type arises as
+follows. Since the tails of a linked list are themselves lists, we can
+represent an interior pointer to a list with a pointer to list, giving
+us the type of a pointer to a list as the type of iterators. 
+
+Then, on line \ref{decl:listpred-impl}, we define the auxilliary
+predicate $\listpred(\tau, c, xs)$, which asserts that $c$ is a list
+value representing the mathematical sequence $xs$, with element type
+$\tau$. This is defined by recursion over the sequence $xs$, with the
+empty sequence represented by a pointer to $\Nil$, and a sequence 
+$y\cdot ys$ represented by a pointer to a cons cell whose head is $x$
+and whose tail is a collection representing $ys$. 
+
+\begin{figure}
+\mbox{}
+\begin{specification}
+\nextlinelabel{decl:colltype-impl}
+$\Listcontent(\alpha) = \Nil \bnfalt \Cons\; \alpha \times \reftype{\Listcontent(\alpha)}$ 
+\nextline
+$\ctext{colltype}(\alpha) = \reftype{(\ctext{listcontent}(\alpha))}$ 
+\nextlinelabel[0.5em]{decl:itertype-impl}
+$\itertype{(\alpha)} =$\=$\;\One\;\reftype{(\colltype{(\alpha)})} \bnfalt 
+                          \Filter\;(\alpha \to bool) \times \itertype{(\alpha)}$
+\nextline
+                       \>$\bnfalt \Merge\; (\alpha \to \alpha \to \alpha) \times \itertype(\alpha) \times \itertype(\alpha)$
+\nextlinelabel[0.5em]{decl:listpred-impl}
+$\listpred(\tau, c, \epsilon)$ \qquad\= $\equiv$ \= $c \pointsto_\tau \Nil$ 
+\nextline
+$\listpred(\tau, c, x\cdot xs)$ \> $\equiv$ \> 
+   $\exists c'.\; c \pointsto_\tau \Cons(\tau, x, c') * list(c', xs)$ 
+\nextlinelabel[0.5em]{decl:collpred-impl}
+$collpred_\tau$\=$(c, xs, P) \equiv list(\tau, c, xs) \land P \land \mbox{exact}(P)$ 
+
+\nextlinelabel[0.5em]{decl:iterpred-impl}
+$\iterpred_\tau(\One\;i, xs, \setof{P}) \qquad\qquad$\=$\equiv \exists c.\; i \pointsto c * (P \wand (P \land (\top * \listpred(\tau, c, xs))))$ 
+\nextline
+$\iterpred_\tau(\Filter(p, i), xs, S)$ \>$\equiv 
+  \exists ys.\; \iterpred_\tau(i, ys, S) \land xs = \mathit{filter}\;p\;ys$ 
+\nextline
+$\iterpred_{\tau}(\Merge(f, i_1, i_2), xs, S)$ \>$\equiv 
+  \exists S_1, ys, S_2, zs.$ 
+\nextline
+  \> \qquad \= $\iterpred_\tau(i_1, ys, S_1) * \iterpred_\tau(i_2, zs, S_2) \;\land$
+\nextline \> \>$S = S_1 \cup S_2 \land xs = \mathit{map2}\;f\;ys\;zs$ 
+\end{specification}
+\caption{Type and Predicate Definitions of the Iterator Implementation}
+\label{iterator-pred-impl}
+\end{figure}
+
+\begin{figure}
+\mbox{}
+\begin{specification}
+\nextlinelabel[0.5em]{decl:newcoll-impl}
+$\newcoll[\alpha] \equiv \comp{\newref{\alpha}{\Nil}}$ 
+\nextlinelabel[0.5em]{decl:sizecoll-impl}
+$\sizecoll[\alpha](c) \equiv $\=
+         $[$\=$\letv{p}{\comp{!c}}{}$ 
+\nextline\> \>$\Run\;
+               \Listcase($\=$p,$ 
+\nextline\> \>                   \>$\Nil \to \comp{0},$
+\nextline\> \>                   \>$\Cons(\_, tl) \to 
+                                     \comp{\letv{n}{\sizecoll[\alpha](tl)}{n+1}})]$
+
+\nextlinelabel[0.5em]{decl:addcoll-impl}
+$\addcoll[\alpha](c, x) \equiv [$
+          \=$\letv{p}{\comp{!c}}{}$ 
+\nextline \>$\letv{c'}{\newref{\ctext{listcontent}(\alpha)}{p}}{}$ 
+\nextline \>$c := \Cons(x, c')]$ 
+
+\nextlinelabel[0.5em]{decl:removecoll-impl}
+$\removecoll[\alpha](c) \equiv [$\=
+            $\letv{p}{\comp{!c}}{}$ 
+\nextline \>$\Run\;\Listcase($\=$p,$ 
+\nextline \>                                \>$\Nil \to \comp{\None},$ 
+\nextline \>                                \>$\Cons(x, c') \to [$\=$\letv{p'}{\comp{!c'}}{}$ 
+\nextline \>                                \> \>$\letv{\_}{\comp{c := p'}}{}$ 
+\nextline \>                                \> \>$\Some(x)])]$
+
+\nextlinelabel[0.5em]{decl:newiter-impl}
+$\newiter[\alpha](c) \equiv \comp{\letv{i}{\comp{\newref{\colltype(\alpha)}{c}}}{\One(i)}}$
+
+\nextlinelabel[0.5em]{decl:filteriter-impl}
+$\filteriter[\alpha](p, i) \equiv \comp{\Filter(p, i)}$
+
+\nextlinelabel[0.5em]{decl:mergeiter-impl}
+$\mergeiter[\alpha](f, i, i') \equiv \comp{\Merge(f, i, i')}$ 
+
+\nextlinelabel[0.5em]{decl:next-one-impl}
+$\nextiter[\alpha](\One\;i) \equiv [$\=$\letv{c}{\comp{!i}}{}$ 
+\nextline \> $\letv{p}{\comp{!c}}{}$ 
+\nextline \> $\Run\;\Listcase($\=$p,$ 
+\nextline \>                                  \>$\Nil \to \comp{\None},$ 
+\nextline \>                                  \>$\Cons(x, c') \to [$\=$\letv{\_}{\comp{i := c'}}{\Some(x)}])]$ 
+\nextlinelabel{decl:next-filter-impl}
+$\nextiter[\alpha](\Filter(p, i)) \equiv [$\= 
+           $\letv{v}{\nextiter[\alpha](i)}$ 
+\nextline\>$\Run\;\Listcase($\=$v,$ 
+\nextline\>\> $\None \to \comp{\None},$ 
+\nextline\>\> $\Some\;x \to \IfThenElse{p\;x}{\comp{v}}{\nextiter[\alpha](\Filter(p,i))})]$ 
+\nextlinelabel{decl:next-merge-impl}
+$\nextiter[\alpha](\Merge(f, i_1, i_2)) \equiv [$\=
+            $\letv{x_1}{\nextiter[\alpha](i_1)}{}$ 
+\nextline\> $\letv{x_2}{\nextiter[\alpha](i_2)}{}$ 
+\nextline\> $\Optcase($\=$x_1,$ 
+\nextline\> \>           $\None \to \None,$ 
+\nextline\> \>           $\Some\;v_1 \to \Optcase($\=$x_2,$ 
+\nextline\> \> \>                                 $\None \to \None,$
+\nextlinelabel{decl:next-impl-end}\> \> \>                                 $\Some\;v_2 \to f\;v_1\;v_2))]$
+                                                   
+\end{specification}
+\caption{Implementation of Collections and Iterators}
+\label{iterator-implementation}
+\end{figure}
+
+The collection predicate $\collpred_\tau(c, xs, P)$, defined on line
+\ref{decl:collpred-impl}, makes use of the list predicate. In addition
+to asserting that the value $c$ represents the sequence $xs$, it
+asserts two further things. First, it says that this program state is
+also described by the abstract predicate $P$, and that this predicate
+is an \emph{exact} predicate.
+
+Exact predicates are predicates that hold of exactly one heap: that
+is, they are the atomic elements of the lattice of assertions. This
+means that they uniquely identify a heap data structure. This property
+lets us track modifications to the collection: any change to the actual
+heap structure will result in the falsification of $P$.  
+
+The iterator predicate, defined on line \ref{decl:iterpred-impl} is 
+given as a recursive definition. The base case is when we have an 
+iterator over a single collection, in the $\One(i)$ case.  Here, 
+we have the following assertion: 
+
+\begin{displaymath}
+  \iterpred_\tau(\One(i), xs, P) \equiv 
+    \exists c.\; i \pointsto c * P \wand (P \land (\top * \listpred(\tau, c, xs)))
+\end{displaymath}
+
+The $i \pointsto c$ clause says that $i$ is a pointer to a linked
+list.  The second clause of this invariant is more complex, and its
+purpose is to say that $c$ is an interior pointer into a collection.
+
+Note that $P$ will come from the abstract predicate field of some
+collection, and so will be an exact predicate. So the conclusion 
+of the magic wand, $(P \land (\top * \listpred(\tau, c, xs)))$, says
+that the state is $P$, and can also be viewed as containing the 
+list starting at $c$ and representing the sequence $xs$. 
+
+Adding the magic wand to the formula , so that we get $(P \land (\top
+* \listpred(\tau, c, xs)))$, ends up meaning, ``if you give me the
+collection state $P$, then I promise to you that it contains $c$,
+which represents $xs$.'' In this way, we express the fact that the
+iterator's invariant depends on having controlled access to the state
+of the collection. However, we are also able to avoid giving the
+iterator state direct ownership of the collection; the magic wand
+ensures that we can follow the pointer $c$ when we are given the
+collection state of the collection.
 
 The reason we go to this effort is to simplify the specification and
 proof of client programs -- we could eliminate the use of the magic
@@ -450,20 +752,30 @@ wand in the base case if iterators owned their collections, but this
 would complicate verifying programs that use multiple iterators over
 the same collection, or which want to call pure methods on the
 underlying collection. In those cases, the alternative would require
-us to explicitly transfer ownership in the proofs of client programs,
-which is quite cumbersome, and forces clients to reason using the 
-magic wand. The current approach isolates that reasoning within the 
-proof of the implementation. 
+us to explicitly transfer ownership of the collection in the proofs of
+client programs, which is quite cumbersome, and forces clients to
+reason using the magic wand. The current approach isolates that
+reasoning within the proof of the implementation.
 
-On line 5, the $\ctext{Filter}(p,i)$ case says that $i$ must have some
-iterator state with the same support $S$, and a sequence of elements
-$xs'$ that yield $xs$ once filtered. We use the logical function
-$filter$, defined at the assertion level, to describe the effect on
-the iterator's logical sequence.  On line 4, we specify $iter$ for the
-$\ctext{Map2}(f, i_1, i_2)$ case. We assert that the support $S$ must
-be divisible into two disjoint parts, one for $i_1$ and one for $i_2$,
-and that there is iterator state for $i_1$ and $i_2$, and that the
-sequences $i_1$ and $i_2$ combine to yield the output sequence.
+Also, I should note that exactness plays a role in making this use of
+the magic wand work correctly. The semantics of the magic wand $p
+\wand q$ quantify over all heaps in $p$, but if $p$ is exact, then
+there is at most one satisfying heap. This lets us treat the wand as a
+``subtraction'' operator, which is ordinarily not legitimate. There is
+possibly a connection to Parkinson's ``septraction''
+operator~\cite{parkinson-septraction}. 
+
+One the next line, we give the case for $\iterpred_\tau(\Filter(p, i),
+xs, S)$.  This is a very simple formula; we simply assert that $i$ is
+an iterator yielding some other sequence $ys$, which when filtered with
+the predicate $p$ is $xs$. There are no changes to the set of abstract
+states. 
+
+On the line after that, we give the case for $\iterpred_\tau(\Merge(f, i_1, i_2), xs, S)$. 
+This case says we can divide the abstract state into two parts, one of which is 
+used by $i_1$, and the other of which is used by $i_2$,  which 
+yield sequences $ys$ and $zs$ respectively, and which can be merged using
+$f$ to yield $xs$. 
 
 In both of these cases, we define the behavior of the imperative
 linked list in terms of purely functional sequences. This is a very
@@ -472,78 +784,412 @@ can use it in a local way -- in the base case, we are forced to
 consider issues of aliasing and ownership, but in the inductive cases
 we can largely avoid that effort.
 
-The collection operations are mostly straightforward --
-$\ctext{newcoll}$ (line 9) allocates a new linked list, $\ctext{size}$
-(lines 10-13) recursively traverses the list to calculate the length,
-and $\ctext{add}$ (lines 14-16) adds a cons cell to the front of the
-list.  $\ctext{newiter}$ (lines 17) allocates a pointer to the front
-of the list, and then wraps that in the $\ctext{Coll}$
-constructor. For $\ctext{filter}$ (line 18) and $\ctext{map2}$ (line
-19), we just apply the constructor to the arguments and then return
-the result.
+\subsubsection{Correctness Proofs of the Iterator Implementation}
 
-$\ctext{next}$ (lines 20-31) recursively walks down the structure of
+Now that we know the definitions of the types and predicates, we can
+give the correctness proofs for the operations defined in
+Figure~\ref{iterator-implementation}. 
+
+\begin{lemma}{(Correctness of $\newcoll$)}
+  We have that 
+  \begin{displaymath}
+    \forall \alpha.\; \spec{\emp}
+                           {\run{\newcoll[\alpha]}}
+                           {a:\colltype(\alpha)}{\exists P.\; \collpred_\alpha(a, \epsilon,P)}
+  \end{displaymath}
+  is valid. 
+\end{lemma}
+
+\begin{proof}
+All $\newcoll[\alpha]$ does is allocate a list. To prove the
+specification, we will assume that $\alpha:\star$, and then prove the
+program in annotated program style.
+
+\begin{specification}
+\nextline $\setof{\emp}$ 
+\nextline $\newref{\alpha}{\Nil}$ 
+\nextline $\setof{a \pointsto_\alpha \Nil}$ 
+\nextline $\setof{\listpred(\alpha, a, \epsilon)}$ 
+\nextline $\setof{\listpred(\alpha, a, \epsilon) \land \exists Q.\; Q \land \exact{Q}}$ 
+\nextline $\setof{\exists Q.\;\listpred(\alpha, a, \epsilon) \land Q \land \exact{Q}}$ 
+\nextline $\setof{\exists Q.\; \collpred_\alpha(a, \epsilon, Q)}$ 
+\end{specification}
+
+Line 4 follows from 3, because of the definition of the list predicate. Line 5 
+follows from 4, because this is an axiomatic property of all predicates -- if
+a predicate holds, there is always at least one heap in which it holds. Line 6 
+is a quantifier manipulation, and line 7 follows from the definition of the predicate.
+\end{proof}
+
+\begin{lemma}{(Correctness of $\sizecoll$)}
+We have that 
+\begin{displaymath}
+\forall \alpha, c, xs, P.\; \spec{\collpred_\alpha(c, xs, P)}{\sizecoll[\alpha](c)}{a:\N}
+                                  {\collpred_\alpha(c, xs, P) \land a = |xs|}
+is valid.   
+\end{displaymath}
+\end{lemma}
+
+\begin{proof}
+This function, defined on line \ref{decl:sizecoll-impl} of Figure~\ref{iterator-implementation},
+is a recursively defined function. So we will prove it using the fixed point rule. So we 
+will assume an identifier $\sizecoll$ satisfying the specification above, and then prove
+the correctness of the body, in annotated specification style. 
+
+Now, assume we have $\alpha, c, xs,$ and $P$: 
+
+\begin{specification}
+\nextline $\setof{\collpred_\alpha(c, xs, P)}$ 
+\nextline $\setof{\listpred(\alpha, c, xs) \land P \land \exact{P}}$ 
+\nextline $\setof{\exists p.\; c \pointsto p \land \listcontentpred(\alpha, p, xs) \land P \land \exact{P}}$ 
+\nextline $\letv{p}{\comp{!c}}{}$
+\nextline $\setof{c \pointsto p \land \listcontentpred(\alpha, p, xs) \land P \land \exact{P}}$ 
+\nextline $\Run\;\Listcase($\=$p,$ 
+\nextline \> $\Nil \to $
+\nextline \> \qquad \=$\setof{c \pointsto p \land p = \Nil \land xs = \epsilon \land P \land \exact{P}}$ 
+\nextline \> \> \comp{0}
+\nextline \> \> $\setof{c \pointsto \Nil \land p = \Nil \land xs = \epsilon \land a = 0 \land P \land \exact{P}}$ 
+\nextline \> \> $\setof{\collpred_\alpha(c, xs, P) \land a = |xs|}$ 
+\nextline \> $\Cons(y, c') \to $ 
+\nextline \> \qquad \= $\setof{c \pointsto \Cons(y, c') * \listpred(\alpha, c', ys) \land xs = y\cdot ys) \land P \land \exact{P}}$ 
+\nextline \> \> $[\letv{n}{\sizecoll[\alpha](c')}{}$
+\nextline \> \> \,$\setof{c \pointsto \Cons(y, c') * \listpred(\alpha, c', ys) \land xs = y\cdot ys \land P \land \exact{P} \land n = |ys|}$ 
+\nextline \> \> \,$\setof{\collpred_\alpha(c, xs, P) \land xs = y\cdot ys \land n = |ys|}$ 
+\nextline \> \> \,$n+1]$
+\nextline \> \> $\setof{\collpred_\alpha(c, xs, P) \land xs = y\cdot ys \land a = |ys| + 1}$ 
+\nextline \> \> $\setof{\collpred_\alpha(c, xs, P) \land xs = y\cdot ys \land a = |y\cdot ys|}$ 
+\nextline \> \> $\setof{\collpred_\alpha(c, xs, P) \land a = |xs|}$ 
+\nextline $\setof{\collpred_\alpha(c, xs, P) \land a = |xs|}$ 
+\end{specification}
+\end{proof}
+
+\begin{lemma}{(Specification of $\addcoll$)}
+We have that for 
+\begin{displaymath}
+  \forall \alpha, x, c, xs, P.\; \spec{\collpred_\alpha(c, xs, P)}{\addcoll[\alpha](c, x)}
+                                      {a:\unittype}{\exists Q.\; \collpred_\alpha(c, x\cdot xs, Q)}
+\end{displaymath}
+\end{lemma}
+
+\begin{proof}
+  This function, defined on line \ref{decl:addcoll-impl}, just conses on an element. 
+Assume we have $\alpha, x, c, xs, P$, and then proceed with the following proof, in
+annotated specification style. 
+
+\begin{specification}
+\nextline $\setof{\collpred_\alpha(c, xs, P)}$ 
+\nextline $\setof{\listpred(\alpha, c, xs) \land P \land \exact{P}}$ 
+\nextline $\setof{\listpred(\alpha, c, xs)}$ 
+\nextline $\setof{\exists p.\; c \pointsto p * \listcontentpred(\alpha, p, xs)}$ 
+\nextline $\letv{p}{\comp{!c}}{}$ 
+\nextline $\setof{c \pointsto p * \listcontentpred(\alpha, p, xs)}$ 
+\nextline $\letv{c'}{\comp{\newref{\Listcontent(\alpha)}{p}}}{}$
+\nextline $\setof{c \pointsto p * c' \pointsto p * \listcontentpred(\alpha, p, xs)}$ 
+\nextline $\setof{c \pointsto p * \listpred(\alpha, c', xs)}$ 
+\nextline $c := \Cons(x, c')$ 
+\nextline $\setof{c \pointsto \Cons(x, c') * \listpred(\alpha, c', xs)}$ 
+\nextline $\setof{\listpred(\alpha, c, x\cdot xs)}$ 
+\nextline $\setof{\exists Q.\; \listpred(\alpha, c, x\cdot xs) \land Q \land \exact{Q}}$ 
+\nextline $\setof{\exists Q.\; \collpred_\alpha(c, x\cdot xs, Q)}$ 
+\end{specification}
+\end{proof}
+
+\begin{lemma}
+We have that 
+\begin{displaymath}
+  \forall \alpha, c, P.\; \spec{\collpred_\alpha(c, \epsilon, P)}
+                               {\removecoll[\alpha](c)}{a:\opttype{(\alpha)}}
+                               {\collpred_\alpha(c, \epsilon, P) \land a = \None}
+\end{displaymath}
+\end{lemma}
+
+\begin{proof}
+  This is one of the two specifications about $\removecoll$, for the case
+  when the list is empty. Assume we have $\alpha, c, P$ and give an annotated
+  specification as follows: 
+
+\begin{specification}
+\nextline $\setof{\collpred_\alpha(c, \epsilon, P)}$ 
+\nextline $\setof{\exists p.\; c \pointsto p \land p = \Nil \land P \land \exact{P}}$ 
+\nextline $\letv{p}{\comp{!c}}{}$ 
+\nextline $\setof{c \pointsto p \land p = \Nil \land P \land \exact{P}}$ 
+\nextline $\Run\;\Listcase($\=$p,$ 
+\nextline \> $\Nil \to $\=$\comp{\None}$ 
+\nextline \> \> $\setof{c \pointsto p \land p = \Nil \land P \land \exact{P} \land a = \None}$ 
+\nextline \> \> $\setof{\collpred_\alpha(c, \epsilon, P) \land a = \None}$ 
+\nextline \> $\Cons(y, c') \to $ 
+\nextline \> \> $\setof{c \pointsto p \land p = \Nil \land p = \Cons(y, c') \land P \land \exact{P}}$ 
+\nextline \> \> $\setof{\bot}$ 
+\nextline \> \> $[\letv{p'}{\comp{!c'}}{}$ 
+\nextline \> \> $\letv{\_}{\comp{c := p'}}{}$ 
+\nextline \> \> $\Some(y)])$
+\nextline \> \> $\setof{\collpred_\alpha(c, \epsilon, P) \land a = \None}$ 
+\nextline $\setof{\collpred_\alpha(c, \epsilon, P) \land a = \None}$ 
+\end{specification}
+\end{proof}
+
+\begin{lemma}{(Correctness of $\removecoll$, part 2)}
+We have that 
+\begin{displaymath}
+  \forall \alpha, c, x, xs, P.\; \spec{\collpred_\alpha(c, x\cdot xs, P)}
+                                      {\removecoll[\alpha](c)}
+                                      {a:\opttype{(\alpha)}}
+                                      {\exists Q.\; \collpred_\alpha(c, xs, Q) 
+                                       \land a = \Some(x)}
+\end{displaymath}
+\end{lemma}
+
+\begin{proof}
+This is the other case of $\removecoll$, for when the iterator is not
+yet exhausted. Assume that we have $\alpha, c, x, xs$, and $P$ of the
+appropriate type. We can give an annotated-specification style proof
+as follows:
+
+\begin{specification}
+\nextline $\setof{\collpred_\alpha(c, x\cdot xs, P)}$ 
+\nextline $\setof{\exists p.\; c \pointsto p \land \exists c'.\; p = \Cons(x, c') * \listpred(\alpha, c', xs) \land P \land \exact{P}}$ 
+\nextline $\letv{p}{\comp{!c}}{}$ 
+\nextline $\setof{c \pointsto p \land \exists c'.\; p = \Cons(x, c') * \listpred(\alpha, c', xs) \land P \land \exact{P}}$ 
+\nextline $\Run\;\Listcase($\=$p,$ 
+\nextline \> $\Nil \to $\= $\setof{p = \Nil \land c \pointsto p \land \exists c'.\; p = \Cons(x, c') * \listpred(\alpha, c', xs) \land P \land \exact{P}}$ 
+\nextline \> \> $\setof{\bot}$
+\nextline \> \> $\comp{\None}$ 
+\nextline \> \> $\setof{\exists Q.\; \collpred_\alpha(c, xs, Q) \land a = \Some(x)}$
+\nextline \> $\Cons(y, c') \to $ 
+\nextline \> \> $\setof{p = \Cons(y, c') \land c \pointsto p \land \exists c'.\; p = \Cons(x, c') * \listpred(\alpha, c', xs) \land P \land \exact{P}}$ 
+\nextline \> \> $\setof{x = y \land c \pointsto p \land p = \Cons(x, c') * \listpred(\alpha, c', xs) \land P \land \exact{P}}$ 
+\nextline \> \> $\setof{x = y \land c \pointsto p \land p = \Cons(x, c') * \listpred(\alpha, c', xs)}$
+\nextline \> \> $\setof{x = y \land c \pointsto p \land p = \Cons(x, c') * \exists p'.\; c' \pointsto p' * \listcontentpred(\alpha, p', xs)}$
+\nextline \> \> $[\letv{p'}{\comp{!c'}}{}$ 
+\nextline \> \> $\setof{x = y \land c \pointsto p \land p = \Cons(x, c') * c' \pointsto p' * \listcontentpred(\alpha, p', xs)}$
+\nextline \> \> $\letv{\_}{\comp{c := p'}}{}$ 
+\nextline \> \> $\setof{x = y \land c \pointsto p' * c' \pointsto p' * \listcontentpred(\alpha, p', xs)}$
+\nextline \> \> $\setof{x = y \land c' \pointsto p' * \listpred(\alpha, c, xs)}$
+\nextline \> \> $\setof{x = y \land \listpred(\alpha, c, xs)}$
+\nextline \> \> $\Some(y)])$
+\nextline \> \> $\setof{\listpred(\alpha, c, xs) \land a = \Some(y) \land x = y}$ 
+\nextline \> \> $\setof{\listpred(\alpha,c, xs) \land a = \Some(x)}$
+\nextline \> \> $\setof{(\exists Q.\; \listpred(\alpha,c, xs) \land Q \land \exact{Q}) \land a = \Some(x)}$
+\nextline \> \> $\setof{\exists Q.\; \collpred_\alpha(c, xs, Q) \land a = \Some(x)}$
+\nextline $\setof{\exists Q.\; \collpred_\alpha(c, xs, Q) \land a = \Some(x)}$
+\end{specification}
+\end{proof}
+
+\begin{lemma}{(Correctness of $\newiter$)}
+We have that
+\begin{displaymath}
+\forall \alpha, c, xs, P.\; \spec{\collpred_\alpha(c, xs, P)}
+                                 {\newiter[\alpha](c)}
+                                 {a:\itertype(\alpha)}
+                                 {\collpred_\alpha(c, xs, P) * 
+                                  \iterpred_\alpha(a, xs, \setof{P})}
+\end{displaymath}
+is valid.
+\end{lemma}
+
+\begin{proof}
+The definition of $\newiter$ is given on line \ref{decl:newiter-impl} of
+Figure~\ref{iterator-implementation}. To prove the correctness of this
+implementation, we assume we have $\alpha, c, xs$, and $P$, and then
+give the following proof: 
+
+\begin{specification}
+\nextline $\setof{\collpred_\alpha(c, xs, P)}$ 
+\nextline $\setof{\listpred(\alpha, c, xs, P) \land P \land \exact{P}}$ 
+\nextline $\letv{i}{\comp{\newref{\colltype(\alpha)}{c}}}{}$ 
+\nextline $\setof{\listpred(\alpha, c, xs) \land P \land \exact{P} * i \pointsto c}$ 
+\nextline $\setof{\listpred(\alpha, c, xs) \land P \land \exact{P} * i \pointsto c * \emp}$ 
+\nextline $\setof{\listpred(\alpha, c, xs) \land P \land \exact{P} * i \pointsto c * (P \wand P)}$
+\nextline $\setof{\listpred(\alpha, c, xs) \land P \land \exact{P} * i \pointsto c * P \wand (P \land \listpred(\alpha, c, xs))}$ 
+\nextline $\One(i)$ 
+\nextline $\setof{\listpred(\alpha, c, xs) \land P \land \exact{P} * i \pointsto c * P \wand (P \land \listpred(\alpha, c, xs)) \land a = \One(i)}$ 
+\nextline $\setof{\listpred(\alpha, c, xs) \land P \land \exact{P} * \iterpred_\alpha(a, xs, \setof{P})}$
+\nextline $\setof{\collpred_\alpha(c, xs, P) * \iterpred_\alpha(a, xs, \setof{P})}$
+\end{specification}
+
+The key steps in this proof are from lines 5 to 7. On line 5, we introduce an extra $\emp$, which
+entails $P \wand P$ on line 6. Then, because $P$ is strict exact, we know that for any $Q$, either $P \land Q = \bot$ or $P \land Q = P$. This justifies changing the formula to $P \wand (P \land \listpred(\alpha, c, xs))$ in line 7. If $P \land \listpred(\alpha, c, xs)$ is false, then the whole formula is false, since it occurs as part of the whole assertion. Otherwise, it's an equality, and we can rewrite the conclusion of the magic wand without changing the meaning of the assertion.
+\end{proof}
+
+\begin{lemma}{(Correctness of $\filteriter$)}
+We have that
+\begin{displaymath}
+  \forall \alpha, p, i, xs, S.\; \spec{\iterpred_\alpha(i, xs, S)}
+                                      {\filteriter[\alpha](i)}
+                                      {a:\itertype(\alpha)}
+                                      {\iterpred_\alpha(a, \filtermath\;p\;xs, S)}
+\end{displaymath}
+\end{lemma}
+
+\begin{proof}
+The definition of this procedure is given on line \ref{decl:filteriter-impl}. Assume
+$\alpha, p, i, xs$, and $S$. 
+
+\begin{specification}
+\nextline $\setof{\iterpred_\alpha(i, xs, S)}$ 
+\nextline $\Filter(p, i)$ 
+\nextline $\setof{\iterpred_\alpha(i, xs, S) \land a = \Filter(p, i)}$ 
+\nextline $\setof{\iterpred_\alpha(i, xs, S) \land \filtermath\;p\;xs = \filtermath\;p\;xs \land a = \Filter(p, i)}$ 
+\nextline $\setof{\exists i, xs.\; \iterpred_\alpha(i, xs, S) \land \filtermath\;p\;xs = \filtermath\;p\;xs \land a = \Filter(p, i)}$
+\nextline $\setof{\iterpred_\alpha(a, \filtermath\;p\;xs, S)}$ 
+\end{specification}
+\end{proof}
+
+\begin{lemma}{(Correctness of $\mergeiter$)}
+We have that 
+\begin{displaymath}
+  \forall \alpha, f, i, xs, S, i', xs', S'.\; 
+  \begin{array}{l}
+    \setof{\iterpred_\alpha(i, xs, S) * \iterpred_\alpha(i',xs',S')} \\
+    \mergeiter[\alpha](f, i, i') \\
+    \setof{a:\itertype(\alpha).\; \iterpred_\alpha(a, \mergemath\;f\;xs\;xs', S \cup S')}\\
+  \end{array}
+\end{displaymath}
+\end{lemma}
+
+\begin{proof}
+The definition of $\mergeiter$ is given on line \ref{decl:mergeiter-impl} of
+Figure~\ref{iterator-implementation}. Assume $f, i, xs, S, i', xs', S'$ as 
+hypotheses, and proceed with the proof as follows: 
+
+\begin{specification}
+\nextline $\setof{\iterpred_\alpha(i, xs, S) * \iterpred_\alpha(i',xs',S')}$ 
+\nextline $\Merge(f, i, i')$
+\nextline $\setof{\iterpred_\alpha(i, xs, S) * \iterpred_\alpha(i',xs',S') \land a = \Merge(f, i', i')}$ 
+\nextline $\{$\=$\iterpred_\alpha(i, xs, S) * \iterpred_\alpha(i',xs',S') \land S \cup S' = S \cup S' \land \mergemath\;f\;xs\;xs' = \mergemath\;f\;xs\;xs'$
+\nextline \> $\land a = \Merge(f, i', i')\}$ 
+\nextline $\{$\=$\exists i, i', S, S'.\; \iterpred_\alpha(i, xs, S) * \iterpred_\alpha(i',xs',S') \land S \cup S' = S \cup S' \land \mergemath\;f\;xs\;xs' = \mergemath\;f\;xs\;xs'$ 
+\nextline \> $\land a = \Merge(f, i', i')\}$ 
+\nextline $\setof{\iterpred_\alpha(a, \mergemath\;f\;xs\;xs', S \cup S')}$
+\end{specification}
+\end{proof}
+
+\begin{lemma}{(Correctness of $\nextiter$)}
+We have that 
+\begin{displaymath}
+  \forall \alpha, i, C, S, xs.\; 
+  \begin{array}{l}
+    \setof{\iterpred_\alpha(i, xs, S) * \mathit{colls}(C,S)} \\
+    \nextiter[\alpha](i) \\
+    \{a:\opttype{(\alpha)}.\; \\
+      \qquad [(a = \None \land xs = \epsilon \land \iterpred_\alpha(i, xs, S)) \vee \\
+      \qquad (\exists y, ys.\; a = \Some(y) \land xs = y\cdot ys \land \iterpred_\alpha(i, ys, S))]
+       \\
+      \qquad * \mathit{colls}(C,S)\} \\
+  \end{array}
+\end{displaymath}
+\end{lemma}
+
+\begin{proof}
+This function is defined on lines \ref{decl:next-one-impl} to \ref{decl:next-impl-end} 
+of Figure~\ref{iterator-implementation}. To prove this, we will use fixed point induction,
+and assume that the specification above holds for an identifier named $\nextiter$, and
+use it to prove the correctness for the body of the function. 
+
+Assuming $\alpha, i, C, S, xs$, this proof will proceed by cases, on
+the structure of $i$. Then we can exploit the fact that we can unroll fixed
+points and beta-reduce expression to avoid proving the impossible branches (which
+in typical Hoare logic proofs are ruled out by getting false as a precondition). 
+
+\begin{itemize}
+\item Suppose $i = \One(i')$. Then, we proceed with an annotated proof as 
+follows: 
+\begin{specification}
+\nextline $\setof{\iterpred_\alpha(\One(i'), xs, S) * \mathit{colls}(C,S)}$ 
+\nextline $\setof{\exists P.\; \iterpred_\alpha(\One(i'), xs, \setof{P}) * \mathit{colls}_\alpha(C,\setof{P})}$ 
+\nextline $\setof{\exists P.\; \iterpred_\alpha(\One(i'), xs, \setof{P}) * \collpred_\alpha(c, ys, P)}$
+\nextline $\setof{\exists c'.\; i' \pointsto c' * (P \wand (P \land (\top * \listpred(\alpha, c', xs)))) * \listpred(\alpha,c, ys) \land P \land \exact{P}}$ 
+\nextline $\setof{\exists c'. i' \pointsto c' * P \land \listpred(\alpha, c, ys) \land (\top * \listpred(\alpha, c', ys)) \land \exact{P}}$ 
+\nextline $\letv{c'}{\comp{!i'}}{}$ 
+\nextline $\setof{i' \pointsto c' * P \land \listpred(\alpha, c, ys) \land (\top * \listpred(\alpha, c', ys)) \land \exact{P}}$ 
+\nextline $\setof{i' \pointsto c' * P \land (\exists p.\; c' \pointsto p * \listcontentpred(\alpha, p, ys)) \land (\top * \listpred(\alpha, c', ys)) \land \exact{P}}$ 
+\nextline $\letv{p}{\comp{!c'}}{}$ 
+\nextline $\setof{i' \pointsto c' * P \land (c' \pointsto p * \listcontentpred(\alpha, p, ys)) \land (\top * \listpred(\alpha, c', ys)) \land \exact{P}}$ 
+\nextline $\Run\;$\=$\Listcase(p,$ 
+\nextline \> $\Nil $\=$\to$ 
+\nextline \> \> Framing $\exact{P}$
+\nextline \> \> $\setof{p = \Nil \land i' \pointsto c' * P \land (c' \pointsto p * \listcontentpred(\alpha, p, ys)) \land (\top * \listpred(\alpha, c', ys)) }$ 
+\nextline \> \> $\setof{p = \Nil \land i' \pointsto c' * P \land (c' \pointsto \Nil \land ys = \epsilon) \land (\top * \listpred(\alpha, c', ys)) }$ 
+\nextline \> \> $\comp{\None}$ 
+\nextline \> \> $\setof{a = \None \land p = \Nil \land i' \pointsto c' * P \land (c' \pointsto \Nil \land ys = \epsilon) \land (\top * \listpred(\alpha, c', ys)) }$ 
+\nextline \> \> Restoring frame $\exact{P}$ 
+\nextline \> \> $\setof{a = \None \land xs = \epsilon \land i' \pointsto c' * P \land \listpred(\alpha, c, ys) \land (\top * \listpred(\alpha, c', ys)) \land \exact{P}}$ 
+\nextline \> \> $\setof{a = \None \land xs = \epsilon \land \iterpred_\alpha(i, xs, \setof{P}) * colls(C, \setof{P})}$
+\nextline \> $\Cons(y, c) \to$ 
+\nextline \> \> Framing $\exact{P}$
+\nextline \> \> $\setof{p = \Cons(y, c) \land i' \pointsto c' * P \land (c' \pointsto p * \listcontentpred(\alpha, p, ys)) \land (\top * \listpred(\alpha, c', ys))}$ 
+\nextline \> \> $\setof{p = \Cons(y, c) \land i' \pointsto c' * P \land (c' \pointsto  * \listcontentpred(\alpha, p, ys)) \land (\top * \listpred(\alpha, c', ys))}$ 
+\end{specification}
+\end{itemize}
+
+Note that this is not a structural induction on $i$; the $\Filter(p,i)$ case
+has a non-structural recursive call. 
+\end{proof}
+
+
+$\nextiter$ (lines 20-31) recursively walks down the structure of
 the iterator tree, and combines the results from the leaves upwards.
 The base case is the $\ctext{Coll }r$ case (lines 20-23). The iterator
 pointer is doubly-dereferenced, and then the contents examined. If the
-end of the list has been reached and the contents are $\ctext{Nil}$,
-then $\ctext{None}$ is returned to indicate there are no more
+end of the list has been reached and the contents are $\Nil$,
+then $\None$ is returned to indicate there are no more
 elements. Otherwise, the pointer $r$ is advanced, and the head
 returned as the observed value. The $\ctext{Filter(p,i)}$ case (lines
-24-26) will return $\ctext{None}$ if $i$ is exhausted, and if it is
+24-26) will return $\None$ if $i$ is exhausted, and if it is
 not, it will pull elements from $i$ until it finds one that satisfies
 $p$, calling itself recursively until it succeeds or $i$ is exhausted.
 Finally, in the $\ctext{Map2}(f, i_1, i_2)$ case (lines 27-31),
-$\ctext{next}$ will draw a value from both $i_1$ and $i_2$, and will
-return $\ctext{None}$ if either is exhausted, and otherwise it will
+$\nextiter$ will draw a value from both $i_1$ and $i_2$, and will
+return $\None$ if either is exhausted, and otherwise it will
 return $f$ applied to the pair of values.
 
 Below, we give an example use of this module in annotated program
-style: {\small
+style: 
+
 \begin{tabbing}
 1 \qquad \= $\setof{\emp}$ \\
-2 \> $\letv{c_1}{\ctext{newcoll}()}{}$ \\
+2 \> $\letv{c_1}{\newcoll()}{}$ \\
 3 \> $\setof{\exists P'_1.\; coll(c_1, \epsilon, P'_1)}$ \\
 4 \> $\setof{coll(c_1, \epsilon, P_1)}$ \\
-5 \> $\letv{()}{\ctext{add}(c_1, 4)}{}$ \\
+5 \> $\letv{()}{\sizecoll(c_1, 4)}{}$ \\
 6 \> $\setof{\exists P'_2.\; coll(c_1, 4\cdot\epsilon, P'_2)}$ \\
 7 \> $\setof{coll(c_1, 4\cdot\epsilon, P_2)}$ \\
-8 \> $\letv{()}{\ctext{add}(c_1, 3)}{}$ \\
-9 \> $\letv{()}{\ctext{add}(c_1, 2)}{}$ \\
+8 \> $\letv{()}{\sizecoll(c_1, 3)}{}$ \\
+9 \> $\letv{()}{\sizecoll(c_1, 2)}{}$ \\
 10 \> $\setof{coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}$ \\
-11 \> $\letv{c_2}{\ctext{newcoll}()}{}$ \\
-12 \> $\letv{()}{\ctext{add}(c_2, 3)}{}$ \\
-13 \> $\letv{()}{\ctext{add}(c_2, 5)}{}$ \\
+11 \> $\letv{c_2}{\newcoll()}{}$ \\
+12 \> $\letv{()}{\sizecoll(c_2, 3)}{}$ \\
+13 \> $\letv{()}{\sizecoll(c_2, 5)}{}$ \\
 14\> $\setof{coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}$ \\
-15\> $\letv{i_1}{\ctext{newiter}(c_1)}{}$ \\
+15\> $\letv{i_1}{\newiter(c_1)}{}$ \\
 16\> $\{$\=$iter(i_1, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}, 2\cdot3\cdot4\cdot\epsilon)$
 \\ 
   \>\>$*\; coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
-17 \> $\letv{i'_1}{\ctext{filter}(even?, i_1)}{}$ \\
+17 \> $\letv{i'_1}{\filteriter(even?, i_1)}{}$ \\
 18 \> $\{$\=$iter(i'_1, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}, 2\cdot4\cdot\epsilon)$ \\
    \>\>$*\; coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$\\
-19 \> $\letv{i_2}{\ctext{newiter}(c_2)}{}$ \\
+19 \> $\letv{i_2}{\newiter(c_2)}{}$ \\
 20 \> $\{$\=$iter(i'_1, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}, 2\cdot4\cdot\epsilon)$\\
   \>\>$*\;iter(i_2, \setof{(c_2, 5\cdot3\cdot\epsilon, Q_2)}, 5\cdot3\cdot\epsilon)$ \\
   \>\>$*\;coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
 21 \> $\letv{i}{\ctext{map2}(plus, i'_1, i_2)}{}$ \\
 22 \> $\{$\=$iter(i, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilon, Q_2)}, 7\cdot7\cdot\epsilon)$ \\
 \> \> $*\; coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
-23 \> $\letv{n}{\ctext{size}(c_2)}{}$ \\
+23 \> $\letv{n}{\sizecoll(c_2)}{}$ \\
 24 \> $\{$\=$n = 2 \;\land
 iter(i, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilon, Q_2)}, 7\cdot7\cdot\epsilon)$\\
 \>\>$*\;coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
 
-25 \> $\letv{x}{\ctext{next}(i)}{}$ \\
+25 \> $\letv{x}{\nextiter(i)}{}$ \\
 26 \> $\{$\= $n = 2 \land x = \ctext{Some }7 \;\land $\\
 \> \> $iter(i, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilon, Q_2)}, 7\cdot\epsilon)$ \\
 \> \> $*\; coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
-27 \> $\ctext{add}(c_2, 17)$ \\
+27 \> $\sizecoll(c_2, 17)$ \\
 28 \> $\{$\= $n = 2 \land x = \ctext{Some }7 \;\land $\\
 \> \> $iter(i, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilon, Q_2)}, 7\cdot\epsilon)$ \\ 
 \> \> $* \; (\exists Q_3.\; coll(c_2, 17\cdot5\cdot3\cdot\epsilon, Q_3)) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
 \end{tabbing}
-}
+
 
 In line 1 of this example, we begin in an empty heap. In line 2, we
 create a new collection $c_1$, which yields us the state $\exists
@@ -562,7 +1208,7 @@ $P_1$.\footnote{A useful analogy is the existential elimination rule
   existential by showing that our program is well-typed no matter what
   the contents of the existential are.}
 
-This permits us to $\ctext{add}$ the element 4 to $c_1$ on line 5. Its
+This permits us to $\sizecoll$ the element 4 to $c_1$ on line 5. Its
 specification puts the predicate $coll()$ on line 6 again into an
 existentially quantified state $P'_2$. So we again replace $P'_2$ with
 a fresh variable $P_2$ on line 7, and will elide these existential
@@ -575,11 +1221,11 @@ iterator $i_1$ on the collection $c_1$. The $iter$ predicate on line
 16 names $i_1$ as its value, and lists $c_1$ in state $P_4$ as its
 support, and promises to enumerate the elements 2, 3, and 4.
 
-On line 17, $\ctext{filter}(even?, i_1)$ creates the new iterator
+On line 17, $\filteriter(even?, i_1)$ creates the new iterator
 $i'_1$. This iterator yields only the even elements of $i_1$, and so
 will only yield 2 and 4. On line 18, $i_1$'s iterator state has been
 consumed to make $i'_1$'s state. We can no longer call
-$\ctext{next}(i_1)$, since we do not have the resource invariant
+$\nextiter(i_1)$, since we do not have the resource invariant
 needed to prove anything about that call. Thus, we cannot write a
 program that would break $i'_1$'s representation invariant.
 
@@ -595,13 +1241,13 @@ from, naming only the collections it needs as support.
 %supports of $i'_1$ and $i_2$ -- namely, the two collections $c_1$ and
 %$c_2$.
 
-On line 23, the $\ctext{size}$ call on $c_2$ illustrates that we can
+On line 23, the $\sizecoll$ call on $c_2$ illustrates that we can
 call non-destructive methods while iterators are active. The call to
-$\ctext{next}(i)$ on line 24 binds $\ctext{Some }7$ to $x$, and the
+$\nextiter(i)$ on line 24 binds $\ctext{Some }7$ to $x$, and the
 the iterator's sequence argument (line 27) shrinks by one element. On
-line 28, we call $\ctext{add}(c_2, 17)$ the state of $c_2$ changes to
+line 28, we call $\sizecoll(c_2, 17)$ the state of $c_2$ changes to
 $\exists Q_3.\; coll(c, 17\cdot 5 \cdot 3\cdot\epsilon, Q_3)$ (line
-27). So we can no longer call $\ctext{next}(i)$, since it needs $c_2$
+27). So we can no longer call $\nextiter(i)$, since it needs $c_2$
 to be in the state $Q_2$.
 
 \textbf{Discussion.} This example shows a pleasant synergy between
@@ -611,7 +1257,7 @@ library, even though the internal invariant is quite subtle (as the
 use of the magic wand suggests). Higher-order logic also lets us
 freely define new data types, and so our specifications can take
 advantage of the pure, non-imperative nature of the mathematical
-world, as can be seen in the specifications of the $\ctext{filter}$
+world, as can be seen in the specifications of the $\filteriter$
 and $\ctext{map2}$ functions -- we can use equational reasoning on
 purely functional lists in our specifications, even though our
 algorithms are imperative.
@@ -651,7 +1297,6 @@ function, $\ctext{make\_flyweight}$, which receives a font as an
 argument and will return appropriate $\ctext{newglyph}$ and
 $\ctext{getdata}$ functions. 
 
-{\small
 \begin{tabbing}
 Flyweight$($\=$I : \assert,\;\; $\\
 \> $\ctext{newglyph} : \chartp \to \monad{\ctext{glyph}},$ \\
@@ -679,7 +1324,7 @@ Flyweight$($\=$I : \assert,\;\; $\\
 $chars(\emptyset)$ \qquad\qquad\qquad \;\;\= $\equiv$ \= $\top$ \\
 $chars(\setof{(l,(c,f))} \cup S)$ \> $\equiv$ \> $glyph(l,c,f) \land chars(S)$ \\
 \end{tabbing}
-}
+
 
 In the opening , we informally parametrize our specification over the
 predicate variable $I$, the function variable $\ctext{newglyph}$, the
@@ -739,7 +1384,7 @@ formula is actually a tautology of separation logic.
 
 The specification of the flyweight factory looks like this:
 
-{\small
+
 \begin{tabbing}
 1 \qquad \= $\exists \ctext{make\_flyweight} :
 \fonttp \to \bigcirc($\=$(\chartp \to \monad{\ctext{glyph}}) \times$ \\
@@ -748,7 +1393,7 @@ The specification of the flyweight factory looks like this:
   \>\> \> $\run{\ctext{make\_flyweight}(f)}$ \\
   \>\> \> $\setof{a.\; \exists I:\assert.\; I \land \validprop{\mbox{Flyweight}(I, \fst{a}, \snd{a}, f)}}$ \\
 \end{tabbing}
-}
+
 
 Here, we assert the existence of a function $\ctext{make\_flyweight}$,
 which takes a font $f$ as an input argument, and returns two functions
@@ -769,7 +1414,6 @@ make use of existentially-quantified \emph{state}.
 Below, we define $\ctext{make\_flyweight}$ and its predicates:
 
 
-{\small
 \begin{tabbing}
 1 \qquad \= $\ctext{m}$\=$\ctext{ake\_flyweight} \equiv$ \\
    \> \>     $\lambda f:$\=$\fonttp.\;$\\
@@ -777,7 +1421,7 @@ Below, we define $\ctext{make\_flyweight}$ and its predicates:
 3  \> \> \> $\ctext{letv }$\=$newglyph =$ \\
 4  \> \> \> \> \!\!$[\lambda c.[$\=$\ctext{letv }x = \ctext{lookup}(t, c)\ctext{ in}$\\
 5  \> \> \>\>\> $\ctext{run }\ctext{case}(x,$\=
-$\ctext{None} \to [$\=$\ctext{letv } r = [\newref{\ctext{glyph}}(c,f)] \ctext{ in}$\\
+$\None \to [$\=$\ctext{letv } r = [\newref{\ctext{glyph}}(c,f)] \ctext{ in}$\\
 6  \> \> \>\>\>\>\> $\ctext{letv } \_ = \ctext{update}(t, c, r) \ctext{ in }r],$ \\
 7 \> \> \>\>\>\> $\ctext{Some }r \to [r])] \ctext{ in}$ \\
 8 \> \> \> $\ctext{letv }getdata = [\lambda r.\; [!r]] \ctext{ in}$ \\
@@ -792,7 +1436,7 @@ $refs(mapping, \emptyset) \qquad\qquad  $ \= $\equiv$\;\;\=$\emp$ \\
 $refs(mapping, \setof{c} \cup D)$ \> $\equiv$\> $mapping(c) \pointsto (c,f) * refs(f, D)$ \\
  
 \end{tabbing}
-}
+
 
 In this implementation we have assumed the existence of a hash table
 implementation with operations $\ctext{newtable}$, $\ctext{lookup}$,
@@ -863,7 +1507,7 @@ and notifies all of its observers of the change.
 
 We give a specification for the subject-observer pattern below:
 %
-{\small
+
 \begin{tabbing}
 1 \qquad \= $\exists sub : A_s \times \N \times \seqsort{((\N \To \assert) \times (\N \to \monad{1}))}.$ \\
 2 \> $\exists \ctext{newsub} : \N \to \monad{A_s},$ \\ 
@@ -888,7 +1532,7 @@ $obs\_at(\epsilon, k) \;\qquad\qquad $\=$\equiv \emp$ \\
 $obs\_at((O,f)\cdot os, k) $\>$\equiv O(k) * obs\_at(os, k)$ 
 \\
 \end{tabbing}
-}
+
 %
 On line 1 we assert the existence of a three-place predicate $sub(s,
 n, os)$. The first argument is the subject $s$'s whose state this
@@ -928,7 +1572,7 @@ $obs\_at(os,k)$ function generates the separated conjunction of all
 the $O$ predicates, all in the same state $k$.
 
 The implementation follows:
-{\small
+
 \begin{tabbing}
 1 \qquad \= $A_s \equiv \reftype{\N} \times \reftype{\listtype{(\N \to \monad{1})}}$
 \\[0.5em]
@@ -943,7 +1587,7 @@ The implementation follows:
 5 \> $\ctext{register}(s, f) \equiv$ \=
          $[$\= $\letv{cell}{\comp{!(\snd{s})}}{}$ \\
 6 \> \> \> $\letv{r}{\comp{\newref{\reftype{\listtype{(\N \to \monad{1})}}}{cell}}}{}$ \\
-7 \> \> \> $\snd{s} := \ctext{Cons}(f, r)]$
+7 \> \> \> $\snd{s} := \Cons(f, r)]$
 \\[0.5em]
 
 8  \> $\ctext{broad}$\=$\ctext{cast}(s, k) \equiv$ \\
@@ -953,15 +1597,15 @@ The implementation follows:
 10 \> $\ctext{loop}$\=$(k, list) \equiv $\\
    \>         \>$[$\=$\letv{cell}{[!list]}{}$ \\
 11 \>\>\> $\run{}\ctext{case}(cell,$\= 
-            $\ctext{Nil} \to [()],$ \\
-12 \>\>\>\> $\ctext{Cons}(f, tl) \to [$\=$\letv{dummy}{f(k)}{}$ \\
+            $\Nil \to [()],$ \\
+12 \>\>\>\> $\Cons(f, tl) \to [$\=$\letv{dummy}{f(k)}{}$ \\
 13  \>\>\>\> \> $\run{\ctext{loop}(k,tl)}])$ \\[0.5em]
 14 \> $\ctext{new}\ctext{sub}(n) \equiv$ \=
           $[$\=$\letv{data}{\newref{\N}{n}}{}$ \\
-15 \> \> \> $\letv{callbacks}{\newref{\listtype{(\N \to \monad{1})}}{\ctext{Nil}}}{}$ \\
+15 \> \> \> $\letv{callbacks}{\newref{\listtype{(\N \to \monad{1})}}{\Nil}}{}$ \\
 16 \> \> \> $(data, callbacks)]$
 \end{tabbing}
-}
+
 
 In line 1, we state concrete type of the subject $A_s$ is a pair of a
 pointer to a reference, and a pointer to a list of callback
@@ -1002,7 +1646,7 @@ progress in the proof.
 
 Below, we give a simple piece of client code using this interface.
 
-{\small
+
 \begin{tabbing}
 1 \qquad \= 
 $\setof{\emp}$ \\
@@ -1025,7 +1669,7 @@ $\letv{s}{\ctext{newsub}(0)}{}$ \\
 16 \> $g$ \> $\equiv \lambda x:\N.\; [b := even?(x)]$ \\
 17 \> $even(n)$ \> $\equiv b \pointsto even?(n)$ \\
 \end{tabbing}
-}
+
 % \vspace{-1em}
 We start in the empty heap, and create a new subject $s$ on line 2.
 On line 4, we create a new reference to $0$, and on line 5, we create

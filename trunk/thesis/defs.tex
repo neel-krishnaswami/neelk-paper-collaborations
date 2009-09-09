@@ -207,6 +207,52 @@
 \newcommand{\ms}[1]{\mathcal{#1}}
 \newcommand{\Frame}[2]{{#1} \otimes {#2}}
 
+% Macros for design patterns
+\newcommand{\colltype}{\ctext{colltype}}
+\newcommand{\itertype}{\ctext{itertype}}
+\newcommand{\collpred}{\mathit{coll}}
+\newcommand{\iterpred}{\mathit{iter}}
+\newcommand{\listpred}{\mathit{list}}
+
+\newcommand{\newcoll}{\ctext{newcoll}}
+\newcommand{\sizecoll}{\ctext{size}}
+\newcommand{\addcoll}{\ctext{add}}
+\newcommand{\removecoll}{\ctext{remove}}
+\newcommand{\newiter}{\ctext{newiter}}
+\newcommand{\filteriter}{\ctext{filter}}
+\newcommand{\mergeiter}{\ctext{merge}}
+\newcommand{\nextiter}{\ctext{next}}
+\newcommand{\IfThenElse}[3]{\ctext{if}({#1}, {#2}, {#3})}
+\newcommand{\None}{\ctext{None}}
+\newcommand{\Some}{\ctext{Some}}
+\newcommand{\Filter}{\ctext{Filter}}
+\newcommand{\Merge}{\ctext{Merge}}
+\newcommand{\One}{\ctext{One}}
+\newcommand{\Nil}{\ctext{Nil}}
+\newcommand{\Cons}{\ctext{Cons}}
+\newcommand{\Run}{\ctext{run}}
+\newcommand{\Listcase}{\ctext{listcase}}
+\newcommand{\Optcase}{\ctext{case}}
+\newcommand{\Listcontent}{\ctext{listcell}}
+\newcommand{\listcontentpred}{\mathit{listcell}}
+\newcommand{\exact}[1]{\mathtt{exact}({#1})}
+\newcommand{\filtermath}{\mathit{filter}}
+\newcommand{\mergemath}{\mathit{map2}}
+
+\newcounter{spec:linenum}
+
+\newenvironment{specification}
+               {\setcounter{spec:linenum}{0}
+                \begin{tabbing}
+                  \qquad \= \\[-2em]}
+               {\end{tabbing}}
+
+\newcommand{\nextline}[1][0em]{\refstepcounter{spec:linenum}\\[#1]\arabic{spec:linenum} \>}
+\newcommand{\nextlinelabel}[2][0em]{\refstepcounter{spec:linenum}\label{#2}\\[#1]\arabic{spec:linenum} \>}
+
+
+
+
 % Macros for ramified frames
 \newcommand{\runcmd}{\ctext{run}\;}
 \newcommand{\return}{\ctext{return}\;}
