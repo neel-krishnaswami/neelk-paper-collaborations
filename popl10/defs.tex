@@ -17,6 +17,7 @@
 \newcommand{\Case}[5]{\ctext{case}(#1,\; {#2}.\; #3,\; {#4}.\; #5)}
 \newcommand{\listcase}[5]{\ctext{case}(#1,\;\ctext{Nil} \to {#2},\;
                                        \ctext{Cons}({#3},{#4}) \to {#5})}
+\newcommand{\Some}{\ctext{Some}}
 \newcommand{\optcase}[4]{\ctext{case}(#1,\;
                                       \ctext{None} \to {#2},\;
                                       \ctext{Some}\;{#3} \to {#4})}
@@ -135,7 +136,7 @@
 \newtheorem{prop}{Proposition}
 \newtheorem{lemma}{Lemma}
 
-\newenvironment{proof}{\noindent\textbf{Proof.}}{\noindent$\Box$}
+\newenvironment{proof}{\noindent\textbf{Proof (Sketch).}}{\noindent$\Box$}
 
 \newenvironment{tabbedproof}{\begin{tabbing}\;\;\=\;\;\=\;\;\=\;\;\=\;\;\=\;\;\=\;\;\=\;\;\=\\[-2em]}{\end{tabbing}}
 
@@ -176,6 +177,7 @@
 \newcommand{\cellpos}[4]{\cellprop{+}{#1}{#2}{#3}{#4}}
 \newcommand{\celleither}[2]{\cellprop{\pm}{#1}{#2}{-}{-}}
 \newcommand{\localref}[2]{\ctext{local}({#1}, {#2})}
+\newcommand{\localstate}{\mathit{localstate}}
 \newcommand{\getref}{\ctext{getref}\;}
 \newcommand{\setref}{\ctext{setref}\;}
 
@@ -192,6 +194,7 @@
 
 \newcommand{\newcell}{\ctext{newcell}\;}
 \newcommand{\cellset}{\ctext{cellset}}
+\newcommand{\addset}{\ctext{addset}}
 
 \newcommand{\comprehend}[2]{\setof{{#1}\;|\;{#2}}}
 \newcommand{\ST}[2]{\ctext{ST}({#1}, {#2})}
@@ -203,11 +206,32 @@
 
 
 \newcommand{\liftop}{\ctext{lift}\;}
-\newcommand{\composeop}{\ctext{compose}\;}
+\newcommand{\seqop}{\ctext{seq}\;}
 \newcommand{\parop}{\ctext{par}\;}
 \newcommand{\loopop}{\ctext{loop}\;}
 \newcommand{\switchop}{\ctext{switch}\;}
 
-\newcommand{\satisfies}[2]{satisfies({#1}, {#2})}
+\newcommand{\satisfies}[2]{\mathit{satisfies}({#1}, {#2})}
+\newcommand{\sat}{\mathit{sat}}
 
 \newcommand{\closed}[2]{\ctext{closed}({#1}, {#2})}
+
+\newcounter{spec:linenum}
+
+\newenvironment{specification}
+               {\setcounter{spec:linenum}{0}
+                \begin{tabbing}
+                  \qquad \= \\[-2em]}
+               {\end{tabbing}}
+
+\newcommand{\nextline}[1][0em]{\refstepcounter{spec:linenum}\\[#1]\arabic{spec:linenum} \>}
+\newcommand{\nextlinelabel}[2][0em]{\refstepcounter{spec:linenum}\label{#2}\\[#1]\arabic{spec:linenum} \>}
+
+\newcommand{\lifttrans}{\mathit{lift}}
+\newcommand{\seqtrans}{\mathit{seq}}
+\newcommand{\partrans}{\mathit{par}}
+\newcommand{\switchtrans}{\mathit{switch}}
+\newcommand{\looptrans}{\mathit{loop}}
+\newcommand{\cycletrans}{\mathit{cycle}}
+\newcommand{\gentrans}{\mathit{gen}}
+\newcommand{\maptrans}{\mathit{map}}
