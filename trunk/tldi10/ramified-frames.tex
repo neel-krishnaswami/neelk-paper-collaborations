@@ -58,12 +58,12 @@ it, in order to notify them when it changes.
 
 These bidirectional linkages pose a serious challenge to verification,
 because their correctness relies upon a global invariant over the
-object graph --- all inbound and outbound links must match. As a
-result, simple local reasoning principles such as the frame rule of
-separation logic (which permit ignoring any heap outside the footprint
-of a command) no longer suffice for modular verification. As a result,
-it is difficult to verify different parts of a dependency network
-separately and combine their correctness proofs.
+object graph --- all inbound and outbound links must
+match. Consequently, simple local reasoning principles such as the
+frame rule of separation logic (which permit ignoring any heap outside
+the footprint of a command) no longer suffice for modular
+verification. Thus it is difficult to verify different parts of a
+dependency network separately and combine their correctness proofs.
 
 In this paper, we show how to \emph{modularly} verify programs written
 using dynamically-generated bidirectional dependency information. The
@@ -72,11 +72,10 @@ and the state whose invariants depends upon the footprint. To do so,
 we define an application-specific semantics of updates, and introduce
 the concept of a \emph{ramification operator} to explain how local
 changes can alter our knowledge of the rest of the heap.
-
-We illustrate the utility of this style of proof with a case study
-from functional reactive programming, showing how to prove rules which
-justify reasoning about an extremely imperative implementation as if
-it were pure.
+We illustrate the applicability of this style of proof with a case
+study from functional reactive programming, and formally justify
+reasoning about an extremely imperative implementation as if it were
+pure.
 \end{abstract}
 
 \category{F.3.1}{Logics and Meanings of Programs}{Specifying and Verifying and Reasoning about Programs}
@@ -92,18 +91,12 @@ functional reactive programming, subject-observer
 
 In many interactive programs, there are mutable data structures which
 change over time, and which must maintain some relationships with one
-another. For example, in a web browser, we need to present a web page
-both as a tree data structure for scripts to manipulate, and 
-display a graphical image for the human user to view. Any change made
-to the tree by a script must be reflected in a change to the image
-that the human sees --- the two structures must remain synchronized.
-
-Likewise, in a spreadsheet, each cell contains a formula, which may
-refer to other cells, and whenever the user changes a cell, all of the
-cells which transitively depend upon it must be updated. Since
-spreadsheets can get very large, this should ideally be done in a lazy
-way, so that only the cells visible on the screen, and the cells
-necessary to compute them, are themselves recomputed.
+another. For example, in a spreadsheet, each cell contains a formula,
+which may refer to other cells, and whenever the user changes a cell,
+all of the cells which transitively depend upon it must be
+updated. Since spreadsheets can get very large, this should ideally be
+done in a lazy way, so that only the cells visible on the screen, and
+the cells necessary to compute them, are themselves recomputed.
 
 Typically, these dependencies are written using what is called the
 \emph{subject-observer} pattern. A mutable data structure (the
@@ -1236,8 +1229,8 @@ Clearly, we cannot expect to be able to simply copy the same frame
 formula into the pre- and the post-condition states in the
 specification of commands like $\readcell a$.
 
-To deal with this problem, we look back to McCarthy's original paper
-introducing the frame problem~\cite{mccarthy}. There, he described the
+To deal with this problem, we look back to the original paper
+introducing the frame problem~\cite{mccarthy}. They described the
 frame problem as the problem of how to specify what parts of a state
 were \emph{unaffected} by the action of a command, which inspired the
 name of the frame rule in separation logic. In that paper, he also
@@ -1245,7 +1238,7 @@ described the \emph{qualification problem}. He observed that many
 commands (such as a flipping a light switch turning on a light bulb)
 have numerous implicit preconditions (such as there being a bulb in
 the light socket), and dubbed the problem of identifying these
-implicit preconditions the qualification problem. 
+implicit preconditions the qualification problem.
 
 Some years later, \citet{finger} observed that the qualification
 problem has a dual: actions can have indirect effects that are not
@@ -1914,30 +1907,47 @@ languages and quantification over predicates have been proposed by
 \citet{parkinson-bierman}. It would be interesting to study how the
 proof techniques in this paper could be adapted to their setting.
 
-Prior work on verifying callbacks using separation logic includes work
-by \citet{tldi09,ftfjp07} and work by \citet{parkinson-iwaco-07}. 
-In both of these works, the program
-invariant explicitly specifies the observers listening to a particular
-subject, and the invariants for each observer. For a chain of
-observers only one level deep, this works reasonably well, but it
-breaks down when there are chains of dependencies -- when we have an
-object which both observes and is observed by yet others. This is
-troublesome because (roughly) we need to specify the transitive
-closure of the reachability graph of observers from any subject, which
-makes it impossible to locally add an observer to a subject, since we
-then need to modify the invariants of everything the subject listens
-to, as well.
+Prior work on verifying the observer pattern using separation logic
+includes work by \citet{tldi09,ftfjp07} and work by
+\citet{parkinson-iwaco-07}. Similar techniques have also been applied
+in the setting of regional logic by \citet{banerjee-naumann-regions}.
+
+In all of these works, the program invariant explicitly tracks the
+observers listening to a particular subject, and the invariants for
+each observer. For a chain of observers only one level deep, this
+works reasonably well, but it breaks down when there are chains of
+dependencies --- when we have an object which both observes and is
+observed by yet other objects. Roughly speaking, it is difficult to
+locally add an observer to a subject, since we then need to touch the
+invariants of everything the subject itself observes, forcing
+us to know the transitive closure of the reachability graph of
+observers from any subject. \texttt{[LANGUAGE: Ambiguous use of
+``observers'' and ``subjects'']}
+
+Even though all of these methods are modular in the sense that
+subjects and observers can be verified independently, they are
+non-modular in the sense that clients will have have to track entire
+dependency graphs when verifying nested uses of the observer
+pattern. In fact, our present work began when we realized that this
+style of observer invariant made it difficult to verify the
+model-view-controller pattern.
 
 \citet{shaner-leavens-naumann} studied using gray-box model programs
 to model higher-order method calls (which can be understood as a a
 variant of refinement calculus-based methods) in JML, and
-\citet{history-invariants} have applied Liskov and Wing's idea of
-history invariants~\cite{liskov-wing} to model observers. The work by
-\citet{shaner-leavens-naumann} is also non-modular, since it requires
-knowing what all of the observers are. The work on history invariants
-\emph{is} modular, but it sharply restricts the kinds of invariants 
-that can be used, in ways that make it very difficult to model the 
-code-update-based protocol seen in our FRP example.
+\citet{barnett-naumann} added a friendship system to the Boogie
+system.  The work by \citet{shaner-leavens-naumann} is also
+non-modular, since it requires knowing what all of the observers are.
+\texttt{[TODO: add explanation of Barnett and Naumann]}
+
+\citet{history-invariants} have applied the idea of
+history invariants~\cite{liskov-wing} to model observers. The use of
+monotonic predicates \emph{does} give rise to a modular
+proof technique, but it sharply restricts the kinds of invariants that
+can be used, in ways that make it very difficult to model the
+code-update-based protocol seen in our FRP example. 
+
+
 
 \citet{self-adjusting} have proposed \emph{self-adjusting computation}
 as a technique for using change propagation to write programs that
