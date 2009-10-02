@@ -1914,7 +1914,9 @@ in the setting of regional logic by \citet{banerjee-naumann-regions}.
 
 In all of these works, the program invariant explicitly tracks the
 observers listening to a particular subject, and the invariants for
-each observer. For a chain of observers only one level deep, this
+each observer. Thus there is an invariant for a cluster of objects 
+(subjects and observers). 
+For a chain of observers only one level deep, this
 works reasonably well, but it breaks down when there are chains of
 dependencies --- when we have an object which both observes and is
 observed by yet other objects. Roughly speaking, it is difficult to
@@ -1936,9 +1938,12 @@ model-view-controller pattern.
 to model higher-order method calls (which can be understood as a a
 variant of refinement calculus-based methods) in JML, and
 \citet{barnett-naumann} added a friendship system to the Boogie
-system.  The work by \citet{shaner-leavens-naumann} is also
-non-modular, since it requires knowing what all of the observers are.
-\texttt{[TODO: add explanation of Barnett and Naumann]}
+system, using which it is possible to describe some forms of clusters of
+collaborating objects, including the subject-observer pattern. 
+These works are also
+non-modular in the above sense, since they require 
+knowing what all of the observers are.
+
 
 \citet{history-invariants} have applied the idea of
 history invariants~\cite{liskov-wing} to model observers. The use of
@@ -1946,8 +1951,6 @@ monotonic predicates \emph{does} give rise to a modular
 proof technique, but it sharply restricts the kinds of invariants that
 can be used, in ways that make it very difficult to model the
 code-update-based protocol seen in our FRP example. 
-
-
 
 \citet{self-adjusting} have proposed \emph{self-adjusting computation}
 as a technique for using change propagation to write programs that
