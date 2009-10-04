@@ -95,8 +95,8 @@ another. For example, in a spreadsheet, each cell contains a formula,
 which may refer to other cells, and whenever the user changes a cell,
 all of the cells which transitively depend upon it must be
 updated. Since spreadsheets can get very large, this should ideally be
-done in a lazy way, so that only the cells visible on the screen, and
-the cells necessary to compute them, are themselves recomputed.
+done in a lazy way, so that only the cells visible on the screen (and
+the cells necessary to compute them) are themselves recomputed.
 
 Typically, these dependencies are written using the
 \emph{subject-observer} pattern. A mutable data structure (the
@@ -169,7 +169,7 @@ Concretely, our contributions are as follows:
     transducers in the style of functional reactive programming. 
 
     Ultimately, clients can reason about the behavior of the imperative
-    implementation ``as if'' it were purely functional, even though it
+    implementation as if it were purely functional, even though it
     is implemented using local state and imperative callback
     procedures.
 \end{itemize}
@@ -198,7 +198,7 @@ effects of programs, which is a first-order logic whose atomic
 propositions are Hoare triples $\spec{p}{c}{a:A}{q}$, which assert
 that if the heap is in a state described by the assertion $p$, then
 executing the command $c$ will result in a postcondition state $q$
-(with the return value of the command bound to $a$).
+(with the variable $a$ referring to the return value of the command).
 
 
 \textbf{Programming Language.} The core programming language we have
@@ -263,7 +263,7 @@ nonterminating programs only at monadic types, we must restrict
 $\ctext{fix}$ to a limited family of types $D$ (given in
 Figure~\ref{lang-syntax}), so that we do not contaminate our language
 with infinite loops at every type.\footnote{The allowed types are those whose
-interpretations are pointed CPOs in domain theory.}  Also, we will
+interpretations are pointed CPOs in domain theory.}  We will
 write recursive functions as syntactic sugar for $\ctext{fix}$.
 
 The computations themselves include all expressions $e$, as
@@ -271,14 +271,15 @@ computations that coincidentally have no side-effects. Furthermore, we
 have sequential composition $\letv{x}{e}{c}$. Intuitively, the
 behavior of this command is as follows. We evaluate $e$ until we get
 some $\comp{c'}$, and then evaluate $c'$, modifying the heap and
-binding its return value to $x$. Then, in this augmented environment,
+binding the return value to $x$. Then, in this augmented environment,
 we run $c$. The fact that monadic commands have return values explains
 why our sequential composition is also a binding construct. Finally,
 we have primitive computations $\newref{A}{e}$, $!e$, and $e := e'$,
 which let us allocate, read and write references (inhabiting type
 $\reftype{A}$), respectively. To save space, we will also write
 $\ctext{run}\;e$, when $e$ is a term of monadic type, as an
-abbreviation for $\letv{x}{e}{x}$. Consider the following example: 
+abbreviation for $\letv{x}{e}{x}$. Consider the following example,
+which creates and swaps the contents of two references:
 \begin{tabbing}
 1 \qquad \= $\letv{r}{\comp{\newref{\N}{5}}}{}$ \\
 2 \> $\letv{s}{\comp{\newref{\N}{14}}}{}$ \\
@@ -297,7 +298,7 @@ to $s$, so that $r$ now points to $14$ and $s$ now points to $5$.
 Finally, on line 7, we return $x+y$, the sum of the two contents.
 
 The primitive commands are all composed using the $\letv{x}{e}{c}$
-construct, and because this form expects the term to be bound to be an
+construct, because this form expects the term to be bound to be an
 expression of monadic type, each of the primitive commands
 (allocation, dereference, assignment) are wrapped in a suspension
 $\comp{c}$ before being given to the let-binder. 
@@ -408,8 +409,8 @@ noninterference of $p$ and $q$ implicit, letting us avoid the unwanted
 quadratic growth in the size of our assertions. In addition to the
 separating conjunction, we have its unit $\emp$, which is true of the
 empty heap, and the points-to relation $e \pointsto e'$, which holds
-of the one-element heap in which the reference $e$ has contents
-$e'$. 
+of the one-element heap in which the value of the reference $e$ has 
+contents equal to the value of $e'$. 
 
 The universal and existential quantifiers $\forall x:\omega.\;p$ and
 $\exists x:\omega.\;p$ are higher-order quantifiers ranging over all
@@ -662,7 +663,7 @@ functions):
 
 This expression does not explicitly mention any dependency
 information; it is up to the primitive operations of our library to
-generate it, and the $\return$ and $\bind$ operations to propagate it
+generate it, and up to the $\return$ and $\bind$ operations to propagate it
 appropriately. In this way, we can (1) avoid the error-prone business
 of explicitly managing the dependencies, and (2) we can use typing to
 forbid invoking arbitrary stateful operations that might ruin  the
@@ -672,9 +673,9 @@ the ones under our control.
 The actual implementation is also given in
 Figure~\ref{notification-implementation}. The abstract type of code is
 implemented using the underlying monad of imperative commands, so that
-$\codetype{A}$ is implemented with the type $\monad{(A \times
+$\codetype{\tau}$ is implemented with the type $\monad{(\tau \times
   \cellset)}$.  The intuition is that when we evaluate a term we are
-allowed to read some cells along the way, and so must return a set of
+allowed to read some cells along the way, and so we must return a set of
 all the cells that we read in order to do proper dependency
 management. So, $\cellset$ is a type representing sets of
 cells\footnote{Properly, these are sets of cells packed inside an
@@ -713,7 +714,7 @@ return value, together with the union of the two read sets.
 
 There are two functions $\getref \alpha\;r$ (line~\ref{notify:getref})
 and $\setref \alpha\;r\;v$ (line~\ref{notify:setref}) whose
-specifications say the simply read and update their argument
+specifications say that they simply read and update their argument
 reference. These two functions allow us to use local state within a
 notification network, which we will need to implement things like
 accumulators when implementing reactive programs. They both return
@@ -807,9 +808,9 @@ similar concept in AI.
 
 The key to getting around our difficulties lies in the difference
 between the implementation of $\updatecell$ and of $\ctext{read}$.
-$\updatecell$ calls $\ctext{mark\_unready}$, which recursively follows
-the observers. The $\ctext{read}$ function, on the other hand,
-proceeds in the opposite direction --- it evaluates code expressions,
+The $\updatecell$ function calls $\ctext{mark\_unready}$, which 
+recursively follows the observers. The $\ctext{read}$ function, on the 
+other hand, proceeds in the opposite direction --- it evaluates code expressions,
 recursively descending into the footprint of its command. The opposite
 direction these two functions look is why we end up needing a global
 invariant: we need to know that these two directions are in harmony
@@ -825,7 +826,7 @@ follow the observer fields -- we will only add entries to them
 whenever we evaluate a cell and change it from unready to ready.  As a
 result, an abstract description of the heap which \emph{does not
   explicitly mention the observer sets} will prove sufficient for
-reasoning about the behavior of $\codetype{A}$ expressions. 
+reasoning about the behavior of $\codetype{\tau}$ expressions. 
 
 With this plan, we introduce \emph{abstract heap formulas}, which are
 syntactic descriptions of the state of part of the cell heap. These
@@ -999,7 +1000,7 @@ requiring that the cell heap $H$ satisfy the abstract heap formula
 $\phi$, which formalizes the informal reading of the abstract heap
 formulas given earlier. The definition of the satisfaction relation is
 given on line~\ref{invariant:satisfies}. The satisfaction relation
-$\satisfies(H, \phi)$ asserts that $\phi$ describes the heap $H$. 
+$\satisfies{H}{\phi}$ asserts that $\phi$ describes the heap $H$. 
 
 This relation closely follows the standard pattern of separation
 logic, with one exception: we need to remember the whole heap in order
@@ -1018,7 +1019,7 @@ that (1) the cell $a$ must be within $D'$, (2) its code must be $e$, and
 (on line~\ref{invariant:sat-cellpos}) is a little more complex. It also says that 
 $a$ must be in $D'$ and that $a$'s code must be $e$. In addition, it says that 
 if all the cells in $r$ have values, then $a$'s value must be $v$ and otherwise 
-$a$ must not have a value. Finally, the clause for $\localref{r}{v}$ is simply
+$a$ must not have a value. The clause for $\localref{r}{v}$ is simply
 the true assertion --- since this is a piece of local state that does not 
 participate in dependency tracking, we leave it out of this 
 invariant and use an ordinary separation logic formula to track it. 
@@ -1040,7 +1041,7 @@ sets of the cell. (This predicate is explained in the appendix, as part
 of the specification of sets of cells.)
 
 The last clause in $Inv(H,\phi)$ is $\localstate(\phi)$, which 
-finds each local reference formula in $\phi$ and asserts it is in
+finds each local reference formula in $\phi$ and asserts that it is in
 the physical heap.
 
 The global character of this invariant should be evident; we describe
@@ -1201,7 +1202,7 @@ having to know what cells might be updated by the change.
 
 \subsection{Ramified Frame Properties}
 
-Ironically, this strategy is sufficient for $\newcell$and
+While this strategy is sufficient for $\newcell$and
 $\updatecell$, but is not adequate for defining a frame property
 for $\codetype{\tau}$ expressions. 
 
@@ -1264,7 +1265,7 @@ we need to modify our abstract formula to reflect our updated state
 of knowledge. 
 
 In our case, \emph{all} of the effects on the frame will arise from
-the cells we flip from unready to ready. Thus, given the set of cells
+the cell formulas we change from unready to ready. Thus, given the set of cells
 which became ready, we can repair the framing formula by taking each
 positive cell formula, and setting it to a negative state if its read
 set includes anything that went from unready to ready. We define the
@@ -1362,7 +1363,8 @@ $\astep{\phi}{e}{\phi'}{v}{r}{u} \triangleq$ \\[0.5em]
             { }
             {\astep{I}{\return \alpha\;v}{I}{v}{\emptyset}{\emptyset}}
 \and
-  \inferrule*{\astep{\phi}{e}{\phi'}{v'}{r_1}{u_1} \\
+  \inferrule*[right=ABind]
+             {\astep{\phi}{e}{\phi'}{v'}{r_1}{u_1} \\
               \astep{\phi'}{f\;v'}{\phi''}{v''}{r_2}{u_2}}
              {\astep{\phi}{\bind \alpha\;\beta\;e\; f}{\phi''}{v''}{r_1 \cup r_2}{u_1 \cup u_2}}
 \\
@@ -1404,7 +1406,7 @@ $\astep{\phi}{e}{\phi'}{v}{r}{u} \triangleq$ \\[0.5em]
 
 
 
-The step relation $\astep{\phi}{e}{\phi'}{v}{r}{u}$ really means four
+The step relation $\astep{\phi}{e}{\phi'}{v}{r}{u}$ really means three
 things. First, it means that if we run $e$ in a heap $G(\phi \otimes
 \psi)$, then we will end in a heap $G(\phi' \otimes R(u, \psi))$, and
 that the return value will be a pair consisting of the value $v$ and
@@ -1475,8 +1477,8 @@ system. We will begin by giving the purely functional/mathematical
 semantics of stream transducers. This semantics is easy to reason
 about, but too inefficient to consider as an implementation. Then,
 we'll give an imperative implementation of the reactive primitives,
-which is intended to be driven by an event loop. Finally, we will show
-the proving the correctness of a realization relation between the
+which is intended to be driven by an event loop. Finally, we will 
+prove the correctness of a realization relation between the
 imperative and functional implementations, which will let us reason
 about the imperative implementation as if it were functional. 
 
@@ -1502,7 +1504,7 @@ denote consing $v$ to the front of $vs$, and if $xs$ is a finite list, then
 $xs \cdot vs$ will denote appending the finite sequence $xs$ to the
 front of $vs$. Finally, we will write $vs_n$ to denote the $n$-th element
 of the stream $vs$, and $\mathit{last}\;xs$ to denote the last element of
-a non-empty list.}
+a non-empty finite list.}
 
 However, not all functions $\stream{A} \to \stream{B}$ are legitimate
 stream transducers: we need to restrict our attention to \emph{causal}
@@ -1549,7 +1551,7 @@ $\looptrans\;a_0\;p = (map\;\pi_2) \circ (cycle\;a_0\;p)$
 
 \nextlinelabel[0.5em]{transducer:spec:cycle}
 $\cycletrans : A \to \ST{A\times B}{A \times C} \to \ST{B}{A \times C}$ \nextline
-$\cycletrans\;a_0\;p = \lambda bs.\;\lambda n.\;last(gen\;a_0\;p\;v\;n)$ 
+$\cycletrans\;a_0\;p = \lambda bs.\;\lambda n.\;last(gen\;a_0\;p\;bs\;n)$ 
 
 \nextlinelabel[0.5em]{transducer:spec:gen}
 $\gentrans : A $\=$\to \ST{A\times B}{A \times C} \to \stream{B}$ \nextline
@@ -1619,7 +1621,7 @@ the next section is the following:
 
 \begin{proof}
   This is easily proved using $take$-lemma of \citet{bird-wadler}, which
-  says that two streams are equal if all their finite prefixes are
+  states that two streams are equal if all their finite prefixes are
   equal.
 \end{proof}
 
@@ -1664,7 +1666,7 @@ $\switchop : \forall \alpha, \beta:\star.\; \N \to \ST{\alpha}{\beta} \to \ST{\a
 $\switchop \alpha\;\beta\;k\;p\;q\; input =  $ \nextline
 \;\;$[$\=$\letv{r}{\newref{\N}{0}}{}$ \nextline
     \>$\letv{a}{p\;input}$ \nextline
-    \>$\letv{b}{p\;input}$ \nextline
+    \>$\letv{b}{q\;input}$ \nextline
     \>$\ctext{letv}\; out = \newcell\; ($\=$\bind (\getref r) \;(\lambda i:\N.\;$ \nextline
     \>                                 \>$\bind (\setref r\;(i+1)) \; (\lambda q:\unittype.$ \nextline
     \>                                 \>$\;\;\ctext{if}(i < k, \readcell a, \readcell b)))) \;\ctext{in}$ \nextline
@@ -1725,6 +1727,7 @@ output is named $middle$, and will then give $middle$ to $q$ to get
 the final output cell. The overall network will be the network built
 by the calls to both $p$ and $q$, which interact via $p$'s network
 installing a value in $middle$, which $q$'s network reads and processes.
+
 
 The operation $\switchop k\;p\;q$ (defined on
 line~\ref{transduce:impl:switch}) is the first example that uses local
@@ -1802,18 +1805,17 @@ over time, and (3) that if the input cell is ever unready, so is the
 output (i.e, the output genuinely depends on the input). Then, on
 line~\ref{realizer:transduce}, we assert that the initial state of the
 evolution of the network is $\Phi$.  (All of these conditions could be
-relaxed, but for the basic combinators we consider in this paper there
-is no need. Doing so \emph{would} become necessary if we added
-combinators that dynamically created new transducers as the program
-ran, since at that point we would need to create new cells at each
-time step.)
+relaxed, but in this paper there is no need. It \emph{would}
+be necessary if we added combinators that dynamically created new
+transducers as the program ran, since we could then create new cells
+at each time step.)
 
 Finally, we assert the network implements the stream transducer 
 property on line~\ref{realizer:transduce}, using the $\mathit{Transduce}$
 sub-predicate. On line~\ref{transduce:quantifiers}, we first quantify
 over all times $n$, and then over $\phi_i$, $\phi'_i$, and
 $u_i$. These extra parameters exist because reading $i$ to get the
-input, may require evaluating some auxilliary network state. 
+input, may require evaluating some auxiliary network state. 
 
 We read $\phi_i$ as the network state needed to read $i$, and $\phi'_i$ is
 that state after $i$ has been read, with $u_i$ being the cells in
@@ -1864,8 +1866,8 @@ These lemmas permit us to reason about our transducer implementation
 as if it is a pure implementation --- for each combinator in the
 interface, we have a proof that shows the corresponding implementation
 combinator lifts related arguments to related results. As a result, 
-we can show that, for example, $\seqop (\liftop f) \;(\liftop g)$
-and $\liftop (g \circ f)$ both realize the same function $\lifttrans\;(g\circ f)$. 
+we can show that, for example,  $\seqop (\liftop f) \;(\liftop g)$
+and $\liftop (g \circ f)$ both realize the same pure $\lifttrans\;(g\circ f)$. 
 
 \section{Future Work}
 
@@ -1987,10 +1989,10 @@ In this section we describe the interface to the $\cellset$ type,
 representing pure collections of existentially quantified cells
 (terms of type $\exists \alpha:\star.\;
 \celltype{\alpha}$). Specifying this interface is not entirely
-trivial, because of the way equality works for this type. Ordinarily,
-we give a two-place predicate $set(v, elts)$ relating a value $v$, and
-the mathematical set of elements $elts$ it represents.
+trivial, because of the way equality works for this type. 
 
+Ordinarily, we give a two-place predicate $set(v, elts)$ relating a
+value $v$, and the mathematical set of elements $elts$ it represents.
 However, this approach is not sufficient in our case. In order to
 manage dependencies, we need to be able to test cells of
 \emph{different} concrete type for equality, and the natural equality
