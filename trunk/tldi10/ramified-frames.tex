@@ -98,11 +98,11 @@ updated. Since spreadsheets can get very large, this should ideally be
 done in a lazy way, so that only the cells visible on the screen, and
 the cells necessary to compute them, are themselves recomputed.
 
-Typically, these dependencies are written using what is called the
+Typically, these dependencies are written using the
 \emph{subject-observer} pattern. A mutable data structure (the
 subject) maintains a list of all of the data structures whose
-invariants depend upon it (the observers), and whenever it changes, it
-calls a function on each of those observers to update them in response
+invariants depend upon it (the observers). Whenever it changes, it
+calls a function on each observer to update it in response
 to the change. (And in turn, the observers of the subject may be
 subjects of still other observers.)
 
@@ -224,8 +224,8 @@ We maintain such a strong distinction between pure and impure code for
 two reasons. First, it allows us to use strong equational reasoning
 principles for our language: we can validate the full $\beta$ and
 $\eta$ rules of the lambda calculus for terms of non-monadic types,
-such as functions, sums, and products. This simplifies reasoning even
-about imperative programs, because we can relatively freely
+such as functions, sums, and products. These rules simplify reasoning
+even about imperative programs, because we can relatively freely
 restructure the program source to follow the logical structure of a
 proof. Second, when program expressions appear in assertions --- that
 is, the pre- and post-conditions of Hoare triples --- they must be
@@ -249,7 +249,7 @@ eliminations for each type, including projections for products and
 case statements for sum types. For the natural numbers, we add a
 primitive iteration construct $\iter{e}{e_z}{x}{e_s}$. If $e = \z$,
 this computes $e_z$ , and if $e = \s{e'}$, it computes
-$e_s[(\iter{e'}{e_z}{x}{e_s})/x]$. This bounded iteration allows us
+$e_s[(\iter{e'}{e_z}{x}{e_s})/x]$. Bounded iteration allows us
 to implement (for example) arithmetic operations as pure expressions.
 We will also freely make use of other polynomial data types (such as
 sum types, lists, option types, and trees) as needed. 
@@ -394,17 +394,17 @@ In ordinary Hoare logic, a predicate describes a set of program states
 (in our case, heaps), and a conjunction like $p \land q$ means that a
 heap in $p \land q$ is in the set described by $p$ and the described
 by $q$. While this is a natural approach, aliasing can become quite
-difficult to treat --- if $x$ and $y$ are pointer variables, we need to
-explicitly state whether they alias or not. This means that as the
-number of variables in a program grows, the number of aliasing
-conditions grows quadratically. 
+difficult to treat --- if $x$ and $y$ are pointer variables, we need
+to explicitly state whether they alias or not. So as the number of
+variables in a program grows, the number of aliasing conditions grows
+quadratically.
 
 With separation logic, we add the \emph{spatial} connectives to
 address this difficulty. A separating conjunction $p * q$ means that
 the state can be broken into two \emph{disjoint} parts, one of which
 is in the set described by $p$, and the other of which is in the
 set described by $q$. The disjointness property makes the
-noninterference of $p$ and $q$ implicit. This avoids the unwanted
+noninterference of $p$ and $q$ implicit, letting us avoid the unwanted
 quadratic growth in the size of our assertions. In addition to the
 separating conjunction, we have its unit $\emp$, which is true of the
 empty heap, and the points-to relation $e \pointsto e'$, which holds
@@ -753,16 +753,15 @@ modify them.) Once we modify a cell, any memoized value it has is no
 longer necessarily correct.
 
 Therefore, we have to drop the memoized value of the cell, and any
-cell that transitively observes the cell. This is what the
-$\ctext{mark\_unready}$ function does
-(line~\ref{notify:mark-unready}). Given a cell, it takes all of the
-observers of the current cell and recursively makes all of them
-unready. Then it removes the current cell from the observer sets of
-all the cells it reads, and then it nulls out the current cell's
-memoized value, as well as setting its read and observer sets to
-empty. Notice that there is no explicit base case to the recursive
-call; if there are any cycles in the dependency graph, invalidation
-could go into an infinite loop.
+cell that transitively observes the cell. The $\ctext{mark\_unready}$
+function (line~\ref{notify:mark-unready}) does this. Given a cell, it
+takes all of the observers of the current cell and recursively makes
+all of them unready. Then it removes the current cell from the
+observer sets of all the cells it reads, and then it nulls out the
+current cell's memoized value, as well as setting its read and
+observer sets to empty. Notice that there is no explicit base case to
+the recursive call; if there are any cycles in the dependency graph,
+invalidation could go into an infinite loop.
 
 So far, we have described the implementation invariants incrementally.
 Before proceeding to describe them formally, we will state them again
@@ -1324,13 +1323,17 @@ know that two parts of the abstract heap formula do not read each
 other at all, we can deduce that ramifications from one will not
 affect the other.
 
-We can finally define the abstract semantics of the code expression
-monad. We introduce the ``judgment''
-$\astep{\phi}{e}{\phi'}{v}{r}{u}$, which is read as ``from an initial
-state $\phi$, evaluating the $\codetype{\tau}$ expression $e$ will result
-in a modified state $\phi'$ and a return value $v$ of type $\tau$. The
-expression $e$ will have directly read the cells in $r$, and will have
-evaluated the cells in $u$, sending them from an unready to a ready state.'' 
+Now we can define the abstract semantics of the code monad. We
+introduce the ``judgment'' $\astep{\phi}{e}{\phi'}{v}{r}{u}$, which is
+read as ``from an initial state $\phi$, evaluating the
+$\codetype{\tau}$ expression $e$ will result in a modified state
+$\phi'$ and a return value $v$ of type $\tau$. The expression $e$ will
+have directly read the cells in $r$, and will have evaluated the cells
+in $u$, sending them from an unready to a ready state.''  The formal
+definition of the meaning is given in Figure~\ref{abstract-semantics},
+where our ``judgment'' is revealed to be a notational abbreviation for
+a formula in our logic of specifications.
+
 
 \begin{figure}
 {\small
@@ -1400,10 +1403,6 @@ $\astep{\phi}{e}{\phi'}{v}{r}{u} \triangleq$ \\[0.5em]
 \end{figure}
 
 
-We define the meaning of the abstract semantics in
-Figure~\ref{abstract-semantics}, where our ``judgment'' is revealed to
-be a notational abbreviation for a formula in our logic of
-specifications.  
 
 The step relation $\astep{\phi}{e}{\phi'}{v}{r}{u}$ really means four
 things. First, it means that if we run $e$ in a heap $G(\phi \otimes
@@ -1432,11 +1431,9 @@ semantic heap if we wish to use them in further reasoning about the
 syntactic description. In particular, we need these facts to prove the
 rules given in Figure~\ref{abs-semantics}, where we finally show that
 terms of type $\codetype{\alpha}$ behave as we claimed in our informal
-description. 
-
-Here, we present a number of implications over specifications in
+description. We give a number of implications over specifications in
 inference rule format, mimicking the structure of a big-step
-operational semantics. 
+semantics.
 
 In rule \textsc{AUnit}, we give a specification for the $\return$
 command, which simply returns its argument and neither reads nor
@@ -1465,8 +1462,8 @@ derivable in our specification logic.
 \end{prop}
 
 We can now reason about the behavior of our imperative notification
-network library in terms of its action on the abstract heap. The combination
-of quantification and ramification give us a domain-specific frame
+network library in terms of its action on the abstract
+heap. Quantification and ramification give us a domain-specific frame
 property, which allows us to modularly prove the correctness of
 programs that construct and use this dependency-tracking library.
 
@@ -1508,9 +1505,9 @@ of the stream $vs$, and $\mathit{last}\;xs$ to denote the last element of
 a non-empty list.}
 
 However, not all functions $\stream{A} \to \stream{B}$ are legitimate
-stream transducers; we need to restrict our attention to \emph{causal}
-stream transducers. A transducer is causal if we can compute the first
-$n$ elements of the output after having read at most $n$ elements of
+stream transducers: we need to restrict our attention to \emph{causal}
+functions. A transducer is causal if we can compute the first
+$n$ elements of the output having read at most $n$ elements of
 the input. 
 
 \begin{tabbing}
@@ -1519,10 +1516,10 @@ $causal(f : \stream{A} \to \stream{B}) \equiv$ \\
     \> \;\;$take\;n\;(f\;as) = \hat{f}\;(take\;n\;as)$ 
 \end{tabbing}
 
-If we are given a causal transducer $p$, we will write $\hat{p}$ to
-indicate the corresponding list function which computes its finite
-approximations. Then, we can define a family of combinators acting on
-causal transducers, which we give in Figure~\ref{transducer-semantics}.
+Given a causal transducer $p$, we will write $\hat{p}$ to indicate the
+corresponding list function which computes its finite
+approximations. In Figure~\ref{transducer-semantics}, we define a
+family of combinators acting on causal transducers.
 
 \begin{figure}
 {\small
@@ -1692,10 +1689,9 @@ $\loopop \alpha\;\beta\;\gamma\;a_0\; p \; input = $ \nextline
 \end{figure}
 
 While the definitions in the previous subsection yield very clean
-proofs, they are not suitable as implementations --- for example,
+proofs, they are not suitable as implementations --- e.g.,
 $loop$ recomputes an entire history at each time step! We can derive
-better implementations by thinking about how imperative, event-driven
-programming works.
+better implementations by looking at how imperative event loops work.
 
 The intuition underlying event-driven programming is that a stream
 transducer is implemented with the combination of a notification
@@ -1704,22 +1700,20 @@ network, and an \emph{event loop}.  The event loop is a
 step. First, it updates an input cell, to reflect any input events
 that occurred on that time step. Then, it reads the output cell of the
 network, to discover the output value for that time step. When the
-input cell is updated, invalidations are propagated throughout the
-dependency network, and when the outputs are read, exactly the
+input cell is updated, invalidations propagate throughout the
+dependency network, and when the outputs are read, only the
 necessary re-computations are performed.
 
-We will shortly formalize exactly this idea, but we will first discuss
-the implementation given in
-Figure~\ref{imperative-transducer-semantics} in informal terms. 
-(In the definitions, we suppress the type arguments to functions
-in order to make the code more readable.) Here,
-we define the type of imperative stream transducers from types $\alpha$
-to $\beta$ as the type $\celltype{\alpha} \to \monad{(\celltype{\beta})}$.
-This type should be read as saying that the implementation is a function that, 
-given an input cell of type
-$A$, will \emph{construct} a dataflow notification network realizing
-the corresponding transducer, and whose return value is the output
-cell of type $B$ that the event loop should read.
+Before formalizing this idea, we will first discuss the implementation
+given in Figure~\ref{imperative-transducer-semantics} in informal
+terms.  (In the definitions, we suppress the type arguments to
+functions in order to make the code more readable.) We define the type
+of imperative stream transducers from types $\alpha$ to $\beta$ as the
+type $\celltype{\alpha} \to \monad{(\celltype{\beta})}$.  This type
+should be read as saying that the implementation is a function that,
+given an input cell of type $A$, will \emph{construct} a dataflow
+network realizing a transducer, and which returns the output cell of
+type $B$ that the event loop should read.
 
 The simplest example of this is $\liftop f$, defined on
 line~\ref{transduce:impl:lift}. It will take an input cell $input$,
@@ -1739,11 +1733,11 @@ initialized to $0$. Then, we build networks corresponding to $p$ and
 to $q$ (with outputs $a$ and $b$, respectively). Finally, we build a cell
 $out$, whose code reads and increments $r$, and which will read $a$ or
 $b$ depending on whether the reference's contents are less than or
-equal to $k$. Notice that the demand-driven nature of evaluation means
+equal to $k$. The demand-driven nature of evaluation means
 that we never redundantly evaluate $p$ or $q$'s networks --- we only
 ever execute one of them.
 
-Finally, the operation $\loopop a_0\;p$ builds a feedback network by
+The operation $\loopop a_0\;p$ builds a feedback network by
 explicitly creating a reference to hold an accumulator parameter. It
 constructs a local reference initialized to $a_0$, and then constructs
 a cell $ab$ which reads the input and the local reference to produce a
@@ -1755,10 +1749,9 @@ returns a value of type $C$. The use of a local reference (rather than
 a cell) to store the current state of $A$ is essential, because we need
 to maintain the acyclicity of the dataflow graph. 
 
-Now, with these ideas in mind, we come to the definition of what it
-means for a dataflow network to realize a stream transducer. This
-property is (unavoidably) quite large, but despite its size is quite
-pleasant to work with.
+With these ideas in mind, we come to the definition of what it means
+for a dataflow network to realize a stream transducer. This property
+is quite large, but despite its size is pleasant to work with.
 {\small
 \begin{specification}
 \nextline
@@ -1806,11 +1799,11 @@ properties. On lines \ref{realizer:basic-start} to
 the network may read is $i$, (2) that the domain of the network (i.e.,
 the cells whose atomic formulas are in that formula) remains constant
 over time, and (3) that if the input cell is ever unready, so is the
-output (i.e, the output genuinely depends on the input).Then, on
+output (i.e, the output genuinely depends on the input). Then, on
 line~\ref{realizer:transduce}, we assert that the initial state of the
 evolution of the network is $\Phi$.  (All of these conditions could be
-relaxed, but for the basic FRP combinators we consider in this paper
-there is no need. Doing so \emph{would} become necessary if we added
+relaxed, but for the basic combinators we consider in this paper there
+is no need. Doing so \emph{would} become necessary if we added
 combinators that dynamically created new transducers as the program
 ran, since at that point we would need to create new cells at each
 time step.)
@@ -1831,13 +1824,12 @@ element of the stream $v$, and that doing so requires the state
 $\phi_i$, which will become $\phi'_i$ during the execution. (The
 unboxed formulas are more syntactic conditions we push along.)
 
-Then, the conclusion of this implication over triples, the second
+The conclusion of this implication over triples, the second
 boxed formula, says that reading $o$ will give us the $(f v)_n$, the
 $n$-th output of the stream transducer, and that in doing so it will 
 also update the input state $\phi_i$ to $\phi'_i$, in addition to 
 sending the transducer state from $\phi_n$ to $\phi_{n+1}$. 
-
-With this property in hand, we can prove the following specifications: 
+With this definition, we can prove the following specifications: 
 
 \begin{prop}{(FRP Correctness)}
 We define the $Relate$ predicate:
@@ -1877,31 +1869,30 @@ and $\liftop (g \circ f)$ both realize the same function $\lifttrans\;(g\circ f)
 
 \section{Future Work}
 
-Now that we have introduced the idea of ramifications, we see many
-possible applications for them. 
+We forsee many further applications of the idea of ramifications.
 
 First, there are numerous algorithms --- such as unification, the
 union-find algorithm, and the chaotic iteration constraint propagation
 algorithm used in dataflow analysis --- which rely on using mutation
 and assignment as a way of globally broadcasting information to the
-rest of the program state. These algorithms have all been naturally
-resistant to modular proofs, because of the apparent need to know
-``the rest of the world'' in the program invariant. It would be
-interesting to see if ramifications can help.
+rest of the program state. These algorithms have all been resistant to
+modular proof, because of the apparent need to know ``the rest of the
+world'' in the program invariant. It would be interesting to see if
+ramifications can help.
 
 Second, we would like to investigate the relationship between
 ramification operators and methods based on
-rely-guarantee~\cite{rely-guarantee-jones}. Rely-guarantee works by
-imposing a mutual contract between a piece of code and the rest of the
-world, which is at least conceptually similar to the idea of a
-ramification, though we see no obvious direct relationship.
+rely-guarantee~\cite{rely-guarantee-jones}. Rely-guarantee imposes a
+mutual contract between a piece of code and the rest of the world.
+This is conceptually similar to the idea of a ramification, though we
+see no obvious direct relationship.
 
-Third, in this work we have presented ramifications as a style of
+Third, we introduced ramifications as a style of
 specification useful for verifying a particular library. Might it be
-sensible or useful to bake ramification operators into the basic
-logical framework? If so, what are their logical properties --- $R(u,
+ useful to make ramification operators part of the basic
+logical framework? If so, what are their logical properties? $R(u,
 \phi)$ looks like a family of modal operators on the formula $\phi$, but
-even in our first example we needed a number of auxiliary interaction
+we needed a number of auxiliary interaction
 lemmas to make them truly useful.
 
 \section{Related Work}
@@ -1909,8 +1900,8 @@ lemmas to make them truly useful.
 Versions of separation logic~\cite{sep-logic} supporting higher-order
 languages and quantification over predicates have been proposed by
 \citet{htt} with Hoare Type Theory, and by
-\citet{parkinson-bierman}. It would be interesting to study how the
-proof techniques in this paper could be adapted to their setting.
+\citet{parkinson-bierman}. It would be interesting to adapt the
+proof techniques in this paper to their settings.
 
 Prior work on verifying the observer pattern using separation logic
 includes work by \citet{tldi09,ftfjp07} and work by
@@ -1919,17 +1910,15 @@ in the setting of regional logic by \citet{banerjee-naumann-regions}.
 
 In all of these works, the program invariant explicitly tracks the
 observers listening to a particular subject, and the invariants for
-each observer. Thus there is an invariant for a cluster of objects 
-(subjects and observers). 
-For a chain of observers only one level deep, this
-works reasonably well, but it breaks down when there are chains of
-dependencies --- when we have an object which both observes and is
-observed by yet other objects. Roughly speaking, it is difficult to
-locally add an observer to a subject, since we then need to touch the
-invariants of everything the subject itself observes, forcing
-us to know the transitive closure of the reachability graph of
-observers from any subject. \texttt{[LANGUAGE: Ambiguous use of
-``observers'' and ``subjects'']}
+each observer. Thus there is an invariant for a cluster of objects
+(subjects and observers). For a chain of observers only one level
+deep, this works reasonably well, but it breaks down when there are
+chains of dependencies --- when we have an object which both observes
+and is observed by yet other objects. Roughly speaking, it is
+difficult to locally add an observer to a subject, since we then need
+to touch the invariants of everything the subject itself observes,
+forcing us to know the transitive closure of the reachability graph of
+object clusters from the subject. 
 
 Even though all of these methods are modular in the sense that
 subjects and observers can be verified independently, they are
@@ -1943,7 +1932,7 @@ model-view-controller pattern.
 to model higher-order method calls (which can be understood as a a
 variant of refinement calculus-based methods) in JML, and
 \citet{barnett-naumann} added a friendship system to the Boogie
-system, using which it is possible to describe some forms of clusters of
+system, with which it is possible to describe some forms of clusters of
 collaborating objects, including the subject-observer pattern. 
 These works are also
 non-modular in the above sense, since they require 
@@ -1959,29 +1948,24 @@ code-update-based protocol seen in our FRP example.
 
 \citet{self-adjusting} have proposed \emph{self-adjusting computation}
 as a technique for using change propagation to write programs that
-incrementally recompute answers as the inputs are adjusted. It would
-be worth studying if our techniques could be useful in verifying
-implementations of this technique.
+incrementally recompute answers as the inputs are
+adjusted. Ramifications may help in verifying implementations of
+this technique.
 
-Functional reactive programming (FRP) was proposed by \citet{frp} as a
-declarative formalism for interactive programming. The API in our
-paper differs from theirs in two ways. First, our interface is a
-variation of the \emph{arrowized FRP} interface proposed in
-\citet{afrp}, and secondly, we use a discrete model of time, rather
-than a continuous model of time --- though we found the core idea of
-using a declarative semantics as a specification for the interface an
-inspiring one.
+FRP was proposed by \citet{frp} as a declarative formalism for
+interactive programming. The API in our paper differs from theirs in
+two ways. First, our interface is a variation of the \emph{arrowized
+  FRP} interface proposed in \citet{afrp}, and secondly, we use a
+discrete rather than continuous model of time --- though we found the
+idea of using a declarative semantics as a specification for the
+interface an inspiring one.  Our work could also serve as a bridge
+between the work on purely functional and imperative implementations,
+such as the work done by \citet{superglue} on SuperGlue and by
+\citet{frtime} on the FrTime system.
 
-Furthermore, our work could also serve as a bridge between the work on
-purely functional reactive programming, and more imperative
-implementations, such as the work done by \citet{superglue} on
-SuperGlue and by \citet{frtime} on the FrTime system.
-
-
-\acks
-
-We would like to thank Peter O'Hearn for pointing out the connection
-of our work with the ramification problem of AI.
+\acks We would like to thank Peter O'Hearn for pointing out the connection
+of our work with the ramification problem of AI. This work was
+partially supported by the US NSF grant CCF0916808.
 
 \bibliography{ramified-frames}{}
 \bibliographystyle{plainnat}
@@ -1999,14 +1983,13 @@ of our work with the ramification problem of AI.
 
 \section{Appendix: The $\cellset$ Interface}
 
-In this section, we'll describe the interface to the $\cellset$ type,
-which is intended to be used to represent pure collections of
-existentially quantified cells (i.e., terms of type $\exists
-\alpha:\star.\; \celltype{\alpha}$). Specifying this interface is not
-entirely trivial, because of the way equality works for this
-type. Ordinarily, we would simply give a two-place predicate $set(v,
-elts)$ relating a value $v$, and the mathematical set of elements
-$elts$ it represents.
+In this section we describe the interface to the $\cellset$ type,
+representing pure collections of existentially quantified cells
+(terms of type $\exists \alpha:\star.\;
+\celltype{\alpha}$). Specifying this interface is not entirely
+trivial, because of the way equality works for this type. Ordinarily,
+we give a two-place predicate $set(v, elts)$ relating a value $v$, and
+the mathematical set of elements $elts$ it represents.
 
 However, this approach is not sufficient in our case. In order to
 manage dependencies, we need to be able to test cells of
@@ -2016,16 +1999,14 @@ result, we cannot unpack an existentially-quantified cell and compare
 the elements in its tuple, because we do not know that the two cells
 are of the same type (and indeed, they might not be). 
 
-To get around this problem, we generate a unique integer identifier
-for each cell we create, and then compare those identifiers to
-establish equality. Since these identifiers are all generated
-dynamically along with the cells, this means that the precise partial
-equivalence relation we need to use is determined dynamically as
-well. So we add an additional index to the set predicate $set(W, v,
-elts)$. The extra parameter $W$ is the \emph{world}, the set of all
-the cells allocated so far, which must collectively satisfy the
-constraint that they are equal if and only if their identifier fields
-match. 
+To deal with this problem, we assign a unique integer identifier to
+each cell we create, and compare those identifiers to establish
+equality. Since these identifiers are generated dynamically along with
+the cells, the precise partial equivalence relation we need to use is
+determined dynamically as well. So we add an additional index to the
+set predicate $set(W, v, elts)$. The extra parameter $W$ is the
+\emph{world}, the set of all the cells allocated so far, whose
+elements must be equal if and only if their identifier fields match.
 
 The usual set operations are supported: the expression
 $\ctext{emptyset}$ represents an empty set of cells; 
@@ -2033,21 +2014,20 @@ $\ctext{addset}\;v\;x$ adds the element $x$ to the set $v$
 represents; and $\ctext{removeset}\;v\;x$ removes $x$ from the
 set $v$ represents. We also have $\ctext{iterset}\;f\;v$, which
 iterates over the elements of $v$'s set and applies $f$ to each
-element in some sequential order. (Observe that the specification
+element in some sequential order. (The specification
 makes use of two auxiliary predicates: $\mathit{matches}$, which assert that a
 set and a list have the same elements; and $\mathit{iterseq}$, which constructs
 a command representing the sequential execution over those elements.)
 
-We impose three axioms that any implementation must satisfy. First, we
-require that if a $\cellset$ value $v$ represents a set $elts$ in a
-world $W$, it will also represent a set in any larger world $W'$ ---
-that is, allocating new cells cannot disturb already-existing cells.
-Second, the values in a set are always a subset of the world $W$.
-Finally, we require that $set(W,v,elts)$ is a pure predicate (i.e., is
-not heap-dependent). In other words, we ask that $\cellset$ have a
-purely functional implementation (for example, as a binary tree). This
-requirement is not a necessity, but was chosen to simplify the
-statement of the other invariants in this paper.
+We have three axioms any implementation must satisfy. First, if a
+$\cellset$ value $v$ represents a set $elts$ in a world $W$, it must
+also represent a set in any larger world $W'$ --- i.e., allocating
+new cells cannot disturb already-existing cells.  Second, the values
+in a set are always a subset of the world $W$.  Third, we require
+that $set(W,v,elts)$ is a pure predicate (i.e., is not
+heap-dependent). That is, we ask that $\cellset$ have a purely
+functional implementation (for example, as a binary tree). This is not
+necessary, but does simplify the other invariants in this paper.
 
 {\small
 \begin{specification}
