@@ -615,10 +615,12 @@ $\itertype{(\alpha)} =$\=$\;\One\;\reftype{(\colltype{(\alpha)})} \bnfalt
 \nextline
                        \>$\bnfalt \Merge\; (\alpha \to \alpha \to \alpha) \times \itertype(\alpha) \times \itertype(\alpha)$
 \nextlinelabel[0.5em]{decl:listpred-impl}
-$\listpred(\tau, c, \epsilon)$ \qquad\= $\equiv$ \= $c \pointsto_\tau \Nil$ 
+$\listpred(\tau, c, xs)$ \qquad\= $\equiv \exists v.\; c \pointsto_\tau v * \listcontentpred(\tau, v, xs)$ 
 \nextline
-$\listpred(\tau, c, x\cdot xs)$ \> $\equiv$ \> 
-   $\exists c'.\; c \pointsto_\tau \Cons(\tau, x, c') * list(c', xs)$ 
+$\listcontentpred(\tau, \Nil, xs)$ \qquad\qquad\= $\equiv$ \= $xs = \epsilon$ 
+\nextline
+$\listcontentpred(\tau, \Cons(y,c), xs)$ \> $\equiv$ \> 
+   $\exists ys.\; xs = y\cdot ys \land \listpred(\tau, c, ys)$ 
 \nextlinelabel[0.5em]{decl:collpred-impl}
 $collpred_\tau$\=$(c, xs, P) \equiv list(\tau, c, xs) \land P \land \mbox{exact}(P)$ 
 
@@ -1099,26 +1101,41 @@ follows:
 \nextline $\setof{\exists P.\; \iterpred_\alpha(\One(i'), xs, \setof{P}) * \mathit{colls}_\alpha(C,\setof{P})}$ 
 \nextline $\setof{\exists P.\; \iterpred_\alpha(\One(i'), xs, \setof{P}) * \collpred_\alpha(c, ys, P)}$
 \nextline $\setof{\exists c'.\; i' \pointsto c' * (P \wand (P \land (\top * \listpred(\alpha, c', xs)))) * \listpred(\alpha,c, ys) \land P \land \exact{P}}$ 
-\nextline $\setof{\exists c'. i' \pointsto c' * P \land \listpred(\alpha, c, ys) \land (\top * \listpred(\alpha, c', ys)) \land \exact{P}}$ 
+\nextline $\setof{\exists c'. i' \pointsto c' * P \land \listpred(\alpha, c, ys) \land (\top * \listpred(\alpha, c', xs)) \land \exact{P}}$ 
 \nextline $\letv{c'}{\comp{!i'}}{}$ 
-\nextline $\setof{i' \pointsto c' * P \land \listpred(\alpha, c, ys) \land (\top * \listpred(\alpha, c', ys)) \land \exact{P}}$ 
-\nextline $\setof{i' \pointsto c' * P \land (\exists p.\; c' \pointsto p * \listcontentpred(\alpha, p, ys)) \land (\top * \listpred(\alpha, c', ys)) \land \exact{P}}$ 
-\nextline $\letv{p}{\comp{!c'}}{}$ 
-\nextline $\setof{i' \pointsto c' * P \land (c' \pointsto p * \listcontentpred(\alpha, p, ys)) \land (\top * \listpred(\alpha, c', ys)) \land \exact{P}}$ 
-\nextline $\Run\;$\=$\Listcase(p,$ 
+\nextline $\setof{i' \pointsto c' * P \land \listpred(\alpha, c, ys) \land (\top * \listpred(\alpha, c', xs)) \land \exact{P}}$ 
+\nextline $\setof{i' \pointsto c' * P \land \listpred(\alpha, c, ys) \land (\top * \exists v.\; c' \pointsto v * \listcontentpred(\alpha, v, xs)) \land \exact{P}}$ 
+\nextline $\letv{v}{\comp{!c'}}{}$ 
+\nextline $\setof{i' \pointsto c' * P \land \listpred(\alpha, c, ys) \land (\top * c' \pointsto v * \listcontentpred(\alpha, v, xs)) \land \exact{P}}$ 
+\nextline $\Run\;$\=$\Listcase(v,$ 
 \nextline \> $\Nil $\=$\to$ 
 \nextline \> \> Framing $\exact{P}$
-\nextline \> \> $\setof{p = \Nil \land i' \pointsto c' * P \land (c' \pointsto p * \listcontentpred(\alpha, p, ys)) \land (\top * \listpred(\alpha, c', ys)) }$ 
-\nextline \> \> $\setof{p = \Nil \land i' \pointsto c' * P \land (c' \pointsto \Nil \land ys = \epsilon) \land (\top * \listpred(\alpha, c', ys)) }$ 
+\nextline \> \> $\setof{v = \Nil \land i' \pointsto c' * P \land \listpred(\alpha, c, ys) \land (\top * c' \pointsto v * \listcontentpred(\alpha, v, xs))}$ 
+\nextline \> \> $\setof{i' \pointsto c' * P \land \listpred(\alpha, c, ys) \land (\top * c' \pointsto \Nil * xs = \epsilon}$ 
 \nextline \> \> $\comp{\None}$ 
-\nextline \> \> $\setof{a = \None \land p = \Nil \land i' \pointsto c' * P \land (c' \pointsto \Nil \land ys = \epsilon) \land (\top * \listpred(\alpha, c', ys)) }$ 
+\nextline \> \> $\setof{a = \None \land i' \pointsto c' * P \land \listpred(\alpha, c, ys) \land (\top * c' \pointsto \Nil * xs = \epsilon}$ 
+\nextline \> \> $\setof{a = \None \land ys = \epsilon \land i' \pointsto c' * P \land \listpred(\alpha, c, ys)  \land (\top * \listpred(\alpha, c', xs)) }$ 
 \nextline \> \> Restoring frame $\exact{P}$ 
-\nextline \> \> $\setof{a = \None \land xs = \epsilon \land i' \pointsto c' * P \land \listpred(\alpha, c, ys) \land (\top * \listpred(\alpha, c', ys)) \land \exact{P}}$ 
+\nextline \> \> $\setof{a = \None \land xs = \epsilon \land i' \pointsto c' * P \land \listpred(\alpha, c, ys) \land (\top * \listpred(\alpha, c', xs)) \land \exact{P}}$ 
 \nextline \> \> $\setof{a = \None \land xs = \epsilon \land \iterpred_\alpha(i, xs, \setof{P}) * colls(C, \setof{P})}$
-\nextline \> $\Cons(y, c) \to$ 
+\nextline \> $\Cons(z, c'') \to$ 
 \nextline \> \> Framing $\exact{P}$
-\nextline \> \> $\setof{p = \Cons(y, c) \land i' \pointsto c' * P \land (c' \pointsto p * \listcontentpred(\alpha, p, ys)) \land (\top * \listpred(\alpha, c', ys))}$ 
-\nextline \> \> $\setof{p = \Cons(y, c) \land i' \pointsto c' * P \land (c' \pointsto  * \listcontentpred(\alpha, p, ys)) \land (\top * \listpred(\alpha, c', ys))}$ 
+\nextline \> \> $\setof{v = \Cons(z, c'') \land i' \pointsto c' * P \land \listpred(\alpha,c,ys) \land (\top * c' \pointsto v * \listcontentpred(\alpha, v, xs))}$  
+\nextline \> \> $\setof{i' \pointsto c' * P \land \listpred(\alpha,c,ys) \land (\top * c' \pointsto \Cons(z,c'') * \listcontentpred(\alpha, \Cons(z,c''), xs))}$  
+\nextline \> \> $\setof{i' \pointsto c' * P \land \listpred(\alpha,c,ys) \land (\top * c' \pointsto \Cons(z,c'') * \exists zs.\; xs = z\cdot zs \land \listpred(\alpha, c'', xs))}$  
+\nextline \> \> $\setof{i' \pointsto c' * P \land \listpred(\alpha,c,ys) \land (\top * c' \pointsto \Cons(z,c'') * xs = z\cdot zs \land \listpred(\alpha, c'', xs))}$  
+\nextline \> \> $[\letv{\_}{i' := c''}{}$ 
+\nextline \> \> $\setof{i' \pointsto c'' * P \land \listpred(\alpha,c,ys) \land (\top * c' \pointsto \Cons(z,c'') * xs = z\cdot zs \land \listpred(\alpha, c'', xs))}$  
+\nextline \> \> $\setof{i' \pointsto c'' * P \land \listpred(\alpha,c,ys) \land (\top * xs = z\cdot zs \land \listpred(\alpha, c'', xs))}$  
+\nextline \> \> $\setof{xs = z\cdot zs \land i' \pointsto c'' * P \land \listpred(\alpha,c,ys) \land (\top * \listpred(\alpha, c'', xs))}$  
+\nextline \> \> Restoring frame $\exact{P}$ 
+\nextline \> \> $\setof{xs = z\cdot zs \land i' \pointsto c'' * P \land \listpred(\alpha,c,ys) \land (\top * \listpred(\alpha, c'', xs)) \land \exact{P}}$  
+\nextline \> \> $\setof{xs = z\cdot zs \land i' \pointsto c'' * (P \land \listpred(\alpha,c,ys) \land \exact{P}) * (P \wand (P \land (\top * \listpred(\alpha, c'', xs))))}$  
+\nextline \> \> $\setof{xs = z\cdot zs \land \collpred_\alpha(c, zs, P) * \iterpred_\alpha(\One(i'),zs,\setof{P})}$  
+\nextline \> \> $\Some(z)]$ 
+\nextline \> \> $\setof{a. \exists z, zs.\; xs = z\cdot zs \land a = \Some(z) \land \collpred_\alpha(c, zs, P) * \iterpred_\alpha(\One(i'),zs,\setof{P})}$  
+
+
 \end{specification}
 \end{itemize}
 
