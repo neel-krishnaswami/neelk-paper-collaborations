@@ -222,6 +222,8 @@
 \newcommand{\filteriter}{\ctext{filter}}
 \newcommand{\mergeiter}{\ctext{merge}}
 \newcommand{\nextiter}{\ctext{next}}
+\newcommand{\True}{\ctext{true}}
+\newcommand{\False}{\ctext{false}}
 \newcommand{\IfThenElse}[3]{\ctext{if}({#1}, {#2}, {#3})}
 \newcommand{\None}{\ctext{None}}
 \newcommand{\Some}{\ctext{Some}}
@@ -248,8 +250,8 @@
                {\end{tabbing}}
 
 \newcommand{\nextline}[1][0em]{\refstepcounter{spec:linenum}\\[#1]\arabic{spec:linenum} \>}
+\newcommand{\contline}{\\ \> \>}
 \newcommand{\nextlinelabel}[2][0em]{\refstepcounter{spec:linenum}\label{#2}\\[#1]\arabic{spec:linenum} \>}
-
 
 
 

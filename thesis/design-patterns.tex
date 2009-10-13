@@ -1134,13 +1134,90 @@ follows:
 \nextline \> \> $\setof{xs = z\cdot zs \land \collpred_\alpha(c, zs, P) * \iterpred_\alpha(\One(i'),zs,\setof{P})}$  
 \nextline \> \> $\Some(z)]$ 
 \nextline \> \> $\setof{a. \exists z, zs.\; xs = z\cdot zs \land a = \Some(z) \land \collpred_\alpha(c, zs, P) * \iterpred_\alpha(\One(i'),zs,\setof{P})}$  
-
-
 \end{specification}
+
+\item Suppose $i = \Filter(p, i')$. Then, we proceed with an annotated proof as 
+follows: 
+\begin{specification}
+\nextline $\setof{\iterpred_\alpha(\Filter(p, i'), xs, S) * \mathit{colls}(C,S)}$ 
+\nextline $\setof{\exists ys. \iterpred_\alpha(i', ys, S) \land 
+                              xs = \mathit{filter}\;p\;ys * 
+                              \mathit{colls}(C,S)}$   
+\nextline $\setof{xs = \mathit{filter}\;p\;ys \land
+                  \iterpred_\alpha(i', ys, S) *
+                  \mathit{colls}(C,S)}$
+\nextline $[\letv{v}{\nextiter[\alpha](i')}{}$ 
+\nextline \{\=$[(ys = \epsilon \land v = \None) \vee 
+                (\exists z, zs.\; ys = z\cdot zs \land v = \Some(z))] \land
+               xs = \mathit{filter}\;p\;ys \;\land$ 
+\contline $\iterpred_\alpha(i', ys, S) * \mathit{colls}(C,S)$\}
+\nextline \;$\Run\;\Listcase($\=$v,$ 
+\nextline \> $\None$\=$ \to [\None]$ 
+\nextline \> \{$a = \None \land 
+               (ys = \epsilon \land v = \None) \land 
+                xs = \mathit{filter}\;p\;ys \;\land
+                \iterpred_\alpha(i', ys, S) * \mathit{colls}(C,S)$\}
+\nextline \> \{$a = \None \land xs = \epsilon \land
+                xs = \mathit{filter}\;p\;ys \;\land
+                \iterpred_\alpha(i', ys, S) * \mathit{colls}(C,S)$\}
+\nextline \> \{$a = \None \land xs = \epsilon \land
+                \exists ys.\;
+                xs = \mathit{filter}\;p\;ys \;\land
+                \iterpred_\alpha(i', ys, S) * \mathit{colls}(C,S)$\}
+\nextline \> \{$a = \None \land xs = \epsilon \land
+                \iterpred_\alpha(\Filter(p, i'), xs, S) * \mathit{colls}(C,S)$\}
+\nextline \> $\Some(z)$\=$\to$
+\nextline \> \;\;\{\=$\exists zs.\; ys = z\cdot zs \land v = \Some(z) \land
+                  xs = \mathit{filter}\;p\;(z\cdot zs) \;\land$ 
+\\ \> \> \>      $\iterpred_\alpha(i', zs, S) * \mathit{colls}(C,S)$\}
+\nextline \> \;\;\{\=$ys = z\cdot zs \land v = \Some(z) \land
+                   xs = \mathit{filter}\;p\;(z\cdot zs) \;\land$ 
+\\ \> \> \>      $\iterpred_\alpha(i', zs, S) * \mathit{colls}(C,S)$\}
+\nextline \> \;\;$\ctext{if}($\=$p\;z,$ 
+\nextline \> \> \{\=$p\;z = \True \land ys = z\cdot zs \land v =\Some(z) \land
+                   xs = \mathit{filter}\;p\;(z\cdot zs) \;\land$ 
+\\ \> \> \>      $\iterpred_\alpha(i', zs, S) * \mathit{colls}(C,S)$\}
+\nextline \> \> \{\=$ys = z\cdot zs \land v =\Some(z) \land
+                   xs = z\cdot(\mathit{filter}\;p\;zs) \;\land$ 
+\\ \> \> \>      $\iterpred_\alpha(i', zs, S) * \mathit{colls}(C,S)$\}
+\nextline \> \> \{\=$v =\Some(z) \land
+                   xs = z\cdot(\mathit{filter}\;p\;zs) \;\land
+                   \iterpred_\alpha(i', zs, S) * \mathit{colls}(C,S)$\}
+\nextline \> \> \{\=$v =\Some(z) \land
+                   xs = z\cdot(\mathit{filter}\;p\;zs) \;\land
+                   \mathit{filter}\;p\;zs = \mathit{filter}\;p\;zs \;\land
+                   \iterpred_\alpha(i', zs, S) * \mathit{colls}(C,S)$\}
+\nextline \> \> \{\=$v =\Some(z) \land
+                   xs = z\cdot(\mathit{filter}\;p\;zs) \;\land
+                   \iterpred_\alpha(i', \mathit{filter}\;p\;zs, S) * \mathit{colls}(C,S)$\}
+\nextline \> \> \{\=$\exists z', zs'.\; v =\Some(z') \land
+                     xs = z'\cdot zs' \land
+                   \iterpred_\alpha(i', zs', S) * \mathit{colls}(C,S)$\}
+\nextline \> \> $[v],$
+\nextline \> \> \{\=$\exists z', zs'.\; a = \Some(z') \land
+                     xs = z'\cdot zs' \land
+                   \iterpred_\alpha(i', zs', S) * \mathit{colls}(C,S)$\}
+\\ \> \> \> (Now the else-branch)
+\nextline \> \> \{\=$p\;z = \False \land ys = z\cdot zs \land a = \Some(z) \land
+                   xs = \mathit{filter}\;p\;(z\cdot zs) \;\land$ 
+\\ \> \> \>      $\iterpred_\alpha(i', zs, S) * \mathit{colls}(C,S)$\}
+\nextline \> \> \{\=$xs = \mathit{filter}\;p\; zs \;\land
+                     \iterpred_\alpha(i', zs, S) * \mathit{colls}(C,S)$\}
+\nextline \> \> \{\=$\iterpred_\alpha(\Filter(p, i'), xs, S) * \mathit{colls}(C,S)$\}
+\nextline \> \> $\nextiter[\alpha](\Filter(p, i'))$ 
+\nextline \> \> \{\=$(xs = \epsilon \land a = \None \land \iterpred_\alpha(\Filter(p, i'), xs, S) * \mathit{colls}(C,S)) \;\vee$ 
+\contline \> \>  $(\exists z, zs. xs = z\cdot zs \land a = \Some(Z) \land
+                    \iterpred_\alpha(\Filter(p, i'), zs, S) * \mathit{colls}(C,S))$\}   
+\end{specification}
+
+Note that this is not a structural induction on $i$; the
+$\Filter(p,i)$ case has a non-structural recursive call. Here, we make
+use of fixed-point induction in our proof of $\nextiter$. 
+
+
+
 \end{itemize}
 
-Note that this is not a structural induction on $i$; the $\Filter(p,i)$ case
-has a non-structural recursive call. 
 \end{proof}
 
 
