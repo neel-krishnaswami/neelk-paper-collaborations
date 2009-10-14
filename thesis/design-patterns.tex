@@ -1151,7 +1151,7 @@ follows:
                 (\exists z, zs.\; ys = z\cdot zs \land v = \Some(z))] \land
                xs = \mathit{filter}\;p\;ys \;\land$ 
 \contline $\iterpred_\alpha(i', ys, S) * \mathit{colls}(C,S)$\}
-\nextline \;$\Run\;\Listcase($\=$v,$ 
+\nextline \;$\Run$\=$\;\Listcase(v,$ 
 \nextline \> $\None$\=$ \to [\None]$ 
 \nextline \> \{$a = \None \land 
                (ys = \epsilon \land v = \None) \land 
@@ -1214,7 +1214,153 @@ Note that this is not a structural induction on $i$; the
 $\Filter(p,i)$ case has a non-structural recursive call. Here, we make
 use of fixed-point induction in our proof of $\nextiter$. 
 
+\item Suppose $i = \Merge(f, i_1, i_2)$. Then, we proceed with an
+annotated proof as follows:
 
+\begin{specification}
+\nextline $\setof{\iterpred_\alpha(\Merge(f, i_1, i_2), xs, S) * \mathit{colls}(C,S)}$ 
+\nextline $\setof{\exists S_1, ys, S_2, zs.\; 
+                    xs = \mathit{map2}\;f\;ys\;zs \land 
+                    S = S_1 \cup S_2 \land
+                    \iterpred_\alpha(i_1, ys, S_1) * 
+                    \iterpred_\alpha(i_2, zs, S_2) * 
+                    \mathit{colls}(C, S)}$ 
+\nextline \{$xs = \mathit{map2}\;f\;ys\;zs \land 
+                  S = S_1 \cup S_2 \land$ 
+\\ \>\;     $\iterpred_\alpha(i_1, ys, S_1) * 
+                  \iterpred_\alpha(i_2, zs, S_2) * 
+                  \mathit{colls}(C,S)$\}
+\nextline \{$xs = \mathit{map2}\;f\;ys\;zs \land 
+                  S = S_1 \cup S_2 \land$ 
+\\ \>\;     $\iterpred_\alpha(i_1, ys, S_1) * 
+                  \iterpred_\alpha(i_2, zs, S_2) * 
+                  \mathit{colls}(C,S_1) * \mathit{colls}(C, S - S_1)$\}
+\nextline $\letv{v_1}{\nextiter[\alpha](i_1)}{}$
+\nextline \{$xs = \mathit{map2}\;f\;ys\;zs \land 
+                  S = S_1 \cup S_2 \land$ 
+\\ \>\;     $[(ys = \epsilon \land v_1 = \None \land \iterpred_\alpha(i_1, ys, S_1))$ 
+\\ \>\;\;    $\vee\; (\exists b, bs.\; ys = b\cdot bs \land v_1 = \Some(b) \land 
+                                \iterpred_\alpha(i, bs, S_1))] \;*$ 
+\\ \>\;     $\iterpred_\alpha(i_2, zs, S_2) * 
+             \mathit{colls}(C,S_1) * \mathit{colls}(C, S - S_1)$\}
+\nextline \{$xs = \mathit{map2}\;f\;ys\;zs \land 
+                  S = S_1 \cup S_2 \land$ 
+\\ \>\;     $[(ys = \epsilon \land v_1 = \None \land \iterpred_\alpha(i_1, ys, S_1))$ 
+\\ \>\;\;    $\vee\; (\exists b, bs.\; ys = b\cdot bs \land v_1 = \Some(b) \land 
+                                \iterpred_\alpha(i_1, bs, S_1))] \;*$ 
+\\ \>\;     $\iterpred_\alpha(i_2, zs, S_2) * 
+             \mathit{colls}(C,S_2) * \mathit{colls}(C, S - S_2)$\}
+\nextline $\letv{v_2}{\nextiter[\alpha](i_2)}{}$ 
+\nextline \{$xs = \mathit{map2}\;f\;ys\;zs \land 
+                  S = S_1 \cup S_2 \land$ 
+\\ \>\;     $[(ys = \epsilon \land v_1 = \None \land \iterpred_\alpha(i_1, ys, S_1))$ 
+\\ \>\;\;    $\vee\; (\exists b, bs.\; ys = b\cdot bs \land v_1 = \Some(b) \land 
+                                \iterpred_\alpha(i_1, bs, S_1))] \;*$ 
+\\ \>\;     $[(zs = \epsilon \land v_2 = \None \land \iterpred_\alpha(i_2, zs, S_2))$ 
+\\ \>\;\;    $\vee\; (\exists c, cs.\; ys = c\cdot cs \land v_2 = \Some(c) \land 
+                                \iterpred_\alpha(i_2, cs, S_2))] \;*$ 
+\\ \>\;     $\mathit{colls}(C,S_2) * \mathit{colls}(C, S - S_2)$\}
+\nextline \{$xs = \mathit{map2}\;f\;ys\;zs \land 
+                  S = S_1 \cup S_2 \land$ 
+\\ \>\;     $[(ys = \epsilon \land v_1 = \None \land \iterpred_\alpha(i_1, ys, S_1))$ 
+\\ \>\;\;    $\vee\; (\exists b, bs.\; ys = b\cdot bs \land v_1 = \Some(b) \land 
+                                \iterpred_\alpha(i_1, bs, S_1))] \;*$ 
+\\ \>\;     $[(zs = \epsilon \land v_2 = \None \land \iterpred_\alpha(i_2, zs, S_2))$ 
+\\ \>\;\;    $\vee\; (\exists c, cs.\; ys = c\cdot cs \land v_2 = \Some(c) \land 
+                                \iterpred_\alpha(i_2, cs, S_2))] \;*$ 
+\\ \>\;     $\mathit{colls}(C,S)$\}
+\nextline $\Optcase(v_1$ 
+\nextline \;\;\; $\None$\=$ \to $ 
+\nextline \> \{$xs = \mathit{map2}\;f\;ys\;zs \land 
+                  S = S_1 \cup S_2 \land$ 
+\\ \> \>\;     $(ys = \epsilon \land v_1 = \None \land \iterpred_\alpha(i_1, ys, S_1)) * $ 
+\\ \> \>\;     $[(zs = \epsilon \land v_2 = \None \land \iterpred_\alpha(i_2, zs, S_2))$ 
+\\ \> \>\;\;    $\vee\; (\exists c, cs.\; ys = c\cdot cs \land v_2 = \Some(c) \land 
+                                \iterpred_\alpha(i_2, cs, S_2))] \;*$ 
+\\ \> \>\;     $\mathit{colls}(C,S)$\}
+\nextline \> \{$xs = \epsilon \land xs = \mathit{map2}\;f\;ys\;zs \land 
+                  S = S_1 \cup S_2 \land$ 
+\\ \> \>\;     $(ys = \epsilon \land v_1 = \None \land \iterpred_\alpha(i_1, ys, S_1)) * $ 
+\\ \> \>\;     $[(zs = \epsilon \land v_2 = \None \land \iterpred_\alpha(i_2, zs, S_2))$ 
+\\ \> \>\;\;    $\vee\; (\exists c, cs.\; ys = c\cdot cs \land v_2 = \Some(c) \land 
+                                \iterpred_\alpha(i_2, cs, S_2))] \;*$ 
+\\ \> \>\;     $\mathit{colls}(C,S)$\}
+\\ \> \>     The next line follows because it holds in either branch of the disjunction 
+\nextline \> \{$xs = \epsilon \land \iterpred_\alpha(\Merge(f, i_1, i_2), xs, S)
+               * \; \mathit{colls}(C,S)$\}
+\nextline \> $\None$ 
+\nextline \> \{$a = \None \land xs = \epsilon \land \iterpred_\alpha(\Merge(f, i_1, i_2), xs, S)
+               * \mathit{colls}(C,S) $\}
+\nextline \;\;\;$\Some(b)$\=$ \to $ 
+\nextline \> \{$xs = \mathit{map2}\;f\;ys\;zs \land 
+                  S = S_1 \cup S_2 \land$ 
+\\ \> \>\;\;    $(\exists bs.\; ys = b\cdot bs \land v_1 = \Some(b) \land 
+                                \iterpred_\alpha(i_1, bs, S_1)) \;*$ 
+\\ \> \>\;     $[(zs = \epsilon \land v_2 = \None \land \iterpred_\alpha(i_2, zs, S_2))$ 
+\\ \> \>\;\;    $\vee\; (\exists c, cs.\; ys = c\cdot cs \land v_2 = \Some(c) \land 
+                                \iterpred_\alpha(i_2, cs, S_2))] \;*$ 
+\\ \> \>\;     $\mathit{colls}(C,S)$\}
+\nextline \> $\Optcase(v_2,$ 
+\nextline \> \;\;\; $\None$\=$\to$ 
+\nextline \> \> \{$xs = \mathit{map2}\;f\;ys\;zs \land 
+                  S = S_1 \cup S_2 \land$ 
+\\ \> \> \>\;\;    $(\exists bs.\; ys = b\cdot bs \land v_1 = \Some(b) \land 
+                                \iterpred_\alpha(i_1, bs, S_1)) \;*$
+\\ \> \> \>\;     $(zs = \epsilon \land v_2 = \None \land \iterpred_\alpha(i_2, zs, S_2))$ 
+\\ \> \> \>\;     $\mathit{colls}(C,S)$\}
+
+\nextline \> \> \{$xs = \epsilon \land xs = \mathit{map2}\;f\;ys\;zs \land 
+                  S = S_1 \cup S_2 \land$ 
+\\ \> \> \>\;\;    $(\exists bs.\; ys = b\cdot bs \land v_1 = \Some(b) \land 
+                                \iterpred_\alpha(i_1, bs, S_1)) \;*$
+\\ \> \> \>\;     $(zs = \epsilon \land v_2 = \None \land \iterpred_\alpha(i_2, zs, S_2))$ 
+\\ \> \> \>\;     $\mathit{colls}(C,S)$\}
+
+\nextline \> \> \{$xs = \epsilon \land \iterpred_\alpha(\Merge(f, i_1, i_2), xs, S) * 
+                   \mathit{colls}(C,S)$\}
+\nextline \> \> $\None$,
+\nextline \> \> \{$a = \None \land xs = \epsilon \land \iterpred_\alpha(\Merge(f, i_1, i_2), xs, S) * 
+                   \mathit{colls}(C,S)$\}
+
+\nextline \> \;\;\; $\Some(c)$\=$ \to $ 
+\nextline \> \> \{$xs = \mathit{map2}\;f\;ys\;zs \land 
+                  S = S_1 \cup S_2 \land$ 
+\\ \> \> \>\;\;    $(\exists bs.\; ys = b\cdot bs \land v_1 = \Some(b) \land 
+                                \iterpred_\alpha(i_1, bs, S_1)) \;*$
+\\ \> \> \>\;\;    $(\exists cs.\; ys = c\cdot cs \land v_2 = \Some(c) \land 
+                                \iterpred_\alpha(i_2, cs, S_2)) \;*$
+
+\\ \> \> \>\;     $\mathit{colls}(C,S)$\}
+\nextline \> \> \{$xs = \mathit{map2}\;f\;ys\;zs \land 
+                  S = S_1 \cup S_2 \land$ 
+\\ \> \> \>\;    $(ys = b\cdot bs \land v_1 = \Some(b) \land 
+                                \iterpred_\alpha(i_1, bs, S_1)) \;*$
+\\ \> \> \>\;    $(zs = c\cdot cs \land v_2 = \Some(c) \land 
+                                \iterpred_\alpha(i_2, cs, S_2)) \;*$
+
+\\ \> \> \>\;     $\mathit{colls}(C,S)$\}
+
+\nextline \> \> \{$xs = (f\;b\;c) \cdot \mathit{map2}\;f\;bs\;cs \land 
+                  S = S_1 \cup S_2 \land$ 
+\\ \> \> \>\;    $\iterpred_\alpha(i_1, bs, S_1)) * \iterpred_\alpha(i_2, cs, S_2)) \;*$
+
+\\ \> \> \>\;     $\mathit{colls}(C,S)$\}
+
+\nextline \> \> \{$xs = (f\;b\;c) \cdot \mathit{map2}\;f\;bs\;cs \; \land$
+\\ \> \> \>\;    $\iterpred_\alpha(\Merge(f, i_1, i_2), \mathit{map2}\;f\;bs\;cs, S) \;*$
+\\ \> \> \>\;     $\mathit{colls}(C,S)$\}
+
+\nextline \> \> $\Some(f\;b\;c)))$ 
+\nextline \> \> \{$a = (f\;b\;c) \land xs = (f\;b\;c) \cdot \mathit{map2}\;f\;bs\;cs \; \land$
+\\ \> \> \>\;    $\iterpred_\alpha(\Merge(f, i_1, i_2), \mathit{map2}\;f\;bs\;cs, S) \;*$
+\\ \> \> \>\;     $\mathit{colls}(C,S)$\}
+
+\nextline \> \> \{$\exists v, vs.\; a = v \land xs = v \cdot vs \; \land$
+\\ \> \> \>\;    $\iterpred_\alpha(\Merge(f, i_1, i_2), vs, S) \;*$
+\\ \> \> \>\;     $\mathit{colls}(C,S)$\}
+
+
+\end{specification}
 
 \end{itemize}
 
