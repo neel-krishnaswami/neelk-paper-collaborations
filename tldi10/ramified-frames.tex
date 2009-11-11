@@ -301,7 +301,7 @@ to $s$, so that $r$ now points to $14$ and $s$ now points to $5$.
 Finally, on line 7, we return $x+y$, the sum of the two contents.
 
 The primitive commands are all composed using the $\letv{x}{e}{c}$
-construct, because this form expects the term to be bound to be an
+construct. Because this form expects the bound term to be an
 expression of monadic type, each of the primitive commands
 (allocation, dereference, assignment) are wrapped in a suspension
 $\comp{c}$ before being given to the let-binder. 
@@ -396,7 +396,7 @@ to higher order.
 
 In ordinary Hoare logic, a predicate describes a set of program states
 (in our case, heaps), and a conjunction like $p \land q$ means that a
-heap in $p \land q$ is in the set described by $p$ and the described
+heap in $p \land q$ is in the set described by $p$ and the set described
 by $q$. While this is a natural approach, aliasing can become quite
 difficult to treat --- if $x$ and $y$ are pointer variables, we need
 to explicitly state whether they alias or not. So as the number of
@@ -486,7 +486,7 @@ assertion language.
 
 With a full logic of triples at our disposal, we can express program
 modules as formulas of the specification logic. We can expose a module
-to a client as a collection of existentially quantified functions
+to a client as a collection of existentially quantified functions and
 variables, and provide the client with Hoare triples describing the
 behavior of those functions. Furthermore, modules can existentially
 quantify over predicates to grant client programs access to module
@@ -1106,8 +1106,8 @@ on $o$, and modifies it to be unready.
 Now consider any positive cell formula in $\psi$ which depends on $o$,
 directly or indirectly. The satisfaction relation for $\phi$ asserts
 that in order for a positive cell formula to represent a ready cell, 
-everything in its read set also be ready. So when $o$'s formula switches
-the unready state, we now require that every positive formula depending 
+everything in its read set also has to be ready. So when $o$'s formula switches
+to the unready state, we now require that every positive formula depending 
 on $o$ represents an unready cell --- which is exactly the effect of
 executing $\updatecell$.  As a result, we can leave the entire frame
 $\psi$ untouched, even though the physical heap it represents may have
@@ -1203,8 +1203,8 @@ having to know what cells might be updated by the change.
 
 \subsection{Ramified Frame Properties}
 
-While this strategy is sufficient for $\newcell$and
-$\updatecell$, but is not adequate for defining a frame property
+While this strategy is sufficient for $\newcell$ and
+$\updatecell$, it is not adequate for defining a frame property
 for $\codetype{\tau}$ expressions. 
 
 As an example, suppose that we want to evaluate the code expression $\readcell \tau\;
@@ -1872,7 +1872,7 @@ and $\liftop (g \circ f)$ both realize the same pure $\lifttrans\;(g\circ f)$.
 
 \section{Future Work}
 
-We forsee many further applications of the idea of ramifications.
+We foresee many further applications of the idea of ramifications.
 
 First, there are numerous algorithms --- such as unification, the
 union-find algorithm, and the chaotic iteration constraint propagation
@@ -1933,7 +1933,7 @@ model-view-controller pattern.
 
 \citet{shaner-leavens-naumann} studied using gray-box model programs
 to model higher-order method calls (which can be understood as a a
-variant of refinement calculus-based methods) in JML, and
+variant of techniques from refinement calculus) in JML, and
 \citet{barnett-naumann} added a friendship system to the Boogie
 system, with which it is possible to describe some forms of clusters of
 collaborating objects, including the subject-observer pattern. 
