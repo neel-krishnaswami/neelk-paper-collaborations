@@ -1952,7 +1952,10 @@ code-update-based protocol seen in our FRP example.
 \citet{self-adjusting} have proposed \emph{self-adjusting computation}
 as a technique for using change propagation to write programs that
 incrementally recompute answers as the inputs are
-adjusted. Ramifications may help in verifying implementations of
+adjusted. \citet{carlsson} showed how to build a monadic combinator
+library for self-adjusting computation, using techniques with striking
+similarities to the monadic library described in this paper. This lets
+us hope that ramifications may help in verifying implementations of
 this technique.
 
 FRP was proposed by \citet{frp} as a declarative formalism for
