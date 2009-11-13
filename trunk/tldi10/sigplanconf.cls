@@ -580,7 +580,7 @@
   \vspace{2pt}
   \noindent \textsl{\@conferencename}\quad \@conferenceinfo \par
   \noindent Copyright \copyright\ \@copyrightyear\ ACM \@copyrightdata
-    \dots \$5.00\par}
+    \dots \$10.00\par}
 
 \newcommand{\permission}[1]{%
   \gdef \@permission {#1}}
