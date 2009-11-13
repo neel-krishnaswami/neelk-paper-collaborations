@@ -1436,7 +1436,9 @@ rules given in Figure~\ref{abs-semantics}, where we finally show that
 terms of type $\codetype{\alpha}$ behave as we claimed in our informal
 description. We give a number of implications over specifications in
 inference rule format, mimicking the structure of a big-step
-semantics.
+semantics. Again, we emphasize that these rules are really just 
+implications in specification logic --- the inference rule format
+is just a suggestive notation for the actual specifications we use.
 
 In rule \textsc{AUnit}, we give a specification for the $\return$
 command, which simply returns its argument and neither reads nor
@@ -1449,7 +1451,7 @@ and \textsc{AUnready}. If a cell is ready, we simply return its
 memoized value without any further computation. If a cell is unready,
 we need to evaluate its code body, and then update the cell with its
 new value. Note that we have to apply the ramification operator in
-\textsc{AUnready}, because the cell we're reading goes from unready to
+\textsc{AUnready}, because the cell we are reading goes from unready to
 ready itself. We can also read (\textsc{AGetRef}) and write
 (\textsc{ASetRef}) local state, which do not have any effect on the
 cells.
@@ -1769,18 +1771,18 @@ $Realize(i, \Phi, o, f) \triangleq$
 \>\> $\specand \;  \mathit{Transduce}(i, \phi, o, u, f, v)$ \nextlinelabel[0.5em]{transduce:transduce}
 
 
-$\mathit{Transduce}(i, \phi, o, u, f, v) \triangleq$ \nextlinelabel{transduce:quantifiers}
-\> $\forall $\=$ n:\N, \phi_i, \phi'_i, u_i.$ \nextline
-\>\> \fbox{$\astep{\phi_i}{\readcell i}{\phi'_i}{v_n}{\setof{i}}{u_i}$} $\; \land$ \nextline
-\>\> $\{$\=$\domain{\phi_i} = \domain{\phi'_i} \;\land $ \nextline
-\>\>     \>$\closed{\phi_i}{\domain{\phi_i}} \land 
-            \closed{\phi_i}{\domain{\phi'_i}} \land $ \nextline
-\>\>     \>$\unready{\phi_i}{i} \land
-            i \in u_i\}$ \nextline
+$\mathit{Transduce}(ri, \phi, o, u, f, v) \triangleq$ \nextlinelabel{transduce:quantifiers}
+\> $\forall $\=$ n:\N, \phi_{in}, \phi'_{in}, u_{in}.$ \nextline
+\>\> \fbox{$\astep{\phi_{in}}{\readcell i}{\phi'_{in}}{v_n}{\setof{i}}{u_{in}}$} $\; \land$ \nextline
+\>\> $\{$\=$\domain{\phi_{in}} = \domain{\phi'_{in}} \;\land $ \nextline
+\>\>     \>$\closed{\phi_{in}}{\domain{\phi_{in}}} \land 
+            \closed{\phi_{in}}{\domain{\phi'_{in}}} \land $ \nextline
+\>\>     \>$\unready{\phi_{in}}{i} \land
+            i \in u_{in}\}$ \nextline
 \>\> \!\!\!\!$\specimp$ \nextline
-\>\> \fbox{$\astep{\phi_i \otimes \phi_n}{\readcell o}
-              {\phi'_i \otimes \phi_{n+1}}{(f\;v)_n}
-              {\setof{o}}{u_i \cup u_n}$} \nextline
+\>\> \fbox{$\astep{\phi_{in} \otimes \phi_n}{\readcell o}
+              {\phi'_{in} \otimes \phi_{n+1}}{(f\;v)_n}
+              {\setof{o}}{u_{in} \cup u_n}$} \nextline
 \>\> $\specand\; \{u \subseteq \domain{\phi_n} \land o \in u\}$ \nextline
 \end{specification}
 }
@@ -1804,7 +1806,7 @@ the network may read is $i$, (2) that the domain of the network (i.e.,
 the cells whose atomic formulas are in that formula) remains constant
 over time, and (3) that if the input cell is ever unready, so is the
 output (i.e, the output genuinely depends on the input). Then, on
-line~\ref{realizer:transduce}, we assert that the initial state of the
+line~\ref{realizer:init}, we assert that the initial state of the
 evolution of the network is $\Phi$.  (All of these conditions could be
 relaxed, but in this paper there is no need. It \emph{would}
 be necessary if we added combinators that dynamically created new
@@ -1814,23 +1816,23 @@ at each time step.)
 Finally, we assert the network implements the stream transducer 
 property on line~\ref{realizer:transduce}, using the $\mathit{Transduce}$
 sub-predicate. On line~\ref{transduce:quantifiers}, we first quantify
-over all times $n$, and then over $\phi_i$, $\phi'_i$, and
-$u_i$. These extra parameters exist because reading $i$ to get the
+over all times $n$, and then over $\phi_{in}$, $\phi'_{in}$, and
+$u_{in}$. These extra parameters exist because reading $i$ to get the
 input, may require evaluating some auxiliary network state. 
 
-We read $\phi_i$ as the network state needed to read $i$, and $\phi'_i$ is
-that state after $i$ has been read, with $u_i$ being the cells in
-$\phi_i$ updated during that execution.  And indeed, on the next line
+We read $\phi_{in}$ as the network state needed to read $i$, and $\phi'_{in}$ is
+that state after $i$ has been read, with $u_{in}$ being the cells in
+$\phi_{in}$ updated during that execution.  And indeed, on the next line
 in the boxed formula, we give an abstract triple making exactly this
 assumption -- that reading $i$ will give us the $v_n$, the $n$-th
 element of the stream $v$, and that doing so requires the state
-$\phi_i$, which will become $\phi'_i$ during the execution. (The
+$\phi_{in}$, which will become $\phi'_{in}$ during the execution. (The
 unboxed formulas are more syntactic conditions we push along.)
 
 The conclusion of this implication over triples, the second
 boxed formula, says that reading $o$ will give us the $(f v)_n$, the
 $n$-th output of the stream transducer, and that in doing so it will 
-also update the input state $\phi_i$ to $\phi'_i$, in addition to 
+also update the input state $\phi_{in}$ to $\phi'_{in}$, in addition to 
 sending the transducer state from $\phi_n$ to $\phi_{n+1}$. 
 With this definition, we can prove the following specifications: 
 
@@ -1932,7 +1934,7 @@ style of observer invariant made it difficult to verify the
 model-view-controller pattern.
 
 \citet{shaner-leavens-naumann} studied using gray-box model programs
-to model higher-order method calls (which can be understood as a a
+to model higher-order method calls (which can be understood as a
 variant of techniques from refinement calculus) in JML, and
 \citet{barnett-naumann} added a friendship system to the Boogie
 system, with which it is possible to describe some forms of clusters of
@@ -1952,11 +1954,12 @@ code-update-based protocol seen in our FRP example.
 \citet{self-adjusting} have proposed \emph{self-adjusting computation}
 as a technique for using change propagation to write programs that
 incrementally recompute answers as the inputs are
-adjusted. \citet{carlsson} showed how to build a monadic combinator
-library for self-adjusting computation, using techniques with striking
-similarities to the monadic library described in this paper. This lets
-us hope that ramifications may help in verifying implementations of
-this technique.
+adjusted. \citet{carlsson} showed how to build a monadic combinator library for
+self-adjusting computation using techniques were strikingly similar
+to the monadic library described in this paper. This gives us 
+confidence that this is a natural implementation style, and makes us 
+hope that ramifications can help in verifying implementations of this
+technique.
 
 FRP was proposed by \citet{frp} as a declarative formalism for
 interactive programming. The API in our paper differs from theirs in
