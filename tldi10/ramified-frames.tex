@@ -119,7 +119,7 @@ of ownership is natural to verify with separation logic.
 
 However, we must explicitly maintain the \emph{other} direction of
 dependency as well --- we track everything which depends upon the
-subject, and modify them appropriately whenever the subject changes.
+subject, and modify the dependent data appropriately whenever the subject changes.
 Hence, the natural program invariant now becomes a global property:
 we need to know the full dependency graph covering all subjects and
 observers to express that the reads and is-read-by relations
@@ -820,7 +820,7 @@ with one another.
 Now, note that we have given the type of $\ctext{mark\_unready}$ the
 monadic type $\monad{\unittype}$. This precludes it from being called
 from within a $\codetype{\tau}$, because the user-level monadic type 
-discipline of $\codetype{\tau}$ will only let us use compute with pure 
+discipline of $\codetype{\tau}$ will only let us compute with pure 
 expressions and other $\codetype{\sigma}$ terms. 
 Therefore, when we evaluate a code expression, we will never actually
 follow the observer fields -- we will only add entries to them
@@ -864,7 +864,7 @@ on the readiness of the elements of its read set $r$. Second, notice
 that the backwards dependencies are entirely missing from these
 formulas. We have simply left out the other half of the dependency
 graph from this description. Forgetting this information will let us
-begin to regain for local reasoning, as we will see in the statements
+begin to regain local reasoning, as we will see in the statements
 of Propositions 1 and 2. 
 
 We have emphasized that the straightforward invariant is not obviously
@@ -1078,7 +1078,7 @@ frame rule can be interpreted as instantiating the universal
 quantifier appropriately. The reason this idea is fruitful for us is
 that it will allow us to give a frame rule, even though the underlying
 semantics of our library does not actually satisfy any analogues of
-the traditional safety monotonicity and frame lemmas. For example, the
+the traditional safety, monotonicity, and frame lemmas. For example, the
 $\updatecell$ operation certainly does not act locally -- it
 recursively traverses the observers set, possibly mutating a very
 large part of the cell graph.
@@ -1974,7 +1974,8 @@ such as the work done by \citet{superglue} on SuperGlue and by
 
 \acks We would like to thank Peter O'Hearn for pointing out the connection
 of our work with the ramification problem of AI. This work was
-partially supported by the US NSF grant CCF0916808.
+partially supported by the US NSF grants CCF-0916808 and CCF-0546550,
+and US DARPA grant HR00110710019.
 
 \bibliography{ramified-frames}{}
 \bibliographystyle{plainnat}
