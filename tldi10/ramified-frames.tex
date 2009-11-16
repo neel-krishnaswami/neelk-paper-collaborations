@@ -23,6 +23,10 @@
 \usepackage{mathpartir}
 \input{defs}
 
+\pdfpagewidth=8.5in
+\pdfpageheight=11in
+
+
 \begin{document}
 
 \conferenceinfo{TLDI '10}{January 23, 2010, Madrid, Spain.} 
@@ -134,10 +138,8 @@ and nature of the observers, so that the programmer may add new
 observers without disturbing the behavior of the rest of the program.
 Our goal, then, is to find a way of taking this piece of practical
 software engineering wisdom, and casting it into formal terms amenable
-to proof.
-
-Concretely, our contributions are as follows: 
-
+to proof. Concretely, our contributions are as follows: 
+\vspace{-1em}
 \begin{itemize}
   \item We define a library with a monadic API for writing
     demand-driven computations with dynamic dependencies and local
@@ -292,6 +294,7 @@ which creates and swaps the contents of two references:
 6 \> $\letv{\_}{\comp{s := x}}{}$ \\
 7 \> $x + y$ \\
 \end{tabbing}
+\vspace{-1.5em}
 On lines 1 and 2, we allocate two references to natural numbers, $r$
 and $s$, initializing them with the contents $5$ and $14$. Then, on
 lines 3 and 4, we dereference $r$ and $s$, binding their contents to
@@ -790,7 +793,7 @@ it all available to examine, and likewise we cannot in general know
 that a cell is in the read set of everything in its observed set
 without knowing the whole graph. Handling this difficulty is one of
 the primary contributions of this work. 
-
+\vspace{-0.5em}
 \section{The Abstract Semantics of Notifications}
 
 We will formalize the informal invariants of the previous section in
@@ -832,6 +835,7 @@ reasoning about the behavior of $\codetype{\tau}$ expressions.
 With this plan, we introduce \emph{abstract heap formulas}, which are
 syntactic descriptions of the state of part of the cell heap. These
 syntactic expressions are given by the following grammar:
+
 \begin{displaymath}
   \begin{array}{lcl}
     \phi,\psi & ::= & I \bnfalt \phi \otimes \psi \bnfalt \cellpos{a}{e}{v}{r} \bnfalt \cellneg{a}{e}\\
@@ -1072,8 +1076,9 @@ quantifier ranging over ``the rest of the heap'':
           { }
           { \forall R.\; \setof{ (e \pointsto v) * R } \;e := v'\; \setof{ (e \pointsto v') * R}}
 \end{mathpar}
-
 This quantifier is propagated through the proof, and any use of the
+
+\noindent 
 frame rule can be interpreted as instantiating the universal
 quantifier appropriately. The reason this idea is fruitful for us is
 that it will allow us to give a frame rule, even though the underlying
