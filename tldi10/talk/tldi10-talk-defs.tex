@@ -31,136 +31,98 @@
 \newcommand{\unit}{\left<\right>}
 \newcommand{\pack}[2]{\ctext{pack}({#1}, {#2})}
 \newcommand{\unpack}[4]{\ctext{unpack}({#1}, {#2}) = {#3} \;\ctext{in}\;{#4}}
-% alt}{\;|\;}
-% tv}[3]{\ctext{letv }#1 = #2\ctext{ in }#3}
-% wref}[2]{\ctext{new}_{#1}(#2)}
-% n}[1]{\ctext{run }{#1}}
-% }{\ctext{ ok}}
-% }[1]{\mathrm{FV}({#1})}
-% 
-% x}[2]{\ctext{fix}\;{#1}.\;{#2}}
-% 
-% atecfg}[2]{\left<{#1};\;{#2}\right>}
-% al}[4]{\left<{#1};\;{#2}\right> \leadsto \left<{#3};\;{#4}\right>}
-% alabort}[2]{\left<{#1};\;{#2}\right> \leadsto \mathbf{abort}}
-% 
-% main}[1]{\mbox{dom}({#1})}
-% set}[1]{\mathcal{P}^{\uparrow}({#1})}
-% 
-% intsto}{\mapsto}
-% sj}{\vee}
-% implies}{\supset}
-% nd}{-\!\!*}
-% p}{\mathsf{emp}}
-% lidprop}[1]{{#1}\ctext{ valid}}
-% 
-% do}[1]{\texttt{[TODO: {#1}]}}
-% 
-% tof}[1]{\{{#1}\}}
-% 
-% }{\Rightarrow}
-% 
-% {\mathbb{N}}
-% 
-% sert}{\ctext{prop}}
-% 
-% gstep}{\Downarrow}
-% 
-% geval}[4]{\left<{#1};\;{#2}\right> \bigstep \left<{#3};\;{#4}\right>}
-% gevalabort}[2]{\left<{#1};\;{#2}\right> \bigstep \mathbf{abort}}
-% 
-% ec}[4]{\{{#1}\}{#2}\{{#3}.\;{#4}\}}
-% ecX}[3]{\{{#1}\}{#2}\{{#3}\}}
-% pec}[4]{\langle{#1}\rangle{#2}\langle{#3}.\;{#4}\rangle}
-% falt}{\;\;|\;\;}
-% 
-% ecor}{\ctext{ or }}
-% ecand}{\;\ctext{and}\;}
-% ecimp}{\ctext{ implies }}
-% ectype}{\ctext{spec}}
-% lid}{\ctext{ valid}}
-% 
-% terp}[1]{[\![{#1}]\!]}
-% terpE}[1]{\interp{#1}^e}
-% terpC}[1]{\interp{#1}^c}
-% 
-% terpF}[1]{[\![{#1}]\!]_f}
-% terpmono}[1]{\interp{#1}^{\mathrm{m}}}
-% 
-% tails}{\models}
-% 
-% dgeE}[4][\Theta]{{#1};\;{#2} \vdash {#3} : {#4}}
-% dgeC}[4][\Theta]{{#1};\;{#2} \vdash {#3} \div {#4}}
-% dgeEq}[5][\Theta]{{#1};\;{#2} \vdash {#3} \equiv {#4} : {#5}}
-% dgeEqC}[5][\Theta]{{#1};{#2} \vdash {#3} \equiv {#4} \div {#5}}
-% 
-% 
-% 
-% 
-% rations
-% 
-% mfun}[2]{\lambda #1.\;#2}
-% mpair}[2]{\left({#1}, {#2}\right)}
-% werset}[1]{\mathcal{P}(#1)}
-% 
-% ircat}[2]{\left<{#1};{#2}\right>}
-% mcat}[2]{\left[{#1};{#2}\right]}
-% scat}[1]{\lambda({#1})}
-% 
-% 
-% dgeP}[3]{{#1} \vdash {#2} : {#3}}
-% dgeS}[2]{{#1} \vdash {#2} : \spectype}
-% 
-% dgeSCtx}[2]{{#1} \vdash {#2} : \ctext{context}}
-% 
-% dgeEqP}[4]{{#1} \vdash {#2} \equiv {#3} : {#4}}
-% 
-% 
-% dgeWK}[3][\Theta]{{#1} \vdash {#2} : {#3}}
-% dgeKeq}[4][\Theta]{{#1} \vdash {#2} \equiv {#3} : {#4}}
-% 
-% tailsP}[3]{{#1} \rhd {#2} \vdash {#3}}
-% tailsS}[3]{{#1}; {#2} \vdash {#3} \ok}
-% 
-% artp}{\ctext{char}}
-% nttp}{\ctext{font}}
-% 
-% C}{loc}
-% NO}{\mathbf{mono}}
-% AP}{heap}
-% OP}{Prop}
-% UE}{True}
-% ROP}{Prop}
-% PE}{Type}
-% 
-% p}{Proposition}
-% emma}{Lemma}
-% 
-% t{proof}{\noindent\textbf{Proof (Sketch).}}{\noindent$\Box$}
-% 
-% {tabbedproof}{\begin{tabbing}\;\;\=\;\;\=\;\;\=\;\;\=\;\;\=\;\;\=\;\;\=\;\;\=\\[-2em]}{\end{tabbing}}
-% 
-% }{\>}
-% o}{\>\>}
-% oo}{\>\>\>}
-% ooo}{\>\>\>\>}
-% oooo}{\>\>\>\>\>}
-% ooooo}{\>\>\>\>\>\>}
-% oooooo}{\>\>\>\>\>\>\>}
-% ooooooo}{\>\>\>\>\>\>\>\>}
-% 
-% 
-% {eqnproof}[1][]{${#1}$\begin{displaymath}\begin{array}{lcll}}
-%           {\end{array}\end{displaymath}}
-% 
-% 
-% ine}[3][]{{#1} & = & {#2} & \mbox{{#3}} \\}
-% 
-% ines}[3][]{{#1} & = & \begin{array}{l} #2 \end{array} & \mbox{{#3}} \\}
-% 
-% laim}[3][]{{#1} &  & {#2} & \mbox{{#3}} \\}
-% act}[2]{{#1} & & & \mbox{#2} \\}
-% 
+
+\newcommand{\letv}[3]{\ctext{letv }#1 = #2\ctext{ in }#3}
+\newcommand{\newref}[2]{\ctext{new}_{#1}(#2)}
+\newcommand{\run}[1]{\ctext{run }{#1}}
+\newcommand{\ok}{\ctext{ ok}}
+\newcommand{\FV}[1]{\mathrm{FV}({#1})}
+
+\newcommand{\fix}[2]{\ctext{fix}\;{#1}.\;{#2}}
+
+\newcommand{\statecfg}[2]{\left<{#1};\;{#2}\right>}
+\newcommand{\eval}[4]{\left<{#1};\;{#2}\right> \leadsto \left<{#3};\;{#4}\right>}
+\newcommand{\evalabort}[2]{\left<{#1};\;{#2}\right> \leadsto \mathbf{abort}}
+
+\newcommand{\domain}[1]{\mbox{dom}({#1})}
+\newcommand{\upset}[1]{\mathcal{P}^{\uparrow}({#1})}
+
+\newcommand{\pointsto}{\mapsto}
+\newcommand{\disj}{\vee}
+\renewcommand{\implies}{\supset}
+\newcommand{\wand}{-\!\!*}
+\newcommand{\emp}{\mathsf{emp}}
+\newcommand{\validprop}[1]{{#1}\ctext{ valid}}
+
+\newcommand{\todo}[1]{\texttt{[TODO: {#1}]}}
+
+\newcommand{\setof}[1]{\{{#1}\}}
+
+\newcommand{\To}{\Rightarrow}
+
+\newcommand{\N}{\mathbb{N}}
+
+\newcommand{\assert}{\ctext{prop}}
+
+\newcommand{\bigstep}{\Downarrow}
+
+\newcommand{\bigeval}[4]{\left<{#1};\;{#2}\right> \bigstep \left<{#3};\;{#4}\right>}
+\newcommand{\bigevalabort}[2]{\left<{#1};\;{#2}\right> \bigstep \mathbf{abort}}
+
+\newcommand{\spec}[4]{\{{#1}\}{#2}\{{#3}.\;{#4}\}}
+\newcommand{\specX}[3]{\{{#1}\}{#2}\{{#3}\}}
+\newcommand{\mspec}[4]{\langle{#1}\rangle{#2}\langle{#3}.\;{#4}\rangle}
+\newcommand{\bnfalt}{\;\;|\;\;}
+
+\newcommand{\specor}{\ctext{ or }}
+\newcommand{\specand}{\;\ctext{and}\;}
+\newcommand{\specimp}{\ctext{ implies }}
+\newcommand{\spectype}{\ctext{spec}}
+\newcommand{\valid}{\ctext{ valid}}
+
+\newcommand{\interp}[1]{[\![{#1}]\!]}
+\newcommand{\interpE}[1]{\interp{#1}^e}
+\newcommand{\interpC}[1]{\interp{#1}^c}
+
+\newcommand{\interpF}[1]{[\![{#1}]\!]_f}
+\newcommand{\interpmono}[1]{\interp{#1}^{\mathrm{m}}}
+
+\newcommand{\entails}{\models}
+
+\newcommand{\judgeE}[4][\Theta]{{#1};\;{#2} \vdash {#3} : {#4}}
+\newcommand{\judgeC}[4][\Theta]{{#1};\;{#2} \vdash {#3} \div {#4}}
+\newcommand{\judgeEq}[5][\Theta]{{#1};\;{#2} \vdash {#3} \equiv {#4} : {#5}}
+\newcommand{\judgeEqC}[5][\Theta]{{#1};{#2} \vdash {#3} \equiv {#4} \div {#5}}
+
+
+
+%% semantic operations
+
+\newcommand{\semfun}[2]{\lambda #1.\;#2}
+\newcommand{\sempair}[2]{\left({#1}, {#2}\right)}
+\newcommand{\powerset}[1]{\mathcal{P}(#1)}
+
+\newcommand{\paircat}[2]{\left<{#1};{#2}\right>}
+\newcommand{\sumcat}[2]{\left[{#1};{#2}\right]}
+\newcommand{\abscat}[1]{\lambda({#1})}
+
+
+\newcommand{\judgeP}[3]{{#1} \vdash {#2} : {#3}}
+\newcommand{\judgeS}[2]{{#1} \vdash {#2} : \spectype}
+
+\newcommand{\judgeSCtx}[2]{{#1} \vdash {#2} : \ctext{context}}
+
+\newcommand{\judgeEqP}[4]{{#1} \vdash {#2} \equiv {#3} : {#4}}
+
+
+\newcommand{\judgeWK}[3][\Theta]{{#1} \vdash {#2} : {#3}}
+\newcommand{\judgeKeq}[4][\Theta]{{#1} \vdash {#2} \equiv {#3} : {#4}}
+
+\newcommand{\entailsP}[3]{{#1} \rhd {#2} \vdash {#3}}
+\newcommand{\entailsS}[3]{{#1}; {#2} \vdash {#3} \ok}
+
+\newcommand{\chartp}{\ctext{char}}
+\newcommand{\fonttp}{\ctext{font}}
 %%
 
 \newcommand{\runcmd}{\ctext{run}\;}
@@ -215,6 +177,18 @@
 \newcommand{\sat}{\mathit{sat}}
 
 \newcommand{\closed}[2]{\ctext{closed}({#1}, {#2})}
+
+\newcommand{\evalAbs}[6]{\left<{#1};\;{#2}\right>\Downarrow
+                         \left<{#3};\;{#4}\right>[{#5}\;|\;{#6}]}
+
+\newcommand{\cellbad}[2]{cell^{-}({#1}, {#2}, -, -)}
+\newcommand{\cellok}[4]{cell^{+}({#1}, {#2}, {#3}, {#4})}
+\newcommand{\ready}[3]{ready({#1}, {#2}, {#3})}
+
+\newcommand{\propagate}[2]{\textsf{R}({#1}, {#2})}
+
+
+
 
 \newcounter{spec:linenum}
 
