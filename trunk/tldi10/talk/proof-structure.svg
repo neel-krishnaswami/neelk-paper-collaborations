@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="792pt"
+   height="612pt"
+   id="svg2383"
+   sodipodi:version="0.32"
+   inkscape:version="0.46"
+   sodipodi:docname="proof-structure.svg"
+   inkscape:output_extension="org.inkscape.output.svg.inkscape">
+  <defs
+     id="defs2385">
+    <inkscape:perspective
+       sodipodi:type="inkscape:persp3d"
+       inkscape:vp_x="0 : 382.5 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_z="990 : 382.5 : 1"
+       inkscape:persp3d-origin="495 : 255 : 1"
+       id="perspective2392" />
+  </defs>
+  <sodipodi:namedview
+     inkscape:document-units="in"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.61399264"
+     inkscape:cx="200.09425"
+     inkscape:cy="380"
+     inkscape:current-layer="layer1"
+     id="namedview2387"
+     showgrid="false"
+     inkscape:window-width="1024"
+     inkscape:window-height="731"
+     inkscape:window-x="0"
+     inkscape:window-y="6" />
+  <metadata
+     id="metadata2389">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <rect
+       style="opacity:1;fill:#ffff00;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:none;marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
+       id="rect3176"
+       width="535.83704"
+       height="99.349724"
+       x="225.57275"
+       y="474.27988" />
+    <rect
+       style="fill:#00c6ff;fill-rule:evenodd;stroke:#000000;stroke-width:0.80818117000000000px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;fill-opacity:1"
+       id="rect3174"
+       width="697.26862"
+       height="148.40204"
+       x="144.85696"
+       y="591.44922" />
+    <rect
+       style="fill:#00c6ff;fill-rule:evenodd;stroke:#000000;stroke-width:0.80818117000000000px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;fill-opacity:1"
+       id="rect3178"
+       width="697.26862"
+       height="148.40204"
+       x="144.85696"
+       y="308.05823" />
+    <rect
+       style="fill:#00c7ff;fill-rule:evenodd;stroke:#000000;stroke-width:0.80818117000000000px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;fill-opacity:1"
+       id="rect3182"
+       width="697.26862"
+       height="148.40204"
+       x="144.85696"
+       y="24.667248" />
+    <rect
+       style="opacity:1;fill:#ffff00;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:none;marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
+       id="rect3184"
+       width="535.83704"
+       height="99.349724"
+       x="225.57275"
+       y="190.8889" />
+    <text
+       xml:space="preserve"
+       style="font-size:40px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:center;line-height:125%;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans;-inkscape-font-specification:Bitstream Vera Sans"
+       x="492.51471"
+       y="652.62085"
+       id="text3186"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3188"
+         x="492.51471"
+         y="652.62085">Concrete Implementation:</tspan><tspan
+         sodipodi:role="line"
+         x="492.51471"
+         y="702.62085"
+         id="tspan3192">Pointers, Callbacks, Heap Graphs</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:56px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans;-inkscape-font-specification:Bitstream Vera Sans"
+       x="174.2692"
+       y="356.20032"
+       id="text3196"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3198"
+         x="174.2692"
+         y="356.20032" /></text>
+    <text
+       xml:space="preserve"
+       style="font-size:40px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans;-inkscape-font-specification:Bitstream Vera Sans"
+       x="184.82916"
+       y="388.77399"
+       id="text3200"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3202"
+         x="184.82916"
+         y="388.77399">Abstract Imperative Semantics</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:40px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:center;line-height:125%;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans;-inkscape-font-specification:Bitstream Vera Sans"
+       x="491.54791"
+       y="89.09613"
+       id="text3204"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3206"
+         x="491.54791"
+         y="89.09613">Mathematical Stream Transducer</tspan><tspan
+         sodipodi:role="line"
+         x="491.54791"
+         y="139.09613"
+         id="tspan3208">Semantics</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:40px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:center;line-height:125%;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans;-inkscape-font-specification:Bitstream Vera Sans"
+       x="492.59283"
+       y="509.29657"
+       id="text3210"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3212"
+         x="492.59283"
+         y="509.29657">Proof of Concrete</tspan><tspan
+         sodipodi:role="line"
+         x="492.59283"
+         y="559.29657"
+         id="tspan3214">Implementation</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:40px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:center;line-height:125%;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans;-inkscape-font-specification:Bitstream Vera Sans"
+       x="428.3439"
+       y="260.10797"
+       id="text3216"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3218"
+         x="428.3439"
+         y="260.10797" /></text>
+    <text
+       xml:space="preserve"
+       style="font-size:40px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:center;line-height:125%;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans;-inkscape-font-specification:Bitstream Vera Sans"
+       x="491.54791"
+       y="230.79164"
+       id="text3220"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3222"
+         x="491.54791"
+         y="230.79164">Proof of Transducer</tspan><tspan
+         sodipodi:role="line"
+         x="491.54791"
+         y="280.79163"
+         id="tspan3224">Semantics</tspan></text>
+  </g>
+</svg>
