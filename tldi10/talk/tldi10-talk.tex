@@ -1,0 +1,75 @@
+\documentclass[svgnames]{beamer}
+\usepackage{mathpartir}
+
+\usecolortheme{orchid}
+\setbeamertemplate{footline}[frame number]
+\setbeamertemplate{navigation symbols}{}
+
+\title{Verifying Event-Driven Programs using Ramified Frame Properties}
+
+\author{Neelakantan R. Krishnaswami \texttt{<neelk@microsoft.com>} \\
+        Lars Birkedal \texttt{<birkedal@itu.dk>} \\
+        Jonathan Aldrich \texttt{<jonathan.aldrich@cs.cmu.edu>}}
+
+\date{TLDI '10: 23 January 2010}
+
+\input{tldi10-talk-defs.tex}
+
+\begin{document}
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\section{Introduction}
+
+\begin{frame}
+  \frametitle{The Question}
+
+  \begin{block}{}
+    \begin{itemize}
+      \item Separation logic permits local reasoning\ldots \pause
+      \item \ldots\ but what happens when our invariants are global? \pause
+    \end{itemize}
+  \end{block}
+
+  \begin{block}{Our (Partial) Answer}
+    \begin{itemize}
+      \pause\item Structure the global invariant to permit some local reasoning
+      \pause\item Use a \emph{ramification operator} to summarize global effects
+      \pause\item Illustrated with a case study from event-driven programming
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Outline}
+  \tableofcontents
+\end{frame}
+
+\section{Our Language and Logic}
+
+\subsection{Programming Language}
+
+\begin{frame}
+  \frametitle{The Programming Language}
+
+  \begin{block}{Types, Terms, and Commands}
+    \begin{mathpar}
+      \begin{array}{llcl}
+        \mbox{Types} & A & ::= & \forall \alpha. A \bnfalt A \to B \\
+        
+      \end{array}
+    \end{mathpar}
+  \end{block}
+\end{frame}
+
+\subsection{Program Logic}
+
+\section{Implementing Imperative Dataflow}
+\section{Specifying Imperative Dataflow}
+\section{Validation}
+
+
+
+\end{document}
+        

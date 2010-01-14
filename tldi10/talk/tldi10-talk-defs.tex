@@ -1,0 +1,237 @@
+\newcommand{\ctext}[1]{\mbox{\textsf{{#1}}}}
+\newcommand{\unittype}{\mathbf{1}}
+\newcommand{\reftype}[1]{\ctext{ref }#1}
+\newcommand{\monad}[1]{\bigcirc{#1}}
+\newcommand{\cont}[1]{\ctext{cont}\;{#1}}
+\newcommand{\opttype}[1]{\ctext{option }{#1}}
+\newcommand{\seqsort}[1]{\ctext{seq }{#1}}
+\newcommand{\listtype}[1]{\ctext{list }{#1}}
+
+\newcommand{\pair}[2]{\left<{#1},{#2}\right>}
+\newcommand{\fst}[1]{\ctext{fst } #1}
+\newcommand{\snd}[1]{\ctext{snd } #1}
+
+\newcommand{\inj}[1]{\iota_{#1}}
+\newcommand{\inl}[1]{\ctext{inl }#1}
+\newcommand{\inr}[1]{\ctext{inr }#1}
+\newcommand{\Case}[5]{\ctext{case}(#1,\; {#2}.\; #3,\; {#4}.\; #5)}
+\newcommand{\listcase}[5]{\ctext{case}(#1,\;\ctext{Nil} \to {#2},\;
+                                       \ctext{Cons}({#3},{#4}) \to {#5})}
+\newcommand{\Some}{\ctext{Some}}
+\newcommand{\optcase}[4]{\ctext{case}(#1,\;
+                                      \ctext{None} \to {#2},\;
+                                      \ctext{Some}\;{#3} \to {#4})}
+\newcommand{\z}{\ctext{z}}
+\newcommand{\s}[1]{\ctext{s}(#1)}
+\newcommand{\iter}[4]{\ctext{iter}(#1, {#2}, {#3}.\; {#4})}
+\newcommand{\iterseq}[4]{\ctext{iter}_{\mathsf{seq}}(#1, {#2}, #3.\; {#4})}
+\newcommand{\comp}[1]{[#1]}
+\newcommand{\fun}[3]{\lambda #1:#2.\;#3}
+\newcommand{\Fun}[3]{\Lambda #1:#2.\;#3}
+\newcommand{\unit}{\left<\right>}
+\newcommand{\pack}[2]{\ctext{pack}({#1}, {#2})}
+\newcommand{\unpack}[4]{\ctext{unpack}({#1}, {#2}) = {#3} \;\ctext{in}\;{#4}}
+% alt}{\;|\;}
+% tv}[3]{\ctext{letv }#1 = #2\ctext{ in }#3}
+% wref}[2]{\ctext{new}_{#1}(#2)}
+% n}[1]{\ctext{run }{#1}}
+% }{\ctext{ ok}}
+% }[1]{\mathrm{FV}({#1})}
+% 
+% x}[2]{\ctext{fix}\;{#1}.\;{#2}}
+% 
+% atecfg}[2]{\left<{#1};\;{#2}\right>}
+% al}[4]{\left<{#1};\;{#2}\right> \leadsto \left<{#3};\;{#4}\right>}
+% alabort}[2]{\left<{#1};\;{#2}\right> \leadsto \mathbf{abort}}
+% 
+% main}[1]{\mbox{dom}({#1})}
+% set}[1]{\mathcal{P}^{\uparrow}({#1})}
+% 
+% intsto}{\mapsto}
+% sj}{\vee}
+% implies}{\supset}
+% nd}{-\!\!*}
+% p}{\mathsf{emp}}
+% lidprop}[1]{{#1}\ctext{ valid}}
+% 
+% do}[1]{\texttt{[TODO: {#1}]}}
+% 
+% tof}[1]{\{{#1}\}}
+% 
+% }{\Rightarrow}
+% 
+% {\mathbb{N}}
+% 
+% sert}{\ctext{prop}}
+% 
+% gstep}{\Downarrow}
+% 
+% geval}[4]{\left<{#1};\;{#2}\right> \bigstep \left<{#3};\;{#4}\right>}
+% gevalabort}[2]{\left<{#1};\;{#2}\right> \bigstep \mathbf{abort}}
+% 
+% ec}[4]{\{{#1}\}{#2}\{{#3}.\;{#4}\}}
+% ecX}[3]{\{{#1}\}{#2}\{{#3}\}}
+% pec}[4]{\langle{#1}\rangle{#2}\langle{#3}.\;{#4}\rangle}
+% falt}{\;\;|\;\;}
+% 
+% ecor}{\ctext{ or }}
+% ecand}{\;\ctext{and}\;}
+% ecimp}{\ctext{ implies }}
+% ectype}{\ctext{spec}}
+% lid}{\ctext{ valid}}
+% 
+% terp}[1]{[\![{#1}]\!]}
+% terpE}[1]{\interp{#1}^e}
+% terpC}[1]{\interp{#1}^c}
+% 
+% terpF}[1]{[\![{#1}]\!]_f}
+% terpmono}[1]{\interp{#1}^{\mathrm{m}}}
+% 
+% tails}{\models}
+% 
+% dgeE}[4][\Theta]{{#1};\;{#2} \vdash {#3} : {#4}}
+% dgeC}[4][\Theta]{{#1};\;{#2} \vdash {#3} \div {#4}}
+% dgeEq}[5][\Theta]{{#1};\;{#2} \vdash {#3} \equiv {#4} : {#5}}
+% dgeEqC}[5][\Theta]{{#1};{#2} \vdash {#3} \equiv {#4} \div {#5}}
+% 
+% 
+% 
+% 
+% rations
+% 
+% mfun}[2]{\lambda #1.\;#2}
+% mpair}[2]{\left({#1}, {#2}\right)}
+% werset}[1]{\mathcal{P}(#1)}
+% 
+% ircat}[2]{\left<{#1};{#2}\right>}
+% mcat}[2]{\left[{#1};{#2}\right]}
+% scat}[1]{\lambda({#1})}
+% 
+% 
+% dgeP}[3]{{#1} \vdash {#2} : {#3}}
+% dgeS}[2]{{#1} \vdash {#2} : \spectype}
+% 
+% dgeSCtx}[2]{{#1} \vdash {#2} : \ctext{context}}
+% 
+% dgeEqP}[4]{{#1} \vdash {#2} \equiv {#3} : {#4}}
+% 
+% 
+% dgeWK}[3][\Theta]{{#1} \vdash {#2} : {#3}}
+% dgeKeq}[4][\Theta]{{#1} \vdash {#2} \equiv {#3} : {#4}}
+% 
+% tailsP}[3]{{#1} \rhd {#2} \vdash {#3}}
+% tailsS}[3]{{#1}; {#2} \vdash {#3} \ok}
+% 
+% artp}{\ctext{char}}
+% nttp}{\ctext{font}}
+% 
+% C}{loc}
+% NO}{\mathbf{mono}}
+% AP}{heap}
+% OP}{Prop}
+% UE}{True}
+% ROP}{Prop}
+% PE}{Type}
+% 
+% p}{Proposition}
+% emma}{Lemma}
+% 
+% t{proof}{\noindent\textbf{Proof (Sketch).}}{\noindent$\Box$}
+% 
+% {tabbedproof}{\begin{tabbing}\;\;\=\;\;\=\;\;\=\;\;\=\;\;\=\;\;\=\;\;\=\;\;\=\\[-2em]}{\end{tabbing}}
+% 
+% }{\>}
+% o}{\>\>}
+% oo}{\>\>\>}
+% ooo}{\>\>\>\>}
+% oooo}{\>\>\>\>\>}
+% ooooo}{\>\>\>\>\>\>}
+% oooooo}{\>\>\>\>\>\>\>}
+% ooooooo}{\>\>\>\>\>\>\>\>}
+% 
+% 
+% {eqnproof}[1][]{${#1}$\begin{displaymath}\begin{array}{lcll}}
+%           {\end{array}\end{displaymath}}
+% 
+% 
+% ine}[3][]{{#1} & = & {#2} & \mbox{{#3}} \\}
+% 
+% ines}[3][]{{#1} & = & \begin{array}{l} #2 \end{array} & \mbox{{#3}} \\}
+% 
+% laim}[3][]{{#1} &  & {#2} & \mbox{{#3}} \\}
+% act}[2]{{#1} & & & \mbox{#2} \\}
+% 
+%%
+
+\newcommand{\runcmd}{\ctext{run}\;}
+\newcommand{\return}{\ctext{return}\;}
+\newcommand{\bind}{\ctext{bind}\;}
+\newcommand{\readcell}{\ctext{read}\;}
+
+
+\newcommand{\ready}[3]{\ctext{ready}({#1}, {#2}, {#3})}
+\newcommand{\unready}[2]{\ctext{unready}({#1}, {#2})}
+
+\newcommand{\cellprop}[5]{\ctext{cell}^{#1}({#2}, {#3}, {#4}, {#5})}
+\newcommand{\cellneg}[2]{\cellprop{-}{#1}{#2}{\_}{\_}}
+\newcommand{\cellpos}[4]{\cellprop{+}{#1}{#2}{#3}{#4}}
+\newcommand{\celleither}[2]{\cellprop{\pm}{#1}{#2}{-}{-}}
+\newcommand{\localref}[2]{\ctext{local}({#1}, {#2})}
+\newcommand{\localstate}{\mathit{localstate}}
+\newcommand{\getref}{\ctext{getref}\;}
+\newcommand{\setref}{\ctext{setref}\;}
+
+\newcommand{\aconfig}[2]{\left<{#1};{#2}\right>}
+\newcommand{\aeffect}[2]{\left[{#1}|{#2}\right]}
+\newcommand{\astep}[6]{\aconfig{#1}{#2}\Downarrow\aconfig{#3}{#4}\aeffect{#5}{#6}}
+
+\newcommand{\powersetfin}[1]{\mathcal{P}^{\mathrm{fin}}({#1})}
+\newcommand{\celltype}[1]{\ctext{cell}\;{#1}}
+\newcommand{\bool}{\ctext{bool}}
+\newcommand{\settype}[1]{\ctext{Set}({#1})}
+
+\newcommand{\codetype}[1]{\ctext{code}\;{#1}}
+
+\newcommand{\newcell}{\ctext{newcell}\;}
+\newcommand{\cellset}{\ctext{cellset}}
+\newcommand{\addset}{\ctext{addset}}
+
+\newcommand{\comprehend}[2]{\setof{{#1}\;|\;{#2}}}
+\newcommand{\ST}[2]{\ctext{ST}({#1}, {#2})}
+\newcommand{\stream}[1]{\ctext{stream}({#1})}
+\newcommand{\formula}{\ctext{formula}}
+
+
+\newcommand{\updatecell}{\ctext{update}}
+
+
+\newcommand{\liftop}{\ctext{lift}\;}
+\newcommand{\seqop}{\ctext{seq}\;}
+\newcommand{\parop}{\ctext{par}\;}
+\newcommand{\loopop}{\ctext{loop}\;}
+\newcommand{\switchop}{\ctext{switch}\;}
+
+\newcommand{\satisfies}[2]{\mathit{satisfies}({#1}, {#2})}
+\newcommand{\sat}{\mathit{sat}}
+
+\newcommand{\closed}[2]{\ctext{closed}({#1}, {#2})}
+
+\newcounter{spec:linenum}
+
+\newenvironment{specification}
+               {\setcounter{spec:linenum}{0}
+                \begin{tabbing}
+                  \qquad \= \\[-2em]}
+               {\end{tabbing}}
+
+\newcommand{\nextline}[1][0em]{\refstepcounter{spec:linenum}\\[#1]\arabic{spec:linenum} \>}
+\newcommand{\nextlinelabel}[2][0em]{\refstepcounter{spec:linenum}\label{#2}\\[#1]\arabic{spec:linenum} \>}
+
+\newcommand{\lifttrans}{\mathit{lift}}
+\newcommand{\seqtrans}{\mathit{seq}}
+\newcommand{\partrans}{\mathit{par}}
+\newcommand{\switchtrans}{\mathit{switch}}
+\newcommand{\looptrans}{\mathit{loop}}
+\newcommand{\cycletrans}{\mathit{cycle}}
+\newcommand{\gentrans}{\mathit{gen}}
+\newcommand{\maptrans}{\mathit{map}}
