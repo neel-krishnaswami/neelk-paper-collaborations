@@ -556,6 +556,128 @@ and see it returns the first element as
 $\Some\;x$, and sets the state to $iter(i, S, xs)$ in the
 postcondition (line 15). 
 
+\subsubsection{Example Client}
+
+Below, we give an example use of this module in annotated program
+style: 
+
+\begin{tabbing}
+1 \qquad \= $\setof{\emp}$ \\
+2 \> $\letv{c_1}{\newcoll()}{}$ \\
+3 \> $\setof{\exists P'_1.\; coll(c_1, \epsilon, P'_1)}$ \\
+4 \> $\setof{coll(c_1, \epsilon, P_1)}$ \\
+5 \> $\letv{()}{\sizecoll(c_1, 4)}{}$ \\
+6 \> $\setof{\exists P'_2.\; coll(c_1, 4\cdot\epsilon, P'_2)}$ \\
+7 \> $\setof{coll(c_1, 4\cdot\epsilon, P_2)}$ \\
+8 \> $\letv{()}{\sizecoll(c_1, 3)}{}$ \\
+9 \> $\letv{()}{\sizecoll(c_1, 2)}{}$ \\
+10 \> $\setof{coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}$ \\
+11 \> $\letv{c_2}{\newcoll()}{}$ \\
+12 \> $\letv{()}{\sizecoll(c_2, 3)}{}$ \\
+13 \> $\letv{()}{\sizecoll(c_2, 5)}{}$ \\
+14\> $\setof{coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}$ \\
+15\> $\letv{i_1}{\newiter(c_1)}{}$ \\
+16\> $\{$\=$iter(i_1, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}, 2\cdot3\cdot4\cdot\epsilon)$
+\\ 
+  \>\>$*\; coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
+17 \> $\letv{i'_1}{\filteriter(even?, i_1)}{}$ \\
+18 \> $\{$\=$iter(i'_1, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}, 2\cdot4\cdot\epsilon)$ \\
+   \>\>$*\; coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$\\
+19 \> $\letv{i_2}{\newiter(c_2)}{}$ \\
+20 \> $\{$\=$iter(i'_1, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}, 2\cdot4\cdot\epsilon)$\\
+  \>\>$*\;iter(i_2, \setof{(c_2, 5\cdot3\cdot\epsilon, Q_2)}, 5\cdot3\cdot\epsilon)$ \\
+  \>\>$*\;coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
+21 \> $\letv{i}{\ctext{map2}(plus, i'_1, i_2)}{}$ \\
+22 \> $\{$\=$iter(i, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilon, Q_2)}, 7\cdot7\cdot\epsilon)$ \\
+\> \> $*\; coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
+23 \> $\letv{n}{\sizecoll(c_2)}{}$ \\
+24 \> $\{$\=$n = 2 \;\land
+iter(i, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilon, Q_2)}, 7\cdot7\cdot\epsilon)$\\
+\>\>$*\;coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
+
+25 \> $\letv{x}{\nextiter(i)}{}$ \\
+26 \> $\{$\= $n = 2 \land x = \ctext{Some }7 \;\land $\\
+\> \> $iter(i, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilon, Q_2)}, 7\cdot\epsilon)$ \\
+\> \> $*\; coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
+27 \> $\sizecoll(c_2, 17)$ \\
+28 \> $\{$\= $n = 2 \land x = \ctext{Some }7 \;\land $\\
+\> \> $iter(i, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilon, Q_2)}, 7\cdot\epsilon)$ \\ 
+\> \> $* \; (\exists Q_3.\; coll(c_2, 17\cdot5\cdot3\cdot\epsilon, Q_3)) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
+\end{tabbing}
+
+
+In line 1 of this example, we begin in an empty heap. In line 2, we
+create a new collection $c_1$, which yields us the state $\exists
+P'_1.\; coll(c_1, \epsilon, P'_1)$, with an existentially quantified
+abstract state.
+
+Because $P'_1$ is existentially quantified, we do not know what value
+it actually takes on. However, if we prove the rest of the program
+using a freshly-introduced variable $P_1$, then we know that the rest
+of the program will work for \emph{any} value of $P_1$, because free
+variables are implicitly universally quantified.  So it will work with
+whatever value $P'_1$ had. So we drop the quantifier on line 4, and
+try to prove this program with the universally-quantified
+$P_1$.\footnote{A useful analogy is the existential elimination rule
+  in the polymorphic lambda calculus: we prove that we can use an
+  existential by showing that our program is well-typed no matter what
+  the contents of the existential are.}
+
+This permits us to $\sizecoll$ the element 4 to $c_1$ on line 5. Its
+specification puts the predicate $coll()$ on line 6 again into an
+existentially quantified state $P'_2$. So we again replace $P'_2$ with
+a fresh variable $P_2$ on line 7, and will elide these existential
+introductions and unpackings henceforth.
+
+In lines 8-9, we add two more elements to $c_1$, and on lines 11-13,
+we create another collection $c_2$, and add $3$ and $5$ to it, as can
+be seen in the state predicate on line 14. On line 15, we create the
+iterator $i_1$ on the collection $c_1$. The $iter$ predicate on line
+16 names $i_1$ as its value, and lists $c_1$ in state $P_4$ as its
+support, and promises to enumerate the elements 2, 3, and 4.
+
+On line 17, $\filteriter(even?, i_1)$ creates the new iterator
+$i'_1$. This iterator yields only the even elements of $i_1$, and so
+will only yield 2 and 4. On line 18, $i_1$'s iterator state has been
+consumed to make $i'_1$'s state. We can no longer call
+$\nextiter(i_1)$, since we do not have the resource invariant
+needed to prove anything about that call. Thus, we cannot write a
+program that would break $i'_1$'s representation invariant.
+
+On line 19, we create a third iterator $i_2$ enumerating the elements
+of $c_2$. The state on line 20 now has predicates for $i'_1$, $i_2$,
+$c_1$ and $c_2$. On line 21, $\ctext{map2}(plus, i'_1, i_2)$ creates a
+new iterator $i$, which produces the pairwise sum of the elements of
+$i'_1$ and $i_2$, and consumes the iterator states for $i'_1$ and
+$i_2$ to yield the state for the new iterator $i$. Note that the 
+invariant for $i$ does not make any mention of what it was constructed
+from, naming only the collections it needs as support. 
+%Furthermore, the support of $i$ is the union of the
+%supports of $i'_1$ and $i_2$ -- namely, the two collections $c_1$ and
+%$c_2$.
+
+On line 23, the $\sizecoll$ call on $c_2$ illustrates that we can
+call non-destructive methods while iterators are active. The call to
+$\nextiter(i)$ on line 24 binds $\ctext{Some }7$ to $x$, and the
+the iterator's sequence argument (line 27) shrinks by one element. On
+line 28, we call $\sizecoll(c_2, 17)$ the state of $c_2$ changes to
+$\exists Q_3.\; coll(c, 17\cdot 5 \cdot 3\cdot\epsilon, Q_3)$ (line
+27). So we can no longer call $\nextiter(i)$, since it needs $c_2$
+to be in the state $Q_2$.
+
+\textbf{Discussion.} This example shows a pleasant synergy between
+higher-order quantification and separation logic. We can give a
+relatively simple specification to the clients of the collection
+library, even though the internal invariant is quite subtle (as the
+use of the magic wand suggests). Higher-order logic also lets us
+freely define new data types, and so our specifications can take
+advantage of the pure, non-imperative nature of the mathematical
+world, as can be seen in the specifications of the $\filteriter$
+and $\ctext{map2}$ functions -- we can use equational reasoning on
+purely functional lists in our specifications, even though our
+algorithms are imperative.
+
+
 \subsection{Example Implementation}
 
 In this subsection, we describe one particular implementation of
@@ -785,6 +907,7 @@ common strategy in many verification efforts, but here we see that we
 can use it in a local way -- in the base case, we are forced to
 consider issues of aliasing and ownership, but in the inductive cases
 we can largely avoid that effort.
+
 
 \subsubsection{Correctness Proofs of the Iterator Implementation}
 
@@ -1383,124 +1506,6 @@ $\nextiter$ will draw a value from both $i_1$ and $i_2$, and will
 return $\None$ if either is exhausted, and otherwise it will
 return $f$ applied to the pair of values.
 
-Below, we give an example use of this module in annotated program
-style: 
-
-\begin{tabbing}
-1 \qquad \= $\setof{\emp}$ \\
-2 \> $\letv{c_1}{\newcoll()}{}$ \\
-3 \> $\setof{\exists P'_1.\; coll(c_1, \epsilon, P'_1)}$ \\
-4 \> $\setof{coll(c_1, \epsilon, P_1)}$ \\
-5 \> $\letv{()}{\sizecoll(c_1, 4)}{}$ \\
-6 \> $\setof{\exists P'_2.\; coll(c_1, 4\cdot\epsilon, P'_2)}$ \\
-7 \> $\setof{coll(c_1, 4\cdot\epsilon, P_2)}$ \\
-8 \> $\letv{()}{\sizecoll(c_1, 3)}{}$ \\
-9 \> $\letv{()}{\sizecoll(c_1, 2)}{}$ \\
-10 \> $\setof{coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}$ \\
-11 \> $\letv{c_2}{\newcoll()}{}$ \\
-12 \> $\letv{()}{\sizecoll(c_2, 3)}{}$ \\
-13 \> $\letv{()}{\sizecoll(c_2, 5)}{}$ \\
-14\> $\setof{coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}$ \\
-15\> $\letv{i_1}{\newiter(c_1)}{}$ \\
-16\> $\{$\=$iter(i_1, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}, 2\cdot3\cdot4\cdot\epsilon)$
-\\ 
-  \>\>$*\; coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
-17 \> $\letv{i'_1}{\filteriter(even?, i_1)}{}$ \\
-18 \> $\{$\=$iter(i'_1, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}, 2\cdot4\cdot\epsilon)$ \\
-   \>\>$*\; coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$\\
-19 \> $\letv{i_2}{\newiter(c_2)}{}$ \\
-20 \> $\{$\=$iter(i'_1, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}, 2\cdot4\cdot\epsilon)$\\
-  \>\>$*\;iter(i_2, \setof{(c_2, 5\cdot3\cdot\epsilon, Q_2)}, 5\cdot3\cdot\epsilon)$ \\
-  \>\>$*\;coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
-21 \> $\letv{i}{\ctext{map2}(plus, i'_1, i_2)}{}$ \\
-22 \> $\{$\=$iter(i, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilon, Q_2)}, 7\cdot7\cdot\epsilon)$ \\
-\> \> $*\; coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
-23 \> $\letv{n}{\sizecoll(c_2)}{}$ \\
-24 \> $\{$\=$n = 2 \;\land
-iter(i, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilon, Q_2)}, 7\cdot7\cdot\epsilon)$\\
-\>\>$*\;coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
-
-25 \> $\letv{x}{\nextiter(i)}{}$ \\
-26 \> $\{$\= $n = 2 \land x = \ctext{Some }7 \;\land $\\
-\> \> $iter(i, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilon, Q_2)}, 7\cdot\epsilon)$ \\
-\> \> $*\; coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
-27 \> $\sizecoll(c_2, 17)$ \\
-28 \> $\{$\= $n = 2 \land x = \ctext{Some }7 \;\land $\\
-\> \> $iter(i, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilon, Q_2)}, 7\cdot\epsilon)$ \\ 
-\> \> $* \; (\exists Q_3.\; coll(c_2, 17\cdot5\cdot3\cdot\epsilon, Q_3)) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
-\end{tabbing}
-
-
-In line 1 of this example, we begin in an empty heap. In line 2, we
-create a new collection $c_1$, which yields us the state $\exists
-P'_1.\; coll(c_1, \epsilon, P'_1)$, with an existentially quantified
-abstract state.
-
-Because $P'_1$ is existentially quantified, we do not know what value
-it actually takes on. However, if we prove the rest of the program
-using a freshly-introduced variable $P_1$, then we know that the rest
-of the program will work for \emph{any} value of $P_1$, because free
-variables are implicitly universally quantified.  So it will work with
-whatever value $P'_1$ had. So we drop the quantifier on line 4, and
-try to prove this program with the universally-quantified
-$P_1$.\footnote{A useful analogy is the existential elimination rule
-  in the polymorphic lambda calculus: we prove that we can use an
-  existential by showing that our program is well-typed no matter what
-  the contents of the existential are.}
-
-This permits us to $\sizecoll$ the element 4 to $c_1$ on line 5. Its
-specification puts the predicate $coll()$ on line 6 again into an
-existentially quantified state $P'_2$. So we again replace $P'_2$ with
-a fresh variable $P_2$ on line 7, and will elide these existential
-introductions and unpackings henceforth.
-
-In lines 8-9, we add two more elements to $c_1$, and on lines 11-13,
-we create another collection $c_2$, and add $3$ and $5$ to it, as can
-be seen in the state predicate on line 14. On line 15, we create the
-iterator $i_1$ on the collection $c_1$. The $iter$ predicate on line
-16 names $i_1$ as its value, and lists $c_1$ in state $P_4$ as its
-support, and promises to enumerate the elements 2, 3, and 4.
-
-On line 17, $\filteriter(even?, i_1)$ creates the new iterator
-$i'_1$. This iterator yields only the even elements of $i_1$, and so
-will only yield 2 and 4. On line 18, $i_1$'s iterator state has been
-consumed to make $i'_1$'s state. We can no longer call
-$\nextiter(i_1)$, since we do not have the resource invariant
-needed to prove anything about that call. Thus, we cannot write a
-program that would break $i'_1$'s representation invariant.
-
-On line 19, we create a third iterator $i_2$ enumerating the elements
-of $c_2$. The state on line 20 now has predicates for $i'_1$, $i_2$,
-$c_1$ and $c_2$. On line 21, $\ctext{map2}(plus, i'_1, i_2)$ creates a
-new iterator $i$, which produces the pairwise sum of the elements of
-$i'_1$ and $i_2$, and consumes the iterator states for $i'_1$ and
-$i_2$ to yield the state for the new iterator $i$. Note that the 
-invariant for $i$ does not make any mention of what it was constructed
-from, naming only the collections it needs as support. 
-%Furthermore, the support of $i$ is the union of the
-%supports of $i'_1$ and $i_2$ -- namely, the two collections $c_1$ and
-%$c_2$.
-
-On line 23, the $\sizecoll$ call on $c_2$ illustrates that we can
-call non-destructive methods while iterators are active. The call to
-$\nextiter(i)$ on line 24 binds $\ctext{Some }7$ to $x$, and the
-the iterator's sequence argument (line 27) shrinks by one element. On
-line 28, we call $\sizecoll(c_2, 17)$ the state of $c_2$ changes to
-$\exists Q_3.\; coll(c, 17\cdot 5 \cdot 3\cdot\epsilon, Q_3)$ (line
-27). So we can no longer call $\nextiter(i)$, since it needs $c_2$
-to be in the state $Q_2$.
-
-\textbf{Discussion.} This example shows a pleasant synergy between
-higher-order quantification and separation logic. We can give a
-relatively simple specification to the clients of the collection
-library, even though the internal invariant is quite subtle (as the
-use of the magic wand suggests). Higher-order logic also lets us
-freely define new data types, and so our specifications can take
-advantage of the pure, non-imperative nature of the mathematical
-world, as can be seen in the specifications of the $\filteriter$
-and $\ctext{map2}$ functions -- we can use equational reasoning on
-purely functional lists in our specifications, even though our
-algorithms are imperative.
 
 \section{The Flyweight and Factory Patterns}
 
@@ -1535,7 +1540,7 @@ glyph.
 Furthermore, these functions will be created by a call to another
 function, $\ctext{make\_flyweight}$, which receives a font as an
 argument and will return appropriate $\ctext{newglyph}$ and
-$\ctext{getdata}$ functions. 
+$\ctext{getdata}$ functions.
 
 \begin{tabbing}
 Flyweight$($\=$I : \assert,\;\; $\\
@@ -1654,28 +1659,27 @@ make use of existentially-quantified \emph{state}.
 Below, we define $\ctext{make\_flyweight}$ and its predicates:
 
 
-\begin{tabbing}
-1 \qquad \= $\ctext{m}$\=$\ctext{ake\_flyweight} \equiv$ \\
-   \> \>     $\lambda f:$\=$\fonttp.\;$\\
-2  \> \> $[$\=$\letv{t}{\ctext{newtable}()}{}$ \\
-3  \> \> \> $\ctext{letv }$\=$newglyph =$ \\
-4  \> \> \> \> \!\!$[\lambda c.[$\=$\ctext{letv }x = \ctext{lookup}(t, c)\ctext{ in}$\\
-5  \> \> \>\>\> $\ctext{run }\ctext{case}(x,$\=
-$\None \to [$\=$\ctext{letv } r = [\newref{\ctext{glyph}}(c,f)] \ctext{ in}$\\
-6  \> \> \>\>\>\>\> $\ctext{letv } \_ = \ctext{update}(t, c, r) \ctext{ in }r],$ \\
-7 \> \> \>\>\>\> $\ctext{Some }r \to [r])] \ctext{ in}$ \\
-8 \> \> \> $\ctext{letv }getdata = [\lambda r.\; [!r]] \ctext{ in}$ \\
-9 \> \> \> $(newglyph, getdata)]$
-\\[0.5em]
+\begin{specification}
+\nextline $\ctext{m}$\=$\ctext{ake\_flyweight} \equiv$ 
+\nextline            \> $\lambda f:$\=$\fonttp.\;$
+\nextline \> $[$\=$\letv{t}{\ctext{newtable}()}{}$ 
+\nextline \> \> $\ctext{letv\;}$\=$\mathit{newglyph} =$ 
+\nextline \> \> \> \!\!$[\lambda c.[$\=$\ctext{letv}\; x = \ctext{lookup}(t, c)\ctext{ in}$
+\nextline \> \>\>\> $\ctext{run}\;\ctext{case}(x,$\=
+$\None \to [$\=$\ctext{letv}\; r = [\newref{\ctext{glyph}}{c,f}] \ctext{ in}$
+\nextline \> \>\>\>\>\> $\ctext{letv } \_ = \ctext{update}(t, c, r) \ctext{ in }r],$ 
+\nextline \> \>\>\>\> $\Some(r) \to [r])] \ctext{ in}$ 
+\nextline \> \> $\ctext{letv\;}\mathit{getdata} = [\lambda r.\; [!r]] \ctext{ in}$ 
+\nextline \> \> $(\mathit{newglyph}, \mathit{getdata})]$
+\\
 
-$glyph(r, c, f) \equiv r \pointsto (c,f) * \top$ \\[0.5em]
+\nextline $glyph(r, c, f) \equiv r \pointsto (c,f) * \top$ \\
 
-$I \equiv table(t,mapping) * refs(mapping, \mbox{dom}(mapping))$ \\[0.5em]
+\nextline $I \equiv table(t,mapping) * refs(mapping, \mbox{dom}(mapping))$ \\
 
-$refs(mapping, \emptyset) \qquad\qquad  $ \= $\equiv$\;\;\=$\emp$ \\
-$refs(mapping, \setof{c} \cup D)$ \> $\equiv$\> $mapping(c) \pointsto (c,f) * refs(f, D)$ \\
- 
-\end{tabbing}
+\nextline $refs(mapping, \emptyset) \qquad\qquad  $ \= $\equiv$\;\;\=$\emp$ 
+\nextline $refs(mapping, \setof{c} \cup D)$ \> $\equiv$\> $mapping(c) \pointsto (c,f) * refs(f, D)$ 
+\end{specification}
 
 
 In this implementation we have assumed the existence of a hash table
@@ -1703,21 +1707,11 @@ specifications and proofs with no possibility that the wrong
 $\ctext{getdata}$ will be called on the wrong reference, even though
 they have compatible types.
 
-% It is also worth noting that our factory here does not correspond
-% precisely to the most general form of the factory pattern. While we
-% take an argument (the font $f$) and return a flyweight interface
-% specialized to $f$, we do not change the implementations of $newchar$
-% and $getdata$ based beyond closing over the newly allocated memo table
-% and $f$.
+\subsection{Verification of the Implementation}
 
+To prove the correctness of the implementation, we will make use of 
+the following specifications for the new
 
-% While this is technically possible, our language is simply-typed --
-% which means that we cannot readily change data representations, and
-% hence there is little reason to change the function
-% implementations. If we added polymorphism to our language, we would
-% be able to use existential quantification to more closely match
-% object-oriented style.
-% \vspace{-1em}
 \section{Subject-Observer}
 
 The subject-observer pattern is one of the most characteristic
