@@ -1,0 +1,49 @@
+\chapter{Proving the Correctness of the Union-Find Disjoint Set Algorithm}
+
+In this chapter, we introduce the technique of ``ramification'', as a
+way of recovering local reasoning in the face of imperative programs
+with global invariants.
+
+The union-find disjoint set data structure is a technique for
+efficiently computing canonical representing for equivalence classes
+of values. The basic technique for doing so is to represent each value
+in the equivalence class as a node in a tree --- but unlike the usual
+implementation of trees, each node does not contain a pointer to its
+children, but rather the children each maintain a pointer to the
+parent. The root of the tree has no parent pointer, and represents the
+canonical representative for an equivalence class.
+
+The canonical representative can be found (the FIND operation) by
+following the parent pointers to the root of the tree. Similarly, two
+disjoint sets can be merged (the UNION operation), by finding their
+canonical representatives and setting one to point to the other.
+
+As described, this data structure is no better than using a linked
+list. However, two optimizations give rise to an extremely efficient
+implementation. First, the root node can be modified to keep track of
+a bound on the maximum height, so that whenever two sets are merged,
+the shorter tree can be made a subtree of the deeper one. Second, the
+algorithm can make use of \emph{path compression} -- whenever the FIND
+operation is called, it can set all of the nodes on the path to the
+root to point directly at the root. Together, these optimizations
+permit performing a sequence of $n$ UNION and FIND operations in $O(n
+\cdot \alpha(n))$ time, where $\alpha$ is the inverse Ackermann
+function.
+
+This permits simple implementation of near-linear-time unification
+algorithms, and a variant of this idea is used in the proofs of
+congruence closure algorithms.
+
+However, path compression has been an idiom difficult to accomodate
+within the framework of separation logic. In informal reasoning about
+the union-find data structure, we do not explicitly track all the
+elements of a union-find data structure in our reasoning --- instead,
+we rely on the fact that path compression makes changes to the heap
+which ``will not change the answer''. However, since separation logic
+is a resource-aware logic, we can't simply leave the other elements of
+the equivalence class out of the invariant, since UNION may read and
+modify them. 
+
+The solution I propose in this chapter is to use a global invariant,
+but structured in a way which preserves modular reasoning.
+
