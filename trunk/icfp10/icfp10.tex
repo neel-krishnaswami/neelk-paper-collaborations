@@ -1,0 +1,31 @@
+\documentclass{article}
+
+\title{The Linear Logic of GUIs}
+\author{Neelakantan R. Krishnaswami \\ Nick Benton}
+
+\begin{document}
+
+\section{Introduction}
+
+The thesis of this paper is that functional reactive programming has not taken the 
+categorical structure of causal functions seriously enough, and by doing so we win 
+along many axes. 
+
+\begin{enumerate}
+\item We get a much more flexible API than arrow-style FRP interfaces
+  permit, while still ruling out the possibility of space/time leaks.
+
+\item This interface still has a very rich equational theory, and a
+  semantics in terms of causal functions (generalized to higher-order). 
+
+\item Nevertheless, we can give an efficient imperative implementation of the 
+  interface, which allows using well-known techniques for ``retained-mode''
+  style interfaces (i.e., DOM/scenegraph) to graphics APIs.  
+
+\item Furthermore, we can prove the correctness of this implementation, using
+  Hoare logic and a logical relation between the implementation and the semantics. 
+\end{enumerate}
+
+\section{Semantics of Causal Stream Functions}
+
+\end{document}
