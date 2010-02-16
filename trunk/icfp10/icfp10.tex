@@ -1,8 +1,14 @@
 \documentclass{article}
+\usepackage{mathpartir}
+\usepackage{amsmath}
+\usepackage{amssymb}
 
 \title{The Linear Logic of GUIs}
 \author{Neelakantan R. Krishnaswami \\ Nick Benton}
 
+\input{defs.tex}
+\newcommand{\Approx}[2][n]{\left\lfloor{#2}\right\rfloor^{#1}}
+\newcommand{\lolli}{\multimap}
 \begin{document}
 
 \section{Introduction}
@@ -27,5 +33,300 @@ along many axes.
 \end{enumerate}
 
 \section{Semantics of Causal Stream Functions}
+
+Given a function on streams $f : \stream{A} \to \stream{B}$, we say
+that $f$ is causal when it is the case that the first $n$ outputs of
+$f$ are determined by the first $n$ inputs. To lift this definition to
+higher type, we use a simple Kripke logical relation:
+
+\begin{mathpar}
+  \begin{array}{lclcl}
+    \unit & \Approx{\unittype} & \unit & = & \top \\
+    \pair{a}{b} &  \Approx{A \otimes B} & \pair{a'}{b'} & = & a \Approx{A} a' \land b \Approx{B} b' \\
+    v & \Approx{\stream{X}} & v' & = & \forall i \leq n.\; v_i = v'_i \\
+    f & \Approx{A \lolli B} & f' & = & \forall m \leq n, v, v'.\; (v \Approx[m]{A} v') \implies (f\;v) \Approx[m]{B} (f'\;v') \\
+  \end{array}
+\end{mathpar}
+
+The Kripke structure comes from the fact that this logical relation is
+indexed by a time $n$, which is ordered with the usual ordering on
+natural numbers. Intuitively, we can think of this as giving a family
+of relations, one for each $n$, which say whether two values
+approximate one another for $n$ time steps. (This is similar to the use of 
+time in step-indexed models --- although here time is literally present, rather 
+than just a convenient technical device!)
+
+The causal values of a type $A$ are those values $v$ such that for all
+$n$, $v \Approx{A} v$.
+
+\begin{theorem}{(Monoidal Closure of the Category of Causal Operations)}
+The category of sets of causal values of type $A$ and causal maps
+between them is a symmetric monoidal closed category.
+\end{theorem}
+
+\begin{proof}
+  First, we need to check that this is actually a category. To do
+  this, we need to check that the identity function is causal, and
+  composition of causal maps is also causal. 
+
+  For the identity function, this is immediate. 
+
+  To show this for composition, suppose that we have $f : A \to B$ and
+  $g : B \to C$. We want to show that $g \circ f$ is causal, which
+  means that we want to show that for arbitrary $m \leq n$, and for all
+  $v,v'$ such that $v \Approx[m]{A} v'$, we have that $g(f(v) \Approx[m]{C} g(f(v'))$. 
+  Since we know that $\forall n, m \leq n, v,v', v\Approx[m]{A}v' \implies f(v) \Approx[m]{B} f(v')$
+  and that $\forall n, m \leq n, v,v', v\Approx[m]{B}v' \implies g(v) \Approx[m]{C} g(v')$,
+  this follows from instantiating quantifiers appropriately and composing implications. 
+
+  Next, we check that pairing is a bifunctor, with an action sending
+  pairs of objects $(A, B)$ to the product $A \otimes B$, and sending
+  pairs of functions $(f,g)$ to $\semfun{\pair{a}{b}}{\pair{f\;a}{g\;b}}$.
+  
+  Since pairs and functions give monoidal structure in Sets, we know
+  that the functorial equations are satisfied, assuming that that the 
+  action of the bifunctor also gives us a causal map. So, suppose that 
+  $f : A \to X$ and $g : B \to Y$ are causal. Now we want to show that 
+  $\semfun{\pair{a}{b}}{\pair{f\;a}{g\;b}}$ is a causal map between 
+  $A \otimes B \to X \otimes Y$. 
+
+  So, suppose that for all $n,m, n \leq m$, we have that $\pair{a}{b} \Approx[m]{A \otimes B}
+  \pair{a'}{b'}$. By the definition of $\Approx[m]{A \otimes B}$, we know that
+  $a \Approx[m]{A} a'$ and $b \Approx[m]{B} b'$ hold. From the causality of $f$ and 
+  $g$, we know that $f\;a \Approx[m]{X} f\;a'$ and $g\;b \Approx[m]{Y} g\;b'$ hold, and 
+  so we can conclude that $\pair{f\;a}{g\;b} \Approx[m]{X \otimes Y}
+  \pair{f\;a'}{g\;b'}$ holds. 
+  
+  
+  Next, we'll show this is a monoidal category, with associator and
+  left and right unitors (what a great word!) defined by:
+
+  \begin{mathpar}
+    \begin{array}{lcl}
+      \alpha_{A,B,C} & = &  \semfun{\pair{\pair{a}{b}}{c}}{\pair{a}{\pair{b}{c}}} \\
+      \alpha^{-1}_{A,B,C} & = & \semfun{\pair{a}{\pair{b}{c}}}{\pair{\pair{a}{b}}{c}}  \\[1em]
+
+      \lambda_A & = & \semfun{\pair{\unit}{a}}{a} \\
+      \rho_A    & = & \semfun{\pair{a}{\unit}}{a} \\
+    \end{array}
+  \end{mathpar}
+
+  Again, the equations we want are inherited from the monoidal structure
+  on Set. So we just need to check that these are causal functions, which
+  is pretty easy. 
+
+  For $\alpha$, assume that $\pair{\pair{a}{b}}{c} \Approx{(A \otimes B) \otimes C} \pair{\pair{a'}{b'}}{c'}$.
+  Therefore, we know that $a \Approx[m]{A} a'$, $b \Approx[m]{B} b'$, and $c \Approx[m]{C} c'$. 
+  We want to show that for all $m \leq n$, $\alpha(\pair{\pair{a}{b}}{c}) \Approx[m]{A \otimes (B \otimes C)}
+  \alpha(\pair{\pair{a'}{b'}}{c'})$. So this means that we want to show that 
+  $\pair{a}{\pair{b}{c}} \Approx[m]{A \otimes (B \otimes C)} \pair{a'}{\pair{b'}{c'}}$. So it suffices 
+  to show that $a \Approx[m]{A} a'$, $b \Approx[m]{B} b'$, and $c \Approx[m]{C} c'$, which are known. 
+
+  The causality of $\alpha^{-1}$ is similar. 
+
+  The causality of $\lambda_A$ can be established as follows. Suppose
+  $\pair{\unit}{a} \Approx{1 \otimes A} \pair{\unit}{a'}$. Therefore
+  we know that $a \Approx{A} a'$. Now we want to show that
+  $\lambda_A(\pair{\unit}{a}) \Approx{A} \lambda_A(\pair{\unit}{a'})$. 
+  So we need to show that $a \Approx{A} a'$, which we know. 
+
+  The causality of $\rho_A$ is similar. 
+
+  Finally, we need to show that this is monoidal closed. To do this, we will 
+  define the evaluation map: 
+  \begin{mathpar}
+    \mathit{eval}_{A,B} : A \otimes (A \lolli B) \to B \triangleq (a, f) \mapsto f(a) 
+  \end{mathpar}
+
+  and define the currying operator, which takes $f : X \otimes A \to B$, and gives us a unique 
+  morphism 
+  
+  \begin{mathpar}
+    \mathit{curry}(f) : X \to (A \lolli B) \triangleq \semfun{x}{\semfun{a}{f(x,a)}}
+  \end{mathpar}
+
+  such that $f = \mathit{eval} \circ (\mathit{curry}(f) \otimes
+  id)$. This equation is of course again inherited from Set, and so we just need to 
+  check that these operations are causal. 
+
+  So we want to show that $\mathit{eval}$ is causal. Suppose that we have for $m \leq n$, 
+  that $(a, f) \Approx[m]{A \otimes (A \lolli B)} (a', f')$. So therefore we know that 
+  $a \Approx[m]{A} a'$ and $f \Approx[m]{A \lolli B} f'$. 
+
+  Now, we want to show that $\mathit{eval}(a, f) \Approx[m]{B}
+  \mathit{eval}(a', f')$. So this means we want to show that $f(a) \Approx[m]{B} f'(a')$. 
+  Now, since $f \Approx[m]{A \lolli B} f'$, we know that for all $k \leq m$ and all 
+  $a$ and $a'$, that $a \Approx[k]{A} a'$ implies $f(a) \Approx[k]{B} f'(a')$. Instantiating
+  $k$ with $m$, we conclude that $f(a) \Approx[m]{B} f'(a')$. 
+
+  Finally, we want to show that if $f$ is causal then
+  $\mathit{curry}(f)$ is causal. So, suppose that we have $m \leq n$ and that 
+  $x \Approx[m]{X} x'$. We want to show that $\mathit{curry}{f}(x) \Approx[m]{A \lolli B} \mathit{curry}(f)(x')$. 
+  So we want to show that $\semfun{a}{f(x, a)} \Approx[m]{A \lolli B} \semfun{a}{f(x',a)}$. 
+  To show this, assume that we have $k \leq m$ and $a \Approx[k]{A} a'$, so that we need to 
+  show $f(x, a) \Approx[k]{B} f(x',a')$. Now, since our relation is Kripke, we know that 
+  $x \Approx[k]{X} x'$, which lets us conclude that $(x, a) \Approx[k]{X \otimes A} (x',a')$, 
+  and since $f$ is causal, we know that $f(x, a) \Approx[k]{B} f(x',a')$. 
+\end{proof}
+
+Some notes: 
+\begin{enumerate}
+\item In fact, we have a cartesian closed category, but we're
+  only going to use the monoidal structure in what follows, in order to
+  let us add a type $\textsf{Widget}$ of linear widget streams. We'll get back
+  the expressiveness by adding a contraction combinator for copyable streams. 
+
+\item This is a rather wimpy closed structure, since we have nothing 
+  corresponding to the linear exponential $!A$. It's possible that $\stream\ $
+  could be pressed into this role, but the isomorphism $!!A \simeq !A$ is 
+  only questionably implementable. 
+
+\item Perhaps we should be looking at \emph{classical} linear logic, if 
+  we want to model nondeterminism as well (so that we could use the category
+  of sets and ``causal relations''). This might be useful for modelling the
+  nondeterminism involved in clicking buttons. :)
+\end{enumerate}
+
+\section{Logical Relation on the Implementation}
+
+All this builds on the stuff in our TLDI paper. In particular, I take
+all the apparatus of abstract semantics of notifications and so on as 
+given. 
+
+\subsection{Something That Almost, But Doesn't Quite, Work}
+
+The basic idea here is to start by saying how a stream is realized in 
+terms of notifications, and likewise how stream transducers are realized. 
+
+A stream $v : \stream{X}$ is realized by a cell $\hat{v} :
+\celltype{X}$. The idea is that at each time step $i$, we read the
+cell $\hat{v}$ to get the value of the stream $v_i$. Now, a cell reads
+and modifies a bunch of state --- both other cells and local state --
+so we also need to specify what it reads and how it changes it. To 
+do this, we give two functions $\phi, \psi : \N \to \mathsf{formula}$. 
+These two functions describe the pre- and the post-state at each 
+time step $i$. 
+
+(Now, you might ask why we don't simply have a \emph{single} function
+$\psi$, and require that the post-state of $\psi_i$ be $\psi_{i+1}$,
+and thereby capture the time-evolution of the system. The answer is
+that this captures some, but not all, sorts of signal. For example, we
+want to model events (such as button clicks) via the external event
+loop modifying some cells. Having both $\psi$ and $\phi$ lets us
+specify the case where we want to place the responsibility for change
+outside the reevaluation mechanism. 
+
+Furthermore, the changes to the state the cell reads can have an
+impact on the rest of the heap, via the ramifications. So we need to
+summarize this information, as well, which we do with a function $d :
+\cellset$.  This set essentially describes the cells which both the
+current stream and the rest of the network may depend on in common. 
+
+So we can give the logical relation between the a mathematical stream and a
+bit of code as follows: 
+
+\begin{mathpar}
+R_{\stream{X}}(\phi, \psi, u, v, \hat{v}) \triangleq 
+  \forall i.\; \exists u.\; \astep{\phi_i}{\readcell{\hat{v}}}{\psi_i}{v_i}{\setof{\hat{v}}}{u}  
+    \land u \subseteq v \cup \dom{\phi_i}
+\end{mathpar}
+
+Note that this means we are promising to read each cell on each time
+step at least once. This is essential, since we can have local state
+in our network -- for example, an accumulator needs to sum the value
+of its input on \emph{every} time step, and if we fail to read the
+cell we can fail to increment the sum on that step.
+
+The way we will model functions $f : A \lolli B$ is via the use of an
+imperative program which, when given an argument, builds a new piece of
+dataflow graph for computing the function. So the representation type
+is $\interp{A \lolli B} = \interp{A} \to \monad{\interp{B}}$.
+
+\begin{mathpar}
+R_{A \lolli B}(\phi, \phi, u, f, \hat{f}) \triangleq 
+  \forall \alpha, \beta, a, \hat{a}.\; R_A(\alpha, \beta, u, a, \hat{a}) \implies 
+     B_B(\alpha, \beta, u, f\;a, \hat{f}\;\hat{a}) 
+\\ \\
+B_A(\phi, \psi, u, v, c) \triangleq \forall \omega.\; \spec{H(\omega)}{c}{\mathit{a}}{\exists \theta.\; H(\omega \otimes \theta_0) \land R_A(\phi \otimes \theta, \psi \otimes \theta^+, u, v, \mathit{a})}
+\end{mathpar}
+
+First, note that we maintain the internal invariant that our functions
+will never depend on the temporal behavior of their components. That
+is, each call to such a function may build some new graph structure,
+but it won't depend on the values in the cells of its arguments. This is
+why the abstract state arguments are equal -- a function does not look
+at the abstract state at all, and so it will work in any abstract state,
+and won't change it. 
+
+The purpose of this invariant is basically to let us call the function
+whenever we want -- we don't want to have to put dataflow constraints
+on calling functions. This may be worth relaxing later on, though.
+
+That said, we then get to the specification. It says that given an 
+input $\hat{a}$ that uses $\alpha$ and $\beta$ to realize a value 
+$a$, then $\hat{f}\hat{a}$ will build a network using $\alpha$ and $\beta$
+to realize $f\;a$. By ``build a network'', we mean the predicate $B_A$, 
+defined on the next line. There, the command $c$ builds a network to 
+realize $v$, when executing it (in any heap) results in some new 
+graph structure $\theta_i$ which it will use together with $\alpha$
+to compute values. Note that here is where we make use of the idea 
+that evaluating the node takes the network from time $i$ to time
+$i+1$ --- the constructed structure starts at state $\theta_0$, and
+at each timestep it goes from $\theta_i$ to $\theta^+_{i} = \theta_{i+1}$. 
+
+Finally, let's quickly look at how we handle pairs and units. 
+
+A tensor type $A \otimes B$ is just realized by a pair $\interp{A}
+\times \interp{B}$.
+
+\begin{mathpar}
+  R_{A \otimes B}(\phi, \psi, u, \pair{a}{b}, (\hat{a}, \hat{b})) \triangleq
+    \exists \theta_A, \theta_B.\; 
+      \begin{array}{lclc}
+        R_A(\phi, \theta_A, u, a, \hat{a}) & \land & R_B(\theta_A, \psi, u, b, \hat{b}) & \land \\
+        R_B(\phi, \theta_B, u, b, \hat{b}) & \land & R_A(\theta_B, \psi, u, a, \hat{a}) &  \\
+      \end{array}
+\end{mathpar}
+
+This says that the pair $\pair{a}{b}$ is realized by a pair of values
+$(\hat{a}, \hat{b})$.  The two lines of the definition assert that
+regardless of the order in which we observe them, we ``end up in the
+same place''. The unit is the unit of the tensor, so it is of the form: 
+
+\begin{mathpar}
+  R_{1}(\phi, \psi, u, \unit, ()) \triangleq (\phi = \psi)
+\end{mathpar}
+
+\subsubsection{Verification of Some Simple Programs}
+
+Here's some examples. 
+
+\begin{theorem}{(Mapping)}
+  Define $\hat{map} f = \semfun{x}{\newcell (\bind (\readcell x)\; (\return \circ f))}$. 
+Then we have that $R_{S(X) \lolli S(Y)}(\phi, \phi, \emptyset, \mathit{map}\;f, \hat{\mathit{map}}\;f)$,
+for $f : X \to Y$. 
+\end{theorem}
+
+\begin{theorem}{(Eval)}
+  Define $\hat{\mathit{eval}} = \semfun{\pair{f}{x}}{f(x)}$. Then we have that 
+$R_{((A \lolli B) \otimes A) \lolli B}(\phi, \phi, \emptyset, \mathit{eval}, \hat{\mathit{eval}})$. 
+\end{theorem}
+
+\begin{proof}
+  These are all just pretty much a matter of unwinding the definitions and seeing that 
+everything is kosher. I'm too lazy to transcribe the proofs from the whiteboard to \LaTeX,
+since we're going to chuck everything out soon. 
+\end{proof}
+
+\subsubsection{What Doesn't Work}
+
+What we'd really like to do is to support a fixed point operator on this category. That
+means that we need an operation with a type like 
+
+\begin{mathpar}
+  \mathsf{trace} : (A \otimes S(X) \lolli B \otimes S(X)) \lolli A \lolli B 
+\end{mathpar}
+
+The only trouble is that 
 
 \end{document}
