@@ -1,4 +1,4 @@
-\chapter{Proving the Correctness of the Union-Find Disjoint Set Algorithm}
+\chapter{Proving the Union-Find Disjoint Set Algorithm}
 
 In this chapter, we introduce the technique of ``ramification'', as a
 way of recovering local reasoning in the face of imperative programs
@@ -42,8 +42,330 @@ we rely on the fact that path compression makes changes to the heap
 which ``will not change the answer''. However, since separation logic
 is a resource-aware logic, we can't simply leave the other elements of
 the equivalence class out of the invariant, since UNION may read and
-modify them. 
+modify them.
 
 The solution I propose in this chapter is to use a global invariant,
 but structured in a way which preserves modular reasoning.
+
+\begin{figure}
+  \begin{mathpar}
+    \begin{array}{lcl}
+      \phi, \psi & ::= & I \bnfalt \elt{x}{y} \bnfalt \phi \otimes \psi
+    \end{array}
+  \end{mathpar}
+  \begin{mathpar}
+    \begin{array}{lcl}
+      R(\rho, I) & = & I \\
+      R(\rho, \psi \otimes \phi) & = & R(\rho, \psi) \otimes R(\rho, \phi) \\
+      R(\rho, \elt{x}{y}) & = & \elt{x}{\rho(x)} \\
+    \end{array}
+  \end{mathpar}
+
+  \begin{mathpar}
+    \boxed{\ufcontains{\phi}{x}{y}}
+    \\
+    \inferrule*[]
+              { }
+              {\ufcontains{\elt{x}{y}}{x}{y}}
+    \and
+    \inferrule*[]
+              {\ufcontains{\phi}{x}{y}}
+              {\ufcontains{\phi \otimes \psi}{x}{y}}
+    \and
+    \inferrule*[]
+              {\ufcontains{\psi}{x}{y}}
+              {\ufcontains{\phi \otimes \psi}{x}{y}}
+  \end{mathpar}
+  \begin{specification}
+    \nextline
+    $\exists \tau : \star$ 
+    \nextline 
+    $\exists H : \formula \to \assert$ 
+    \nextline
+    $\exists \newset : \monad{\tau}$ 
+    \nextline
+    $\exists \find : \tau \to \monad{\tau}$ 
+    \nextline
+    $\exists \union : \tau \times \tau \to \monad{\unittype}$
+    \nextline 
+      $\spec{H(\phi)}{\newset}{a:\tau}{H(\phi \otimes \elt{a}{a})}$
+    \\ \> $\specand$
+    \nextline 
+      $\spec{H(\phi) \land (\ufcontains{\phi}{x}{y})}
+            {\find(x)}
+            {a:\tau}
+            {H(\phi) \land a = y}$
+    \\ \> $\specand$
+    \nextline 
+      $\spec{H(\phi) \land (\ufcontains{\phi}{x}{y})
+                     \land (\ufcontains{\phi}{u}{v})}
+            {\union(x, u)}
+            {a:1}
+            {H(R([y/v], \phi))}$
+  \end{specification}
+
+\caption{Specification of Union Find Algorithm}
+\label{union-find:spec}
+\end{figure}
+
+In Figure~\ref{union-find:spec}, we give a specification of the
+union-find algorithm. In this specification, we essentially replay the
+key trick of separation logic, only ``one level up''. That is, we give
+a monolithic abstract predicate $H(\phi)$, which describes all of the
+trees at once. We recover modularity in the index of the predicate
+$\phi$, which gives a small (in fact, nearly degenerate) ``separation
+logic'' for describing nodes. 
+
+\begin{figure}
+\mbox{}
+\begin{specification}
+\nextline $\sigma = \Child \of \reftype{\sigma} \bnfalt \Root \of \opttype\;{\reftype{\sigma}} \times \N$ 
+\nextline $\tau = \reftype{\sigma}$ 
+
+\nextlinelabel{union-find:invariant} 
+   $H(\phi) \triangleq \exists$\=
+     $n \subseteq \tau, p \in n \to n, w \in \mu(n) \to n.$
+\nextline \> $p^{*} \mbox{ partial order} \;\land$ 
+\nextline \> $(n, p, w) \models \phi \;\land$
+\nextline \> $\heap(n, p, w)$ 
+
+\nextline[1em] $n, p, w \models I \qquad\qquad$\=$\mbox{ iff}\;\;$\=$\mbox{always}$ 
+\nextline      $n, p, w \models \phi \otimes \psi$\>$\mbox{ iff}$\>$
+                     \exists n', n''.\; n = n' \uplus n'' \mbox{ and } n', p, w \models \phi \mbox{ and } 
+                     n'', p, w \models \psi$
+\nextline      $n, p, w \models \elt{x}{y}$ \> $\mbox{ iff }$\>$
+                 w(\mathit{root}(x)) = y$
+
+\nextline[1em] $\heap(n, p, w) =  \forall^{*} l \in n. \IfThenElse{p(l) = l}{\exists n.\; l \pointsto \Root(w(l), n)}{l \pointsto \Child(p(l))}$
+
+\nextline[1em] $\mathit{root} : n \to \mu(p) = \mu(\semfun{f}{f \circ p})$
+\end{specification}
+\caption{Implementation of Union Find Algorithm}
+\label{union-find:impl}
+\end{figure}
+ 
+On line~\ref{union-find:invariant} of Figure~\ref{union-find:impl} we
+give the invariant for the union-find data structure. We assert the
+existence of a finite set of nodes $n$, a map $p : n \to n$, and a map
+$w : \mu(p) \to p$ (where $\mu(p)$ denotes the set of fixed points of
+$p$). The set of nodes $n$ are all the sets that have been allocated,
+and the parent map $p$ maps each node to its parent. The fixed points
+of $p$ are the roots of the union-find trees, and the map $w : \mu(p)
+\to p$ identifies the canonical witness associated with each root.
+
+In order to ensure that the graph structure actually forms a tree, we
+impose the condition that the transitive closure of $p$ is a partial
+order. The antisymmetry condition means that there are no nontrivial
+cycles in the relation, and since every node has (a) a single parent,
+and (b) there are a finite number of nodes, we will reach a root node
+in a finite number of steps.
+
+Then, we assert that the triple $(n, p, w)$ models our formulas.
+These formulas are a small subset of separation logic. We have the
+formula $I$, which is always satisfied. Then we have the formula $\phi
+\otimes \psi$, which corresponds to the usual separating conjunction,
+in that the resource $n$ (the collection of disjoint-set nodes) is
+split into two parts, one of which must support $\phi$ and the other
+of which must support $\psi$. Note that the whole of the parent
+function $p$ and the canonical witness function $w$ functions are
+passed to both branches. This is the information that will let us
+ensure that global constraints are maintained in local invariants.
+
+In particular, the atomic proposition $\elt{x}{y}$ asserts that $x$ is
+a node whose canonical witness is $y$, which is checked by consulting
+$p$ to get the root, and then passing that to $w$.
+
+\begin{figure}
+\mbox{}
+\begin{specification}
+\nextline $\newset = \comp{\newref{\sigma}{\Root(\None, 0)}}$
+
+\nextline[1em] $\ctext{findroot}(x) = [$\=$
+                  \letv{v}{\comp{!x}}{}$ 
+\nextline \>     $\run{}\ctext{case}($\=$v,$ 
+\nextline \> \>     $\Root(w, n) \to [(x, w, n)],$
+\nextline \> \>     $\Child(p) \to \ctext{findroot}(p))]$
+
+\nextline[1em] $\find(x) = [$\=
+             $\letv{(\_, w, \_)}{\ctext{findroot}(x)}{}$ 
+\nextline \> $\ctext{case}($\=$w,$ 
+\nextline \> \> $\None \to x,$  
+\nextline \> \> $\Some(w) \to w)]$
+
+\nextline[1em] $\union(x, y) = [$\= 
+                 $\letv{(r, u, m)}{\find\;x}{}$ 
+\nextline \>     $\letv{(s, v, n)}{\find\;y}{}$ 
+\nextline \>     
+\end{specification}
+\caption{Implementation of Union-Find Algorithm}
+\label{union-find:impl}  
+\end{figure}
+
+\begin{lemma}{(Existence of Upper Fixed Points)}
+Suppose $A$ is a finite set, and $f : A \to A$ is a function whose
+transitive closure is a partial order, and let $\mu(f)$ be the
+set of fixed points of $f$. Then, there is a function 
+$\mathit{root}_f : A \to \mu(f)$ such that for each $x$ there is a 
+$k$ such that $f^{k} = \mathit{root}_f(x)$.
+\end{lemma}
+
+\begin{proof}
+Observe that the transitive closure gives an order such that for
+each $i \leq j$ and $x$ in $A$, $f^i(x) \sqsubseteq f^j(x)$. Since
+$A$ is finite, it follows that the size of the longest chain of
+distinct elements is at most $|A|$ -- so any sequence longer 
+than that must repeat elements of $A$. 
+
+Suppose there is a repeated element, occuring at the $i$-th and
+$j$-th iterations of applying $f$ to $x$, where $i < j$. Since the
+transitive closure is a partial order, we know that if $a \sqsubseteq
+b$ and $a \sqsubseteq b$, then $a = b$. Therefore every element 
+of the sequence from $i$ to $j$ is equal to $f^i(x)$. Since $i$ is
+strictly less than $j$, this means that $f(f^i(x)) = f^i(x)$, and 
+is hence a fixed point of $f$. 
+\end{proof}
+
+\begin{lemma}{(Fixed Point Update)}
+Suppose $A$ is a finite set, and $f : A \to A$ is a function whose
+transitive closure is a partial order, and let $\mu(f)$ be the set of
+fixed points of $f$. For a given $z$ in $A$, if we define $f' =
+[f|z:\mathit{root}_f(z)]$, then $\mathit{root}_f = \mathit{root}_{f'}$. 
+\end{lemma}
+
+\begin{proof}
+Suppose that we have an arbitrary $x \in A$. Now, consider the totally
+ordered set of elements $U = \comprehend{y}{y \sqsupseteq_f x}$, and 
+$U' = \comprehend{y}{y \sqsupseteq_{f'} x}$. Now, $U$ either contains 
+$z$ or not.
+
+Suppose it does not contain $z$. Then $U = \comprehend{y}{y
+  \sqsupseteq_{f'} x} = U'$, and so $\mathit{root}_{f'}(x) =
+\mathit{root}_f(x)$.
+
+Suppose $U$ does contain $z$. Then we know that $U$ contains
+$\mathit{root}_f(z)$, and that this is an upper bound of every element
+of $U$. Furthermore, since $U$ is totally ordered, we know that $U'$
+must be smaller than $U$ -- it will contain none of the elements of
+$U$ that were in between $z$ and $\mathit{root}_f(z)$.  That is, $U' =
+\comprehend{y}{y \sqsupseteq_{f'} x} = \comprehend{y}{ z \sqsupseteq y
+  \sqsupseteq x }$. But $U'$ still has a maximum equal to
+$\mathit{root}_f(z)$. So $\mathit{root}_{f'}(x) =
+\mathit{root}_{f}(x)$.
+\end{proof}
+
+\begin{lemma}{(Order Extension)}
+Suppose $A$ and $B$ are disjoint finite sets, and $f : A \to A$ and $g
+: B \to B$ are functions whose transitive closures are partial
+orders. Let $\mu(f)$ and $\mu(g)$ be the set of fixed points of $f$
+and $g$, respectively. 
+
+Then $h : A \cup B \to A \cup B = f \cup g$ is also a function whose 
+transitive closure is a partial order, with $\mu(h) = \mu(f) \cup \mu(g)$, 
+and $\mathit{root}_h = \mathit{root}_f \cup \mathit{root}_g$. 
+\end{lemma}
+
+
+\begin{proof}
+\begin{enumerate}
+\item We need to show that the transitive closure of $h$ is a partial
+order. To do this, we need to show that the antisymmetry axiom holds, 
+since reflexivity and transitivity arise immediately from taking the
+transitive closure. 
+
+So, suppose that $(x,y) \in h^{*}$, and likewise $(y, x) \in
+h^{*}$. From the definition of the transitive closure, we know there
+is some $m$ and $n$ such that $y = h^m(x)$, and $x = h^n{y}$.  Since
+$A$ and $B$ are disjoint, we know that either $x \in A$ or $x \in
+B$. Furthermore, from the definition of $h$ we know that $h$ takes
+elements of $A$ to elements of $A$ according to $f$, and takes
+elements of $B$ to elements of $B$ according to $g$. So if $x \in A$,
+then $y = f^m(x)$, and so $y \in A$, and so $x = f^n(y)$.  Then by the
+antisymmetry of $f^{*}$, we know that $x = y$. So if $x \in B$, then
+$y = g^m(x)$, and so $y \in B$, and so $x = g^n(y)$.  Then by the
+antisymmetry of $g^{*}$, we know that $x = y$.
+
+\item Next, we need to show that the set of fixed points of $h$ is the
+  union of the fixed points of $f$ and $g$. This follows immediately
+  from the fact that $A$ and $B$ are disjoint, and $f$ and $g$ are
+  endofunctions.
+
+\item Finally, we need to show that $\mathit{root}_h = \mathit{root}_f
+  \cup \mathit{root}_g$. Again, since $A$ and $B$ are disjoint, there
+  are no increasing chains of elements of $A \cup B$ that include
+  elements of both $A$ and $B$.  Therefore, the upper fixed points of
+  $h$ on its $A$ sub-domain will be given by $\mathit{root}_f$ and the
+  upper fixed points of $h$ on its $B$ sub-domain will be given by
+  $\mathit{root}_g$.
+\end{enumerate}
+\end{proof}
+
+\begin{lemma}{(Monotonicity of $\ufcontains{\phi}{x}{y}$)}
+Suppose $\ufcontains{\phi}{x}{y}$. Then $\ufcontains{\phi \otimes \psi}{x}{y}$. 
+\end{lemma}
+
+\begin{proof}
+Take the derivation of $\ufcontains{\phi}{x}{y}$. Apply the tensor rule 
+to it, and derive $\ufcontains{\phi \otimes \psi}{x}{y}$.
+\end{proof}
+
+\begin{lemma}
+  Suppose $\ufcontains{\phi}{x}{y}$. Then for all $\rho$, $\ufcontains{R(\rho, \phi)}{x}{\rho(y)}$. 
+\end{lemma}
+
+\begin{proof}
+This follows by induction on the derivation of $\ufcontains{\phi}{x}{y}$. 
+\begin{itemize}
+\item Suppose $\ufcontains{\elt{x}{y}}{x}{y}$. 
+
+In this case $R(\rho, \elt{x}{y}) = \elt{x}{\rho(y)}$. Then apply the 
+unit rule to derive $\ufcontains{R(\rho, \phi)}{x}{\rho(y)}$. 
+
+\item Suppose that we use the tensor-left rule, so that by inversion we have
+$\phi = \psi \otimes \theta$, and $\ufcontains{\psi}{x}{y}$. 
+
+Then, by induction we have $\ufcontains{R(\rho, \psi)}{x}{\rho(y)}$. 
+By the tensor-left rule, we have $\ufcontains{R(\rho, \psi) \otimes R(\rho, \theta)}{x}{\rho(y)}$. Then, by the definition of $R$, we have $\ufcontains{R(\rho, \psi \otimes \theta)}{x}{\rho(y)}$.
+
+\item The tensor-right case is symmetric. 
+\end{itemize}
+\end{proof}
+\section{Correctness Proofs}
+
+\subsection{Proof of $\newset$}
+
+\begin{specification}
+\nextline
+  $\setof{H(\phi)}$ 
+\nextline 
+  $\{$\=$\exists n \subseteq \tau, p \in n \to n, w \in \mu(n) \to n.\;
+      p^{*} \mbox{ partial order} \land 
+             (n, p, w) \models \phi \;\land \heap(n, p, w) \}$
+\nextline 
+  $\{n \subseteq \tau \land p \in n \to n \land w \in \mu(n) \to n \land
+      p^{*} \mbox{ partial order} \land 
+             (n, p, w) \models \phi \;\land \heap(n, p, w) \}$
+\nextline
+  $\newref{\sigma}{\Root(\None, 0)}$ 
+\nextline
+  $\{$\=$n \subseteq \tau \land p \in n \to n \land w \in \mu(n) \to n \land
+      p^{*} \mbox{ partial order} \land 
+             (n, p, w) \models \phi \;\land$
+\nextline \>
+        $\heap(n, p, w) * a \pointsto \Root(\None, 0) \}$ 
+\nextline
+  $\{$\=$n \subseteq \tau \land p \in n \to n \land w \in \mu(n) \to n \land
+      p^{*} \mbox{ partial order} \land 
+             (n, p, w) \models \phi \;\land$
+\nextline \>
+        $\heap(n, p, w) * a \pointsto \Root(\None, 0) \}$ 
+\nextline Take $n' = n \cup {a}$, take $p' = [p|a:a]$, and $w = [w|a:a]$. 
+  $\{$\=$n' \subseteq \tau \land p' \in n' \to n' \land w' \in \mu(n') \to n' \land
+      p'^{*} \mbox{ partial order} \land 
+             (n', p', w') \models \phi \;\land$
+\nextline \>
+        $\heap(n', p', w')\}$ 
+
+\end{specification}
+
+
 
