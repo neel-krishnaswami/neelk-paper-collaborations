@@ -253,7 +253,18 @@
 \newcommand{\contline}{\\ \> \>}
 \newcommand{\nextlinelabel}[2][0em]{\refstepcounter{spec:linenum}\label{#2}\\[#1]\arabic{spec:linenum} \>}
 
+% Macros for union-find 
 
+\newcommand{\elt}[2]{\ctext{elt}({#1}, {#2})}
+\newcommand{\ufcontains}[3]{{#1} \vdash \elt{#2}{#3}}
+
+\newcommand{\newset}{\ctext{newset}}
+\newcommand{\find}{\ctext{find}}
+\newcommand{\union}{\ctext{union}}
+\newcommand{\Child}{\ctext{Child}}
+\newcommand{\of}{\;\ctext{of}\;}
+\newcommand{\Root}{\ctext{Root}}
+\newcommand{\heap}{\mathit{heap}}
 
 % Macros for ramified frames
 \newcommand{\runcmd}{\ctext{run}\;}
