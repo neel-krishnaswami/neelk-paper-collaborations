@@ -329,6 +329,31 @@ By the tensor-left rule, we have $\ufcontains{R(\rho, \psi) \otimes R(\rho, \the
 \item The tensor-right case is symmetric. 
 \end{itemize}
 \end{proof}
+
+\begin{lemma}
+  Suppose $(n, p, w) \models \phi$, and $n'$ is disjoint from $n$, and $p' \in n' \to n'$ such that $p'^*$ is a partial order, and $w' \in n' \to \mu(n')$. Then $(n, p \cup p', w \cup w') \models \phi$. 
+\end{lemma}
+
+\begin{proof}
+ We proceed by induction on $\phi$. 
+
+ \begin{itemize}
+   \item Case $\phi = I$
+
+     This case is immediate. 
+
+   \item Case $\phi = \elt{x}{y}$. 
+
+     In this case, we know that $p'$ is completely disjoint from $p$. As a result, the transitive closure of $p \cup p'$ is just the unions of the transitive closures of $p$ and $p'$, and any upper fixed point of an element of $n \cup n'$ is just the upper fixed point of $p$ or of $p'$. Therefore $\mathit{root}(x)$ remains unchanged, and since $w'$ is an extension of $w$, $w'(\mathit{root}(x)) = y$. 
+     
+     \item $\phi = \psi \otimes \theta$
+
+       This follows by induction -- suppose $(n_1, p, w) \models \psi$ and 
+       $(n_2, p, w) models \theta$. Then by induction $(n_1 \cup n', p', w') \models \theta$, and $(n_2, p', w') \models \theta$. (FIX THE INDUCTION HYP TO MAKE THIS WORK.)
+       
+ \end{itemize}
+\end{proof}
+
 \section{Correctness Proofs}
 
 \subsection{Proof of $\newset$}
@@ -358,14 +383,36 @@ By the tensor-left rule, we have $\ufcontains{R(\rho, \psi) \otimes R(\rho, \the
              (n, p, w) \models \phi \;\land$
 \nextline \>
         $\heap(n, p, w) * a \pointsto \Root(\None, 0) \}$ 
-\nextline Take $n' = n \cup {a}$, take $p' = [p|a:a]$, and $w = [w|a:a]$. 
+\nextlinelabel{newset:witness} Take $n' = n \cup {a}$, take $p' = [p|a:a]$, and $w = [w|a:a]$. 
+\nextline
   $\{$\=$n' \subseteq \tau \land p' \in n' \to n' \land w' \in \mu(n') \to n' \land
       p'^{*} \mbox{ partial order} \land 
-             (n', p', w') \models \phi \;\land$
+             (n', p', w') \models \phi \otimes \elt{a}{a} \;\land$
 \nextline \>
         $\heap(n', p', w')\}$ 
+\nextline 
+  $\{$\=$\exists n' \subseteq \tau, p' \in n' \to n', w' \in \mu(n') \to n'.\;$ 
+\nextline \>$p^{*} \mbox{ partial order} \land 
+             (n', p', w') \models \phi \otimes \elt{a}{a} \;\land \heap(n', p', w') \}$
+\nextline
+  $\setof{H(\phi \otimes \elt{a}{a})}$ 
 
 \end{specification}
 
+The key step in the correctness proof of $\newset$ is on line~\ref{newset:witness}, where we define new witnesses and show that it satisfies the invariant. 
 
+\begin{enumerate}
+\item Since we allocate a new pointer, and each of the elements in $n$ is also a pointer in the current heap (due to the $\heap(n,p,w)$ assertion), it follows that the new value $a$ is disjoint from all of the values in $n$. 
+
+\item Due to the disjointness, $\mu(n') = \mu(n) \cup \mu([a:a]) = \mu(n) \cup \setof{a}$.
+
+\item Also due to the disjointness, the transitive closure of $p' = [p|a:a]$ is equal to the union of the transitive closure of $p$, (i.e., $p^{*}$) and the transitive closure of $[a:a]$ (i.e., $\setof{(a,a)}$). Since each of these is a partial order, and are disjoint from one another, their union is itself a partial order. So $p'^{*}$ is a partial order. 
+
+\item We know that $(\setof{a}, p', w') \models \elt{a}{a}$, and that 
+$(n, p', w') \models \phi$ (since $(n, p, w) \models \phi$), so it follows
+that $(n', p', w') \models \phi \otimes \elt{a}{a}$. 
+
+\item Since $p'(a) = a$, and $w'(a) = a$, it follows that $\heap(n, p, w) * 
+* a \pointsto \Root(\None, 0)$ is the same as $\heap(n', p', w')$. 
+\end{enumerate}
 
