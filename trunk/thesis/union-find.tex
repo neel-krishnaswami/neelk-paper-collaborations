@@ -416,3 +416,71 @@ that $(n', p', w') \models \phi \otimes \elt{a}{a}$.
 * a \pointsto \Root(\None, 0)$ is the same as $\heap(n', p', w')$. 
 \end{enumerate}
 
+\subsection{Proof of $\find$}
+
+\begin{lemma}{(External Membership and Modelling)}
+Suppose $n \subseteq \tau, p \in n \to n, w \in \mu(n) \to n$. Furthermore,
+suppose $(p, n, w) \models \phi$, and $\ufcontains{\phi}{x}{y}$. 
+Then $(n, p, w) \models \elt{x}{y}$. 
+\end{lemma}
+
+\begin{proof}
+We proceed by induction on $\phi$: 
+\begin{itemize}
+  \item Case $\phi = \elt{x'}{y'}$
+    By inversion on $\ufcontains{\phi}{x}{y}$, we know that the only 
+    rule which can apply is the element rule, and so $x = x'$ and $y = y'$. 
+
+    Then by hypothesis we know that $(n, p, w) \models \elt{x}{y}$. 
+
+  \item Case $\phi = I$
+
+    This case is impossible, since there is no rule from which we can
+    conclude $\ufcontains{I}{x}{y}$. 
+
+  \item Case $\phi = \psi \otimes \theta$. 
+
+    By inversion, we know that either $\ufcontains{\psi}{x}{y}$, or 
+    that $\ufcontains{\theta}{x}{y}$. 
+
+    Then, since $(n, p, w) \models \psi \otimes \theta$, we know 
+    that $(n_1, p, w) \models \psi$ and $(n_2, p, w) \models \theta$,
+    where $n = n_1 \uplus n_2$. Without loss of generality, 
+    suppose that $\ufcontains{\psi}{x}{y}$. Then by induction we know
+    that $(n_1, p, w) \models \elt{x}{y}$, and then by monotonicity 
+    we know that $(n, p, w) \models \elt{x}{y}$. 
+\end{itemize}
+\end{proof}
+
+\begin{lemma}{(Relating Membership and Heaps)}
+Suppose $n = n_1 \uplus n_2$. Then $\heap(n, p, w) \iff \heap(n_1, p, w) * \heap(n_2, p, w)$. 
+\end{lemma}
+
+\begin{proof}
+  \begin{specification}
+    \nextline By definition, $\heap(n, p, w) =  \forall^{*} l \in n. \IfThenElse{p(l) = l}{\exists n.\; l \pointsto \Root(w(l), n)}{l \pointsto \Child(p(l))}$.
+    \nextline So $\heap(n, p, w) =  \forall^{*} l \in n_1 \uplus n_2. \IfThenElse{p(l) = l}{\exists n.\; l \pointsto \Root(w(l), n)}{l \pointsto \Child(p(l))}$.
+    \nextline So $\heap(n, p, w) =  $\=$[\forall^{*} l \in n_1. \IfThenElse{p(l) = l}{\exists n.\; l \pointsto \Root(w(l), n)}{l \pointsto \Child(p(l))}] \;*$ 
+    \nextline \> $[\forall^{*} l \in n_2. \IfThenElse{p(l) = l}{\exists n.\; l \pointsto \Root(w(l), n)}{l \pointsto \Child(p(l))}]$.
+    \nextline So $\heap(n, p, w) = \heap(n_1, p, w) * \heap(n_2, p, w)$. 
+  \end{specification}
+\end{proof}
+
+\begin{specification}
+\nextline $\setof{H(\phi) \land \ufcontains{\phi}{x}{y}}$
+\nextline Since $\ufcontains{\phi}{x}{y}$ is pure, we assume it outside
+  the precondition. 
+\nextline 
+  $\{$\=$\exists n \subseteq \tau, p \in n \to n, w \in \mu(n) \to n.\;
+      p^{*} \mbox{ partial order} \land 
+             (n, p, w) \models \phi \;\land \heap(n, p, w) \}$
+\nextline 
+  $\{$\=$n \subseteq \tau, p \in n \to n, w \in \mu(n) \to n \land
+      p^{*} \mbox{ partial order} \land 
+             (n, p, w) \models \phi \;\land \heap(n, p, w) \}$
+\nextline 
+  $\{$\=$n \subseteq \tau, p \in n \to n, w \in \mu(n) \to n \land
+      p^{*} \mbox{ partial order} \land 
+             (n, p, w) \models \phi \;\land \heap(n, p, w) \}$
+
+\end{specification}
