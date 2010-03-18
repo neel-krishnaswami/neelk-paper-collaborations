@@ -1,0 +1,892 @@
+\documentclass{article}
+\usepackage{amsmath,amssymb}
+\usepackage{mathpartir}
+
+\newcommand{\fix}[2]{\mu {#1}.\;{#2}}
+\newcommand{\lft}[1]{\left<{#1}\right.}
+\newcommand{\rgt}[1]{\left.{#1}\right>}
+\newcommand{\bnfalt}{\;\;|\;\;}
+\newcommand{\Word}{\Sigma^{*}}
+\newcommand{\ints}{\mathbb{Z}}
+\newcommand{\nats}{\mathbb{N}}
+\newcommand{\judgebalance}[3][\Gamma]{{#1} \vdash {#2} : {#3}}
+\newcommand{\judgecat}[3]{{#1} \circ {#2} \equiv {#3}}
+
+\newcommand{\powerset}[1]{\mathcal{P}({#1})}
+\newcommand{\powersetfin}[1]{\mathcal{P}^{\mathrm{fin}}({#1})}
+\newcommand{\interp}[1]{[\![{#1}]\!]}
+\newcommand{\setof}[1]{\{{#1}\}}
+\newcommand{\comprehend}[2]{\setof{{#1}\;|\;{#2}}}
+\newcommand{\semderiv}[2]{D_{#1}({#2})}
+\newcommand{\deriv}[2]{d_{#1}({#2})}
+\newcommand{\call}[2]{C_{#1}({#2})}
+\newcommand{\fun}[2]{\lambda {#1}.\;{#2}}
+\newcommand{\IfThenElse}[3]{\mbox{if }{#1}\mbox{ then }{#2}\mbox{ else }{#3}}
+\newcommand{\Let}[2]{\mbox{let }{#1} = {#2}}
+\newcommand{\nullable}[1]{\mathit{null}(#1)}
+\newcommand{\emptify}[1]{\delta({#1})}
+\newcommand{\path}[2]{{#1}\rhd{#2}}
+\newcommand{\guard}[2]{|{#1}|_{#2}}
+
+\newtheorem{prop}{Proposition}
+\newtheorem{definition}{Definition}
+
+
+
+\newenvironment{proof}{\noindent\textbf{Proof.}}
+{\noindent\textbf{End Proof.}}
+\newenvironment{caseblock}{\begin{itemize}}{\end{itemize}}
+\newenvironment{case}[1]{\item \textbf{Case} {#1}\\}{}
+
+
+\author{Neel Krishnaswami}
+\title{Partial Parsing with Nested Words}
+
+\begin{document}
+\maketitle
+
+\section{Bracketed Grammars}
+
+\subsection{Notational Conventions}
+
+Intuitively, a bracketed grammar is a grammar in which all recursive calls to
+grammatical productions are wrapped in explicit open-close symbols.
+
+So we will fix three disjoint sets $\Sigma_i, \Sigma_l,$ and $\Sigma_r$ to use
+as an alphabet in what follows. The set $\Sigma_i$ is the set of basic
+characters, whose elements we will denote with $a, b, c$.  The set $\Sigma_l$
+is the set of the left brackets, whose elements we will denote with $\lft{a},
+\lft{b}, \lft{c}$. The set $\Sigma_r$ is the set of right brackets, whose
+elements we will write $\rgt{a}, \rgt{b}, \rgt{c}$. We will write $\Sigma =
+\Sigma_i \cup \Sigma_l \cup \Sigma_r$, and denote its elements with $\sigma$
+and $\tau$.
+
+Formally, we define \emph{grammar expressions} via the following
+BNF:
+
+\begin{displaymath}
+\begin{array}{lcll}
+g & ::= & \epsilon   & \mbox{Empty String} \\
+  &  |  & a          & \mbox{Single character from $\Sigma_i$} \\
+  &  |  & \lft{a}    & \mbox{Single character from $\Sigma_l$} \\
+  &  |  & \rgt{a}    & \mbox{Single character from $\Sigma_r$} \\
+  &  |  & g \cdot g' & \mbox{Concatenation} \\ 
+  &  |  & g*         & \mbox{Kleene Closure} \\
+  &  |  & \bot       & \mbox{Empty Language} \\
+  &  |  & g \vee g'  & \mbox{Language Union} \\
+  &  |  & \fix{x}{g} & \mbox{Fixed Point} \\
+  &  |  & x          & \mbox{Recursive Call} \\
+\end{array}
+\end{displaymath}
+
+Note that this is essentially the language of regular expressions, extended
+with an operator to take the fixed point of a language. This is (thanks
+to a variant of Bekic's lemma) essentially lets us define unrestricted
+context-free grammars. 
+
+To define the bracketed languages, we will impose \emph{typing
+restrictions} on this language to ensure that open and close
+parentheses match up, and that every recursive call is wrapped
+with an explicit open and close symbol. 
+
+\begin{mathpar}
+  \begin{array}{llcl}
+    \mbox{Contexts} & \Gamma & ::= & \cdot \bnfalt \Gamma, x \\
+    \mbox{Types}    & d      & \in  & \ints \\
+  \end{array}
+\\
+\boxed{\judgebalance{g}{d}}
+\\
+\inferrule*[right=TEpsilon]
+           { }
+           {\judgebalance{\epsilon}{0}}
+\and
+\inferrule*[right=TChar]
+          { }
+          {\judgebalance{c}{0}}
+\and
+\inferrule*[right=TOpen]
+          { }
+          {\judgebalance{\lft{a}}{+1}}
+\and
+\inferrule*[right=TClose]
+          { }
+          {\judgebalance{\rgt{b}}{-1}}
+\and
+\inferrule*[right=TCat]
+          {\judgebalance{g_1}{d_1} \\ 
+           \judgebalance{g_2}{d_2} \\
+           (d_1 \geq 0 \vee d_2 \leq 0)}
+          {\judgebalance{g_1\cdot g_2}{d_1 + d_2}}
+\and
+\inferrule*[right=TStar]
+          {\judgebalance{g}{0}}
+          {\judgebalance{g*}{0}}
+\and
+\inferrule*[right=TBot]
+          { }
+          {\judgebalance{\bot}{d}}
+\and
+\inferrule*[right=TAlt]
+          {\judgebalance{g_1}{d} \\ 
+           \judgebalance{g_2}{d} }
+          {\judgebalance{g_1 \vee g_2}{d}}
+\and
+\inferrule*[right=TCall]
+          {x \in \Gamma}
+          {\judgebalance{\lft{a} x \rgt{b}}{0}}
+\and
+\inferrule*[right=TFix]
+          {\judgebalance[\Gamma, x]{g}{0}}
+          {\judgebalance{\fix{x}{g}}{0}}
+\end{mathpar}
+
+Here, we ascribe integers as types to our grammars, with the idea that
+the type of a grammar describes the number of unbalanced parentheses
+in every sentence of the grammar's language. So the grammar $\lft{a}
+\vee \lft{b}\cdot(\lft{c}\cdot\rgt{d})*$ has type $+1$, since every
+sentence of this language has one more left-bracket than
+right-bracket. This also means a language like $\epsilon \vee \lft{a}$
+will fail to typecheck, since its two sentences each have different
+numbers of unbalanced parens in them.
+
+The side-condition on the \textsc{TCat} rule enforces the property
+that unbalanced right-parentheses cannot occur to the left of
+unbalanced left-parentheses -- that is, we do not want to admit
+languages with sentences like $\rgt{a}\cdot\lft{b}$.
+
+The rule \textsc{TCall} is the only rule that lets us introduce 
+variables, and it ensures that every call is guarded with a left-
+and right-bracket.  
+
+We will formally prove the soundness of these informal claims in the
+next section.
+
+\subsection{Semantics of Bracketed Grammars}
+
+First, let's take the set of strings to be the free monoid $\Word$
+over the set of characters, writing $\epsilon$ and $s\cdot s'$ for the
+unit and join of the monoid. Now, since our language has recursive
+calls, we'll need to interpret grammars as fixed points of monotone
+operators.
+
+\begin{mathpar}
+\boxed{\interp{-} :  (\Gamma \to \powerset{\Word}) \to G \to \powerset{\Word}}
+
+\\
+
+\begin{array}{lcl}
+\interp{\epsilon}\gamma    & = & \setof{\epsilon} \\
+\interp{a}\gamma           & = & \setof{a} \\
+\interp{\lft{b}}           & = & \setof{\lft{b}} \\
+\interp{\rgt{c}}           & = & \setof{\rgt{c}} \\
+\interp{g \cdot g'}\gamma  & = & \comprehend{\sigma\cdot\tau}
+                                            {\sigma \in \interp{g}\gamma \mbox{ and } \tau \in \interp{g'}\gamma} \\
+\interp{g*}\gamma          & = & \bigcup\limits_{n \in \nats} 
+                                   \comprehend{s_1 \cdot \ldots \cdot s_n}
+                                              {\forall i \in \setof{1 \ldots n}.\; s_i \in \interp{g}\gamma} \\
+\interp{\bot}\gamma        & = & \emptyset \\
+\interp{g \vee g'}\gamma   & = & \interp{g}\gamma \cup \interp{g'}\gamma \\
+\interp{x}\gamma           & = & \gamma(x) \\
+\interp{\fix{x}g}\gamma    & = & \mathit{fix}(\fun{L}{L \cup \interp{g}(\gamma, L)}) \\ 
+\end{array}
+\end{mathpar}
+
+All of the cases of this definition are straightforward, with the
+exception of the final case, the definition of the fixed point. In
+this clause, we make use of the fact that the powerset of words forms
+a complete lattice, and so by the Knaster-Tarski theorem, monotonic
+functions on this lattice have least fixed points.
+
+Since the set of languages is a Kleene algebra, we can write $g \simeq
+g'$ to indicate that the two grammars have the same interpretation,
+and then $(\cdot, \epsilon)$ has monoidal structure, and $(\bot,
+\vee)$ has join-semilattice structure. Furthermore, from the definition
+of fixed points we know that $\fix{x}{g} \simeq g[\fix{x}{g}/x]$. 
+
+\subsubsection{Properties of Languages}
+
+Next, we'll say a word $\sigma$ is well-nested if there is a relation $R$ on the 
+positions in the word, such that 
+
+\begin{enumerate}
+\item $R$ describes a matching between open and close brackets: 
+      $i \in \mathrm{dom}(R)$ iff $\sigma(i) \in \Sigma_l$. And also,
+      $j \in \mathrm{cod}(R)$ iff $\sigma(j) \in \Sigma_r$.
+\item $R$ is nested: if $R(i, j)$ and $R(i', j')$ holds, then if $i \leq i'$ and $i' \leq j$, then $j' \leq j$. 
+\item Brackets match up uniquely: if $R(i, j)$ and $R(i', j')$ holds, then $i = i'$ iff $j = j'$. 
+\end{enumerate}
+
+This condition is natural, but will prove a little too stringent to be
+univerally applicable. Instead, we will relax it just a little, and
+say a word $\sigma$ is well-nested with depth $d \in \ints$ if it can
+be broken up into $|d| + 1$ well-nested substrings separated by
+characters from $\Sigma_l$ if $d \geq 0$ and separated by characters
+from $\Sigma_r$ if $d \leq 0$.
+
+Finally, we will say a language $L$ is well-nested to depth $d$, if every string $\sigma$ 
+in $L$ is well-nested to depth $d$. 
+
+\begin{prop}{(Semantic Nesting Lemma)}
+If $\sigma_1$ is nested to depth $d_1$ and $\sigma_2$ is nested to depth $d_2$, then 
+$\sigma_1\cdot\sigma_2$ is nested to depth $d_1 + d_2$, assuming either $d_1 \geq 0$ or 
+$d_2 \leq 0$.  
+\end{prop}
+
+\begin{proof}
+By assumption , we know that $\sigma_1$ is well-nested to depth $d_1$, and that $\sigma_2$ is well-nested to depth $d_2$, and that either $d_1 \geq 0$ or $d_2 \leq 0$. 
+
+  \begin{enumerate}
+    \item Suppose $d_1 \geq 0$. Therefore $\sigma_1 = \sigma^1_1\cdot\lft{a}_1\cdot \ldots\cdot\lft{a}_{d_1}\sigma^{d_1+1}_1$ and each $\sigma^i_1$ is well-nested. 
+
+      Now, either $d_2 \geq 0$ or $d_2 < 0$. 
+      \begin{enumerate}
+        \item If $d_2 \geq 0$, then $\sigma_2 = \sigma^1_2\cdot\lft{a}_1\cdot \ldots\cdot\lft{a}_{d_2}\sigma^{d_2+1}_2$ and each $\sigma^i_2$ is well-nested. 
+
+          \noindent Therefore $\sigma = \sigma^1_1\cdot\lft{a}_1\cdot \ldots\cdot\lft{a}_{d_1}\sigma^{d_1+1}_1\cdot\sigma^1_2\cdot\lft{a}_1\cdot \ldots\cdot\lft{a}_{d_2}\sigma^{d_2+1}_2$
+            
+          \noindent Therefore $\sigma$ is well-nested to depth $d_1 + d_2$. 
+
+        \item If $d_2 < 0$, then $\sigma_2 = \sigma^1_2\cdot\rgt{a}_1\cdot \ldots\cdot\rgt{a}_{|d_2|}\sigma^{|d_2|+1}_2$ and each $\sigma^i_2$ is well-nested. 
+
+          \noindent Therefore $\sigma = \sigma^1_1\cdot\lft{a}_1\cdot \ldots\cdot\lft{a}_{d_1}\sigma^{d_1+1}_1\cdot\sigma^1_2\cdot\rgt{a}_1\cdot \ldots\cdot\rgt{a}_{d_2}\sigma^{|d_2|+1}_2$
+
+          \noindent We can construct a nesting relation for the concatenated word by merging the nesting relations for each word, and adding an entry for the matched pairs starting at the inside $(\lft{a}_{d_1}, \rgt{a}_1)$ and working outwards. 
+ 
+         \noindent This will leave $d_1 + d_2$ left brackets left over on the left if $d_1 > |d_2|$, and $d_1 + d_2$ right brackets left over on the right if $d_1 < |d_2|$. In either case, the word is nested with depth $d_1 + d_2$.         \end{enumerate}
+
+    \item Suppose $d_1 < 0$. Then $\sigma_1 = \sigma^1_1\cdot\rgt{a}_1\cdot\ldots\cdot\rgt{a}_{|d_1|}\sigma^{|d_1| + 1}_1$
+        
+      \noindent Since $d_1 \geq 0 \vee d_2 \leq 0$, we know $d_2 \leq 0$. So 
+           $\sigma_2 = \sigma^1_2\cdot\rgt{a}_1\cdot\ldots\cdot\rgt{a}_{|d_2|}\sigma^{|d_2| + 1}_1$
+
+      \noindent Therefore $\sigma = \sigma^1_1\cdot\rgt{a}_1\cdot\ldots\cdot\rgt{a}_{|d_1|}\sigma^{|d_1| + 1}_1\cdot\sigma^1_2\cdot\rgt{a}_1\cdot\ldots\cdot\rgt{a}_{|d_2|}\sigma^{|d_2| + 1}_1$
+
+      \noindent This is well-nested to depth $d_1 + d_2$. 
+  \end{enumerate}
+\end{proof}
+
+\begin{prop}
+If $\judgebalance{g}{d}$, and $\gamma$ is a map from the variables in $\Gamma$ to 
+languages well-nested with depth $0$, then $\interp{g}\;\gamma$ is a language well-nested 
+with depth $d$. 
+\end{prop}
+
+\begin{proof}
+The proof is by induction on the typing derivation of $g$. Assume we have a context $\gamma$ of well-nested
+languages.
+
+\begin{caseblock}
+  \begin{case}{$\judgebalance{\epsilon}{0}$}
+    We see $\interp{\epsilon}{\gamma} = \setof{\epsilon}$, which is a one-element set consisting 
+    of a single well-nested word (since it has no characters in it at all). 
+  \end{case}
+
+  \begin{case}{$\judgebalance{c}{0}$}
+    We see $\interp{c}{\gamma} = \setof{c}$, which is a one-element set consisting 
+    of a single well-nested word (since it has no brackets in it at all). 
+  \end{case}
+
+  \begin{case}{$\judgebalance{\lft{a}}{+1}$}
+    We see $\interp{\lft{a}}{\gamma} = \setof{\lft{a}}$, which is a one-element set consisting 
+    of a single bracket. This is a well-nested word of depth $+1$, since we can write it as a 
+    word of the from $\epsilon\lft{a}\cdot\epsilon$, and $\epsilon$ is well-nested. 
+  \end{case}
+
+  \begin{case}{$\judgebalance{\rgt{a}}{-1}$}
+    We see $\interp{\rgt{a}}{\gamma} = \setof{\rgt{a}}$, which is a one-element set consisting 
+    of a single bracket. This is a well-nested word of depth $+1$, since we can write it as a 
+    word of the from $\epsilon\rgt{a}\cdot\epsilon$, and $\epsilon$ is well-nested. 
+   \end{case}
+
+  \begin{case}{$\judgebalance{g_1\cdot g_2}{d_1 + d_2}$}
+    We reason as follows: 
+    \begin{enumerate}
+      \item By inversion, we know that $\judgebalance{g_1}{d_1}$, and $\judgebalance{g_2}{d_2}$, and either
+        $d_1 \geq 0$ or $d_2 \leq 0$. 
+      \item By the semantics, every word $\sigma$ of $\interp{g_1\cdot g_2}\gamma$ is equal to 
+        $\sigma_1\cdot\sigma_2$, where $\sigma_1 \in \interp{g_1}\gamma$ and $\sigma_2 \in \interp{g_2}\gamma$. 
+      \item By the semantic nesting lemma, we know that $\sigma_1 \cdot \sigma_2$ has nesting depth $d_1 + d_2$. 
+    \end{enumerate}
+  \end{case}
+
+  \begin{case}{$\judgebalance{g*}{0}$}
+    We reason as follows: 
+    \begin{enumerate}
+      \item By inversion, we know that $\judgebalance{g}{0}$, so every string in $\interp{g}\gamma$ is 
+        well-nested. 
+      \item By the semantics of languages, every word $\sigma$ in $\interp{g*}\gamma$ is a concatenation of 
+        $n$ well-nested words for some $n$. 
+      \item By induction on $n$ and the semantic nesting lemma, we know that $\sigma$ is well-nested. 
+    \end{enumerate}
+  \end{case}
+
+  \begin{case}{$\judgebalance{\lft{a}x\rgt{b}}{0}$}
+    We reason as follows: 
+    \begin{enumerate}
+      \item By hypothesis, we know that $\gamma(x)$ is a well-nested language of depth 0. 
+      \item From the semantics we know that every word $\sigma$ of $\interp{\lft{a}x\rgt{b}}\gamma$ is 
+        of the form $\lft{a}\cdot\sigma'\cdot\rgt{b}$, where $\sigma' \in \gamma(x)$. 
+      \item We can construct a nesting relation for this word by adding the first and last positions 
+        to the nesting relation for $\sigma'$. 
+      \item This means that there are no brackets left over, so we have a nesting depth of 0. 
+    \end{enumerate}
+  \end{case}
+
+  \begin{case}{$\judgebalance{\fix{x}{g}}{0}$}
+    We reason as follows: 
+    \begin{enumerate}
+      \item By inversion, we know that $\judgebalance[\Gamma, x]{g}{0}$ holds. 
+      \item By induction, given a zero-balanced language $L$ as an argument, $f = \fun{L}{\interp{g}(\gamma,L)}$
+        returns a zero-balanced language. 
+      \item Since the empty language is zero-balanced, $f\;\emptyset$ is
+        also zero-balanced. 
+      \item So, we know from the semantics that $f$ preserves zero-balance and that the least language is zero-balanced. 
+      \item So we know that $h = \fun{L}{L \cup f(L)}$ is zero-balanced, since zero-balance is closed under unions. 
+      \item Hence $\mathit{fix}(h)$ is also zero-balanced. 
+      \item This is the denotation of $\fix{x}{g}$ at $\gamma$, so the theorem holds. 
+    \end{enumerate}
+  \end{case}
+
+  \begin{case}{$\judgebalance{\bot}{d}$}
+    The interpretation of $\bot$ is the empty set, which vacuously satisfies the property that
+    all its elements are well-nested to depth $d$. 
+  \end{case}
+
+  \begin{case}{$\judgebalance{g_1 \vee g_2}{d}$}
+    We reason as follows:
+    \begin{enumerate}
+      \item From the semantics $\interp{g_1 \vee g_2}\gamma = \interp{g_1}\gamma \cup \interp{g_2}\gamma$.
+      \item By induction, both $\interp{g_1}\gamma$ and $\interp{g_2}\gamma$ are well-nested to depth $d$.
+      \item Therefore every element in the union is well-nested to depth $d$. 
+    \end{enumerate}
+    
+  \end{case}
+\end{caseblock}
+
+\end{proof}
+
+
+% \subsection{Generalizing to Nested Word Languages}
+% 
+% Now that we have a definition and semantics for bracketed languages, we'll
+% generalize this just a little bit, to \emph{nested word languages}. A nested
+% word language is essentially a regular expression over the whole alphabet
+% $\Sigma$, but which can make calls to a bracketed language. We'll define the
+% set $N$ of nested word grammars with the following BNF:
+% 
+% \begin{mathpar}
+%   \begin{array}{lcl}
+%     n & ::= & \epsilon \bnfalt \sigma \bnfalt n_1 \cdot n_2 \bnfalt n* \bnfalt \bot 
+%               \bnfalt n_1 \vee n_2 \bnfalt \lft{a} i \rgt{b} \\
+%   \end{array}
+% \end{mathpar}
+% 
+% The reason we make this generalization is for two reasons. First, we'd like to
+% be able to specify a language that includes \emph{unbalanced} brackets, so
+% that we can handle incremental addition of parentheses in an editor.  Second,
+% and more importantly, nested word languages have better closure properties
+% than bracketed languages do -- in particular, when we take a derivative of a
+% balanced paren, the remaining string is now unbalanced.
+
+\subsection{Relating Syntactic and Semantic Properties of Grammars}
+
+We define the emptification operator on well-typed grammars as follows: 
+
+\begin{mathpar}
+  \begin{array}{lcl}
+    \emptify{\epsilon}      & = & \epsilon \\
+    \emptify{\sigma}        & = & \bot \\
+    \emptify{g_1 \cdot g_2} & = & \IfThenElse{\emptify{g_1} = \epsilon \land \emptify{g_2} = \epsilon}{\epsilon}{\bot} \\
+    \emptify{g*}           & = & \epsilon \\
+    \emptify{\bot}         & = & \bot \\
+    \emptify{g_1 \vee g_2} & = & \IfThenElse{\emptify{g_1} = \epsilon \vee \emptify{g_2} = \epsilon}{\epsilon}{\bot} \\
+    \emptify{\fix{x}{g}}   & = & \emptify{x} \\
+    \emptify{\lft{a} x \rgt{b}} & = & \bot \\
+  \end{array}
+\end{mathpar}
+
+The idea is that this is an operation that returns the language
+$\epsilon$ if its argument contains the empty string, and the language
+$\bot$ if its argument language does not contain the empty string. Since we
+restrict to well-typed grammars, all occurences of variables are 
+guarded, and so the result of the emptification operator is the same under
+all substitutions for the variables. 
+
+\begin{prop}{(Emptiness Operator)}
+Suppose $g$ is a well-typed grammar with free variables $\Gamma$. Then
+for any assignment of languages $\gamma$ for $\Gamma$, we have that
+$\emptify{g} = \epsilon$ if $\epsilon \in \interp{g}\gamma$, and is
+equal to $\bot$ otherwise.
+\end{prop}
+
+\begin{proof}
+This proof is by induction on $g$. 
+\begin{caseblock}
+  \begin{case}{$\epsilon$}
+    The interpretation of this language contains the empty string, and $\emptify{\epsilon} = \epsilon$. 
+  \end{case}
+
+  \begin{case}{$\sigma$}
+    The interpretation of this language is the one-element set containing the one-character string $c$, 
+    which does not contain $\epsilon$, and we have that $\emptify{\sigma} = \bot$. 
+  \end{case}
+
+  \begin{case}{$g_1\cdot g_2$}
+    The interpretation $\interp{g_1\cdot g_2}\gamma$ contains the concatenations of the strings of
+    $\interp{g_1}\gamma$ and $\interp{g_2}\gamma$. This can only contain an empty string if both 
+    languages contain empty strings. 
+
+    By induction, we know that in that case, both $\emptify{g_1}$ and $\emptify{g_2}$ will equal $\epsilon$, 
+    and so by the definition, we know that $\emptify{g_1\cdot g_2} = \epsilon$. Otherwise, it will equal
+    $\bot$, and likewise the interpretation will not contain the empty string.
+  \end{case}
+
+  \begin{case}{$g*$}
+    We know that $\interp{g*}\gamma$ contains the empty string by definition, and likewise the 
+    $\emptify{g*} = \epsilon$. 
+  \end{case}
+
+  \begin{case}{$\fix{x}{g}$}
+    By induction, we know for any language $L$, that $\epsilon \in \interp{g}(\gamma, L)$  if and 
+    only if $\emptify{g} = \epsilon$. Therefore, we know that 
+    $\epsilon \in \interp{g}(\gamma, \interp{\fix{x}{g}}\gamma)$ if and only if $\emptify{g} = \epsilon$. 
+    Therefore, we know that $\emptify{g} = \epsilon$ if and only if $\epsilon \in \interp{\fix{x}{g}}\gamma$. 
+  \end{case}
+
+  \begin{case}{$\lft{a}x\rgt{b}$}
+    For any language $L$, all the words in $\interp{\lft{a}x\rgt{b}}L$ are non-empty. 
+    Since $\emptify{\lft{a}x\rgt{b}} = \bot$, the algorithm is correct in this case. 
+  \end{case}
+
+  \begin{case}{$\bot$}
+    The interpretation of this grammar is the empty set of strings, which does not
+    contain the empty string. Since $\emptify{\bot} = \bot$, the algorithm is correct in
+    this case. 
+  \end{case}
+
+  \begin{case}{$g_1 \vee g_2$}
+    We reason as follows:
+    \begin{enumerate}
+      \item By induction, we know that $\emptify{g_1} = \epsilon$ when $\epsilon \in \interp{g_1}\gamma$, 
+        and is $\bot$  otherwise. 
+      \item By induction, we know that $\emptify{g_2} = \epsilon$ when $\epsilon \in \interp{g_2}\gamma$, 
+        and is $\bot$  otherwise. 
+      \item The interpretation $\interp{g_1 \vee g_2}\gamma = \interp{g_1}\gamma \cup \interp{g_2}\gamma$,  
+        and so $\epsilon$ is in this set if and only if it is in either $\interp{g_1}\gamma$ or in 
+        $\interp{g_2}\gamma$.
+      \item If it is in either one, then $\emptify{g_1 \vee g_2} = \epsilon$ by the definition, and is 
+        $\bot$ otherwise. 
+    \end{enumerate}
+  \end{case}
+\end{caseblock}
+  
+\end{proof}
+
+\subsection{Derivatives of Nested Words}
+
+\subsubsection{Derivatives, Semantically}
+
+The definition of a single-character derivative is straightforward. For 
+$c \in \Sigma$, we define:
+
+\begin{mathpar}
+\semderiv{c}{L} = \comprehend{ s \in \Word }{ c\cdot s \in L}  
+\end{mathpar}
+
+\noindent We can lift to derivatives over strings $s$ in a straightforward way: 
+
+\begin{mathpar}
+  \begin{array}{lcl}
+    \semderiv{\epsilon}{L} & = & L \\
+    \semderiv{c \cdot s}{L} & = & \semderiv{c}{\semderiv{s}{L}} \\
+  \end{array}
+\end{mathpar}
+
+\subsection{Derivatives, Syntactically}
+
+Now, let's try to define what derivatives should be for closed grammar expressions: 
+
+\begin{mathpar}
+  \begin{array}{lcl}
+    \deriv{\sigma}{\epsilon}      & = & \bot \\
+    \deriv{\sigma}{\sigma}        & = & \epsilon \\
+    \deriv{\sigma}{\sigma'}       & = & \bot \\
+    \deriv{\sigma}{g_1 \cdot g_2} & = & \deriv{\sigma}{g_1}\cdot g_2 \vee \emptify{g_1}\cdot\deriv{\sigma}{g_2} \\
+    \deriv{\sigma}{g*}            & = & \deriv{\sigma}{g}\cdot(g*) \\
+    \deriv{\sigma}{\bot}          & = & \bot \\
+    \deriv{\sigma}{g_1 \vee g_2}  & = & \deriv{\sigma}{g_1} \vee \deriv{\sigma}{g_2} \\
+    \deriv{\sigma}{\fix{x}{g}}    & = & \deriv{\sigma}{[\fix{x}{g}/x]g} \\
+    \deriv{\sigma}{\lft{a}x\rgt{b}} & = & \mbox{(not defined)} \\
+  \end{array}
+\end{mathpar}
+
+All of the clauses are identical to the standard derivative algorithm,
+except for the last one, which is the obvious extension to handle the
+recursive call --- namely, we unroll the recursive reference to $x$
+and recur. Because all variable occurences are guarded, we know that
+this actually defines a function; we cannot get into an infinite loop
+of repeatedly unfolding the same fixed-point expression. 
+
+(The variable case doesn't occur, since we have defined the derivative
+on closed grammars).
+
+Now, let's show that syntactic and semantic derivatives coincide. 
+
+\begin{prop}{(Syntactic and Semantic Derivatives Coincide)}
+For any closed $g$ and character $\sigma$, we have that $\interp{\deriv{\sigma}{g}} = \semderiv{\sigma}{\interp{g}}$.   
+\end{prop}
+
+\begin{proof}
+  We proceed by induction of $g$: 
+
+  \begin{caseblock}
+    \begin{case}{$\sigma'$}
+      There are two possibilities, depending on whether or not $\sigma = \sigma'$: 
+      \begin{itemize}
+        \item If $\sigma = \sigma'$, then $\interp{\deriv{\sigma}{\sigma}} = \interp{\epsilon} = \setof{\epsilon}$
+
+          Furthermore, $\interp{\sigma} = \setof{\sigma}$, and $\semderiv{\sigma}{\setof{\sigma}} = \setof{\epsilon}$
+        \item If $\sigma \not= \sigma'$, then $\interp{\deriv{\sigma}{\sigma'}} = \interp{\bot} = \emptyset$
+          
+          Furthermore, $\interp{\sigma'} = \setof{\sigma'}$, and $\semderiv{\sigma}{\setof{\sigma'}} = \emptyset$
+      \end{itemize}
+    \end{case}
+
+    \begin{case}{$\epsilon$}
+      $\interp{\deriv{\sigma}{\epsilon}} = \interp{\bot} = \emptyset = \semderiv{\sigma}{\setof{\epsilon}} = \semderiv{\sigma}{\interp{\epsilon}}$
+    \end{case}
+
+    \begin{case}{$g_1\cdot g_2$}
+      We need to show that $\interp{\deriv{\sigma}{g_1\cdot g_2}} = \semderiv{\sigma}{\interp{g_1\cdot g_2}}$. 
+      \begin{enumerate}
+        \item By induction, we know that $\interp{\deriv{\sigma}{g_1}} = \semderiv{\sigma}{\interp{g_1}}$
+        \item By induction, we know that $\interp{\deriv{\sigma}{g_2}} = \semderiv{\sigma}{\interp{g_2}}$
+        \item Now we need to show that for all $s$, $s \in \interp{\deriv{\sigma}{g_1\cdot g_2}}$ if and 
+          only if $s \in \semderiv{\sigma}{\interp{g_1\cdot g_2}}$. 
+          \begin{itemize}
+          \item The $\Leftarrow$ direction: 
+            \begin{enumerate}
+              \item Suppose $s \in \semderiv{\sigma}{\interp{g_1\cdot g_2}}$. 
+              \item Then there exist $s_1$ and $s_2$ such that $\sigma\cdot s = s_1\cdot s_2$ and 
+                $s_1 \in \interp{g_1}$ and $s_2 \in \interp{g_2}$. 
+              \item Now, $s_1$ has either 0 or more elements. 
+                \begin{itemize}
+                  \item Suppose $s_1$ has length $0$. 
+                    \begin{enumerate}
+                      \item Then $s_1$ is the empty string, so $\epsilon \in \interp{g_1}$ and 
+                            $s_2 = \sigma \cdot s$
+                      \item From the emptiness lemma,  $\emptify{g_1} = \epsilon$ 
+                      \item From the induction hypothesis, $s \in \interp{\deriv{\sigma}{g_2}}$ 
+                      \item Therefore $s \in \interp{\emptify{g_1}\cdot\deriv{\sigma}{g_2}}$
+                      \item Therefore $s \in \interp{\deriv{\sigma}{g_1}\cdot g_2 \vee \emptify{g_1}\cdot\deriv{\sigma}{g_2}}$
+                  \end{enumerate}
+                 \item Suppose $s_1$ has length $n \geq 1$ 
+                   \begin{enumerate}
+                     \item Then there exists $s'_1$ such that $s = s'_1 \cdot s_2$ and $s_1 = \sigma \cdot s'_1$. 
+                     \item Therefore $s'_1 \in \semderiv{\sigma}{\interp{g_1}}$
+                     \item By induction hypothesis $s'_1 \in \interp{\deriv{\sigma}{g_1}}$
+                     \item Therefore $s = s'_1 \cdot s_2$ is in $\interp{\deriv{\sigma}{g_1}\cdot g_2}$
+                     \item Therefore $s \in \interp{\deriv{\sigma}{g_1}\cdot g_2 \vee \emptify{g_1}\cdot\deriv{\sigma}{g_2}}$
+                   \end{enumerate}
+                \end{itemize}
+            \end{enumerate}
+          \item The $\Rightarrow$ direction: 
+            \begin{enumerate}
+              \item Suppose $s \in \interp{\deriv{\sigma}{g_1\cdot g_2}}$
+              \item Therefore $s \in \interp{\deriv{\sigma}{g_1}\cdot g_2 \vee \emptify{g_1}\cdot\deriv{\sigma}{g_2}}$
+              \item Therefore either $s \in \interp{\deriv{\sigma}{g_1}\cdot g_2}$ or 
+                    $s \in \interp{\emptify{g_1}\cdot\deriv{\sigma}{g_2} }$
+                \begin{itemize}
+                  \item Suppose $s \in \interp{\deriv{\sigma}{g_1}\cdot g_2}$ 
+                    \begin{enumerate}
+                      \item Therefore there exist $s_1, s_2$ such that $s = s_1 \cdot s_2$ and 
+                        $s_1 \in \interp{\deriv{\sigma}{g_1}}$ and $s_2 \in \interp{g_2}$
+                      \item By induction hypothesis $s_1 \in \semderiv{\sigma}{\interp{g_1}}$
+                      \item Therefore $\sigma \cdot s_1 \in \interp{g_1}$
+                      \item Therefore $\sigma \cdot s_1 \cdot s_2 \in \interp{g_1 \cdot g_2}$
+                      \item Therefore $s_1 \cdot s_2 \in \semderiv{\sigma}{g_1 \cdot g_2}$
+                    \end{enumerate}
+                  \item Suppose $s \in \interp{\emptify{g_1}\cdot\deriv{\sigma}{g_2} }$
+
+                \end{itemize}
+            \end{enumerate}
+          \end{itemize}
+      \end{enumerate}
+    \end{case}
+  \end{caseblock}
+\end{proof}
+
+
+\begin{prop}{(Syntactic Derivatives of Strings)}
+For any string $s$, and grammatical expression $g$ the following propositions hold:
+\begin{enumerate}
+\item $\deriv{s}{g_1 \vee g_2} \simeq \deriv{s}{g_1} \vee \deriv{s}{g_2}$
+\item $\deriv{s}{g_1 \cdot g_2} \simeq \deriv{s}{g_1}\cdot g_2 \vee \bigvee_{\comprehend{s_1, s_2}{s = s_1\cdot s_2}} \emptify{\deriv{s_1}{g_1}}\cdot \deriv{s_2}{g_2}$
+% \item $\deriv{s}{g*} \simeq \left(\bigvee_{\comprehend{(s_1, \ldots, s_k)}{s = s_1 \cdot \ldots s_{k+1} \land \forall j \leq k.\; |s_j} > 0}} \emptify{\deriv{s_1}{g}}\cdot\ldots\cdot\emptify{\deriv{s_k}{g}}\cdot\deriv{s_{k+1}}{g}\right)\cdot (g*)$
+\end{enumerate}
+\end{prop}
+
+\begin{proof}
+In each case, we proceed by induction on $s$.   
+\begin{enumerate}
+\item $\deriv{s}{g_1 \vee g_2} \simeq \deriv{s}{g_1} \vee \deriv{s}{g_2}$
+  \begin{caseblock}
+    \begin{case}{$s = \epsilon$}
+      $\deriv{\epsilon}{g_1 \vee g_2} \simeq g_1 \vee g_2 \simeq\deriv{\epsilon}{g_1} \vee \deriv{\epsilon}{g_2}$
+    \end{case}
+
+    \begin{case}{$s = \sigma\cdot s'$}
+      \begin{mathpar}
+        \begin{array}{lcll}
+          \mbox{By definition,} & \deriv{\sigma\cdot s'}{g_1 \vee g_2} & = & 
+             \deriv{s'}{\deriv{\sigma}{g_1 \vee g_2}} \\
+          \mbox{By definition} & & = & 
+            \deriv{s'}{\deriv{\sigma}{g_1} \vee \deriv{\sigma}{g_2}} \\
+          \mbox{By induction}  & & = & 
+             \deriv{\sigma\cdot s'}{g_1} \vee \deriv{\sigma\cdot s'}{g_2} \\
+        \end{array}
+      \end{mathpar}
+    \end{case}
+  \end{caseblock}
+
+\item $\deriv{s}{g_1 \cdot g_2} \simeq \deriv{s}{g_1}\cdot g_2 \vee \bigvee_{\comprehend{s_1, s_2}{s = s_1\cdot s_2}} \emptify{\deriv{s_1}{g_1}}\cdot \deriv{s_2}{g_2}$
+  \begin{caseblock}
+    \begin{case}{$s = \epsilon$}
+      \begin{mathpar}
+        \begin{array}{llcl}
+          \mbox{By definition} & \deriv{\epsilon}{g_1 \cdot g_2} & = & 
+             g_1 \cdot g_2 \\
+          \mbox{By equation} & & \simeq & 
+             g_1 \cdot g_2 \vee \emptify{g_1}\cdot g_2 \\
+          \mbox{By equation} & & \simeq & 
+             g_1 \cdot g_2 \vee \emptify{g_1}\cdot \deriv{\epsilon}{g_2} \\
+        \end{array}
+      \end{mathpar}
+    \end{case}
+  \end{caseblock}
+
+\item $\deriv{s}{g*} \simeq \left(\bigvee_{\comprehend{(s_0, \ldots, s_k)}{s = s_0 \cdot \ldots s_{k+1}}} \emptify{\deriv{s_0}{g}}\cdot\ldots\cdot\emptify{\deriv{s_k}{g}}\cdot\deriv{s_{k+1}}{g}\right)\cdot (g*)$
+
+\end{enumerate}
+\end{proof}
+
+
+\section{Nondeterministic Brzozowski Derivatives}
+
+Now, our definition is sound, in the sense that it means the right
+thing. Unfortunately, it won't give us a finite set of derivatives. 
+For example,  consider the grammar $i := \epsilon \vee \lft{a} i \rgt{b}$. 
+When we  differentiate with respect to $\lft{a}$, the result is equivalent to 
+\begin{mathpar}
+(\epsilon \vee \lft{a} i \rgt{b}) \cdot \rgt{b}
+\end{mathpar}
+
+\noindent When we differentiate this again, we get
+\begin{mathpar}
+(\epsilon \vee \lft{a} i \rgt{b}) \cdot \rgt{b} \cdot \rgt{b}  
+\end{mathpar}
+
+\noindent and so on for arbitrary $n$-fold derivatives.  Of course, this
+shouldn't be terribly surprising --- we're interpreting expressions as states,
+and there's no finite state machine that can recognize this language! 
+
+So what we need to do is find some generalization of the notion of derivative,
+from which we some kind of stack machine will fall out in the same way that 
+finite-state automata fall out of derivatives of regular expressions.  
+
+To do this, we'll proceed in two steps. First, we'll give a 
+non-deterministic version of the Brzozowski derivative algorithm, and
+then show how to determinize it. 
+
+\begin{definition}{(Finite Base)}
+We say a grammatical expression $g$ is derived from $B$, when $B$ is a
+finite set of grammatical expressions, and $g$ is equivalent to a sum of
+concatenations of elements of $B$. That is, $g$ should be generated (up to $\simeq$)
+via the following grammar:
+\begin{mathpar}
+  \begin{array}{lcl}
+    t & ::= & \sigma \bnfalt \epsilon \bnfalt t \cdot t' \bnfalt \bot \bnfalt t \vee t' \bnfalt b \in B
+  \end{array}
+\end{mathpar}
+
+We say a grammatical expression $g$ is based in $B$, when $g$ and all 
+of its derivatives are based in $B$. 
+\end{definition}
+
+The intuition behind this definition is that it is a way of
+distinguishing the pieces of a grammatical expression that don't
+require recursion from those that do --- observe that $g*$ and
+$\fix{x}{g}$ do not occur in the grammar $t$, and hence must 
+come from the basis $B$. 
+
+\begin{prop}{(Closure of Finite Basis)}
+Suppose that $g$ and $g'$ are grammatical expressions with a free
+variables in $\Gamma$. Now, suppose that there is a set $G$, such that
+for any $\gamma$ which is finitely based in $X$, that $\gamma(g)$ and
+$\gamma(g')$ are finitely based in $G \cup X$.  Then we know that
+$\gamma(g[g'/x])$ is finitely based in $G \cup X$.
+\end{prop}
+
+\begin{proof}
+We proceed by induction on $g$. We will suppose $s$ is a string we 
+take a derivative with respect to. 
+\begin{caseblock}
+  \begin{case}{$g \in \setof{\bot, \epsilon, \sigma}$}
+    These cases are all trivial. 
+  \end{case}
+
+  \begin{case}{$g$ is $(g')*$, $g_1\cdot g_2$ or $g_1 \vee g_2$}
+    These cases all follow from the structure of the syntactic derivative
+    for strings. 
+  \end{case}
+
+  \begin{case}{$g = \lft{a}y\rgt{b}$}
+    The only interesting possibility is if $y = x$. Then the substitution 
+    gives us $\lft{a}g'\rgt{b}$, which obviously has the same finite basis as $g'$. 
+  \end{case}
+
+  \begin{case}{$g = \fix{y}{g''}$}
+    This is where we find out if the induction hypothesis is strong enough!
+    \begin{itemize}
+      \item We have $G$, $X$, and $\gamma$ finitely based in $X$, and $g'$ finitely
+        based in $G \cup X$. 
+      \item By inversion we have $g''$ in a context $\Gamma' = \Gamma, y$. 
+      \item By induction we have for all $g'$, $G$, $X$, and $\gamma'$ for $\Gamma'$ finitely
+        based in $X$, that if $\gamma'(g'')$ and $\gamma'(g')$ are finitely based in $G \cup X$,
+        then $\gamma'(g''[g'/x])$ is finitely based in $G \cup X$. 
+      \item In the induction hypothesis, take $\gamma' = \gamma, [y \mapsto \fix{y}{g''}]$ and 
+        $X$ to be $G \cup X$. Since we know that $\fix{y}{g''}$ has basis $G \cup X$, and since
+        $\gamma$ has basis $X$, it follows that $\gamma'(g'')$ has basis $G \cup X$. Furthermore, 
+        since $y \not\in \mathrm{FV}(g')$, it follows that $\gamma'(g') = \gamma''(g')$, and 
+        so $\gamma'(g')$ is finitely based in $G \cup X$. 
+      \item Therefore $\gamma'(g''[g'/x])$ is finitely based in $G \cup X$. 
+      \item Since $\gamma'(g''[g'/x]) \simeq\gamma(\fix{y}{g''[g'/x]}) \simeq \gamma(g[g'/x])$, 
+        this case follows.         
+    \end{itemize}
+  \end{case}
+\end{caseblock}
+\end{proof}
+
+\subsubsection{Paths in Grammars}
+Next, we'll need to explain the concept of a path in a grammar.
+
+\begin{mathpar}
+\boxed{\path{g}{(\Sigma \cup X)^{*}}}
+\\
+\inferrule*[] 
+          { }
+          { \path{\epsilon}{\epsilon} }
+\and
+\inferrule*[]
+          { }
+          { \path{\sigma}{\sigma} }
+\and
+\inferrule*[]
+          { \path{g_1}{s_1} \\ \path{g_2}{s_2} }
+          { \path{g_1\cdot g_2}{s_1 \cdot s_2} }
+\and
+\inferrule*[]  
+          { \path{g_i}{s} \\ i \in \setof{1,2} }
+          { \path{g_1 \vee g_2}{s} }
+\and
+\inferrule*[]
+          { }
+          { \path{g*}{\epsilon} }
+\and
+\inferrule*[]
+          { \path{g}{s} \\ \path{g*}{s'} }
+          { \path{g*}{s\cdot s'} }
+\and
+\inferrule*[]
+          { }
+          { \path{\lft{a}x\rgt{b}}{\lft{a}x\rgt{b}} }
+\and
+\inferrule*[]  
+          { \path{g[\fix{x}{g}/x]}{s} }
+          { \path{\fix{x}{g}}{s} }
+\end{mathpar}
+
+\begin{prop}{(Guardedness and Derivatives)}
+For all $g$ with free variable $x$ and all closed $g'$, we have that 
+ $\path{g[g'/x]}{\sigma\cdot s}$ if and only if $\path{\deriv{\sigma}{g[g'/x]}}{s}$. 
+\end{prop}
+
+\begin{proof}
+This proof proceeds by induction on $g$. 
+\end{proof}
+
+
+The guardedness $\guard{s}{x}$ of a path $s$ with respect to the variable $x$ is given by the 
+following function: 
+\begin{mathpar}
+  \begin{array}{lcl}
+    \guard{\epsilon}{x}       & = & 0 \\
+    \guard{\sigma\cdot s'}{x} & = & 1 + \guard{s'}{x} \\
+    \guard{y \cdot s'}{x}     & = & \guard{s'}{x} \\
+    \guard{x \cdot s'}{x}     & = & 0 \\
+  \end{array}
+\end{mathpar}
+
+We say a grammatical expression $g$ is $k$-guarded with respect to
+$x$, if for every path $s$ such that $\path{g}{s}$, then$\guard{s}{x} \geq k$. 
+
+
+
+\begin{prop}{($k$-guarded derivatives)}
+  If $s$ is a string of length less than $k$, and $g$ is a grammatical expression with a 
+  $k$-guarded free variable $x$, then there is a $g'$ such that for any $g_1$ and $g_2$, 
+  $\deriv{s}{g[g_1/x]} = g'[g_1/x]$ and $\deriv{s}{g[g_2/x]} = g'[g_2/x]$. 
+\end{prop}
+
+\begin{proof}
+  This proof is by induction on 
+\end{proof}
+
+
+\begin{prop}{(The Set of Derivatives Is Finitely Based)}
+For any grammatical expression $g$ with free variables $\Gamma$, there
+is a finite set $G$ such that every for every substitution $\gamma$ all of 
+whose derivatives are finitely based in $X$, the derivative $D_s(\gamma(g))$ 
+is finitely based in $G \cup X$.  
+\end{prop}
+
+\begin{proof}
+\begin{caseblock}
+  \begin{case}{$g = \epsilon$}
+    Let $G = \emptyset$. If $s$ is the empty string, 
+    then $D_\epsilon(\epsilon) = \epsilon$. If it is nonempty, then $D_{c\cdot s'}(\epsilon) = \bot$. 
+  \end{case}
+
+  \begin{case}{$g = \sigma$}
+    Let $G = \setof{\sigma}$. If $s$ is empty, the derivative is $\sigma$. 
+    If $s$ is $\sigma$, the derivative is $\epsilon$. Otherwise, it is $\bot$. 
+  \end{case}
+
+  \begin{case}{$g = \bot$}
+    Let $G = \emptyset$. All derivatives of $\bot$ are $\bot$. 
+  \end{case}
+
+  \begin{case}{$g = g_1 \vee g_2$}
+    Let $G_1$ and $G_2$ be the basis sets of $g_1$ and $g_2$. Then, we know 
+    that $\deriv{s}{\gamma(g_1 \vee g_2)} = \deriv{s}{\gamma(g_1)} \vee \deriv{s}{\gamma(g_2)}$. Since
+    $\deriv{s}{g_1}$ is finitely based in $G_1 \cup X$ and $\deriv{s}{g_2}$ is finitely based in $G_2 \cup X$, 
+    it follows that $\deriv{s}{g_1} \vee \deriv{s}{g_2}$ is finitely based in $G \cup X$. 
+  \end{case}
+
+  \begin{case}{$g = \fix{x}{g'}$}
+    Let $G'$ be the basis set of $g'$. Now, take $G$ to be $G \cup \setof{\fix{x}{g'}}$. 
+    To show that this is a basis of $\fix{x}{g'(x)}$ for arbitrary $s$ of length $n$, unroll
+    the fixed point $n$ times to get $g'' = (g')^n(\fix{x}{g'(x)}$, which we know has the same basis. 
+    Now every occurence of $\fix{x}{g}$ in the new expression will have $n$ occurences of some 
+    $\lft{a}$ in front of it, and so the taking the derivative with respect to $s$ will never 
+    unroll this loop. Therefore, [FIXME]
+  \end{case}
+\end{caseblock}
+\end{proof}
+
+In fact, it's not enough to know that a grammatical expression is
+finitely based to ensure that it has a
+
+
+\end{document}
