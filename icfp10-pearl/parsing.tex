@@ -411,7 +411,7 @@ $\epsilon$ if its argument contains the empty string, and the language
 $\bot$ if its argument language does not contain the empty string. Since we
 restrict to well-typed grammars, all occurences of variables are 
 guarded, and so the result of the emptification operator is the same under
-all substitutions for the variables. 
+all substitutions for the variables.  
 
 \begin{prop}{(Emptiness Operator)}
 Suppose $g$ is a well-typed grammar with free variables $\Gamma$. Then
@@ -505,7 +505,8 @@ $c \in \Sigma$, we define:
 
 \subsection{Derivatives, Syntactically}
 
-Now, let's try to define what derivatives should be for closed grammar expressions: 
+Now, let's try to define what derivatives should be for well-typed
+grammar expressions:
 
 \begin{mathpar}
   \begin{array}{lcl}
@@ -517,7 +518,7 @@ Now, let's try to define what derivatives should be for closed grammar expressio
     \deriv{\sigma}{\bot}          & = & \bot \\
     \deriv{\sigma}{g_1 \vee g_2}  & = & \deriv{\sigma}{g_1} \vee \deriv{\sigma}{g_2} \\
     \deriv{\sigma}{\fix{x}{g}}    & = & \deriv{\sigma}{[\fix{x}{g}/x]g} \\
-    \deriv{\sigma}{\lft{a}x\rgt{b}} & = & \mbox{(not defined)} \\
+    \deriv{\sigma}{\lft{a}x\rgt{b}} & = & \deriv{\sigma}{\lft{a}}\cdot x \cdot \rgt{b} \\
   \end{array}
 \end{mathpar}
 
@@ -528,13 +529,11 @@ and recur. Because all variable occurences are guarded, we know that
 this actually defines a function; we cannot get into an infinite loop
 of repeatedly unfolding the same fixed-point expression. 
 
-(The variable case doesn't occur, since we have defined the derivative
-on closed grammars).
-
 Now, let's show that syntactic and semantic derivatives coincide. 
 
 \begin{prop}{(Syntactic and Semantic Derivatives Coincide)}
-For any closed $g$ and character $\sigma$, we have that $\interp{\deriv{\sigma}{g}} = \semderiv{\sigma}{\interp{g}}$.   
+For any closed, well-typed $g$ and character $\sigma$, we have that
+$\interp{\deriv{\sigma}{g}} = \semderiv{\sigma}{\interp{g}}$.
 \end{prop}
 
 \begin{proof}
@@ -661,6 +660,30 @@ In each case, we proceed by induction on $s$.
              g_1 \cdot g_2 \vee \emptify{g_1}\cdot g_2 \\
           \mbox{By equation} & & \simeq & 
              g_1 \cdot g_2 \vee \emptify{g_1}\cdot \deriv{\epsilon}{g_2} \\
+        \end{array}
+      \end{mathpar}
+    \end{case}
+
+    \begin{case}{$s = \sigma \cdot s'$}
+      \begin{mathpar}
+        \begin{array}{llcl}
+          \mbox{By def} & \deriv{\sigma\cdot s'}{g_1 \cdot g_2} & = & 
+             \deriv{s'}{\deriv{\sigma}{g_1\cdot g_2}} \\
+          \mbox{By def} & & = & 
+              \deriv{s'}{\deriv{\sigma}{g_1}\cdot g_2 \vee \emptify{g_1}\deriv{\sigma}{g_2}} \\
+          \mbox{By def} & & = & 
+              \deriv{s'}{\deriv{\sigma}{g_1}\cdot g_2} \vee 
+              \deriv{s'}{\emptify{g_1}\deriv{\sigma}{g_2}} \\
+          \mbox{By IH} & & \simeq & 
+              \deriv{\sigma\cdot s'}{g_1}\cdot g_2 \vee \bigvee_{\comprehend{s_1, s_2}{s' = s_1\cdot s_2}} \emptify{\deriv{\sigma\cdot s_1}{g_1}}\cdot \deriv{s_2}{g_2} \;\vee \\
+                       & & & 
+               \deriv{s'}{\emptify{g_1}}\cdot \deriv{\sigma}{g_2} \vee \bigvee_{\comprehend{s_1, s_2}{s' = s_1\cdot s_2}} \emptify{\deriv{s_1}{\emptify{g_1}}}\cdot \deriv{s_2}{\deriv{\sigma}{g_2}} \\
+          \mbox{Semantics} & & \simeq & 
+              \deriv{\sigma\cdot s'}{g_1}\cdot \deriv{\sigma}{g_2} \vee \bigvee_{\comprehend{s_1, s_2}{s' = s_1\cdot s_2}} \emptify{\deriv{\sigma\cdot s_1}{g_1}}\cdot \deriv{s_2}{\deriv{\sigma}{g_2}} \\
+                       & & & 
+              \vee \emptify{g_1}\cdot\deriv{s}{g_2} \\
+           \mbox{Simplify} & & \simeq & 
+             \deriv{s}{g_1}\cdot g_2 \vee \bigvee_{\comprehend{s_1, s_2}{s = s_1\cdot s_2}} \emptify{\deriv{s_1}{g_1}}\cdot \deriv{s_2}{g_2}
         \end{array}
       \end{mathpar}
     \end{case}
