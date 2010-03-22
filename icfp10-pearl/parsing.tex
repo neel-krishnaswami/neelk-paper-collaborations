@@ -505,8 +505,8 @@ $c \in \Sigma$, we define:
 
 \subsection{Derivatives, Syntactically}
 
-Now, let's try to define what derivatives should be for well-typed
-grammar expressions:
+Now, let's try to define what derivatives should be for grammar
+expressions:
 
 \begin{mathpar}
   \begin{array}{lcl}
@@ -518,16 +518,119 @@ grammar expressions:
     \deriv{\sigma}{\bot}          & = & \bot \\
     \deriv{\sigma}{g_1 \vee g_2}  & = & \deriv{\sigma}{g_1} \vee \deriv{\sigma}{g_2} \\
     \deriv{\sigma}{\fix{x}{g}}    & = & \deriv{\sigma}{[\fix{x}{g}/x]g} \\
-    \deriv{\sigma}{\lft{a}x\rgt{b}} & = & \deriv{\sigma}{\lft{a}}\cdot x \cdot \rgt{b} \\
+    \deriv{\sigma}{x}             & = & \mbox{(undefined)}
   \end{array}
 \end{mathpar}
 
 All of the clauses are identical to the standard derivative algorithm,
-except for the last one, which is the obvious extension to handle the
-recursive call --- namely, we unroll the recursive reference to $x$
-and recur. Because all variable occurences are guarded, we know that
-this actually defines a function; we cannot get into an infinite loop
-of repeatedly unfolding the same fixed-point expression. 
+except for the last two, The recursive call is handled in the obvious
+way --- namely, we unroll the recursive reference to $x$ and recur.
+Furthermore, we do not define what the algorithm should do when it
+reaches a free variable; that is, this algorithm is only partially
+defined.
+
+Now, it's obviously the case that for well-typed grammars, taking the
+derivative with respect to a 1-character string is well-defined, since
+every variable occurence is guarded. However, (a) it may be the case
+that the 1-character derivative of a well-typed grammar is not itself
+well-typed (since the sole guarding term may be removed), and (b) we
+will want to lift the definition of derivatives to whole strings. Both
+of these facts motivate us to consider a more subtle notion of when 
+the derivatives are well-defined. 
+
+\subsubsection{Paths in Grammars}
+Next, we'll need to explain the concept of a path in a grammar.
+
+\begin{mathpar}
+\boxed{\path{g}{(\Sigma \cup X)^{*}}}
+\\
+\inferrule*[] 
+          { }
+          { \path{\epsilon}{\epsilon} }
+\and
+\inferrule*[]
+          { }
+          { \path{\sigma}{\sigma} }
+\and
+\inferrule*[]
+          { \path{g_1}{s_1} \\ \path{g_2}{s_2} }
+          { \path{g_1\cdot g_2}{s_1 \cdot s_2} }
+\and
+\inferrule*[]  
+          { \path{g_i}{s} \\ i \in \setof{1,2} }
+          { \path{g_1 \vee g_2}{s} }
+\and
+\inferrule*[]
+          { }
+          { \path{g*}{\epsilon} }
+\and
+\inferrule*[]
+          { \path{g}{s} \\ \path{g*}{s'} }
+          { \path{g*}{s\cdot s'} }
+\and
+\inferrule*[]
+          { }
+          { \path{\lft{a}x\rgt{b}}{\lft{a}x\rgt{b}} }
+\and
+\inferrule*[]  
+          { \path{g[\fix{x}{g}/x]}{s} }
+          { \path{\fix{x}{g}}{s} }
+\end{mathpar}
+
+The idea is that a path describes the strings that a grammar can
+generate, while leaving in the free variables. This way, we can count
+how many concrete characters \emph{guard} each occurence of the
+variables. Formally, let us define the guardedness $\guard{s}{x}$ of a
+path $s$ with respect to the variable $x$ is given by the following
+function:
+\begin{mathpar}
+  \begin{array}{lcl}
+    \guard{\epsilon}{x}       & = & \infty \\
+    \guard{\sigma\cdot s'}{x} & = & 1 + \guard{s'}{x} \\
+    \guard{y \cdot s'}{x}     & = & \guard{s'}{x} \\
+    \guard{x \cdot s'}{x}     & = & 0 \\
+  \end{array}
+\end{mathpar}
+
+Note that if $x$ does not occur in the path, we say that its 
+guardedness with respect to $x$ is infinite.
+
+Now, we say a grammatical expression $g$ is \emph{$k$-guarded with respect to
+$x$}, if for every path $s$ such that $\path{g}{s}$, then$\guard{s}{x} \geq k$. 
+
+The point of this definition is that it lets us state precisely when we can 
+take the derivative of a grammatical expression with respect to a string: 
+
+\begin{prop}{($k$-guarded derivatives)}
+  If $s$ is a string of length less than $k$, and $g$ is a well-typed $k$-guarded grammatical
+  expression, then $\deriv{s}{g}$ is defined, and a well-typed $(k - |s|)$-guarded grammatical
+  expression. 
+\end{prop}
+
+\begin{proof}
+  This proof is by induction on $k$. 
+
+  \begin{caseblock}
+    \begin{case}{$k = 0$}
+      The base case is vacuous, since there are no strings of length less than zero. 
+    \end{case}
+
+    \begin{case}{$k = n+1$}
+      \begin{itemize}
+      \item We know tha $s = s' \cdot \sigma$, where $|s'| = n$. We know by induction that 
+        $g' = \deriv{s'}{g} = $ is well-typed and $(k - n)$-guarded, and that $k - n > 0$.  
+        Furthermore, we know that $\deriv{s}{g} = \deriv{\sigma}{g'}$. Now, we proceed by 
+        cases on the typing derivation of $g'$. 
+      \end{itemize}
+    \end{case}
+  \end{caseblock}
+
+\end{proof}
+
+
+
+
+
 
 Now, let's show that syntactic and semantic derivatives coincide. 
 
@@ -683,7 +786,7 @@ In each case, we proceed by induction on $s$.
                        & & & 
               \vee \emptify{g_1}\cdot\deriv{s}{g_2} \\
            \mbox{Simplify} & & \simeq & 
-             \deriv{s}{g_1}\cdot g_2 \vee \bigvee_{\comprehend{s_1, s_2}{s = s_1\cdot s_2}} \emptify{\deriv{s_1}{g_1}}\cdot \deriv{s_2}{g_2}
+           \deriv{s}{g_1}\cdot g_2 \vee \bigvee_{\comprehend{s_1, s_2}{s = s_1\cdot s_2}} \emptify{\deriv{s_1}{g_1}}\cdot \deriv{s_2}{g_2}
         \end{array}
       \end{mathpar}
     \end{case}
@@ -791,80 +894,6 @@ take a derivative with respect to.
 \end{caseblock}
 \end{proof}
 
-\subsubsection{Paths in Grammars}
-Next, we'll need to explain the concept of a path in a grammar.
-
-\begin{mathpar}
-\boxed{\path{g}{(\Sigma \cup X)^{*}}}
-\\
-\inferrule*[] 
-          { }
-          { \path{\epsilon}{\epsilon} }
-\and
-\inferrule*[]
-          { }
-          { \path{\sigma}{\sigma} }
-\and
-\inferrule*[]
-          { \path{g_1}{s_1} \\ \path{g_2}{s_2} }
-          { \path{g_1\cdot g_2}{s_1 \cdot s_2} }
-\and
-\inferrule*[]  
-          { \path{g_i}{s} \\ i \in \setof{1,2} }
-          { \path{g_1 \vee g_2}{s} }
-\and
-\inferrule*[]
-          { }
-          { \path{g*}{\epsilon} }
-\and
-\inferrule*[]
-          { \path{g}{s} \\ \path{g*}{s'} }
-          { \path{g*}{s\cdot s'} }
-\and
-\inferrule*[]
-          { }
-          { \path{\lft{a}x\rgt{b}}{\lft{a}x\rgt{b}} }
-\and
-\inferrule*[]  
-          { \path{g[\fix{x}{g}/x]}{s} }
-          { \path{\fix{x}{g}}{s} }
-\end{mathpar}
-
-\begin{prop}{(Guardedness and Derivatives)}
-For all $g$ with free variable $x$ and all closed $g'$, we have that 
- $\path{g[g'/x]}{\sigma\cdot s}$ if and only if $\path{\deriv{\sigma}{g[g'/x]}}{s}$. 
-\end{prop}
-
-\begin{proof}
-This proof proceeds by induction on $g$. 
-\end{proof}
-
-
-The guardedness $\guard{s}{x}$ of a path $s$ with respect to the variable $x$ is given by the 
-following function: 
-\begin{mathpar}
-  \begin{array}{lcl}
-    \guard{\epsilon}{x}       & = & 0 \\
-    \guard{\sigma\cdot s'}{x} & = & 1 + \guard{s'}{x} \\
-    \guard{y \cdot s'}{x}     & = & \guard{s'}{x} \\
-    \guard{x \cdot s'}{x}     & = & 0 \\
-  \end{array}
-\end{mathpar}
-
-We say a grammatical expression $g$ is $k$-guarded with respect to
-$x$, if for every path $s$ such that $\path{g}{s}$, then$\guard{s}{x} \geq k$. 
-
-
-
-\begin{prop}{($k$-guarded derivatives)}
-  If $s$ is a string of length less than $k$, and $g$ is a grammatical expression with a 
-  $k$-guarded free variable $x$, then there is a $g'$ such that for any $g_1$ and $g_2$, 
-  $\deriv{s}{g[g_1/x]} = g'[g_1/x]$ and $\deriv{s}{g[g_2/x]} = g'[g_2/x]$. 
-\end{prop}
-
-\begin{proof}
-  This proof is by induction on 
-\end{proof}
 
 
 \begin{prop}{(The Set of Derivatives Is Finitely Based)}
