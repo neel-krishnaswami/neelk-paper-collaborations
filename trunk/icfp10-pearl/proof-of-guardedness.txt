@@ -1,0 +1,81 @@
+G e        = id
+G c        = \n. n+1
+G g1.g2    = G g1 o G g2 
+G g*       = \n. min(n, G g n)
+G fix x. g = G g 
+G <axb>    = \n.0
+G bot      = \n. \infty
+G g1 | g2  = \n. min(G g1 n, G g2 n)
+
+ 
+g is k-guarded, if for all n \geq k, G g n >= k 
+
+Thm. forall k, n >= k. G g (n+1) >= (k+1) & g well-typed 
+      implies D_c(g) is defined and G D_c(g) n >= k. 
+
+Case: g = g1.g2 
+
+IH: forall k, n >= k. 
+      G g1 (n+1) >= (k+1) & g well-typed implies D_c(g1) is defined
+         and G D_c(g1) n >= k. 
+
+IH: forall k, n >= k. 
+      G g2 (n+1) >= (k+1) & g well-typed implies D_c(g2) is defined
+         and G D_c(g2) n >= k. 
+
+Assume k, n >= k, G g1.g2 n+1 >= k+1. 
+Therefore G g1 (G g2 n+1) >= k+1 
+
+We want to show G D_c(g1.g2) n >= k 
+We want to show G (D_c(g1).g2 + if(empty(g1), D_c(g2), bot)) n >= k 
+
+  - Subcase empty(g1):
+
+    We wts G (D_c(g1).g2 + D_c(g2)) n >= k 
+       wts min(G D_c(g1).g2 n, G D_c(g2) n) >= k 
+       wts G D_c(g1).g2 n >= k and G D_c(g2) n) >=  k
+       wts G D_c(g1) (G g2 n) >= k and G D_c(g2) n) >=  k
+    Since empty(g1), G g_1 n <= n, so G g2 n+1 >= k+1
+    Therefore D_c(g2) is defined and G D_c(g2) n >= k 
+    We know G g1 (G g2 n+1) >= k+1 
+    We know G g2 (n+1) <= (G g2 n) + 1 
+    By monotonicity G g1 (G g2 n)+1 >= k+1 
+    Therefore D_c(g1) is defined and G D_c(g1) (G g2 n) >= k 
+    Therefore G D_c(g1).g2 n >= k 
+    Therefore G (D_c(g1).g2 + D_c(g2)) n >= k 
+
+  - Subcase empty(g2): 
+    
+    We wts G (D_c(g1).g2 + bot)) n >= k 
+       wts min(G D_c(g1).g2 n, G bot n) >= k 
+       wts G D_c(g1).g2 n >= k 
+       wts G D_c(g1) (G g2 n) >= k 
+    We know G g1 (G g2 n+1) >= k+1 
+    We know G g2 (n+1) <= (G g2 n) + 1 
+    By monotonicity G g1 (G g2 n)+1 >= k+1 
+    Therefore D_c(g1) is defined and G D_c(g1) (G g2 n) >= k 
+    Therefore G D_c(g1).g2 n >= k 
+    Therefore G (D_c(g1).g2 + bot) n >= k 
+
+Case g' = g*:
+
+IH: forall k, n >= k. 
+      G g (n+1) >= (k+1) & g well-typed implies D_c(g) is defined
+         and G D_c(g) n >= k. 
+
+Assume k, n >= k, G (g*) n+1 >= k+1
+We wts G D_c(g).g* n >= k 
+   wts G D_c(g) (G g* n) >= k 
+   wts G D_c(g) min(n, G g n) >= k 
+
+
+Instantiate IH with k, min(n, G g n), so we get 
+  G g (min(n, G g n)+1) >= (k+1) & g well-typed implies D_c(g) is defined
+  and G D_c(g) min(n, G g n) >= k. 
+
+So we know that G g* n+1 = min(n+1, G g n+1) >= k+1 
+Since G g n+1 <= (G g n)+1, we know min(n, G g n) >= k 
+Therefore min(n, G g n)+1 >= k+1, and D_c(g) is defined
+and G D_c(g) min(n, G g n) >= k. 
+
+Therefore G D_c(g).g* n >= k 
