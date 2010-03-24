@@ -577,7 +577,7 @@ continuation is represented by a number -- the guardedness of the
 if for all $m$, we have that $G\;g\;m \geq k$. 
 
 \begin{lemma}{(Emptiness and Guardedness)}
-If $g$ is well-typed and $\emptify{g} = \epsilon$, then $G\;g\;n \leq n$. 
+Suppose $g$ is well-typed. If $\emptify{g} = \epsilon$, then $G\;g\;n \leq n$. 
 \end{lemma}
 
 \begin{proof}
@@ -598,8 +598,14 @@ If $g$ is well-typed and $\emptify{g} = \epsilon$, then $G\;g\;n \leq n$.
 
       By induction, we know that for all $k, s, n$, if $g_1$ is
       well-typed and $G\;g_1\;n \geq k+1$, then the derivative
-      $\deriv{\sigma}{g}$ exists, is well-typed, and
-      $G\;\deriv{\sigma}{g}\;n \geq k$.
+      $\deriv{\sigma}{g_1}$ exists, is well-typed, and
+      $G\;\deriv{\sigma}{g_1}\;n \geq k$.
+
+
+      By induction, we know that for all $k, s, n$, if $g_2$ is
+      well-typed and $G\;g_2\;n \geq k+1$, then the derivative
+      $\deriv{\sigma}{g_2}$ exists, is well-typed, and
+      $G\;\deriv{\sigma}{g_2}\;n \geq k$.
 
       By the definition of the semantics, we know that $G\;(g_1\cdot g_2)\;n = 
       G\;g_1\;(G\;g_2\;n) \geq k+1$. 
@@ -609,7 +615,37 @@ If $g$ is well-typed and $\emptify{g} = \epsilon$, then $G\;g\;n \leq n$.
       $G\;\deriv{\sigma}{g_1}\;(G\;g_2\;n) \geq k$, which means 
       $G\;(\deriv{\sigma}{g_1}\cdot g_2)\;n \geq k$. 
 
-      Now,  $\emptify{g_1}$ can be either $\epsilon$ or $
+      Now, $\emptify{g_1}$ can be either $\epsilon$ or $\bot$. 
+
+      If it is empty, then $G\;g_1\;(G\;g_2\;n) \leq G\;g_2\;n$, so
+      $G\;g_2\;n \geq$. Therefore by the induction hypothesis, we
+      know that $G\;\deriv{\sigma}{g_2}\;n$ exists and is at least as
+      large as $k$.
+
+      If it is $\bot$, then $\deriv{\sigma}{\bot} = \bot$, which 
+      automatically satisfies $G\;\deriv{\sigma}{g_2}\;n \geq k$. 
+
+      Then, by the definition of the derivative, it's easy to see
+      that $G\;(\deriv{\sigma}{g_1\cdot g_2})\;n \geq k$. 
+    \end{case}
+
+    \begin{case}{$g = ({g'}*)$}
+      We know by assumption that we have $n, k$, and $s$, and that 
+      $g'*$ is well-typed, and that $G\;(g'*)\;n \geq k+1$. 
+
+      By induction, we know that for all $n, k$, and $s$, and that 
+      if $g'$ is well-typed, and that $G\;(g')\;n \geq k+1$, then 
+      $g'' = \deriv{\sigma}{g'}$ is defined, and $G\;g'';n \geq k$. 
+
+      By inversion, we know that $g'$ is well-typed. 
+
+      By definition, $G\;{g'}*\;n = \min(n, G\;g'\;n) \geq k+1$, which
+      means $G\;g'\;n \geq k+1$ and $n \geq k+1$.
+
+      From the induction hypothesis, we now know $\deriv{\sigma}{g'}$
+      exists, and that $G\;\deriv{\sigma}{g'}\;n \geq k$. 
+      
+
     \end{case}
   \end{caseblock}
 \end{proof}
