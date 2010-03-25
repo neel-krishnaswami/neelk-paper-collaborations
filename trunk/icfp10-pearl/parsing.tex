@@ -528,7 +528,17 @@ except for the last two, The recursive call is handled in the obvious
 way --- namely, we unroll the recursive reference to $x$ and recur.
 Furthermore, we do not define what the algorithm should do when it
 reaches a free variable; that is, this algorithm is only partially
-defined.
+defined. However, if it is defined, then it is compatible with 
+substitution: 
+
+\begin{lemma}{(Derivatives and Substitution)}
+If $g$ and $g'$ are well-typed grammars such that $\deriv{\sigma}{g}$ exists, 
+then $\deriv{\sigma}{g[g'/x]}$ exists and is equal to $\deriv{\sigma}{g}[g'/x]$. 
+\end{lemma}
+
+\begin{proof}
+  By induction over $g$.
+\end{proof}
 
 We would like to extend the definition of a syntactic derivative to
 strings, but of course the partiality of the definition will also lift
@@ -562,7 +572,7 @@ the grammar, we compute a \emph{function}.
   \begin{array}{lcl}
     G(\epsilon)        & = & id \\
     G(\sigma)          & = & \fun{n}{n+1} \\
-    G(g_1 \cdot g_2)   & = & G(g_1) \circ G(g_2) \\
+    G(g_1 \cdot g_2)   & = & \IfThenElse{\emptify{g_1}}{\fun{n}{\min(G\;g_2\;n, G\;g_1\;(G\;g_2\;n))}}{G(g_1) \circ G(g_2)} \\
     G(\bot)            & = & \infty \\
     G(g_1 \vee g_2)    & = & \fun{n}{\min(G\;g_1\;n, G\;g_2\;n)} \\
     G(g*)              & = & \fun{n}{\min(n, G\;g\;n)} \\
@@ -573,81 +583,132 @@ the grammar, we compute a \emph{function}.
 
 This can be read as a program in continuation-passing style, where the
 continuation is represented by a number -- the guardedness of the
-``rest of the grammar''. We say that a well-typed grammar $g$ is $k$-guarded
-if for all $m$, we have that $G\;g\;m \geq k$. 
+``rest of the grammar''. The interpretation of this function is that
+if there is a variable occurence in the grammar, then we can take a
+derivative of length at most $k'$ before we reach it. If there are no
+variable occurences, then the guardedness of the overall expression is
+depends on how guarded the continuation grammar is.
 
-\begin{lemma}{(Emptiness and Guardedness)}
-Suppose $g$ is well-typed. If $\emptify{g} = \epsilon$, then $G\;g\;n \leq n$. 
-\end{lemma}
-
-\begin{proof}
-  This lemma follows from an easy induction on the derivations of $g$. 
-\end{proof}
+So we say that a well-typed grammar $g$ is $k$-guarded if for all $n
+\geq k$, we have that $G\;g\;n \geq k$. 
 
 \begin{lemma}{(Derivatives of 1-guarded grammars)}
-  If $g$ is well-typed and $G\;g\;n \geq k+1$, then the derivative $\deriv{\sigma}{g}$ exists, 
-  is well-typed, and $G\;\deriv{\sigma}{g}\;n \geq k$. 
+  For all $g$ and $k, n \geq k$, if $g$ is well-typed and $G\;g\;(n+1) \geq k+1$,
+  then there exists a well-typed $g'$ such that $g' =
+  \deriv{\sigma}{g}$ exists, and $G\;g'\;n \geq k$.
 \end{lemma}
 
 \begin{proof}
   This proof follows from an induction on the derivations of $g$. The interesting cases follow: 
   \begin{caseblock}
     \begin{case}{$g = g_1\cdot g_2$}
-      We know by assumption that we have $n, k$, and $s$, and that 
-      $g_1\cdot g_2$ is well-typed, and that $G\;(g_1\cdot g_2)\;n \geq k+1$. 
+      As induction hypothesis, we know that for all $k, n \geq
+      k$, if $g_1$ is well-typed and $G\;g_1\;(n+1) \geq k+1$, then there
+      exists a well-typed $g'_1$ such that $g'_1 = \deriv{\sigma}{g_1}$
+      exists, and $G\;g'_1\;n \geq k$.
 
-      By induction, we know that for all $k, s, n$, if $g_1$ is
-      well-typed and $G\;g_1\;n \geq k+1$, then the derivative
-      $\deriv{\sigma}{g_1}$ exists, is well-typed, and
-      $G\;\deriv{\sigma}{g_1}\;n \geq k$.
+      As induction hypothesis, we know that for all $k, n \geq
+      k$, if $g_2$ is well-typed and $G\;g_2\;(n+1) \geq k+1$, then there
+      exists a well-typed $g'_2$ such that $g'_2 = \deriv{\sigma}{g_2}$
+      exists, and $G\;g'_2\;n \geq k$.
+      
+      Assume $k, n \geq k$, that $g_1\cdot g_2$ is well-typed, and $G\;(g_1\cdot g_2)\;(n+1) \geq k+1$. 
+      
+      By inversion we know that $g_1$ and $g_2$ are well-typed. 
+      
+      By definition, we know $G\;g_1\;(G\;g_2\;(n+1)) \geq k+1$. 
 
+      Since $G\;g_2\;(n+1) \leq (G\;g_2\;n)+1$, we can conclude
+      that $G\;g_1\;((G\;g_2\;n)+1) \geq G\;g_1\;(G\;g_2\;(n+1)) \geq k+1$. 
 
-      By induction, we know that for all $k, s, n$, if $g_2$ is
-      well-typed and $G\;g_2\;n \geq k+1$, then the derivative
-      $\deriv{\sigma}{g_2}$ exists, is well-typed, and
-      $G\;\deriv{\sigma}{g_2}\;n \geq k$.
+      Therefore by induction, we know that $g'_1 = \deriv{\sigma}{g_1}$ exists,
+      and that $G\;g'_1\;(G\;g_2\;n) \geq k$. 
 
-      By the definition of the semantics, we know that $G\;(g_1\cdot g_2)\;n = 
-      G\;g_1\;(G\;g_2\;n) \geq k+1$. 
+      Therefore we know that $G\;(g'_1\cdot g_2)\;n \geq k$. 
 
-      Substituting $k$ for $k$, $s$ for $s$, and $G\;g_2\;n$ for $n$ in the 
-      induction hypothesis, we get that $\deriv{\sigma}{g_1}$ exists, and that
-      $G\;\deriv{\sigma}{g_1}\;(G\;g_2\;n) \geq k$, which means 
-      $G\;(\deriv{\sigma}{g_1}\cdot g_2)\;n \geq k$. 
+      Now, we proceed by case analysis on whether or not $\emptify{g_1} = \epsilon$. 
 
-      Now, $\emptify{g_1}$ can be either $\epsilon$ or $\bot$. 
+      \begin{itemize}
+        \item[$\emptify{g_1} = \epsilon$]
+          
+          If it is empty, then we know that for all $n$, $G\;g_1\; n
+          \leq n$. Therefore we know that $G\;g_2\;(n+1) \geq
+          k+1$. Therefore by induction we know that $g'_2 =
+          \deriv{\sigma}{g_2}$ exists and that $G\;g'_2\;n \geq k$.
 
-      If it is empty, then $G\;g_1\;(G\;g_2\;n) \leq G\;g_2\;n$, so
-      $G\;g_2\;n \geq$. Therefore by the induction hypothesis, we
-      know that $G\;\deriv{\sigma}{g_2}\;n$ exists and is at least as
-      large as $k$.
+          Therefore we know that $\min(G\;(g'_1\cdot g_2)\;n, G\;g'_2\;n) \geq k$. 
+      
+          Therefore $G\;\deriv{\sigma}{g_1\cdot g_2}\;n \geq k$. 
 
-      If it is $\bot$, then $\deriv{\sigma}{\bot} = \bot$, which 
-      automatically satisfies $G\;\deriv{\sigma}{g_2}\;n \geq k$. 
+        \item[$\emptify{g_1} = \bot$]
 
-      Then, by the definition of the derivative, it's easy to see
-      that $G\;(\deriv{\sigma}{g_1\cdot g_2})\;n \geq k$. 
+          Now, note that $G\;\bot\;n = \infty$. 
+
+          Therefore $\min(G\;(g'_1\cdot g_2)\;n, G\;\bot\;n) \geq k$. 
+
+          Therefore $G\;\deriv{\sigma}{g_1\cdot g_2}\;n \geq k$
+      \end{itemize}
+    \end{case}
+      
+    \begin{case}{$g_0 = g*$}
+      As induction hypothesis, we know for all $k, n \geq k$, if $g$
+      is well-typed and $G\;g\;(n+1) \geq k+1$, then there exists a
+      well-typed $g'$ such that $g' = \deriv{\sigma}{g}$ exists, and
+      $G\;g'\;n \geq k$.
+
+      We assume $k, n \geq k$, and $G\;(g*)\;(n+1) \geq k+1$. 
+
+      By definition we know that $\min(n+1, G\;g\;(n+1)) \geq k+1$, 
+      which means that $G\;g\;(n+1) \geq k+1$. 
+
+      Since $(G\;g\;n)+1 \geq G\;g\;(n+1)$, we know that 
+      $(G\;g\;n)+1 \geq k+1$. Therefore we know that 
+      $\min(n+1, (G\;g\;n)+1) \geq k+1$, and therefore we
+      know that $\min(n, G\;g\;n)+1 \geq k+1$. 
+
+      Therefore we know that $g' = \deriv{\sigma}{g}$ exists, 
+      and that $G\;g'\;\min(n, G\;g\;n) \geq k$. 
+
+      Therefore by definition, $G\;g'\;(G\;g*\;n) \geq k$.
+
+      Therefore by definition, $G\;\deriv{\sigma}{g*}\;n \geq k$. 
     \end{case}
 
-    \begin{case}{$g = ({g'}*)$}
-      We know by assumption that we have $n, k$, and $s$, and that 
-      $g'*$ is well-typed, and that $G\;(g'*)\;n \geq k+1$. 
+    \begin{case}{$g_0 = \fix{x}{g}$}
+      By induction, we know for all $k, n \geq k$, if $g$
+      is well-typed and $G\;g\;(n+1) \geq k+1$, then there exists a
+      well-typed $g'$ such that $g' = \deriv{\sigma}{g}$ exists, and
+      $G\;g'\;n \geq k$.
 
-      By induction, we know that for all $n, k$, and $s$, and that 
-      if $g'$ is well-typed, and that $G\;(g')\;n \geq k+1$, then 
-      $g'' = \deriv{\sigma}{g'}$ is defined, and $G\;g'';n \geq k$. 
+      Assume $k, n \geq k$, and $G\;\fix{x}{g}\;(n+1) \geq k+1$. 
 
-      By inversion, we know that $g'$ is well-typed. 
+      By inversion, we know that $g$ is well-typed.
 
-      By definition, $G\;{g'}*\;n = \min(n, G\;g'\;n) \geq k+1$, which
-      means $G\;g'\;n \geq k+1$ and $n \geq k+1$.
+      By definition, we know that $G\;g\;n+1 \geq k+1$. 
 
-      From the induction hypothesis, we now know $\deriv{\sigma}{g'}$
-      exists, and that $G\;\deriv{\sigma}{g'}\;n \geq k$. 
-      
+      By induction, we know that $g' = \deriv{\sigma}{g}$ exists, 
+      and that $G\;g\;n \geq k$. 
 
+      By substitution, we know that $\deriv{\sigma}{g[\fix{x}{g}/x]} = 
+      g'[\fix{x}{g}/x]$. 
+
+      We also know that substitution preserves guardedness, so 
+      $G\;g'[\fix{x}{g}/x]\;n \geq k$. 
+
+      Therefore $G\;\deriv{\sigma}{\fix{x}{g}}\;n \geq k$. 
     \end{case}
   \end{caseblock}
+\end{proof}
+
+This lemma lets us prove the following theorem: 
+
+\begin{theorem}{(Guardedness and derivatives)}
+If $g$ is well-typed and $k$-guarded, and $s$ is a string of length less than or equal to $k$, 
+then $\deriv{s}{g}$ is well-defined and $(k - |s|)$-guarded. 
+\end{theorem}
+
+\begin{proof}
+  This follows by a simple induction on $k$. 
 \end{proof}
 
 Now, let's show that syntactic and semantic derivatives coincide. 
