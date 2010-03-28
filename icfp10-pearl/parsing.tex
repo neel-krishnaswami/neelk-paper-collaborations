@@ -11,6 +11,7 @@
 \newcommand{\nats}{\mathbb{N}}
 \newcommand{\judgebalance}[3][\Gamma]{{#1} \vdash {#2} : {#3}}
 \newcommand{\judgecat}[3]{{#1} \circ {#2} \equiv {#3}}
+\newcommand{\judgesubst}[3]{{#1} \vdash {#2} : {#3}}
 
 \newcommand{\powerset}[1]{\mathcal{P}({#1})}
 \newcommand{\powersetfin}[1]{\mathcal{P}^{\mathrm{fin}}({#1})}
@@ -86,9 +87,9 @@ to a variant of Bekic's lemma) essentially lets us define unrestricted
 context-free grammars. 
 
 To define the bracketed languages, we will impose \emph{typing
-restrictions} on this language to ensure that open and close
-parentheses match up, and that every recursive call is wrapped
-with an explicit open and close symbol. 
+  restrictions} on this language to ensure that open and close
+parentheses match up, and that every recursive call is wrapped with an
+explicit open and close symbol. 
 
 \begin{mathpar}
   \begin{array}{llcl}
@@ -106,18 +107,15 @@ with an explicit open and close symbol.
           { }
           {\judgebalance{c}{0}}
 \and
-\inferrule*[right=TOpen]
-          { }
-          {\judgebalance{\lft{a}}{+1}}
+\mbox{(No rule for $\lft{a}$)}
 \and
 \inferrule*[right=TClose]
           { }
-          {\judgebalance{\rgt{b}}{-1}}
+          {\judgebalance{\rgt{b}}{+1}}
 \and
 \inferrule*[right=TCat]
           {\judgebalance{g_1}{d_1} \\ 
-           \judgebalance{g_2}{d_2} \\
-           (d_1 \geq 0 \vee d_2 \leq 0)}
+           \judgebalance{g_2}{d_2} }
           {\judgebalance{g_1\cdot g_2}{d_1 + d_2}}
 \and
 \inferrule*[right=TStar]
@@ -133,7 +131,7 @@ with an explicit open and close symbol.
            \judgebalance{g_2}{d} }
           {\judgebalance{g_1 \vee g_2}{d}}
 \and
-\inferrule*[right=TCall]
+\inferrule*[right=TVar]
           {x \in \Gamma}
           {\judgebalance{\lft{a} x \rgt{b}}{0}}
 \and
@@ -144,21 +142,24 @@ with an explicit open and close symbol.
 
 Here, we ascribe integers as types to our grammars, with the idea that
 the type of a grammar describes the number of unbalanced parentheses
-in every sentence of the grammar's language. So the grammar $\lft{a}
-\vee \lft{b}\cdot(\lft{c}\cdot\rgt{d})*$ has type $+1$, since every
-sentence of this language has one more left-bracket than
-right-bracket. This also means a language like $\epsilon \vee \lft{a}$
+in every sentence of the grammar's language. So the grammar $\rgt{a}
+\vee \rgt{b}\cdot(\lft{c}\cdot x\cdot \rgt{d})*$ has type $+1$, since
+every sentence of this language has one more right-bracket than
+left-bracket. This also means a language like $\epsilon \vee \rgt{a}$
 will fail to typecheck, since its two sentences each have different
 numbers of unbalanced parens in them.
 
-The side-condition on the \textsc{TCat} rule enforces the property
-that unbalanced right-parentheses cannot occur to the left of
-unbalanced left-parentheses -- that is, we do not want to admit
-languages with sentences like $\rgt{a}\cdot\lft{b}$.
-
-The rule \textsc{TCall} is the only rule that lets us introduce 
+The rule \textsc{TVar} is the only rule that lets us introduce 
 variables, and it ensures that every call is guarded with a left-
 and right-bracket.  
+
+Note that the right brackets can appear in a well-typed grammar
+\emph{only} in conjunction with a variable occurrence. Intuitively,
+the reason for this restriction is that we will be considering
+grammars that arise as derivatives of balanced grammars, and as 
+we match a string from left to right, we will always meet left-brackets
+before right-brackets, and so the derivative grammars will always 
+only need free right-brackets. 
 
 We will formally prove the soundness of these informal claims in the
 next section.
@@ -207,8 +208,8 @@ of fixed points we know that $\fix{x}{g} \simeq g[\fix{x}{g}/x]$.
 
 \subsubsection{Properties of Languages}
 
-Next, we'll say a word $\sigma$ is well-nested if there is a relation $R$ on the 
-positions in the word, such that 
+Next, we'll say a word $\sigma$ is strictly well-nested if there is a
+relation $R$ on the positions in the word, such that
 
 \begin{enumerate}
 \item $R$ describes a matching between open and close brackets: 
@@ -220,51 +221,30 @@ positions in the word, such that
 
 This condition is natural, but will prove a little too stringent to be
 univerally applicable. Instead, we will relax it just a little, and
-say a word $\sigma$ is well-nested with depth $d \in \ints$ if it can
-be broken up into $|d| + 1$ well-nested substrings separated by
-characters from $\Sigma_l$ if $d \geq 0$ and separated by characters
-from $\Sigma_r$ if $d \leq 0$.
+say a word $\sigma$ is well-nested with depth $d \in \nats$ if it can
+be broken up into $|d| + 1$ strictly well-nested substrings separated
+by characters from $\Sigma_r$.
 
-Finally, we will say a language $L$ is well-nested to depth $d$, if every string $\sigma$ 
-in $L$ is well-nested to depth $d$. 
+Finally, we will say a language $L$ is well-nested to depth $d$, if
+every string $\sigma$ in $L$ is well-nested to depth $d$.
 
 \begin{prop}{(Semantic Nesting Lemma)}
 If $\sigma_1$ is nested to depth $d_1$ and $\sigma_2$ is nested to depth $d_2$, then 
-$\sigma_1\cdot\sigma_2$ is nested to depth $d_1 + d_2$, assuming either $d_1 \geq 0$ or 
-$d_2 \leq 0$.  
+$\sigma_1\cdot\sigma_2$ is nested to depth $d_1 + d_2$.
 \end{prop}
 
 \begin{proof}
-By assumption , we know that $\sigma_1$ is well-nested to depth $d_1$, and that $\sigma_2$ is well-nested to depth $d_2$, and that either $d_1 \geq 0$ or $d_2 \leq 0$. 
+  This follows from an induction on $d_1$. Written more suggestively with ellipses, 
+the proof is as follows: 
 
-  \begin{enumerate}
-    \item Suppose $d_1 \geq 0$. Therefore $\sigma_1 = \sigma^1_1\cdot\lft{a}_1\cdot \ldots\cdot\lft{a}_{d_1}\sigma^{d_1+1}_1$ and each $\sigma^i_1$ is well-nested. 
+  We know $\sigma_1 = \sigma^1_1\rgt{a_1}\ldots\rgt{a_{d_1}}\sigma^{d_1+1}_1$
 
-      Now, either $d_2 \geq 0$ or $d_2 < 0$. 
-      \begin{enumerate}
-        \item If $d_2 \geq 0$, then $\sigma_2 = \sigma^1_2\cdot\lft{a}_1\cdot \ldots\cdot\lft{a}_{d_2}\sigma^{d_2+1}_2$ and each $\sigma^i_2$ is well-nested. 
+  We know $\sigma_2 = \sigma^1_2\rgt{b_1}\ldots\rgt{b_{d_2}}\sigma^{d_2+1}_2$.
+  
+  So $\sigma_1\cdot\sigma_2 = \sigma^1_1\rgt{a_1}\ldots\rgt{a_{d_1}}\sigma^{d_1+1}_1\cdot\sigma^1_2\rgt{b_1}\ldots\rgt{b_{d_2}}\sigma^{d_2+1}_2$.
 
-          \noindent Therefore $\sigma = \sigma^1_1\cdot\lft{a}_1\cdot \ldots\cdot\lft{a}_{d_1}\sigma^{d_1+1}_1\cdot\sigma^1_2\cdot\lft{a}_1\cdot \ldots\cdot\lft{a}_{d_2}\sigma^{d_2+1}_2$
-            
-          \noindent Therefore $\sigma$ is well-nested to depth $d_1 + d_2$. 
+  This is obviously well-nested with depth $d_1 + d_2$. 
 
-        \item If $d_2 < 0$, then $\sigma_2 = \sigma^1_2\cdot\rgt{a}_1\cdot \ldots\cdot\rgt{a}_{|d_2|}\sigma^{|d_2|+1}_2$ and each $\sigma^i_2$ is well-nested. 
-
-          \noindent Therefore $\sigma = \sigma^1_1\cdot\lft{a}_1\cdot \ldots\cdot\lft{a}_{d_1}\sigma^{d_1+1}_1\cdot\sigma^1_2\cdot\rgt{a}_1\cdot \ldots\cdot\rgt{a}_{d_2}\sigma^{|d_2|+1}_2$
-
-          \noindent We can construct a nesting relation for the concatenated word by merging the nesting relations for each word, and adding an entry for the matched pairs starting at the inside $(\lft{a}_{d_1}, \rgt{a}_1)$ and working outwards. 
- 
-         \noindent This will leave $d_1 + d_2$ left brackets left over on the left if $d_1 > |d_2|$, and $d_1 + d_2$ right brackets left over on the right if $d_1 < |d_2|$. In either case, the word is nested with depth $d_1 + d_2$.         \end{enumerate}
-
-    \item Suppose $d_1 < 0$. Then $\sigma_1 = \sigma^1_1\cdot\rgt{a}_1\cdot\ldots\cdot\rgt{a}_{|d_1|}\sigma^{|d_1| + 1}_1$
-        
-      \noindent Since $d_1 \geq 0 \vee d_2 \leq 0$, we know $d_2 \leq 0$. So 
-           $\sigma_2 = \sigma^1_2\cdot\rgt{a}_1\cdot\ldots\cdot\rgt{a}_{|d_2|}\sigma^{|d_2| + 1}_1$
-
-      \noindent Therefore $\sigma = \sigma^1_1\cdot\rgt{a}_1\cdot\ldots\cdot\rgt{a}_{|d_1|}\sigma^{|d_1| + 1}_1\cdot\sigma^1_2\cdot\rgt{a}_1\cdot\ldots\cdot\rgt{a}_{|d_2|}\sigma^{|d_2| + 1}_1$
-
-      \noindent This is well-nested to depth $d_1 + d_2$. 
-  \end{enumerate}
 \end{proof}
 
 \begin{prop}
@@ -288,13 +268,7 @@ languages.
     of a single well-nested word (since it has no brackets in it at all). 
   \end{case}
 
-  \begin{case}{$\judgebalance{\lft{a}}{+1}$}
-    We see $\interp{\lft{a}}{\gamma} = \setof{\lft{a}}$, which is a one-element set consisting 
-    of a single bracket. This is a well-nested word of depth $+1$, since we can write it as a 
-    word of the from $\epsilon\lft{a}\cdot\epsilon$, and $\epsilon$ is well-nested. 
-  \end{case}
-
-  \begin{case}{$\judgebalance{\rgt{a}}{-1}$}
+  \begin{case}{$\judgebalance{\rgt{a}}{+1}$}
     We see $\interp{\rgt{a}}{\gamma} = \setof{\rgt{a}}$, which is a one-element set consisting 
     of a single bracket. This is a well-nested word of depth $+1$, since we can write it as a 
     word of the from $\epsilon\rgt{a}\cdot\epsilon$, and $\epsilon$ is well-nested. 
@@ -303,10 +277,10 @@ languages.
   \begin{case}{$\judgebalance{g_1\cdot g_2}{d_1 + d_2}$}
     We reason as follows: 
     \begin{enumerate}
-      \item By inversion, we know that $\judgebalance{g_1}{d_1}$, and $\judgebalance{g_2}{d_2}$, and either
-        $d_1 \geq 0$ or $d_2 \leq 0$. 
+      \item By inversion, we know that $\judgebalance{g_1}{d_1}$, and $\judgebalance{g_2}{d_2}$.
       \item By the semantics, every word $\sigma$ of $\interp{g_1\cdot g_2}\gamma$ is equal to 
         $\sigma_1\cdot\sigma_2$, where $\sigma_1 \in \interp{g_1}\gamma$ and $\sigma_2 \in \interp{g_2}\gamma$. 
+      \item By induction, we know that $\sigma_1$ is nested to depth $d_1$ and $\sigma_2$ is nested to depth $d_2$.
       \item By the semantic nesting lemma, we know that $\sigma_1 \cdot \sigma_2$ has nesting depth $d_1 + d_2$. 
     \end{enumerate}
   \end{case}
@@ -518,198 +492,105 @@ expressions:
     \deriv{\sigma}{g*}              & = & \deriv{\sigma}{g}\cdot(g*) \\
     \deriv{\sigma}{\bot}            & = & \bot \\
     \deriv{\sigma}{g_1 \vee g_2}    & = & \deriv{\sigma}{g_1} \vee \deriv{\sigma}{g_2} \\
-    \deriv{\sigma}{\fix{x}{g}}      & = & \deriv{\sigma}{[\fix{x}{g}/x]g} \\
-    \deriv{\sigma}{\lft{a}x\rgt{b}} & = & \mbox{(undefined)}
+    \deriv{\sigma}{\fix{x}{g}}      & = & \deriv{\sigma}{g}[\fix{x}{g}/x] \\
+    \deriv{\sigma}{x}               & = & \mbox{(undefined)}
   \end{array}
 \end{mathpar}
 
 All of the clauses are identical to the standard derivative algorithm,
-except for the last two, The recursive call is handled in the obvious
-way --- namely, we unroll the recursive reference to $x$ and recur.
-Furthermore, we do not define what the algorithm should do when it
-reaches a free variable; that is, this algorithm is only partially
-defined. However, if it is defined, then it is compatible with 
-substitution: 
+except for the last two. We do not define what the algorithm should do
+when it reaches a free variable; that is, this algorithm is only
+partially defined. 
 
-\begin{lemma}{(Derivatives and Substitution)}
-If $g$ and $g'$ are well-typed grammars such that $\deriv{\sigma}{g}$ exists, 
-then $\deriv{\sigma}{g[g'/x]}$ exists and is equal to $\deriv{\sigma}{g}[g'/x]$. 
+The derivative of a fixed point $\fix{x}{g}$is handled by taking the
+derivative of fixed point's body, and then substituting the original
+gramamtical expression for $x$ and recurring. Intuitively, a
+derivative is equivalent to its unrolling, so it might seem that a
+more natural thing to do is to unroll the fixed point first, and
+\emph{then} take the derivative. However, this would be a
+non-structural recursion, and so will complicate the theory.
+
+However, since we are going to be considering balanced grammars, we
+can exploit the fact that a one-character derivative will never to
+unroll a given fixed point more than once, since every variable
+occurence will be guarded. As a result, we can take the derivative,
+and then perform the substitution, without changing the result (we
+will prove this shortly). 
+
+Now, the derivative of a well-typed grammar will not necessarily be
+well-typed, since a subterm of the form $\lft{a}\cdot x \cdot\rgt{b}$ can
+differentiated to $x\cdot\rgt{b}$, but it will be the case that any
+\emph{substitution} of a derivative will also be well-typed, since
+any ``bare'' variables will be replaced by well-typed terms. 
+
+\begin{lemma}{(Existence and Well-Typedness of Derivatives)}
+For any grammatical expression $g$ such that $\judgebalance{g}{d}$, 
+we have that $\deriv{\sigma}{g}$ is defined and that for all 
+substitutions $\gamma$ such that $\judgesubst{\Gamma'}{\gamma}{\Gamma}$, 
+we have that $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g})}{d - \mathrm{sgn}(\sigma)}$.
 \end{lemma}
 
 \begin{proof}
-  By induction over $g$.
-\end{proof}
-
-We would like to extend the definition of a syntactic derivative to
-strings, but of course the partiality of the definition will also lift
-to strings. To precisely explain this, we'll turn to the idea of $k$-guarded
-grammars.
-
-\subsubsection{Guardedness and Grammars}
-
-Now, we'll need to explain the concept of a $k$-guarded grammar. The
-basic intuition we'll use is that if there are at least $k$ character
-symbols occur before each occurence of a variable in a grammatical
-expression, then a derivative of any string with at most $k$ characters
-will be well-defined. 
-
-However, there's a slight bump in the road. The notion of ``before''
-in this intuition relies on being able to give the symbols in a
-grammatical expression in sequence (for example, in a traditional BNF
-gramar a production is a sequence of terminals and nonterminals), but
-our grammatical expressions are formed with a binary operator $g_1
-\cdot g_2$. This makes it seem like we might need to somehow introduce
-operations to linearize grammatical operations, taking into account
-the associativity of the sequential concatenation and its interaction
-with operations like Kleene closure and fixed point.
-
-This is not \emph{difficult}, but is decidedly
-``un-pearl-like''. Fortunately, there is a solution more in the spirit
-of functional programming: instead of computing a \emph{number} from
-the grammar, we compute a \emph{function}. 
-
-\begin{mathpar}
-  \begin{array}{lcl}
-    G(\epsilon)        & = & id \\
-    G(\sigma)          & = & \fun{n}{n+1} \\
-    G(g_1 \cdot g_2)   & = & \IfThenElse{\emptify{g_1}}{\fun{n}{\min(G\;g_2\;n, G\;g_1\;(G\;g_2\;n))}}{G(g_1) \circ G(g_2)} \\
-    G(\bot)            & = & \infty \\
-    G(g_1 \vee g_2)    & = & \fun{n}{\min(G\;g_1\;n, G\;g_2\;n)} \\
-    G(g*)              & = & \fun{n}{\min(n, G\;g\;n)} \\
-    G(\lft{a}x\rgt{b}) & = & \fun{n}{0} \\
-    G(\fix{x}{g})      & = & G(g) \\
-  \end{array}
-\end{mathpar}
-
-This can be read as a program in continuation-passing style, where the
-continuation is represented by a number -- the guardedness of the
-``rest of the grammar''. The interpretation of this function is that
-if there is a variable occurence in the grammar, then we can take a
-derivative of length at most $k'$ before we reach it. If there are no
-variable occurences, then the guardedness of the overall expression is
-depends on how guarded the continuation grammar is.
-
-So we say that a well-typed grammar $g$ is $k$-guarded if for all $n
-\geq k$, we have that $G\;g\;n \geq k$. 
-
-\begin{lemma}{(Derivatives of 1-guarded grammars)}
-  For all $g$ and $k, n \geq k$, if $g$ is well-typed and $G\;g\;(n+1) \geq k+1$,
-  then there exists a well-typed $g'$ such that $g' =
-  \deriv{\sigma}{g}$ exists, and $G\;g'\;n \geq k$.
-\end{lemma}
-
-\begin{proof}
-  This proof follows from an induction on the derivations of $g$. The interesting cases follow: 
+  This proof proceeds by induction on $g$. In what follows, we will 
+  abbreviate $\mathrm{sgn}(\sigma)$ as $i$. The interesting cases are
   \begin{caseblock}
     \begin{case}{$g = g_1\cdot g_2$}
-      As induction hypothesis, we know that for all $k, n \geq
-      k$, if $g_1$ is well-typed and $G\;g_1\;(n+1) \geq k+1$, then there
-      exists a well-typed $g'_1$ such that $g'_1 = \deriv{\sigma}{g_1}$
-      exists, and $G\;g'_1\;n \geq k$.
+      By inversion, we know that $\judgebalance{g_1}{d_1}$ and 
+      $\judgebalance{g_2}{d_2}$ and $d = d_1 + d_2$. 
 
-      As induction hypothesis, we know that for all $k, n \geq
-      k$, if $g_2$ is well-typed and $G\;g_2\;(n+1) \geq k+1$, then there
-      exists a well-typed $g'_2$ such that $g'_2 = \deriv{\sigma}{g_2}$
-      exists, and $G\;g'_2\;n \geq k$.
+      By induction, we know that $\deriv{\sigma}{g_1}$ and $\deriv{\sigma}{g_2}$ 
+      exist. Since emptiness is defined on all well-typed grammars, it follows
+      immediately that $\deriv{\sigma}{g}$ exists. 
+
+      Now suppose that $\judgesubst{\Gamma'}{\gamma}{\Gamma}$. 
+
+      By induction we know that $\judgebalance[\Gamma']{\gamma(g_1)}{d_1 - i}$. 
       
-      Assume $k, n \geq k$, that $g_1\cdot g_2$ is well-typed, and $G\;(g_1\cdot g_2)\;(n+1) \geq k+1$. 
-      
-      By inversion we know that $g_1$ and $g_2$ are well-typed. 
-      
-      By definition, we know $G\;g_1\;(G\;g_2\;(n+1)) \geq k+1$. 
+      By substitution, we know that $\judgebalance[\Gamma']{\gamma(g_2)}{d_2}$
+        
+      Therefore we know that \textsc{TCat}, we know that $\judgebalance[\Gamma']{\gamma(g_1\cdot g_2)}{d - i}$. 
 
-      Since $G\;g_2\;(n+1) \leq (G\;g_2\;n)+1$, we can conclude
-      that $G\;g_1\;((G\;g_2\;n)+1) \geq G\;g_1\;(G\;g_2\;(n+1)) \geq k+1$. 
-
-      Therefore by induction, we know that $g'_1 = \deriv{\sigma}{g_1}$ exists,
-      and that $G\;g'_1\;(G\;g_2\;n) \geq k$. 
-
-      Therefore we know that $G\;(g'_1\cdot g_2)\;n \geq k$. 
-
-      Now, we proceed by case analysis on whether or not $\emptify{g_1} = \epsilon$. 
+      We now proceed by  case analysis on $\emptify{g_1}$. 
 
       \begin{itemize}
-        \item[$\emptify{g_1} = \epsilon$]
+        \item If $\emptify{g_1}$ is true, then we know that $d_1 = 0$. 
+        
+          By induction, we know that $\judgebalance[\Gamma]{\gamma(\deriv{\sigma}{g_2})}{d - i}$. 
           
-          If it is empty, then we know that for all $n$, $G\;g_1\; n
-          \leq n$. Therefore we know that $G\;g_2\;(n+1) \geq
-          k+1$. Therefore by induction we know that $g'_2 =
-          \deriv{\sigma}{g_2}$ exists and that $G\;g'_2\;n \geq k$.
+          Therefore we know that $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g})}{d - i}$. 
 
-          Therefore we know that $\min(G\;(g'_1\cdot g_2)\;n, G\;g'_2\;n) \geq k$. 
-      
-          Therefore $G\;\deriv{\sigma}{g_1\cdot g_2}\;n \geq k$. 
+        \item If $\emptify{g_2}$ is false, 
 
-        \item[$\emptify{g_1} = \bot$]
+          We know by rule \textsc{TBot} that $\judgebalance[\Gamma']{\bot}{d - i}$. 
 
-          Now, note that $G\;\bot\;n = \infty$. 
-
-          Therefore $\min(G\;(g'_1\cdot g_2)\;n, G\;\bot\;n) \geq k$. 
-
-          Therefore $G\;\deriv{\sigma}{g_1\cdot g_2}\;n \geq k$
+          Therefore we know that $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g})}{d - i}$. 
       \end{itemize}
     \end{case}
+
+    \begin{case}{$\judgebalance{\fix{x}{g}}{0}$}
+      By inversion, we know that $\judgebalance[\Gamma, x]{g}{0}$. 
       
-    \begin{case}{$g_0 = g*$}
-      As induction hypothesis, we know for all $k, n \geq k$, if $g$
-      is well-typed and $G\;g\;(n+1) \geq k+1$, then there exists a
-      well-typed $g'$ such that $g' = \deriv{\sigma}{g}$ exists, and
-      $G\;g'\;n \geq k$.
+      So, by induction we know that $\deriv{\sigma}{g}$ is well-defined, and hence 
+      $\deriv{\sigma}{\fix{x}{g}}$ is well-defined. 
 
-      We assume $k, n \geq k$, and $G\;(g*)\;(n+1) \geq k+1$. 
+      Now, suppose that we have $\judgesubst{\Gamma'}{\gamma}{\Gamma}$. Now, note that 
+      by substitution, $\judgebalance[\Gamma']{\gamma(\fix{x}{g})}{0}$ holds. Hence
+      $\judgesubst{\Gamma'}{\gamma, [\gamma(\fix{x}{g})/x]}{\Gamma,x}$. 
 
-      By definition we know that $\min(n+1, G\;g\;(n+1)) \geq k+1$, 
-      which means that $G\;g\;(n+1) \geq k+1$. 
+      Therefore by induction hypothesis, we know that $\judgebalance[\Gamma']{(\gamma, [\gamma(\fix{x}{g})/x])(\deriv{\sigma}{g})}{0}$
 
-      Since $(G\;g\;n)+1 \geq G\;g\;(n+1)$, we know that 
-      $(G\;g\;n)+1 \geq k+1$. Therefore we know that 
-      $\min(n+1, (G\;g\;n)+1) \geq k+1$, and therefore we
-      know that $\min(n, G\;g\;n)+1 \geq k+1$. 
+      By definition of substitution, we know that $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g}[\fix{x}{g}/x])}{0}$
 
-      Therefore we know that $g' = \deriv{\sigma}{g}$ exists, 
-      and that $G\;g'\;\min(n, G\;g\;n) \geq k$. 
-
-      Therefore by definition, $G\;g'\;(G\;g*\;n) \geq k$.
-
-      Therefore by definition, $G\;\deriv{\sigma}{g*}\;n \geq k$. 
-    \end{case}
-
-    \begin{case}{$g_0 = \fix{x}{g}$}
-      By induction, we know for all $k, n \geq k$, if $g$
-      is well-typed and $G\;g\;(n+1) \geq k+1$, then there exists a
-      well-typed $g'$ such that $g' = \deriv{\sigma}{g}$ exists, and
-      $G\;g'\;n \geq k$.
-
-      Assume $k, n \geq k$, and $G\;\fix{x}{g}\;(n+1) \geq k+1$. 
-
-      By inversion, we know that $g$ is well-typed.
-
-      By definition, we know that $G\;g\;n+1 \geq k+1$. 
-
-      By induction, we know that $g' = \deriv{\sigma}{g}$ exists, 
-      and that $G\;g\;n \geq k$. 
-
-      By substitution, we know that $\deriv{\sigma}{g[\fix{x}{g}/x]} = 
-      g'[\fix{x}{g}/x]$. 
-
-      We also know that substitution preserves guardedness, so 
-      $G\;g'[\fix{x}{g}/x]\;n \geq k$. 
-
-      Therefore $G\;\deriv{\sigma}{\fix{x}{g}}\;n \geq k$. 
+      Therefore $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{\fix{x}{g}})}{0}$. 
     \end{case}
   \end{caseblock}
 \end{proof}
 
-This lemma lets us prove the following theorem: 
 
-\begin{theorem}{(Guardedness and derivatives)}
-If $g$ is well-typed and $k$-guarded, and $s$ is a string of length less than or equal to $k$, 
-then $\deriv{s}{g}$ is well-defined and $(k - |s|)$-guarded. 
-\end{theorem}
 
-\begin{proof}
-  This follows by a simple induction on $k$. 
-\end{proof}
+
+
+
 
 Now, let's show that syntactic and semantic derivatives coincide. 
 
