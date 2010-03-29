@@ -13,6 +13,9 @@
 \newcommand{\judgecat}[3]{{#1} \circ {#2} \equiv {#3}}
 \newcommand{\judgesubst}[3]{{#1} \vdash {#2} : {#3}}
 
+\newcommand{\true}{\mathsf{true}}
+\newcommand{\false}{\mathsf{false}}
+
 \newcommand{\powerset}[1]{\mathcal{P}({#1})}
 \newcommand{\powersetfin}[1]{\mathcal{P}^{\mathrm{fin}}({#1})}
 \newcommand{\interp}[1]{[\![{#1}]\!]}
@@ -370,14 +373,14 @@ We define the emptification operator on well-typed grammars as follows:
 
 \begin{mathpar}
   \begin{array}{lcl}
-    \emptify{\epsilon}      & = & \epsilon \\
-    \emptify{\sigma}        & = & \bot \\
-    \emptify{g_1 \cdot g_2} & = & \IfThenElse{\emptify{g_1} = \epsilon \land \emptify{g_2} = \epsilon}{\epsilon}{\bot} \\
-    \emptify{g*}           & = & \epsilon \\
-    \emptify{\bot}         & = & \bot \\
-    \emptify{g_1 \vee g_2} & = & \IfThenElse{\emptify{g_1} = \epsilon \vee \emptify{g_2} = \epsilon}{\epsilon}{\bot} \\
+    \emptify{\epsilon}      & = & \true \\
+    \emptify{\sigma}        & = & \false \\
+    \emptify{g_1 \cdot g_2} & = & \emptify{g_1} \land \emptify{g_2}} \\
+    \emptify{g*}           & = & \true \\
+    \emptify{\bot}         & = & \false \\
+    \emptify{g_1 \vee g_2} & = & \emptify{g_1} \vee \emptify{g_2} \\
     \emptify{\fix{x}{g}}   & = & \emptify{x} \\
-    \emptify{\lft{a} x \rgt{b}} & = & \bot \\
+    \emptify{\lft{a} x \rgt{b}} & = & \false \\
   \end{array}
 \end{mathpar}
 
@@ -391,20 +394,20 @@ all substitutions for the variables.
 \begin{prop}{(Emptiness Operator)}
 Suppose $g$ is a well-typed grammar with free variables $\Gamma$. Then
 for any assignment of languages $\gamma$ for $\Gamma$, we have that
-$\emptify{g} = \epsilon$ if $\epsilon \in \interp{g}\gamma$, and is
-equal to $\bot$ otherwise.
+$\emptify{g}$ is $\true$ if $\epsilon \in \interp{g}\gamma$, and is
+$\false$ otherwise. 
 \end{prop}
 
 \begin{proof}
 This proof is by induction on $g$. 
 \begin{caseblock}
   \begin{case}{$\epsilon$}
-    The interpretation of this language contains the empty string, and $\emptify{\epsilon} = \epsilon$. 
+    The interpretation of this language contains the empty string, and $\emptify{\epsilon} = \true$. 
   \end{case}
 
   \begin{case}{$\sigma$}
     The interpretation of this language is the one-element set containing the one-character string $c$, 
-    which does not contain $\epsilon$, and we have that $\emptify{\sigma} = \bot$. 
+    which does not contain $\epsilon$, and we have that $\emptify{\sigma} = \false$. 
   \end{case}
 
   \begin{case}{$g_1\cdot g_2$}
@@ -412,50 +415,108 @@ This proof is by induction on $g$.
     $\interp{g_1}\gamma$ and $\interp{g_2}\gamma$. This can only contain an empty string if both 
     languages contain empty strings. 
 
-    By induction, we know that in that case, both $\emptify{g_1}$ and $\emptify{g_2}$ will equal $\epsilon$, 
-    and so by the definition, we know that $\emptify{g_1\cdot g_2} = \epsilon$. Otherwise, it will equal
-    $\bot$, and likewise the interpretation will not contain the empty string.
+    By induction, we know that in that case, both $\emptify{g_1}$ and $\emptify{g_2}$ will equal $\true$, 
+    and so by the definition, we know that $\emptify{g_1\cdot g_2} = \false$. Otherwise, it will equal
+    $\false$, and likewise the interpretation will not contain the empty string.
   \end{case}
 
   \begin{case}{$g*$}
     We know that $\interp{g*}\gamma$ contains the empty string by definition, and likewise the 
-    $\emptify{g*} = \epsilon$. 
+    $\emptify{g*} = \true$. 
   \end{case}
 
   \begin{case}{$\fix{x}{g}$}
     By induction, we know for any language $L$, that $\epsilon \in \interp{g}(\gamma, L)$  if and 
-    only if $\emptify{g} = \epsilon$. Therefore, we know that 
-    $\epsilon \in \interp{g}(\gamma, \interp{\fix{x}{g}}\gamma)$ if and only if $\emptify{g} = \epsilon$. 
-    Therefore, we know that $\emptify{g} = \epsilon$ if and only if $\epsilon \in \interp{\fix{x}{g}}\gamma$. 
+    only if $\emptify{g} = \true$. Therefore, we know that 
+    $\epsilon \in \interp{g}(\gamma, \interp{\fix{x}{g}}\gamma)$ if and only if $\emptify{g} = \true$. 
+    Therefore, we know that $\emptify{g} = \true$ if and only if $\epsilon \in \interp{\fix{x}{g}}\gamma$. 
   \end{case}
 
   \begin{case}{$\lft{a}x\rgt{b}$}
     For any language $L$, all the words in $\interp{\lft{a}x\rgt{b}}L$ are non-empty. 
-    Since $\emptify{\lft{a}x\rgt{b}} = \bot$, the algorithm is correct in this case. 
+    Since $\emptify{\lft{a}x\rgt{b}} = \false$, the algorithm is correct in this case. 
   \end{case}
 
   \begin{case}{$\bot$}
     The interpretation of this grammar is the empty set of strings, which does not
-    contain the empty string. Since $\emptify{\bot} = \bot$, the algorithm is correct in
+    contain the empty string. Since $\emptify{\bot} = \false$, the algorithm is correct in
     this case. 
   \end{case}
 
   \begin{case}{$g_1 \vee g_2$}
     We reason as follows:
     \begin{enumerate}
-      \item By induction, we know that $\emptify{g_1} = \epsilon$ when $\epsilon \in \interp{g_1}\gamma$, 
-        and is $\bot$  otherwise. 
-      \item By induction, we know that $\emptify{g_2} = \epsilon$ when $\epsilon \in \interp{g_2}\gamma$, 
-        and is $\bot$  otherwise. 
+      \item By induction, we know that $\emptify{g_1} = \true$ when $\epsilon \in \interp{g_1}\gamma$, 
+        and is $\false$  otherwise. 
+      \item By induction, we know that $\emptify{g_2} = \true$ when $\epsilon \in \interp{g_2}\gamma$, 
+        and is $\false$  otherwise. 
       \item The interpretation $\interp{g_1 \vee g_2}\gamma = \interp{g_1}\gamma \cup \interp{g_2}\gamma$,  
         and so $\epsilon$ is in this set if and only if it is in either $\interp{g_1}\gamma$ or in 
         $\interp{g_2}\gamma$.
-      \item If it is in either one, then $\emptify{g_1 \vee g_2} = \epsilon$ by the definition, and is 
-        $\bot$ otherwise. 
+      \item If it is in either one, then $\emptify{g_1 \vee g_2} = \true$ by the definition, and is 
+        $\false$ otherwise. 
     \end{enumerate}
   \end{case}
 \end{caseblock}
-  
+\end{proof}
+
+\begin{lemma}{Emptiness and Balance}
+If $\judgebalance{g}{d}$ is well-typed, and $\emptify{g}$, then $d = 0$. 
+\end{lemma}
+
+\begin{proof}
+  This is by induction over the derivation of $g$. 
+  \begin{caseblock}
+    \begin{case}{$\judgebalance{\epsilon}{d}$}
+      By inversion on the derivation, we know that $d = 0$
+    \end{case}
+
+    \begin{case}{$\judgebalance{\sigma}{d}$}
+      By assumption $\emptify{\sigma} = \true$, which is a contradiction. Hence this
+      case is impossible. 
+    \end{case}
+
+    \begin{case}{$\judgebalance{g_1\cdot g_2}{d}$}
+      By inversion, we know that $\judgebalance{g_1}{d_1}$, and
+      $\judgebalance{g_2}{d_2}$, and that $d_1 + d_2 = d$.  
+
+      By hypothesis, we know that $\emptify{g_1\cdot g_2} = \true$. 
+
+      By definition we know that $\emptify{g_1} \land \emptify{g_2} =
+      \true$. 
+
+      Hence $\emptify{g_1} = \true$ and $\emptify{g_2} = \true$.
+
+      By induction, $d_1 = 0$ and $d_2 = 0$. Hence $d = d_1 + d_2 = 0$. 
+    \end{case}
+
+    \begin{case}{$\judgebalance{g*}{d}$}
+      By inversion, $d = 0$. 
+    \end{case}
+
+    \begin{case}{$\judgebalance{\bot}{d}$}
+      Since $\emptify{\bot} = \false$, and we assume $\emptify{g} = \true$, this case is
+      impossible. 
+    \end{case}
+
+    \begin{case}{$\judgebalance{g_1 \vee g_2}{d}$}
+      By inversion, we know that $\judgebalance{g_1}{d}$ and $\judgebalance{g_2}{d}$. 
+      
+      By hypothesis, we know that $\emptify{g_1 \vee g_2} = \true$. 
+
+      By definition, $\emptify{g_1} \vee \emptify{g_2} = \true$. 
+      
+      Hence either $\emptify{g_1}$ or $\emptify{g_2}$ is $\true$. 
+
+      Suppose it is $g_i$. Then by induction $d = 0$. 
+
+      Hence $\judgebalance{g_1 \vee g_2}{0}$. 
+    \end{case}
+
+    \begin{case}{$\judgebalance{\fix{x}{g}}{d}$}
+      By inversion, $d = 0$. 
+    \end{case}
+  \end{caseblock}
 \end{proof}
 
 \subsection{Derivatives of Nested Words}
@@ -502,7 +563,7 @@ except for the last two. We do not define what the algorithm should do
 when it reaches a free variable; that is, this algorithm is only
 partially defined. 
 
-The derivative of a fixed point $\fix{x}{g}$is handled by taking the
+The derivative of a fixed point $\fix{x}{g}$ is handled by taking the
 derivative of fixed point's body, and then substituting the original
 gramamtical expression for $x$ and recurring. Intuitively, a
 derivative is equivalent to its unrolling, so it might seem that a
@@ -527,13 +588,63 @@ any ``bare'' variables will be replaced by well-typed terms.
 For any grammatical expression $g$ such that $\judgebalance{g}{d}$, 
 we have that $\deriv{\sigma}{g}$ is defined and that for all 
 substitutions $\gamma$ such that $\judgesubst{\Gamma'}{\gamma}{\Gamma}$, 
-we have that $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g})}{d - \mathrm{sgn}(\sigma)}$.
+we have that $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g})}{d - \mathrm{sgn}(\sigma)}$
+and that $\gamma(\deriv{\sigma}{g}) = \deriv{\sigma}{\gamma(g)}$. 
 \end{lemma}
 
 \begin{proof}
-  This proof proceeds by induction on $g$. In what follows, we will 
-  abbreviate $\mathrm{sgn}(\sigma)$ as $i$. The interesting cases are
+  This proof proceeds by induction on the derivation of $g$. 
+
   \begin{caseblock}
+    \begin{case}{$g = \bot$ or $g = \epsilon$ or $g = \sigma'$ (where $\sigma' \not= \sigma$)}
+      In each case, the derivative exists and is $\bot$, which trivially satisfies the 
+      substitution condition. 
+    \end{case}
+
+    \begin{case}{$\judgebalance{\sigma}{d}$}
+      In this case, the derivative is $\epsilon$, which has a balance of 0 in all 
+      contexts. 
+
+      If $\sigma \in \Sigma_i$, then $d = 0$, and $\mathrm{sgn}(\sigma) = 0$. 
+      If $\sigma \in \Sigma_r$, then $d = 1$, and $\mathrm{sgn}(\sigma) = 1$. 
+
+      Either way, $0 = d - \mathrm{sgn}(\sigma)$. 
+
+      Again, the substitution condition is trivially satisfied, since $\epsilon$ has
+      no free variables. 
+    \end{case}
+
+    \begin{case}{$\judgebalance{g_1 \vee g_2}{d}$}
+      By inversion, we have $\judgebalance{g_2}{d}$ and $\judgebalance{g_2}{d}$}
+      
+      By induction, we have that $\deriv{\sigma}{g_1}$ and $\deriv{\sigma}{g_2}$ are
+      both defined. Therefore, we know that $\deriv{\sigma}{g_1 \vee g_2} = \deriv{\sigma}{g_1} \vee 
+      \deriv{\sigma}{g_2}$ is defined.
+
+      Suppose that we have $\judgesubst{\Gamma'}{\gamma}{\Gamma}$. Then, by 
+      induction we know that $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g_1})}{d}$ and 
+      $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g_2})}{d}$, and furthermore 
+      we know that $\gamma(\deriv{\sigma}{g_1}) = \deriv{\sigma}{\gamma(g_1)}$ and 
+      $\gamma(\deriv{\sigma}{g_2}) = \deriv{\sigma}{\gamma(g_2)}$. 
+
+      By rule \textsc{TOr}, we know that $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g_1}) \vee \gamma(\deriv{\sigma}{g_2})}{d}$. 
+
+      This is equal to $\gamma(\deriv{\sigma}{g_1 \vee g_2})$, so we
+      know $\judgebalance[\Gamma']{\gamma(g_1 \vee g_2)}{d}$.
+
+      Furthermore, we can reason that: 
+      \begin{mathpar}
+        \begin{array}{lcl}
+          \gamma(\deriv{\sigma}{g_1 \vee g_2})
+               & = & \gamma(\deriv{\sigma}{g_1} \vee \deriv{\sigma}{g_2}) \\
+               & = & \gamma(\deriv{\sigma}{g_1}) \vee \gamma(\deriv{\sigma}{g_2}) \\
+               & = & \deriv{\sigma}{\gamma(g_1)} \vee \deriv{\sigma}{\gamma(g_2)} \\
+               & = & \deriv{\sigma}{\gamma(g_1) \vee \gamma(g_2)} \\
+               & = & \deriv{\sigma}{\gamma(g_1 \vee g_2)} \\
+        \end{array}
+      \end{mathpar}
+    \end{case}
+
     \begin{case}{$g = g_1\cdot g_2$}
       By inversion, we know that $\judgebalance{g_1}{d_1}$ and 
       $\judgebalance{g_2}{d_2}$ and $d = d_1 + d_2$. 
@@ -544,7 +655,8 @@ we have that $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g})}{d - \mathrm{sgn}
 
       Now suppose that $\judgesubst{\Gamma'}{\gamma}{\Gamma}$. 
 
-      By induction we know that $\judgebalance[\Gamma']{\gamma(g_1)}{d_1 - i}$. 
+      By induction we know that $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g_1})}{d_1 - i}$ and
+      that $\gamma(\deriv{\sigma}{g_1}) = \deriv{\sigma}{\gamma(g_1)}$. 
       
       By substitution, we know that $\judgebalance[\Gamma']{\gamma(g_2)}{d_2}$
         
@@ -555,15 +667,41 @@ we have that $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g})}{d - \mathrm{sgn}
       \begin{itemize}
         \item If $\emptify{g_1}$ is true, then we know that $d_1 = 0$. 
         
-          By induction, we know that $\judgebalance[\Gamma]{\gamma(\deriv{\sigma}{g_2})}{d - i}$. 
+          By induction, we know that $\judgebalance[\Gamma]{\gamma(\deriv{\sigma}{g_2})}{d - i}$, and 
+          that $\deriv{\sigma}{\gamma(g_2)} = \gamma(\deriv{\sigma}{g_2})$. 
           
           Therefore we know that $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g})}{d - i}$. 
+
+          Furthermore, we can reason that: 
+          \begin{mathpar}
+            \begin{array}{lcl}
+              \gamma(\deriv{\sigma}{g_1\cdot g_2}) 
+               & = & \gamma(\deriv{\sigma}{g_1}\cdot g_2 \vee \deriv{\sigma}{g_2}) \\
+               & = & \gamma(\deriv{\sigma}{g_1}\cdot g_2) \vee \gamma(\deriv{\sigma}{g_2}) \\
+               & = & \gamma(\deriv{\sigma}{g_1})\cdot \gamma(g_2) \vee \gamma(\deriv{\sigma}{g_2}) \\
+               & = & \deriv{\sigma}{\gamma(g_1)}\cdot \gamma(g_2) \vee \deriv{\sigma}{\gamma(g_2)} \\
+               & = & \deriv{\sigma}{\gamma(g_1)\cdot\gamma(g_2)} \\
+               & = & \deriv{\sigma}{\gamma(g_1\cdot g_2)} \\
+            \end{array}
+          \end{mathpar}
 
         \item If $\emptify{g_2}$ is false, 
 
           We know by rule \textsc{TBot} that $\judgebalance[\Gamma']{\bot}{d - i}$. 
 
           Therefore we know that $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g})}{d - i}$. 
+          Furthermore, we can reason that: 
+          \begin{mathpar}
+            \begin{array}{lcl}
+              \gamma(\deriv{\sigma}{g_1\cdot g_2}) 
+               & = & \gamma(\deriv{\sigma}{g_1}\cdot g_2 \vee \bot) \\
+               & = & \gamma(\deriv{\sigma}{g_1}\cdot g_2) \vee \gamma(\bot}) \\
+               & = & \gamma(\deriv{\sigma}{g_1})\cdot \gamma(g_2) \vee \gamma(\bot) \\
+               & = & \deriv{\sigma}{\gamma(g_1)}\cdot \gamma(g_2) \vee \bot} \\
+               & = & \deriv{\sigma}{\gamma(g_1)\cdot\gamma(g_2)} \\
+               & = & \deriv{\sigma}{\gamma(g_1\cdot g_2)} \\
+            \end{array}
+          \end{mathpar}
       \end{itemize}
     \end{case}
 
@@ -575,13 +713,73 @@ we have that $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g})}{d - \mathrm{sgn}
 
       Now, suppose that we have $\judgesubst{\Gamma'}{\gamma}{\Gamma}$. Now, note that 
       by substitution, $\judgebalance[\Gamma']{\gamma(\fix{x}{g})}{0}$ holds. Hence
-      $\judgesubst{\Gamma'}{\gamma, [\gamma(\fix{x}{g})/x]}{\Gamma,x}$. 
+      $\judgesubst{\Gamma'}{\gamma_x = \gamma, [\gamma(\fix{x}{g})/x]}{\Gamma,x}$. 
 
-      Therefore by induction hypothesis, we know that $\judgebalance[\Gamma']{(\gamma, [\gamma(\fix{x}{g})/x])(\deriv{\sigma}{g})}{0}$
+      Therefore by induction hypothesis, we know that
+      $\judgebalance[\Gamma']{\gamma_x(\deriv{\sigma}{g})}{-\mathrm{sgn}(\sigma)}$ and that $\deriv{\sigma}{\gamma_x(g)} = \gamma_x(\deriv{\sigma}{g})$. 
 
-      By definition of substitution, we know that $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g}[\fix{x}{g}/x])}{0}$
+      By the definition of $\gamma_x$, substitution and the derivative, we know that $\gamma_x(\deriv{\sigma}{g}) = \gamma(\deriv{\sigma}{g}[\fix{x}{g}/x]) = \gamma(\deriv{\sigma}{\fix{x}{g}})$. 
 
-      Therefore $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{\fix{x}{g}})}{0}$. 
+
+      Therefore $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{\fix{x}{g}})}{-\mathrm{sgn}(\sigma)}$.
+
+      Furthermore, we can reason that: 
+      \begin{mathpar}
+        \begin{array}{lcl}
+          \gamma(\deriv{\sigma}{\fix{x}{g}})  
+          & = & \gamma(\deriv{\sigma}{g}[\fix{x}{g}/x]) \\
+          & = & \gamma(\deriv{\sigma}{g})[\gamma(\fix{x}{g}/x)] \\
+          & = & \deriv{\sigma}{\gamma(g)}[\fix{x}{\gamma(g)}/x] \\
+          & = & \deriv{\sigma}{\fix{x}{\gamma(g)}} \\
+          & = & \deriv{\sigma}{\gamma(\fix{x}{g})} \\
+        \end{array}
+      \end{mathpar}
+
+    \end{case}
+
+    \begin{case}{$\judgebalance{g*}{0}$}
+      By inversion, we know that $\judgebalance{g}{0}$. 
+
+      Therefore by induction we know that $\deriv{\sigma}{g}$ exists, and so the 
+      derivative $\deriv{\sigma}{g*} = \deriv{\sigma}{g}\cdot g*$ exists. 
+      
+      Assume that we have $\judgesubst{\Gamma'}{\gamma}{\Gamma}$. 
+      
+      By induction we know that $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g})}{-\mathrm{sgn}(\sigma)}$ holds,
+      and that $\gamma(\deriv{\sigma}{g}) = \deriv{\sigma}{\gamma(g)}$. 
+
+      By substitution we know that $\judgebalance[\Gamma']{(\gamma(g*)}{0}$ holds. 
+
+      By rule \textsc{TCat}, we know that $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g})\cdot\gamma(g*)}{-\mathrm{sgn}(\sigma)}$ holds. 
+
+      Therefore $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g}\cdot(g*))}{-\mathrm{sgn}(\sigma)}$ holds, and
+      so $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g*})}{-\mathrm{sgn}(\sigma)}$ holds. 
+
+      Furthermore, we can reason that: 
+      \begin{mathpar}
+        \begin{array}{lcl}
+          \gamma(\deriv{\sigma}{g*})  
+          & = & \gamma(\deriv{\sigma}{g}\cdot(g*)) \\
+          & = & \gamma(\deriv{\sigma}{g})\cdot\gamma(g*) \\
+          & = & \deriv{\sigma}{\gamma(g)}\cdot(\gamma(g))* \\
+          & = & \deriv{\sigma}{(\gamma(g))*} \\
+          & = & \deriv{\sigma}{\gamma(g*)} \\
+        \end{array}
+      \end{mathpar}
+    \end{case}
+
+    \begin{case}{$\judgebalance{\lft{a}\cdot x \cdot\rgt{b}}{0}$}
+      If $\sigma = \lft{a}$, then $\deriv{\sigma}{\lft{a}\cdot x \cdot\rgt{b}} = x \cdot \rgt{b}$, and
+      if it is not, then the derivative is $\bot$. Either way, the derivative exists. 
+
+      Now suppose we have $\judgesubst{\Gamma'}{\gamma}{\Gamma}$. 
+
+      If the derivative is $\bot$, then the conclusion is immediate. 
+
+      Otherwise, we know that $\judgebalance[\Gamma']{\gamma(x)}{0}$, and so by rule 
+      \textsc{TCat}, we know that $\judgebalance[\Gamma']{\gamma(x)\cdot \rgt{b}}{+1}$. 
+
+      Furthermore, it is immediate that $\gamma(\deriv{\sigma}{\lft{a}\cdot x\cdot\rgt{b}}) = \gamma(x \cdot \rgt{b})$
     \end{case}
   \end{caseblock}
 \end{proof}
