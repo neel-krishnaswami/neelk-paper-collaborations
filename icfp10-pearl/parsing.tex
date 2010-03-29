@@ -34,6 +34,7 @@
 
 \newtheorem{prop}{Proposition}
 \newtheorem{lemma}{Lemma}
+\newtheorem{theorem}{Theorem}
 \newtheorem{definition}{Definition}
 
 
@@ -166,6 +167,86 @@ only need free right-brackets.
 
 We will formally prove the soundness of these informal claims in the
 next section.
+
+\begin{theorem}{(Substitution)}
+If $\judgebalance[\Gamma,x]{g}{d}$ and $\judgebalance{g'}{0}$
+then $\judgebalance[\Gamma']{\gamma(g)}{d}$. 
+\end{theorem}
+
+\begin{proof}
+  This proceeds by induction on the derivation of $g$. 
+
+  \begin{caseblock}
+    \begin{case}{$g \in \{\sigma, \bot, \epsilon\}$}
+      By rule $\judgebalance{g[g'/x]}{d}$, and we know $g[g'/x] = g$ since
+      these terms have no free variables in them. 
+      Hence $\judgebalance{g[g'/x]}{d}$
+    \end{case}
+
+    \begin{case}{$\judgebalance[\Gamma,x]{g*}{0}$}
+      By inversion, we have $\judgebalance{g}{0}$. 
+
+      By induction, we have $\judgebalance{g[g'/x]}{0}$.
+
+      By rule \textsc{TStar}, we have $\judgebalance{(g[g'/x])*}{0}$. 
+
+      By definition of substitution, $\judgebalance{(g*)[g'/x]}{0}$. 
+    \end{case}
+
+    \begin{case}{$\judgebalance[\Gamma, x]{g_1\cdot g_2}{d}$}
+      By inversion, we have $\judgebalance[\Gamma, x]{g_1}{d_1}$}, and
+        $\judgebalance[\Gamma, x]{g_2}{d_2}$}, and $d = d_1 + d_2$. 
+      
+      By induction, we have $\judgebalance{g_1[g'/x]}{d_1}$ and 
+      $\judgebalance{g_2[g'/x]}{d_2}$. 
+
+      By rule \textsc{TCat}, we have $\judgebalance{(g_1[g'/x])\cdot(g_2[g'/x])}{d_1 + d_2}$. 
+      
+      By definition, we have $\judgebalance{(g_1\cdot g_2)[g'/x]}{d}$. 
+    \end{case}
+
+    \begin{case}{$\judgebalance[\Gamma, x]{g_1\vee g_2}{d}$}
+      By inversion, we have $\judgebalance[\Gamma, x]{g_1}{d}$}, and
+        $\judgebalance[\Gamma, x]{g_2}{d}$}.
+      
+      By induction, we have $\judgebalance{g_1[g'/x]}{d}$ and 
+      $\judgebalance{g_2[g'/x]}{d}$. 
+
+      By rule \textsc{TCat}, we have $\judgebalance{(g_1[g'/x])\vee(g_2[g'/x])}{d}$. 
+      
+      By definition, we have $\judgebalance{(g_1\vee g_2)[g'/x]}{d}$. 
+    \end{case}
+    
+    \begin{case}{$\judgebalance[\Gamma, y]{\lft{a}\cdot y \cdot\rgt{b}}{0}$}
+      There are two cases, depending on whether $x = y$ or not. 
+
+      \begin{itemize}
+        \item If $x \not= y$, then $y \in \Gamma$, therefore
+          $\judgebalance{\lft{a}\cdot y \cdot\rgt{b}}{0}$}. 
+
+        \item If $x = y$:
+          
+          By hypothesis, $\judgebalance{g'}{0}$.
+
+          By rule \textsc{TCat} twice, $\judgebalance{\lft{a}\cdot g'\cdot\rgt{b}}{0}$. 
+
+          By definition, $\judgebalance{(\lft{a}\cdot x \cdot\rgt{b})[g'/x]}{0}$}
+      \end{itemize}
+    \end{case}
+
+    \begin{case}{$\judgebalance[\Gamma, x]{\fix{y}{g}}{0}$}
+      By inversion, we have $\judgebalance[\Gamma, x, y]{g}{0}$
+
+      By induction, we have $\judgebalance[\Gamma, y]{g[g'/x]}{0}$
+
+      By rule \textsc{TFix}, $\judgebalance{\fix{y}{g[g'/x]}}{0}$
+
+      By definition, $\judgebalance{(\fix{y}{g})[g'/x]}{0}$
+    \end{case}
+  \end{caseblock}
+\end{proof}
+
+
 
 \subsection{Semantics of Bracketed Grammars}
 
