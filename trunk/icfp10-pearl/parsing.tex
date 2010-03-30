@@ -1,7 +1,7 @@
 \documentclass{article}
 \usepackage{amsmath,amssymb}
 \usepackage{mathpartir}
-
+ 
 \newcommand{\fix}[2]{\mu {#1}.\;{#2}}
 \newcommand{\lft}[1]{\left<{#1}\right.}
 \newcommand{\rgt}[1]{\left.{#1}\right>}
@@ -39,8 +39,9 @@
 
 
 
-\newenvironment{proof}{\noindent\textbf{Proof.}}
-{\noindent\textbf{End Proof.}}
+\newenvironment{proof}{\noindent\textbf{Proof.}}{\noindent\textbf{End Proof.}}
+
+
 \newenvironment{caseblock}{\begin{itemize}}{\end{itemize}}
 \newenvironment{case}[1]{\item \textbf{Case} {#1}\\}{}
 
@@ -165,12 +166,9 @@ we match a string from left to right, we will always meet left-brackets
 before right-brackets, and so the derivative grammars will always 
 only need free right-brackets. 
 
-We will formally prove the soundness of these informal claims in the
-next section.
-
 \begin{theorem}{(Substitution)}
 If $\judgebalance[\Gamma,x]{g}{d}$ and $\judgebalance{g'}{0}$
-then $\judgebalance[\Gamma']{\gamma(g)}{d}$. 
+then $\judgebalance[\Gamma']{g[g'/x]}{d}$. 
 \end{theorem}
 
 \begin{proof}
@@ -194,8 +192,8 @@ then $\judgebalance[\Gamma']{\gamma(g)}{d}$.
     \end{case}
 
     \begin{case}{$\judgebalance[\Gamma, x]{g_1\cdot g_2}{d}$}
-      By inversion, we have $\judgebalance[\Gamma, x]{g_1}{d_1}$}, and
-        $\judgebalance[\Gamma, x]{g_2}{d_2}$}, and $d = d_1 + d_2$. 
+      By inversion, we have $\judgebalance[\Gamma, x]{g_1}{d_1}$, and
+        $\judgebalance[\Gamma, x]{g_2}{d_2}$, and $d = d_1 + d_2$. 
       
       By induction, we have $\judgebalance{g_1[g'/x]}{d_1}$ and 
       $\judgebalance{g_2[g'/x]}{d_2}$. 
@@ -206,8 +204,8 @@ then $\judgebalance[\Gamma']{\gamma(g)}{d}$.
     \end{case}
 
     \begin{case}{$\judgebalance[\Gamma, x]{g_1\vee g_2}{d}$}
-      By inversion, we have $\judgebalance[\Gamma, x]{g_1}{d}$}, and
-        $\judgebalance[\Gamma, x]{g_2}{d}$}.
+      By inversion, we have $\judgebalance[\Gamma, x]{g_1}{d}$, and
+        $\judgebalance[\Gamma, x]{g_2}{d}$.
       
       By induction, we have $\judgebalance{g_1[g'/x]}{d}$ and 
       $\judgebalance{g_2[g'/x]}{d}$. 
@@ -222,7 +220,7 @@ then $\judgebalance[\Gamma']{\gamma(g)}{d}$.
 
       \begin{itemize}
         \item If $x \not= y$, then $y \in \Gamma$, therefore
-          $\judgebalance{\lft{a}\cdot y \cdot\rgt{b}}{0}$}. 
+          $\judgebalance{\lft{a}\cdot y \cdot\rgt{b}}{0}$. 
 
         \item If $x = y$:
           
@@ -230,7 +228,7 @@ then $\judgebalance[\Gamma']{\gamma(g)}{d}$.
 
           By rule \textsc{TCat} twice, $\judgebalance{\lft{a}\cdot g'\cdot\rgt{b}}{0}$. 
 
-          By definition, $\judgebalance{(\lft{a}\cdot x \cdot\rgt{b})[g'/x]}{0}$}
+          By definition, $\judgebalance{(\lft{a}\cdot x \cdot\rgt{b})[g'/x]}{0}$
       \end{itemize}
     \end{case}
 
@@ -289,6 +287,82 @@ g'$ to indicate that the two grammars have the same interpretation,
 and then $(\cdot, \epsilon)$ has monoidal structure, and $(\bot,
 \vee)$ has join-semilattice structure. Furthermore, from the definition
 of fixed points we know that $\fix{x}{g} \simeq g[\fix{x}{g}/x]$. 
+
+\begin{lemma}{(Soundness of Substitution)}
+Suppose $g$ has free variables in $\Gamma, x$. 
+Then for all  $g'$ with free variables in $\Gamma$ and $\gamma$ mapping variables
+to languages, we have that $\interp{g}(\gamma, \interp{g'}\gamma) = \interp{g[g'/x]}\gamma$. 
+\end{lemma}
+
+\begin{proof}
+  This proof is by induction on $g$. 
+
+  \begin{caseblock}
+    \begin{case}{$g \in \setof{\epsilon, \bot, \sigma}$}
+      Immediate, since none of these cases have any free variables. 
+    \end{case}
+
+    \begin{case}{$g = g_1 \cdot g_2$}
+      By induction, we know that $\interp{g_1}(\gamma, \interp{g'}\gamma) = \interp{g_1[g'/x]}\gamma$.
+
+      By induction, we know that $\interp{g_2}(\gamma, \interp{g'}\gamma) = \interp{g_2[g'/x]}\gamma$.
+
+      Hence $\interp{g_1}(\gamma, \interp{g'}\gamma) \cup \interp{g_2}(\gamma, \interp{g'}\gamma) = \interp{g_1[g'/x]}\gamma \cup \interp{g_2[g'/x]}\gamma$.
+
+      Hence $\interp{g_1 \vee g_2}(\gamma, \interp{g'}\gamma) = \interp{g_1[g'/x] \vee g_2[g'/x]}\gamma$.
+
+      Hence $\interp{g_1 \vee g_2}(\gamma, \interp{g'}\gamma) = \interp{(g_1 \vee g_2)[g'/x]}\gamma$.
+    \end{case}
+
+    \begin{case}{$g = g_1\cdot g_2$}
+      By induction, we know that $\interp{g_1}(\gamma, \interp{g'}\gamma) = \interp{g_1[g'/x]}\gamma$.
+
+      By induction, we know that $\interp{g_2}(\gamma, \interp{g'}\gamma) = \interp{g_2[g'/x]}\gamma$.
+
+      Hence $\comprehend{\sigma\cdot\tau}{\sigma\in\interp{g_1}(\gamma, \interp{g'}\gamma \land \tau\in\interp{g_2}(\gamma, \interp{g'}\gamma}$ equals \\
+      \noindent $\comprehend{\sigma\cdot\tau}{\sigma\in\interp{g_1[g'/x]}\gamma \land \tau\in\interp{g_2[g'/x]}\gamma}$.
+
+      Hence $\interp{g_1\cdot g_2}(\gamma, \interp{g'}\gamma) = \interp{g_1[g'/x]\cdot g_2[g'/x]}\gamma$. 
+
+      Hence $\interp{g_1\cdot g_2}(\gamma, \interp{g'}\gamma) = \interp{(g_1\cdot g_2)[g'/x]}\gamma$. 
+    \end{case}
+
+    \begin{case}{$g = g_0*$}
+      By induction we know that $\interp{g_0}{\gamma, \interp{g'}\gamma} = \interp{g_0[g'/x]}\gamma$. 
+
+      Hence $\bigcup\limits{n \in \nats} \comprehend{s_1\cdot\ldots s_n}{\forall i \in \setof{1\ldots n}.\; s_i \in \interp{g_0}(\gamma, \interp{g'}\gamma)}$ equals\\
+      $\bigcup\limits{n \in \nats} \comprehend{s_1\cdot\ldots s_n}{\forall i \in \setof{1\ldots n}.\; s_i \in \interp{g_0[g'/x]}(\gamma)}$
+
+      Hence $\interp{g_0*}(\gamma, \interp{g'}\gamma) = \interp{(g_0[g'/x])*}\gamma$
+
+      Hence $\interp{g_0*}(\gamma, \interp{g'}\gamma) = \interp{(g_0*)[g'/x]}\gamma$
+    \end{case}
+
+    \begin{case}{$g = y$}
+      If $y \not=x$, then $\interp{y}(\gamma, \interp{g'}\gamma) = \gamma(y) = \interp{y[g'/x]}\gamma$. 
+
+      Otherwise, $\interp{x}(\gamma, \interp{g'}\gamma) = \interp{g'}\gamma = \interp{x[g'/x]}\gamma$. 
+    \end{case}
+
+    \begin{case}{$g = \fix{y}{g_0}$}
+      By inversion , we know that that $g_0$ has free variables in $\Gamma, y, x$. 
+
+      So by induction, we know that for all $\gamma'$ sending $\Gamma, y$ to languages, 
+      $\interp{g_0}(\gamma', \interp{g'}\gamma') = \interp{g_0[g'/x]}\gamma'$. 
+
+      Now, assume we have a $\gamma$ sending $\Gamma$ to languages. Since $y$ does not 
+      occur free in $g'$, we know that for all languages $L$, $\interp{g'}(\gamma, L) = \interp{g'}\gamma$. 
+
+      Hence $\interp{g_0}(\gamma, x:\interp{g'}\gamma, y:L) = \interp{g_0[g'/x]}(\gamma, y:L)$.
+
+      Hence $\mathit{fix}(\fun{L}{\interp{g_0}(\gamma, x:\interp{g'}\gamma, y:L)}) = \mathit{fix}(\fun{L}{\interp{g_0[g'/x]}(\gamma, L)}$. 
+ 
+      Hence $\interp{\fix{y}{g_0}}(\gamma, \interp{g'}\gamma) = \interp{\fix{y}{g_0[g'/x]}}\gamma$. 
+
+      Hence $\interp{\fix{y}{g_0}}(\gamma, \interp{g'}\gamma) = \interp{(\fix{y}{g_0})[g'/x]}\gamma$. 
+   \end{case}
+  \end{caseblock}
+\end{proof}
 
 \subsubsection{Properties of Languages}
 
@@ -456,7 +530,7 @@ We define the emptification operator on well-typed grammars as follows:
   \begin{array}{lcl}
     \emptify{\epsilon}      & = & \true \\
     \emptify{\sigma}        & = & \false \\
-    \emptify{g_1 \cdot g_2} & = & \emptify{g_1} \land \emptify{g_2}} \\
+    \emptify{g_1 \cdot g_2} & = & \emptify{g_1} \land \emptify{g_2} \\
     \emptify{g*}           & = & \true \\
     \emptify{\bot}         & = & \false \\
     \emptify{g_1 \vee g_2} & = & \emptify{g_1} \vee \emptify{g_2} \\
@@ -476,7 +550,7 @@ all substitutions for the variables.
 Suppose $g$ is a well-typed grammar with free variables $\Gamma$. Then
 for any assignment of languages $\gamma$ for $\Gamma$, we have that
 $\emptify{g}$ is $\true$ if $\epsilon \in \interp{g}\gamma$, and is
-$\false$ otherwise. 
+$\false$ otherwise.
 \end{prop}
 
 \begin{proof}
@@ -696,7 +770,7 @@ and that $\gamma(\deriv{\sigma}{g}) = \deriv{\sigma}{\gamma(g)}$.
     \end{case}
 
     \begin{case}{$\judgebalance{g_1 \vee g_2}{d}$}
-      By inversion, we have $\judgebalance{g_2}{d}$ and $\judgebalance{g_2}{d}$}
+      By inversion, we have $\judgebalance{g_2}{d}$ and $\judgebalance{g_2}{d}$
       
       By induction, we have that $\deriv{\sigma}{g_1}$ and $\deriv{\sigma}{g_2}$ are
       both defined. Therefore, we know that $\deriv{\sigma}{g_1 \vee g_2} = \deriv{\sigma}{g_1} \vee 
@@ -776,9 +850,9 @@ and that $\gamma(\deriv{\sigma}{g}) = \deriv{\sigma}{\gamma(g)}$.
             \begin{array}{lcl}
               \gamma(\deriv{\sigma}{g_1\cdot g_2}) 
                & = & \gamma(\deriv{\sigma}{g_1}\cdot g_2 \vee \bot) \\
-               & = & \gamma(\deriv{\sigma}{g_1}\cdot g_2) \vee \gamma(\bot}) \\
+               & = & \gamma(\deriv{\sigma}{g_1}\cdot g_2) \vee \gamma(\bot) \\
                & = & \gamma(\deriv{\sigma}{g_1})\cdot \gamma(g_2) \vee \gamma(\bot) \\
-               & = & \deriv{\sigma}{\gamma(g_1)}\cdot \gamma(g_2) \vee \bot} \\
+               & = & \deriv{\sigma}{\gamma(g_1)\cdot \gamma(g_2) \vee \bot} \\
                & = & \deriv{\sigma}{\gamma(g_1)\cdot\gamma(g_2)} \\
                & = & \deriv{\sigma}{\gamma(g_1\cdot g_2)} \\
             \end{array}
@@ -868,14 +942,11 @@ and that $\gamma(\deriv{\sigma}{g}) = \deriv{\sigma}{\gamma(g)}$.
 
 
 
-
-
-
 Now, let's show that syntactic and semantic derivatives coincide. 
 
 \begin{prop}{(Syntactic and Semantic Derivatives Coincide)}
-For any closed, well-typed $g$ and character $\sigma$, we have that
-$\interp{\deriv{\sigma}{g}} = \semderiv{\sigma}{\interp{g}}$.
+For any  $\judgebalance{g}{d}$ and character $\sigma$ we have that
+$\interp{\deriv{\sigma}{g}}\gamma = \semderiv{\sigma}{\interp{g}\gamma}$.
 \end{prop}
 
 \begin{proof}
@@ -903,7 +974,7 @@ $\interp{\deriv{\sigma}{g}} = \semderiv{\sigma}{\interp{g}}$.
       \begin{enumerate}
         \item By induction, we know that $\interp{\deriv{\sigma}{g_1}} = \semderiv{\sigma}{\interp{g_1}}$
         \item By induction, we know that $\interp{\deriv{\sigma}{g_2}} = \semderiv{\sigma}{\interp{g_2}}$
-        \item Now we need to show that for all $s$, $s \in \interp{\deriv{\sigma}{g_1\cdot g_2}}$ if and 
+        \item We want that for all $s$, $s \in \interp{\deriv{\sigma}{g_1\cdot g_2}}$ if and 
           only if $s \in \semderiv{\sigma}{\interp{g_1\cdot g_2}}$. 
           \begin{itemize}
           \item The $\Leftarrow$ direction: 
@@ -917,10 +988,10 @@ $\interp{\deriv{\sigma}{g}} = \semderiv{\sigma}{\interp{g}}$.
                     \begin{enumerate}
                       \item Then $s_1$ is the empty string, so $\epsilon \in \interp{g_1}$ and 
                             $s_2 = \sigma \cdot s$
-                      \item From the emptiness lemma,  $\emptify{g_1} = \epsilon$ 
+                      \item From the emptiness lemma,  $\emptify{g_1} = \true$ 
                       \item From the induction hypothesis, $s \in \interp{\deriv{\sigma}{g_2}}$ 
                       \item Therefore $s \in \interp{\emptify{g_1}\cdot\deriv{\sigma}{g_2}}$
-                      \item Therefore $s \in \interp{\deriv{\sigma}{g_1}\cdot g_2 \vee \emptify{g_1}\cdot\deriv{\sigma}{g_2}}$
+                      \item Therefore $s \in \interp{\deriv{\sigma}{g_1}\cdot g_2 \vee \deriv{\sigma}{g_2}}$
                   \end{enumerate}
                  \item Suppose $s_1$ has length $n \geq 1$ 
                    \begin{enumerate}
@@ -928,16 +999,16 @@ $\interp{\deriv{\sigma}{g}} = \semderiv{\sigma}{\interp{g}}$.
                      \item Therefore $s'_1 \in \semderiv{\sigma}{\interp{g_1}}$
                      \item By induction hypothesis $s'_1 \in \interp{\deriv{\sigma}{g_1}}$
                      \item Therefore $s = s'_1 \cdot s_2$ is in $\interp{\deriv{\sigma}{g_1}\cdot g_2}$
-                     \item Therefore $s \in \interp{\deriv{\sigma}{g_1}\cdot g_2 \vee \emptify{g_1}\cdot\deriv{\sigma}{g_2}}$
+                     \item Therefore $s \in \interp{\deriv{\sigma}{g_1}\cdot g_2 \vee \IfThenElse{\emptify{g_1}}{\deriv{\sigma}{g_2}}{\bot}}$
                    \end{enumerate}
                 \end{itemize}
             \end{enumerate}
           \item The $\Rightarrow$ direction: 
             \begin{enumerate}
               \item Suppose $s \in \interp{\deriv{\sigma}{g_1\cdot g_2}}$
-              \item Therefore $s \in \interp{\deriv{\sigma}{g_1}\cdot g_2 \vee \emptify{g_1}\cdot\deriv{\sigma}{g_2}}$
+              \item Therefore $s \in \interp{\deriv{\sigma}{g_1}\cdot g_2 \vee \IfThenElse{\emptify{g_1}}{\deriv{\sigma}{g_2}}{\bot}}$
               \item Therefore either $s \in \interp{\deriv{\sigma}{g_1}\cdot g_2}$ or 
-                    $s \in \interp{\emptify{g_1}\cdot\deriv{\sigma}{g_2} }$
+                    $s \in \interp{\IfThenElse{\emptify{g_1}}{\deriv{\sigma}{g_2}}{\bot} }$
                 \begin{itemize}
                   \item Suppose $s \in \interp{\deriv{\sigma}{g_1}\cdot g_2}$ 
                     \begin{enumerate}
@@ -948,12 +1019,141 @@ $\interp{\deriv{\sigma}{g}} = \semderiv{\sigma}{\interp{g}}$.
                       \item Therefore $\sigma \cdot s_1 \cdot s_2 \in \interp{g_1 \cdot g_2}$
                       \item Therefore $s_1 \cdot s_2 \in \semderiv{\sigma}{g_1 \cdot g_2}$
                     \end{enumerate}
-                  \item Suppose $s \in \interp{\emptify{g_1}\cdot\deriv{\sigma}{g_2} }$
+                  \item Suppose $s \in \interp{\IfThenElse{\emptify{g_1}}{\deriv{\sigma}{g_2}}{\bot} }$
 
+                    We proceed by cases on $\emptify{g_1}$. 
+                    \begin{itemize}
+                    \item If $\emptify{g_1} = \true$: 
+                        
+                      Therefore $s \in \interp{\deriv{\sigma}{g_2}}\gamma$ 
+                      
+                      By induction $\sigma\cdot s \in \interp{g_2}\gamma$
+                      
+                      By emptiness, $\epsilon \in \interp{g_1}$
+                      
+                      Therefore $\epsilon\cdot\sigma\cdot s \in \interp{g_1\cdot g_2}\gamma$
+                      
+                      Therefore $s \in \semderiv{\sigma}{\interp{g_1\cdot g_2}\gamma}$ 
+                    \item If $\emptify{g_2} = \false$: 
+
+                         Therefore $s \in \interp{\bot}{\gamma} = \emptyset$
+
+                         This is a contradiction, so this case is impossible.
+                    \end{itemize}
                 \end{itemize}
             \end{enumerate}
           \end{itemize}
       \end{enumerate}
+    \end{case}
+
+    \begin{case}{$g*$}
+      By induction we know that $\interp{\deriv{\sigma}{g}}\gamma = \semderiv{\sigma}{\interp{g}\gamma}$.
+
+      We want for all $s$, that $s \in \interp{\deriv{\sigma}{g}}\gamma \iff s \in \semderiv{\sigma}{\interp{g}\gamma}$. 
+      \begin{itemize}
+        \item $\Rightarrow$ direction: 
+
+          Assume $s \in \interp{\deriv{\sigma}{g*}}\gamma$. 
+          
+          Therefore $s \in \interp{\deriv{\sigma}{g}\cdot(g*)}\gamma$. 
+
+          So we know there are $s_1, s_2$ such that $s = s_1\cdot s_2$ and $s_1 \in \interp{\deriv{\sigma}{g}}\gamma$ and $s_2 \in \interp{g*}\gamma$. 
+          
+          Therefore $s_1 \in \semderiv{\sigma}{\interp{g}\gamma}$
+          
+          Therefore $\sigma\cdot s_1 \in \interp{g}{\gamma}$. 
+          
+          Therefore $(\sigma\cdot s_1)\cdot s_2 \in \interp{g*}\gamma$
+          
+          Therefore $s_1\cdot s_2 \in \semderiv{\sigma}{\interp{g*}\gamma}$. 
+          
+          Therefore $s \in \semderiv{\sigma}{\interp{g*}\gamma}$. 
+
+        \item $\Leftarrow$ direction: 
+
+          Assume $s \in \semderiv{\sigma}{\interp{g*}\gamma}$. 
+
+          Therefore $\sigma\cdot s \in \interp{g*}\gamma$. 
+
+          Therefore there exists $s_1, \ldots s_n \in \interp{g}\gamma$, such that $s_1\cdot\ldots s_n = \sigma\cdot s$, and without loss of generality, suppose $s_1$ is nonempty.  
+
+          Then there is a $s'_1$, such that $s_1 = \sigma\cdot s'_1$. 
+
+          Hence $s'_1 \in \semderiv{\sigma}{\interp{g}\gamma}$.
+
+          Hence $s'_1 \in \interp{\deriv{\sigma}{g}}\gamma$. 
+
+          By definition $s_2\cdot\ldots s_n \in \interp{g*}\gamma$. 
+
+          Therefore $s'_1\cdot s_2\ldots s_n \in \interp{\deriv{\sigma}{g}\cdot(g*)}\gamma$. 
+          
+          Therefore $s \in \interp{\deriv{\sigma}{g*}}\gamma$
+      \end{itemize}
+    \end{case}
+
+    \begin{case}{$g = \bot$}
+      We want to show that for all $s$, $s \in \interp{\deriv{\sigma}{\bot}}\gamma = \semderiv{\sigma}{\interp{\bot}\gamma}$. 
+      
+      This is equivalent to showing $\emptyset = \emptyset$, which is immediate. 
+    \end{case}
+
+    \begin{case}{$g = g_1 \vee g_2$}
+
+      By induction, we know that $\interp{\deriv{\sigma}{g_1}} = \semderiv{\sigma}{\interp{g_1}}$
+
+      By induction, we know that $\interp{\deriv{\sigma}{g_2}} = \semderiv{\sigma}{\interp{g_2}}$
+
+      We want to show that for all $s$, $s \in \interp{\deriv{\sigma}{g_1 \vee g_2}}\gamma \iff s \in \semderiv{\sigma}{\interp{g_1 \vee g_2}}\gamma$.
+
+      Assume $s$. We can reason as follows: 
+
+      \begin{mathpar}
+        \begin{array}{lcl}
+          s \in \interp{\deriv{\sigma}{g_1 \vee g_2}}\gamma
+          & \iff & s \in \interp{\deriv{\sigma}{g_1} \vee \deriv{\sigma}{g_2}}\gamma \\
+          & \iff & s \in \interp{\deriv{\sigma}{g_1}}\gamma \cup \interp{\deriv{\sigma}{g_2}}\gamma \\
+          & \iff & s \in \semderiv{\sigma}{\interp{g_1}\gamma} \cup \semderiv{\sigma}{\interp{g_2}\gamma} \\
+          & \iff & s \in \semderiv{\sigma}{\interp{g_1}\gamma} \cup \semderiv{\sigma}{\interp{g_2}\gamma} \\
+          & \iff & \sigma\cdot s \in \interp{g_1}\gamma \cup \interp{g_2}\gamma \\
+          & \iff & \sigma\cdot s \in \interp{g_1 \vee g_2}\gamma \\
+          & \iff & s \in \semderiv{\sigma}{\interp{g_1 \vee g_2}\gamma} \\
+        \end{array}
+      \end{mathpar}
+    \end{case}
+
+    \begin{case}{$g = \lft{a}\cdot x \cdot\rgt{b}$}
+      If $\sigma \not= \lft{a}$, then $\deriv{\sigma}{g} = \bot$ and the result is immediate. 
+
+      Otherwise, we want to show for any $s$, that $s \in \interp{\semderiv{\lft{a}}{\lft{a}\cdot x \cdot\rgt{b}}}\gamma \iff s \in \semderiv{\lft{a}}{\interp{\lft{a}\cdot x \cdot\rgt{b}}\gamma}$. 
+
+      Assume $s$, and reason as follows: 
+      \begin{mathpar}
+        \begin{array}{lcl}
+          s \in \interp{\deriv{\lft{a}}{\lft{a}\cdot x \cdot\rgt{b}}}\gamma 
+          & \iff & s \in \interp{x \cdot\rgt{b}}\gamma  \\
+          & \iff & \lft{a}\cdot s \in \comprehend{\lft{a}\cdot s'}{s' \in \interp{x \cdot\rgt{b}}\gamma}  \\
+          & \iff & \lft{a}\cdot s \in \comprehend{s''\cdot s'}{s'' \in \setof{\lft{a}} \land s' \in \interp{x \cdot\rgt{b}}\gamma}  \\
+          & \iff & \lft{a}\cdot s \in \comprehend{s''\cdot s'}{s'' \in \interp{\lft{a}}\gamma \land s' \in \interp{x \cdot\rgt{b}}\gamma}  \\
+          & \iff & \lft{a}\cdot s \in \interp{\lft{a}\cdot x \cdot \rgt{b}}\gamma \\
+          & \iff & s \in \semderiv{\lft{a}}{\interp{\lft{a}\cdot x \cdot \rgt{b}}\gamma} \\
+        \end{array}
+      \end{mathpar}
+    \end{case}
+
+    \begin{case}{$\fix{x}{g}$}
+      By induction, we know that for all $\gamma'$ for $\Gamma,x$ , $\interp{\deriv{\sigma}{g}}\gamma' = \semderiv{\sigma}{\interp{g}\gamma'}$
+
+      \begin{math}
+        \begin{array}{lcl}
+          s \in \interp{\deriv{\sigma}{\fix{x}{g}}}\gamma 
+          & \iff & s \in \interp{\deriv{\sigma}{g}[\fix{x}{g}/x]}\gamma \\
+          & \iff & s \in \interp{\deriv{\sigma}{g}}(\gamma, \interp{\fix{x}{g}}\gamma) \\
+          & \iff & s \in \semderiv{\sigma}{\interp{g}(\gamma, \interp{\fix{x}{g}}\gamma)} \\
+          & \iff & \sigma\cdot s \in \interp{g}(\gamma, \interp{\fix{x}{g}}\gamma) \\
+          & \iff & \sigma\cdot s \in \interp{\fix{x}{g}}\gamma \\
+          & \iff & s \in \semderiv{\sigma}{\interp{\fix{x}{g}}\gamma} \\
+        \end{array}
+      \end{math}
     \end{case}
   \end{caseblock}
 \end{proof}
@@ -1009,22 +1209,22 @@ In each case, we proceed by induction on $s$.
     \begin{case}{$s = \sigma \cdot s'$}
       \begin{mathpar}
         \begin{array}{llcl}
-          \mbox{By def} & \deriv{\sigma\cdot s'}{g_1 \cdot g_2} & = & 
+          \mbox{Def.} & \deriv{\sigma\cdot s'}{g_1 \cdot g_2} & = & 
              \deriv{s'}{\deriv{\sigma}{g_1\cdot g_2}} \\
-          \mbox{By def} & & = & 
+          \mbox{Def.} & & = & 
               \deriv{s'}{\deriv{\sigma}{g_1}\cdot g_2 \vee \emptify{g_1}\deriv{\sigma}{g_2}} \\
-          \mbox{By def} & & = & 
+          \mbox{Def.} & & = & 
               \deriv{s'}{\deriv{\sigma}{g_1}\cdot g_2} \vee 
               \deriv{s'}{\emptify{g_1}\deriv{\sigma}{g_2}} \\
-          \mbox{By IH} & & \simeq & 
+          \mbox{IH} & & \simeq & 
               \deriv{\sigma\cdot s'}{g_1}\cdot g_2 \vee \bigvee_{\comprehend{s_1, s_2}{s' = s_1\cdot s_2}} \emptify{\deriv{\sigma\cdot s_1}{g_1}}\cdot \deriv{s_2}{g_2} \;\vee \\
                        & & & 
                \deriv{s'}{\emptify{g_1}}\cdot \deriv{\sigma}{g_2} \vee \bigvee_{\comprehend{s_1, s_2}{s' = s_1\cdot s_2}} \emptify{\deriv{s_1}{\emptify{g_1}}}\cdot \deriv{s_2}{\deriv{\sigma}{g_2}} \\
-          \mbox{Semantics} & & \simeq & 
+          \mbox{Sem.} & & \simeq & 
               \deriv{\sigma\cdot s'}{g_1}\cdot \deriv{\sigma}{g_2} \vee \bigvee_{\comprehend{s_1, s_2}{s' = s_1\cdot s_2}} \emptify{\deriv{\sigma\cdot s_1}{g_1}}\cdot \deriv{s_2}{\deriv{\sigma}{g_2}} \\
                        & & & 
               \vee \emptify{g_1}\cdot\deriv{s}{g_2} \\
-           \mbox{Simplify} & & \simeq & 
+           \mbox{Simp.} & & \simeq & 
            \deriv{s}{g_1}\cdot g_2 \vee \bigvee_{\comprehend{s_1, s_2}{s = s_1\cdot s_2}} \emptify{\deriv{s_1}{g_1}}\cdot \deriv{s_2}{g_2}
         \end{array}
       \end{mathpar}
@@ -1056,27 +1256,28 @@ When we  differentiate with respect to $\lft{a}$, the result is equivalent to
 shouldn't be terribly surprising --- we're interpreting expressions as states,
 and there's no finite state machine that can recognize this language! 
 
-So what we need to do is find some generalization of the notion of derivative,
-from which we some kind of stack machine will fall out in the same way that 
-finite-state automata fall out of derivatives of regular expressions.  
+So what we need to do is find some generalization of the notion of
+derivative, from which we some kind of stack machine will fall out in
+the same way that finite-state automata fall out of derivatives of
+regular expressions.
 
-To do this, we'll proceed in two steps. First, we'll give a 
+To do this, we'll proceed in two steps. First, we'll give a
 non-deterministic version of the Brzozowski derivative algorithm, and
-then show how to determinize it. 
+then show how to determinize it.
 
 \begin{definition}{(Finite Base)}
-We say a grammatical expression $g$ is derived from $B$, when $B$ is a
-finite set of grammatical expressions, and $g$ is equivalent to a sum of
-concatenations of elements of $B$. That is, $g$ should be generated (up to $\simeq$)
-via the following grammar:
+We say a grammatical expression $g$ is derived from a basis $B$, when
+$B$ is a finite set of grammatical expressions, and $g$ is equivalent
+to a sum of concatenations of elements of $B$. That is, $g$ should be
+generated (up to $\simeq$) via the following grammar:
 \begin{mathpar}
   \begin{array}{lcl}
     t & ::= & \sigma \bnfalt \epsilon \bnfalt t \cdot t' \bnfalt \bot \bnfalt t \vee t' \bnfalt b \in B
   \end{array}
 \end{mathpar}
 
-We say a grammatical expression $g$ is based in $B$, when $g$ and all 
-of its derivatives are based in $B$. 
+We say a grammatical expression $g$ is based in $B$, when $g$ and all
+of its derivatives are derived from a basis $B$.
 \end{definition}
 
 The intuition behind this definition is that it is a way of
@@ -1085,62 +1286,14 @@ require recursion from those that do --- observe that $g*$ and
 $\fix{x}{g}$ do not occur in the grammar $t$, and hence must 
 come from the basis $B$. 
 
-\begin{prop}{(Closure of Finite Basis)}
-Suppose that $g$ and $g'$ are grammatical expressions with a free
-variables in $\Gamma$. Now, suppose that there is a set $G$, such that
-for any $\gamma$ which is finitely based in $X$, that $\gamma(g)$ and
-$\gamma(g')$ are finitely based in $G \cup X$.  Then we know that
-$\gamma(g[g'/x])$ is finitely based in $G \cup X$.
-\end{prop}
-
-\begin{proof}
-We proceed by induction on $g$. We will suppose $s$ is a string we 
-take a derivative with respect to. 
-\begin{caseblock}
-  \begin{case}{$g \in \setof{\bot, \epsilon, \sigma}$}
-    These cases are all trivial. 
-  \end{case}
-
-  \begin{case}{$g$ is $(g')*$, $g_1\cdot g_2$ or $g_1 \vee g_2$}
-    These cases all follow from the structure of the syntactic derivative
-    for strings. 
-  \end{case}
-
-  \begin{case}{$g = \lft{a}y\rgt{b}$}
-    The only interesting possibility is if $y = x$. Then the substitution 
-    gives us $\lft{a}g'\rgt{b}$, which obviously has the same finite basis as $g'$. 
-  \end{case}
-
-  \begin{case}{$g = \fix{y}{g''}$}
-    This is where we find out if the induction hypothesis is strong enough!
-    \begin{itemize}
-      \item We have $G$, $X$, and $\gamma$ finitely based in $X$, and $g'$ finitely
-        based in $G \cup X$. 
-      \item By inversion we have $g''$ in a context $\Gamma' = \Gamma, y$. 
-      \item By induction we have for all $g'$, $G$, $X$, and $\gamma'$ for $\Gamma'$ finitely
-        based in $X$, that if $\gamma'(g'')$ and $\gamma'(g')$ are finitely based in $G \cup X$,
-        then $\gamma'(g''[g'/x])$ is finitely based in $G \cup X$. 
-      \item In the induction hypothesis, take $\gamma' = \gamma, [y \mapsto \fix{y}{g''}]$ and 
-        $X$ to be $G \cup X$. Since we know that $\fix{y}{g''}$ has basis $G \cup X$, and since
-        $\gamma$ has basis $X$, it follows that $\gamma'(g'')$ has basis $G \cup X$. Furthermore, 
-        since $y \not\in \mathrm{FV}(g')$, it follows that $\gamma'(g') = \gamma''(g')$, and 
-        so $\gamma'(g')$ is finitely based in $G \cup X$. 
-      \item Therefore $\gamma'(g''[g'/x])$ is finitely based in $G \cup X$. 
-      \item Since $\gamma'(g''[g'/x]) \simeq\gamma(\fix{y}{g''[g'/x]}) \simeq \gamma(g[g'/x])$, 
-        this case follows.         
-    \end{itemize}
-  \end{case}
-\end{caseblock}
-\end{proof}
-
-
-
 \begin{prop}{(The Set of Derivatives Is Finitely Based)}
-For any grammatical expression $g$ with free variables $\Gamma$, there
-is a finite set $G$ such that every for every substitution $\gamma$ all of 
-whose derivatives are finitely based in $X$, the derivative $D_s(\gamma(g))$ 
-is finitely based in $G \cup X$.  
+For any $\judgebalance{\Gamma}{g}{d}$ there is a finite set $G$ of
+$\Gamma$-typed terms such that for any grounding substitution $\gamma$
+for $\Gamma$ based in any $X$, $\gamma(g)$ is based in $\gamma(G) \cup
+X$.
 \end{prop}
+
+FIX THIS PROOF
 
 \begin{proof}
 \begin{caseblock}
@@ -1166,18 +1319,77 @@ is finitely based in $G \cup X$.
   \end{case}
 
   \begin{case}{$g = \fix{x}{g'}$}
-    Let $G'$ be the basis set of $g'$. Now, take $G$ to be $G \cup \setof{\fix{x}{g'}}$. 
-    To show that this is a basis of $\fix{x}{g'(x)}$ for arbitrary $s$ of length $n$, unroll
-    the fixed point $n$ times to get $g'' = (g')^n(\fix{x}{g'(x)}$, which we know has the same basis. 
-    Now every occurence of $\fix{x}{g}$ in the new expression will have $n$ occurences of some 
-    $\lft{a}$ in front of it, and so the taking the derivative with respect to $s$ will never 
-    unroll this loop. Therefore, [FIXME]
+    By hypothesis, we have $\judgebalance{\fix{x}{g'}}{0}$, and a $\gamma$ for $\Gamma$. 
+
+    By inversion, we know that $\judgebalance[\Gamma, x]{g'}{0}$. 
+
+    Now, take $\gamma' = \gamma, [\gamma(\fix{x}{g})/x]$ as a substitution for $\Gamma, x$. 
+
+    By induction, we have a set $G'$ such that for $\gamma'(g')$ is based in $G'$. 
+
+    Take $G = G' \cup \setof{\gamma(\fix{x}{g'})}$. 
+
+    Now, consider an arbitrary string $s$. If it is empty, then $\deriv{\epsilon}{g)} = g \in G$. 
+
+    Otherwise, $s = \sigma\cdot s'$. Now observe that 
+    \begin{mathpar}
+      \begin{array}{lcl}
+        \deriv{s}{\gamma(\fix{x}{g'})} 
+        & = & \deriv{s'}{\deriv{\sigma}{\gamma(\fix{x}{g'})}} \\
+        & = & \deriv{s'}{\deriv{\sigma}{\gamma(g')}[\gamma(\fix{x}{g'})/x]} \\
+        & = & \deriv{s'}{\deriv{\sigma}{\gamma'(g')}} \\
+      \end{array}
+    \end{mathpar}
+
+    Since we know that $\deriv{\sigma}{\gamma'(g')}$ is derived from the basis $G$, we know that
+    $\deriv{s'}{\deriv{\sigma}{\gamma'(g')}}$ is also derived from the basis $G$. 
+  \end{case}
+
+  \begin{case}{$\judgebalance{g_1\cdot g_2}{d}$}
+    By inversion, we know that $\judgebalance{g_1}{d_1}$ and $\judgebalance{g_2}{d_2}$.
+    
+    Assume we have some grounding substitution $\gamma$. 
+
+    By induction we have $G_1$ and $G_2$ as finite bases for $\gamma(g_1)$ and $\gamma(g_2)$. 
+    
+    Take $G = G_1 \cup G_2$. 
+
+    Now we proceed by induction on the length of an arbitrary string $s$. 
+    
+    If the string is empty, then the derivative is equal to $g_1\cdot g_2$. Because of 
+    the finite basis property, there are expressions $g'_1$ and $g'_2$ equivalent to 
+    $g_1$ and $g_2$ generated from $G_1$ and $G_2$. Hence $g'_1\cdot g'_2$ is derived
+    from the basis $G_1 \cup G_2$. 
+
+    If the string is nonempty, it is of the form $s = \sigma\cdot s'$. 
+
+    Therefore 
+    \begin{mathpar}
+      \begin{array}{lcl}
+        \deriv{s}{g_1\cdot g_2} 
+        & = & \deriv{s'}{\deriv{\sigma}{g_1\cdot g_2}} \\
+        & = & \deriv{s'}{\deriv{\sigma}{g_1}\cdot g_2 \vee \IfThenElse{\emptify{g_1}}{\deriv{\sigma}{g_2}}{\bot}}\\
+      \end{array}
+    \end{mathpar}
+
+    Now, note that $\deriv{\sigma}{g_1}$ is based in $G_1$, $g_2$ is
+    based in $G_2$, and $\deriv{\sigma}{g_2}$ is based in $G_2$. Hence
+    the whole expression is based in $G_1 \cup G_2$.
+  \end{case}
+
+  \begin{case}{$\judgebalance{g'*}{0}$}
+    By inversion we have $\judgebalance{g'}{0}$ and assume we have $\gamma$ grounding $\Gamma$. 
+
+    By induction $\gamma(g')$ is based in $G'$. 
+
+    Take $G$ to be $G' \cup g'*$. 
+
+    Now, we need to show that 
   \end{case}
 \end{caseblock}
 \end{proof}
 
-In fact, it's not enough to know that a grammatical expression is
-finitely based to ensure that it has a
+
 
 
 \end{document}
