@@ -1159,83 +1159,6 @@ $\interp{\deriv{\sigma}{g}}\gamma = \semderiv{\sigma}{\interp{g}\gamma}$.
 \end{proof}
 
 
-\begin{prop}{(Syntactic Derivatives of Strings)}
-For any string $s$, and grammatical expression $g$ the following propositions hold:
-\begin{enumerate}
-\item $\deriv{s}{g_1 \vee g_2} \simeq \deriv{s}{g_1} \vee \deriv{s}{g_2}$
-\item $\deriv{s}{g_1 \cdot g_2} \simeq \deriv{s}{g_1}\cdot g_2 \vee \bigvee_{\comprehend{s_1, s_2}{s = s_1\cdot s_2}} \emptify{\deriv{s_1}{g_1}}\cdot \deriv{s_2}{g_2}$
-% \item $\deriv{s}{g*} \simeq \left(\bigvee_{\comprehend{(s_1, \ldots, s_k)}{s = s_1 \cdot \ldots s_{k+1} \land \forall j \leq k.\; |s_j} > 0}} \emptify{\deriv{s_1}{g}}\cdot\ldots\cdot\emptify{\deriv{s_k}{g}}\cdot\deriv{s_{k+1}}{g}\right)\cdot (g*)$
-\end{enumerate}
-\end{prop}
-
-\begin{proof}
-In each case, we proceed by induction on $s$.   
-\begin{enumerate}
-\item $\deriv{s}{g_1 \vee g_2} \simeq \deriv{s}{g_1} \vee \deriv{s}{g_2}$
-  \begin{caseblock}
-    \begin{case}{$s = \epsilon$}
-      $\deriv{\epsilon}{g_1 \vee g_2} \simeq g_1 \vee g_2 \simeq\deriv{\epsilon}{g_1} \vee \deriv{\epsilon}{g_2}$
-    \end{case}
-
-    \begin{case}{$s = \sigma\cdot s'$}
-      \begin{mathpar}
-        \begin{array}{lcll}
-          \mbox{By definition,} & \deriv{\sigma\cdot s'}{g_1 \vee g_2} & = & 
-             \deriv{s'}{\deriv{\sigma}{g_1 \vee g_2}} \\
-          \mbox{By definition} & & = & 
-            \deriv{s'}{\deriv{\sigma}{g_1} \vee \deriv{\sigma}{g_2}} \\
-          \mbox{By induction}  & & = & 
-             \deriv{\sigma\cdot s'}{g_1} \vee \deriv{\sigma\cdot s'}{g_2} \\
-        \end{array}
-      \end{mathpar}
-    \end{case}
-  \end{caseblock}
-
-\item $\deriv{s}{g_1 \cdot g_2} \simeq \deriv{s}{g_1}\cdot g_2 \vee \bigvee_{\comprehend{s_1, s_2}{s = s_1\cdot s_2}} \emptify{\deriv{s_1}{g_1}}\cdot \deriv{s_2}{g_2}$
-  \begin{caseblock}
-    \begin{case}{$s = \epsilon$}
-      \begin{mathpar}
-        \begin{array}{llcl}
-          \mbox{By definition} & \deriv{\epsilon}{g_1 \cdot g_2} & = & 
-             g_1 \cdot g_2 \\
-          \mbox{By equation} & & \simeq & 
-             g_1 \cdot g_2 \vee \emptify{g_1}\cdot g_2 \\
-          \mbox{By equation} & & \simeq & 
-             g_1 \cdot g_2 \vee \emptify{g_1}\cdot \deriv{\epsilon}{g_2} \\
-        \end{array}
-      \end{mathpar}
-    \end{case}
-
-    \begin{case}{$s = \sigma \cdot s'$}
-      \begin{mathpar}
-        \begin{array}{llcl}
-          \mbox{Def.} & \deriv{\sigma\cdot s'}{g_1 \cdot g_2} & = & 
-             \deriv{s'}{\deriv{\sigma}{g_1\cdot g_2}} \\
-          \mbox{Def.} & & = & 
-              \deriv{s'}{\deriv{\sigma}{g_1}\cdot g_2 \vee \emptify{g_1}\deriv{\sigma}{g_2}} \\
-          \mbox{Def.} & & = & 
-              \deriv{s'}{\deriv{\sigma}{g_1}\cdot g_2} \vee 
-              \deriv{s'}{\emptify{g_1}\deriv{\sigma}{g_2}} \\
-          \mbox{IH} & & \simeq & 
-              \deriv{\sigma\cdot s'}{g_1}\cdot g_2 \vee \bigvee_{\comprehend{s_1, s_2}{s' = s_1\cdot s_2}} \emptify{\deriv{\sigma\cdot s_1}{g_1}}\cdot \deriv{s_2}{g_2} \;\vee \\
-                       & & & 
-               \deriv{s'}{\emptify{g_1}}\cdot \deriv{\sigma}{g_2} \vee \bigvee_{\comprehend{s_1, s_2}{s' = s_1\cdot s_2}} \emptify{\deriv{s_1}{\emptify{g_1}}}\cdot \deriv{s_2}{\deriv{\sigma}{g_2}} \\
-          \mbox{Sem.} & & \simeq & 
-              \deriv{\sigma\cdot s'}{g_1}\cdot \deriv{\sigma}{g_2} \vee \bigvee_{\comprehend{s_1, s_2}{s' = s_1\cdot s_2}} \emptify{\deriv{\sigma\cdot s_1}{g_1}}\cdot \deriv{s_2}{\deriv{\sigma}{g_2}} \\
-                       & & & 
-              \vee \emptify{g_1}\cdot\deriv{s}{g_2} \\
-           \mbox{Simp.} & & \simeq & 
-           \deriv{s}{g_1}\cdot g_2 \vee \bigvee_{\comprehend{s_1, s_2}{s = s_1\cdot s_2}} \emptify{\deriv{s_1}{g_1}}\cdot \deriv{s_2}{g_2}
-        \end{array}
-      \end{mathpar}
-    \end{case}
-  \end{caseblock}
-
-\item $\deriv{s}{g*} \simeq \left(\bigvee_{\comprehend{(s_0, \ldots, s_k)}{s = s_0 \cdot \ldots s_{k+1}}} \emptify{\deriv{s_0}{g}}\cdot\ldots\cdot\emptify{\deriv{s_k}{g}}\cdot\deriv{s_{k+1}}{g}\right)\cdot (g*)$
-
-\end{enumerate}
-\end{proof}
-
 
 \section{Nondeterministic Brzozowski Derivatives}
 
@@ -1286,14 +1209,59 @@ require recursion from those that do --- observe that $g*$ and
 $\fix{x}{g}$ do not occur in the grammar $t$, and hence must 
 come from the basis $B$. 
 
+\begin{lemma}{(Combining Bases)}
+  If $g_1$ and $g_2$ are closed grammatical expressions based in $G$, 
+  then $g_1\cdot g_2$ and $g_1 \vee g_2$ are also based in $G$. 
+\end{lemma}
+
+\begin{proof}
+  We want to show that for all strings $s$, $g_1\cdot g_2$ and 
+  $g_1 \vee g_2$ are based in $G$. 
+
+  Therefore we proceed by induction on the length of $s$. 
+
+  If $s$ is empty, then the derivatives are $g_1\cdot g_2$ and 
+  $g_1 \vee g_2$, which are evidently based in $G$. 
+
+  If $s = \sigma \cdot s'$, then first consider $g_1\cdot g_2$. 
+
+  \begin{mathpar}
+    \begin{array}{lcl}
+      \deriv{s}{g_1\cdot g_2} 
+      & = & \deriv{s'}{\deriv{\sigma}{g_1\cdot g_2}} \\
+      & = & \deriv{s'}{\deriv{\sigma}{g_1}\cdot g_2 \vee 
+                       \IfThenElse{\emptify{g_1}}{\deriv{\sigma}{g_2}}{\bot}} \\
+    \end{array}
+  \end{mathpar}
+
+  Now, note that $\deriv{\sigma}{g_1}, g_2$, and $\deriv{\sigma}{g_2}$ are based in $G$, 
+  and so the whole expression is (regardless of whether the conditional is $\true$ or 
+  $\false$). Therefore by induction the derivative with respect to $s'$ is also based 
+  in $G$. 
+
+  Now consider $g_1 \cdot g_2$. 
+  \begin{mathpar}
+    \begin{array}{lcl}
+      \deriv{s}{g_1 \vee g_2} 
+      & = & \deriv{s'}{\deriv{\sigma}{g_1 \vee g_2}} \\
+      & = & \deriv{s'}{\deriv{\sigma}{g_1} \vee \deriv{\sigma}{g_2}} \\
+    \end{array}
+  \end{mathpar}
+
+  Now note that both $\deriv{\sigma}{g_1}$ and $\deriv{\sigma}{g_2}$ are 
+  based in $G$, and so the disjunction is as well. Therefore by induction
+  the derivative of this term with respect to $s'$ is also based in $G$. 
+
+\end{proof}
+
+
+
 \begin{prop}{(The Set of Derivatives Is Finitely Based)}
 For any $\judgebalance{\Gamma}{g}{d}$ there is a finite set $G$ of
 $\Gamma$-typed terms such that for any grounding substitution $\gamma$
 for $\Gamma$ based in any $X$, $\gamma(g)$ is based in $\gamma(G) \cup
 X$.
 \end{prop}
-
-FIX THIS PROOF
 
 \begin{proof}
 \begin{caseblock}
@@ -1314,52 +1282,27 @@ FIX THIS PROOF
   \begin{case}{$g = g_1 \vee g_2$}
     Let $G_1$ and $G_2$ be the basis sets of $g_1$ and $g_2$. Then, we know 
     that $\deriv{s}{\gamma(g_1 \vee g_2)} = \deriv{s}{\gamma(g_1)} \vee \deriv{s}{\gamma(g_2)}$. Since
-    $\deriv{s}{g_1}$ is finitely based in $G_1 \cup X$ and $\deriv{s}{g_2}$ is finitely based in $G_2 \cup X$, 
-    it follows that $\deriv{s}{g_1} \vee \deriv{s}{g_2}$ is finitely based in $G \cup X$. 
-  \end{case}
-
-  \begin{case}{$g = \fix{x}{g'}$}
-    By hypothesis, we have $\judgebalance{\fix{x}{g'}}{0}$, and a $\gamma$ for $\Gamma$. 
-
-    By inversion, we know that $\judgebalance[\Gamma, x]{g'}{0}$. 
-
-    Now, take $\gamma' = \gamma, [\gamma(\fix{x}{g})/x]$ as a substitution for $\Gamma, x$. 
-
-    By induction, we have a set $G'$ such that for $\gamma'(g')$ is based in $G'$. 
-
-    Take $G = G' \cup \setof{\gamma(\fix{x}{g'})}$. 
-
-    Now, consider an arbitrary string $s$. If it is empty, then $\deriv{\epsilon}{g)} = g \in G$. 
-
-    Otherwise, $s = \sigma\cdot s'$. Now observe that 
-    \begin{mathpar}
-      \begin{array}{lcl}
-        \deriv{s}{\gamma(\fix{x}{g'})} 
-        & = & \deriv{s'}{\deriv{\sigma}{\gamma(\fix{x}{g'})}} \\
-        & = & \deriv{s'}{\deriv{\sigma}{\gamma(g')}[\gamma(\fix{x}{g'})/x]} \\
-        & = & \deriv{s'}{\deriv{\sigma}{\gamma'(g')}} \\
-      \end{array}
-    \end{mathpar}
-
-    Since we know that $\deriv{\sigma}{\gamma'(g')}$ is derived from the basis $G$, we know that
-    $\deriv{s'}{\deriv{\sigma}{\gamma'(g')}}$ is also derived from the basis $G$. 
+    $\deriv{s}{g_1}$ is finitely based in $\gamma(G_1) \cup X$ and $\deriv{s}{g_2}$ is finitely based in $\gamma(G_2) \cup X$, 
+    it follows that $\deriv{s}{g_1} \vee \deriv{s}{g_2}$ is finitely based in $\gamma(G) \cup X$. 
   \end{case}
 
   \begin{case}{$\judgebalance{g_1\cdot g_2}{d}$}
     By inversion, we know that $\judgebalance{g_1}{d_1}$ and $\judgebalance{g_2}{d_2}$.
     
-    Assume we have some grounding substitution $\gamma$. 
-
     By induction we have $G_1$ and $G_2$ as finite bases for $\gamma(g_1)$ and $\gamma(g_2)$. 
     
     Take $G = G_1 \cup G_2$. 
+
+    Now let $\gamma$ be a grounding substitution based in $X$. Then 
+    $\gamma(G_1) \cup X$ is a basis for $\gamma(g_1)$ and $\gamma(G_2)$ is a basis
+    for $\gamma(g_2) \cup X$. 
 
     Now we proceed by induction on the length of an arbitrary string $s$. 
     
     If the string is empty, then the derivative is equal to $g_1\cdot g_2$. Because of 
     the finite basis property, there are expressions $g'_1$ and $g'_2$ equivalent to 
-    $g_1$ and $g_2$ generated from $G_1$ and $G_2$. Hence $g'_1\cdot g'_2$ is derived
-    from the basis $G_1 \cup G_2$. 
+    $g_1$ and $g_2$ generated from $\gamma(G_1) \cup X$ and $\gamma(G_2) \cup X$. Hence 
+    $g'_1\cdot g'_2$ is derived from the basis $\gamma(G_1 \cup G_2) \cup X$. 
 
     If the string is nonempty, it is of the form $s = \sigma\cdot s'$. 
 
@@ -1372,20 +1315,96 @@ FIX THIS PROOF
       \end{array}
     \end{mathpar}
 
-    Now, note that $\deriv{\sigma}{g_1}$ is based in $G_1$, $g_2$ is
-    based in $G_2$, and $\deriv{\sigma}{g_2}$ is based in $G_2$. Hence
-    the whole expression is based in $G_1 \cup G_2$.
+    Now, note that $\deriv{\sigma}{g_1}$ is based in $\gamma(G_1) \cup
+    X$, $g_2$ is based in $\gamma(G_2) \cup X$, and
+    $\deriv{\sigma}{g_2}$ is based in $\gamma(G_2) \cup X$. Hence the
+    whole expression is based in $\gamma(G_1 \cup G_2) \cup X$.
   \end{case}
 
   \begin{case}{$\judgebalance{g'*}{0}$}
-    By inversion we have $\judgebalance{g'}{0}$ and assume we have $\gamma$ grounding $\Gamma$. 
-
-    By induction $\gamma(g')$ is based in $G'$. 
+    By inversion we have $\judgebalance{g'}{0}$.
+    
+    By induction we have $G'$ such that for all $\gamma$ grounding $\Gamma$ 
+    based in all $X$, $\gamma(g')$ is based in $\gamma(G') \cup X$. 
 
     Take $G$ to be $G' \cup g'*$. 
 
-    Now, we need to show that 
+    Now assume that we have $\gamma$ grounding $\Gamma$ based in $X$. 
+
+    Now suppose we have some string $s$. If it is empty, then obviously 
+    $\gamma(g'*) \in \gamma(G)$. Otherwise, the string is $s = \sigma\cdot s'$
+    for some $s'$. Then:
+    \begin{mathpar}
+      \begin{array}{lcl}
+        \deriv{s}{\gamma(g'*)} 
+         & = & \deriv{s}{(\gamma(g'))*} \\
+         & = & \deriv{s'}{\deriv{\sigma}{(\gamma(g'))*}} \\
+         & = & \deriv{s'}{\deriv{\sigma}{\gamma(g')}\cdot\gamma(g')*} \\
+      \end{array}
+    \end{mathpar}
+    By hypothesis $\deriv{\sigma}{\gamma(g')}$ is derived from $\gamma(G) \cup X$, 
+    and likewise for $\gamma(g')$. Hence every derivative of this is also based 
+    in $\gamma(G) \cup X$. 
   \end{case}
+
+  \begin{case}{$g = \fix{x}{g'}$}
+    By hypothesis, we have $\judgebalance{\fix{x}{g'}}{0}$.
+
+    By inversion, we know that $\judgebalance[\Gamma, x]{g'}{0}$. 
+
+    As induction hypothesis, we have a set $G'$ such that for all $\gamma'$ for $\Gamma,x$ 
+    we have $\gamma'(g')$ is based in $\gamma'(G')$. 
+
+    Let $G = G'[\fix{x}{g'}/x] \cup \setof{\fix{x}{g'}}$. 
+
+    Suppose we have a grounding substitution $\gamma$ for $\Gamma$ finitely based in $X$. 
+
+    Now, we want to show that $\gamma(g)$ is finitely based in $\gamma(G) \cup X$.  
+
+    First, observe that if we let $\gamma' = \gamma, \gamma(\fix{x}{g})$, then $\gamma'(g')$
+    is based in $\gamma'(G')$, which is a subset of $\gamma(G)$. 
+
+    Now, consider an arbitrary string $s$. If it is empty, then $\deriv{\epsilon}{\gamma(g))} = g \in \gamma(G)$. 
+
+    Otherwise, $s = \sigma\cdot s'$. Now observe that 
+    \begin{mathpar}
+      \begin{array}{lcl}
+        \deriv{s}{\gamma(\fix{x}{g'})} 
+        & = & \deriv{s'}{\deriv{\sigma}{\gamma(\fix{x}{g'})}} \\
+        & = & \deriv{s'}{\deriv{\sigma}{\gamma(g')}[\gamma(\fix{x}{g'})/x]} \\
+        & = & \deriv{s'}{\deriv{\sigma}{\gamma'(g')}} \\
+      \end{array}
+    \end{mathpar}
+
+    Since we know that $\deriv{\sigma}{\gamma'(g')}$ is derived from
+    the basis $\gamma'(G') \cup X$, we know that 
+    $\deriv{s'}{\deriv{\sigma}{\gamma'(g')}}$ is also derived from the
+    basis $\gamma'(G') \cup X$, and hence is derived from $\gamma(G) \cup X$. 
+  \end{case}
+
+  \begin{case}{$\judgebalance{\lft{a}x\rgt{b}}{0}$}
+    In this case, let $G = \setof{\lft{a}, \rgt{b}}$. 
+
+    Now, suppose we have a grounding substitution $\gamma$ based in $X$. 
+
+    Now suppose that we have an arbitrary string $s$. 
+
+    If $s$ is empty, the derivative is the trivial $\lft{a}\cdot\gamma(x)\cdot\rgt{b}$. 
+    Since $\gamma(x)$ is based in $X$, there is some derivation of it from $X$ -- call
+    it $g_x$. Then $\lft{a}\cdot g_x \cdot \rgt{b}$ is based in $G \cup X$. 
+
+    If $s$ is non-empty, then it is some string $\sigma\cdot s'$. If $\sigma$ is 
+    not $\lft{a}$, then this is trivial. Otherwise, we have 
+    \begin{mathpar}
+      \begin{array}{lcl}
+        \deriv{s}{\lft{a}\cdot g_x \cdot \rgt{b}} 
+        & = & \deriv{s'}{\deriv{\lft{a}}{\lft{a}\cdot g_x \cdot \rgt{b}}} \\
+        & = & \deriv{s'}{g_x \cdot \rgt{b}} \\
+    \end{mathpar}
+  \end{case}
+    
+  Since both $g_x$ and $\rgt{b}$ are based in $G \cup X$, all their derivatives
+  are based in $G \cup X$. 
 \end{caseblock}
 \end{proof}
 
