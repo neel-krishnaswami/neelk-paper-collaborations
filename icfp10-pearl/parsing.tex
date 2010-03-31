@@ -32,6 +32,8 @@
 
 \newcommand{\guard}[2]{{#1}\rhd{#2}}
 
+\newcommand{\depth}[1]{|{#1}|}
+
 \newtheorem{prop}{Proposition}
 \newtheorem{lemma}{Lemma}
 \newtheorem{theorem}{Theorem}
@@ -1189,78 +1191,54 @@ non-deterministic version of the Brzozowski derivative algorithm, and
 then show how to determinize it.
 
 \begin{definition}{(Finite Base)}
-We say a grammatical expression $g$ is derived from a basis $B$, when
-$B$ is a finite set of grammatical expressions, and $g$ is equivalent
-to a sum of concatenations of elements of $B$. That is, $g$ should be
-generated (up to $\simeq$) via the following grammar:
+We say a grammatical expression $g$ is derived from a basis set $F$, when
+$F$ is a finite set of closed grammatical expressions of type $0$, and
+$g$ is equivalent to a sum of concatenations of elements of $F$. That
+is, $g$ should be generated (up to $\simeq$) via the following
+grammar, where $f$ ranges over elements of $F$. 
 \begin{mathpar}
   \begin{array}{lcl}
-    t & ::= & \sigma \bnfalt \epsilon \bnfalt t \cdot t' \bnfalt \bot \bnfalt t \vee t' \bnfalt b \in B
+    t & ::= & \epsilon \bnfalt t \cdot t' \bnfalt \bot \bnfalt t \vee t' \bnfalt \rgt{b}\cdot f \bnfalt f 
   \end{array}
 \end{mathpar}
 
 We say a grammatical expression $g$ is based in $B$, when $g$ and all
-of its derivatives are derived from a basis $B$.
+of its derivatives are derived from a basis $B$. 
 \end{definition}
 
-The intuition behind this definition is that it is a way of
-distinguishing the pieces of a grammatical expression that don't
-require recursion from those that do --- observe that $g*$ and
-$\fix{x}{g}$ do not occur in the grammar $t$, and hence must 
-come from the basis $B$. 
+In Brzozowski's derivative algorithm, the states of a state machine
+recognizing a regular language are regular expressions which describe
+the language recognizable from that state. In our case, this simple
+intuition is not quite good enough. A balanced language cannot be
+recognized with a finite state machine, since we need a stack to match
+the open and closing parentheses. 
 
-\begin{lemma}{(Combining Bases)}
-  If $g_1$ and $g_2$ are closed grammatical expressions based in $G$, 
-  then $g_1\cdot g_2$ and $g_1 \vee g_2$ are also based in $G$. 
-\end{lemma}
+So, to capture this intuition, we use basis expressions, which are
+trees of 0-balanced grammatical expressions, with each 0-balanced
+grammatical expression separated by right-parentheses. The idea is
+that each time we see a left-parenthesis, we can ``push a state on
+the stack''. The tree structure arises from the fact that 
 
-\begin{proof}
-  We want to show that for all strings $s$, $g_1\cdot g_2$ and 
-  $g_1 \vee g_2$ are based in $G$. 
+Now, define the \emph{height} of a basis expression as follows: 
 
-  Therefore we proceed by induction on the length of $s$. 
-
-  If $s$ is empty, then the derivatives are $g_1\cdot g_2$ and 
-  $g_1 \vee g_2$, which are evidently based in $G$. 
-
-  If $s = \sigma \cdot s'$, then first consider $g_1\cdot g_2$. 
-
-  \begin{mathpar}
-    \begin{array}{lcl}
-      \deriv{s}{g_1\cdot g_2} 
-      & = & \deriv{s'}{\deriv{\sigma}{g_1\cdot g_2}} \\
-      & = & \deriv{s'}{\deriv{\sigma}{g_1}\cdot g_2 \vee 
-                       \IfThenElse{\emptify{g_1}}{\deriv{\sigma}{g_2}}{\bot}} \\
-    \end{array}
-  \end{mathpar}
-
-  Now, note that $\deriv{\sigma}{g_1}, g_2$, and $\deriv{\sigma}{g_2}$ are based in $G$, 
-  and so the whole expression is (regardless of whether the conditional is $\true$ or 
-  $\false$). Therefore by induction the derivative with respect to $s'$ is also based 
-  in $G$. 
-
-  Now consider $g_1 \cdot g_2$. 
-  \begin{mathpar}
-    \begin{array}{lcl}
-      \deriv{s}{g_1 \vee g_2} 
-      & = & \deriv{s'}{\deriv{\sigma}{g_1 \vee g_2}} \\
-      & = & \deriv{s'}{\deriv{\sigma}{g_1} \vee \deriv{\sigma}{g_2}} \\
-    \end{array}
-  \end{mathpar}
-
-  Now note that both $\deriv{\sigma}{g_1}$ and $\deriv{\sigma}{g_2}$ are 
-  based in $G$, and so the disjunction is as well. Therefore by induction
-  the derivative of this term with respect to $s'$ is also based in $G$. 
-
-\end{proof}
-
-
+\begin{mathpar}
+  \begin{array}{lcl}
+    \depth{b}            & = & 1 \\
+    \depth{\epsilon}     & = & 0 \\
+    \depth{\rgt{b}}      & = & 1 \\
+    \depth{t_1\cdot t_2} & = & \depth{t_1} + \depth{t_2} \\
+    \depth{\bot}         & = & 0 \\ 
+    \depth{t_1 \vee t_2} & = &  \max(\depth{t_1}, \depth{t_2}) \\
+  \end{array}
+\end{mathpar}
 
 \begin{prop}{(The Set of Derivatives Is Finitely Based)}
-For any $\judgebalance{\Gamma}{g}{d}$ there is a finite set $G$ of
+For any $\judgebalance{\Gamma}{g}{0}$ there is a finite set $G$ of
 $\Gamma$-typed terms such that for any grounding substitution $\gamma$
 for $\Gamma$ based in any $X$, $\gamma(g)$ is based in $\gamma(G) \cup
-X$.
+X$. Furthermore, for any string $s$ of depth $-d$, the derivative
+$\deriv{s}{g}$ is equivalent to a basis expression of height 
+$d + 1$. 
 \end{prop}
 
 \begin{proof}
@@ -1268,15 +1246,18 @@ X$.
   \begin{case}{$g = \epsilon$}
     Let $G = \emptyset$. If $s$ is the empty string, 
     then $D_\epsilon(\epsilon) = \epsilon$. If it is nonempty, then $D_{c\cdot s'}(\epsilon) = \bot$. 
+    The maximum height in this case is 1. 
   \end{case}
 
   \begin{case}{$g = \sigma$}
     Let $G = \setof{\sigma}$. If $s$ is empty, the derivative is $\sigma$. 
     If $s$ is $\sigma$, the derivative is $\epsilon$. Otherwise, it is $\bot$. 
+    The maximum size in this case is at most 1. 
   \end{case}
 
   \begin{case}{$g = \bot$}
     Let $G = \emptyset$. All derivatives of $\bot$ are $\bot$. 
+    The maximum height in this case is at most 1. 
   \end{case}
 
   \begin{case}{$g = g_1 \vee g_2$}
@@ -1284,6 +1265,10 @@ X$.
     that $\deriv{s}{\gamma(g_1 \vee g_2)} = \deriv{s}{\gamma(g_1)} \vee \deriv{s}{\gamma(g_2)}$. Since
     $\deriv{s}{g_1}$ is finitely based in $\gamma(G_1) \cup X$ and $\deriv{s}{g_2}$ is finitely based in $\gamma(G_2) \cup X$, 
     it follows that $\deriv{s}{g_1} \vee \deriv{s}{g_2}$ is finitely based in $\gamma(G) \cup X$. 
+
+    Similarly, if $s$ has depth $-d$, then $\deriv{s}{g_1}$ has a height of at most $d + 1$,
+    as does $\deriv{s}{g_2}$. Hence $\deriv{s}{g_1} \vee \deriv{s}{g_2}$ does too, and this is 
+    equivalent to $\deriv{s}{g_1 \vee g_2}$. 
   \end{case}
 
   \begin{case}{$\judgebalance{g_1\cdot g_2}{d}$}
@@ -1291,7 +1276,7 @@ X$.
     
     By induction we have $G_1$ and $G_2$ as finite bases for $\gamma(g_1)$ and $\gamma(g_2)$. 
     
-    Take $G = G_1 \cup G_2$. 
+    Take $G = \comprehend{g\cdot g_2}{g \in G_1 } \cup G_2$. 
 
     Now let $\gamma$ be a grounding substitution based in $X$. Then 
     $\gamma(G_1) \cup X$ is a basis for $\gamma(g_1)$ and $\gamma(G_2)$ is a basis
@@ -1299,10 +1284,12 @@ X$.
 
     Now we proceed by induction on the length of an arbitrary string $s$. 
     
-    If the string is empty, then the derivative is equal to $g_1\cdot g_2$. Because of 
-    the finite basis property, there are expressions $g'_1$ and $g'_2$ equivalent to 
-    $g_1$ and $g_2$ generated from $\gamma(G_1) \cup X$ and $\gamma(G_2) \cup X$. Hence 
-    $g'_1\cdot g'_2$ is derived from the basis $\gamma(G_1 \cup G_2) \cup X$. 
+    If the string is empty, then the derivative is equal to $g_1\cdot
+    g_2$. Because of the finite basis property, there is an expression
+    $t_1$ equivalent to $g_1$ generated from from $\gamma(G_1) \cup
+    X$. Then, by induction on $t_1$, we can show that there is a term
+    equivalent to $t_1 \cdot g_2$ derived from the basis $\gamma(G_1
+    \cup G_2) \cup X$.
 
     If the string is nonempty, it is of the form $s = \sigma\cdot s'$. 
 
@@ -1312,13 +1299,22 @@ X$.
         \deriv{s}{g_1\cdot g_2} 
         & = & \deriv{s'}{\deriv{\sigma}{g_1\cdot g_2}} \\
         & = & \deriv{s'}{\deriv{\sigma}{g_1}\cdot g_2 \vee \IfThenElse{\emptify{g_1}}{\deriv{\sigma}{g_2}}{\bot}}\\
+        & \simeq & \deriv{s'}{t'_1\cdot g_2 \vee \IfThenElse{\emptify{g_1}}{t_2}{\bot}}\\
       \end{array}
     \end{mathpar}
 
-    Now, note that $\deriv{\sigma}{g_1}$ is based in $\gamma(G_1) \cup
-    X$, $g_2$ is based in $\gamma(G_2) \cup X$, and
-    $\deriv{\sigma}{g_2}$ is based in $\gamma(G_2) \cup X$. Hence the
-    whole expression is based in $\gamma(G_1 \cup G_2) \cup X$.
+    Now, note that $t'_1 \simeq \deriv{\sigma}{g_1}$ is based in
+    $\gamma(G_1) \cup X$, and $t'_2 \simeq \deriv{\sigma}{g_2}$ is
+    based in $\gamma(G_2) \cup X$.  Then, by induction on $t'_1$, we
+    can see that there is a $t \simeq t'_1 \cdot g_2$ based in
+    $\comprehend{g\cdot g_2}{g \in G_1} \cup X$. Then by induction 
+    we know that the whole thing is based in $G$. 
+
+    Next, suppose we have a string of depth $-d$. 
+
+    If $s = \epsilon$, then we know that $d = 0$. We know that there is a
+    $t_1 \simeq g_1$ based in $\gamma(G_1) \cup X$ of height 1, and then by 
+    induction we can establish that there is a $t \simeq t_1\cdot g_2$. 
   \end{case}
 
   \begin{case}{$\judgebalance{g'*}{0}$}
@@ -1400,6 +1396,7 @@ X$.
         \deriv{s}{\lft{a}\cdot g_x \cdot \rgt{b}} 
         & = & \deriv{s'}{\deriv{\lft{a}}{\lft{a}\cdot g_x \cdot \rgt{b}}} \\
         & = & \deriv{s'}{g_x \cdot \rgt{b}} \\
+      \end{array}
     \end{mathpar}
   \end{case}
     
@@ -1407,6 +1404,11 @@ X$.
   are based in $G \cup X$. 
 \end{caseblock}
 \end{proof}
+
+
+In fact, we actually need a stronger theorem than the above. 
+
+
 
 
 
