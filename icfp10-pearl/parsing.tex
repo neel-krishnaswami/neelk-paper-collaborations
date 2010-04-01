@@ -12,10 +12,10 @@
 \newcommand{\judgebalance}[3][\Gamma]{{#1} \vdash {#2} : {#3}}
 \newcommand{\judgecat}[3]{{#1} \circ {#2} \equiv {#3}}
 \newcommand{\judgesubst}[3]{{#1} \vdash {#2} : {#3}}
-
+\newcommand{\combine}[2]{{#1} \oplus {#2}}
 \newcommand{\true}{\mathsf{true}}
 \newcommand{\false}{\mathsf{false}}
-
+\newcommand{\zero}{(0,0)}
 \newcommand{\powerset}[1]{\mathcal{P}({#1})}
 \newcommand{\powersetfin}[1]{\mathcal{P}^{\mathrm{fin}}({#1})}
 \newcommand{\interp}[1]{[\![{#1}]\!]}
@@ -93,168 +93,11 @@ with an operator to take the fixed point of a language. This is (thanks
 to a variant of Bekic's lemma) essentially lets us define unrestricted
 context-free grammars. 
 
-To define the bracketed languages, we will impose \emph{typing
-  restrictions} on this language to ensure that open and close
-parentheses match up, and that every recursive call is wrapped with an
-explicit open and close symbol. 
-
-\begin{mathpar}
-  \begin{array}{llcl}
-    \mbox{Contexts} & \Gamma & ::= & \cdot \bnfalt \Gamma, x \\
-    \mbox{Types}    & d      & \in  & \ints \\
-  \end{array}
-\\
-\boxed{\judgebalance{g}{d}}
-\\
-\inferrule*[right=TEpsilon]
-           { }
-           {\judgebalance{\epsilon}{0}}
-\and
-\inferrule*[right=TChar]
-          { }
-          {\judgebalance{c}{0}}
-\and
-\mbox{(No rule for $\lft{a}$)}
-\and
-\inferrule*[right=TClose]
-          { }
-          {\judgebalance{\rgt{b}}{+1}}
-\and
-\inferrule*[right=TCat]
-          {\judgebalance{g_1}{d_1} \\ 
-           \judgebalance{g_2}{d_2} }
-          {\judgebalance{g_1\cdot g_2}{d_1 + d_2}}
-\and
-\inferrule*[right=TStar]
-          {\judgebalance{g}{0}}
-          {\judgebalance{g*}{0}}
-\and
-\inferrule*[right=TBot]
-          { }
-          {\judgebalance{\bot}{d}}
-\and
-\inferrule*[right=TAlt]
-          {\judgebalance{g_1}{d} \\ 
-           \judgebalance{g_2}{d} }
-          {\judgebalance{g_1 \vee g_2}{d}}
-\and
-\inferrule*[right=TVar]
-          {x \in \Gamma}
-          {\judgebalance{\lft{a} x \rgt{b}}{0}}
-\and
-\inferrule*[right=TFix]
-          {\judgebalance[\Gamma, x]{g}{0}}
-          {\judgebalance{\fix{x}{g}}{0}}
-\end{mathpar}
-
-Here, we ascribe integers as types to our grammars, with the idea that
-the type of a grammar describes the number of unbalanced parentheses
-in every sentence of the grammar's language. So the grammar $\rgt{a}
-\vee \rgt{b}\cdot(\lft{c}\cdot x\cdot \rgt{d})*$ has type $+1$, since
-every sentence of this language has one more right-bracket than
-left-bracket. This also means a language like $\epsilon \vee \rgt{a}$
-will fail to typecheck, since its two sentences each have different
-numbers of unbalanced parens in them.
-
-The rule \textsc{TVar} is the only rule that lets us introduce 
-variables, and it ensures that every call is guarded with a left-
-and right-bracket.  
-
-Note that the right brackets can appear in a well-typed grammar
-\emph{only} in conjunction with a variable occurrence. Intuitively,
-the reason for this restriction is that we will be considering
-grammars that arise as derivatives of balanced grammars, and as 
-we match a string from left to right, we will always meet left-brackets
-before right-brackets, and so the derivative grammars will always 
-only need free right-brackets. 
-
-\begin{theorem}{(Substitution)}
-If $\judgebalance[\Gamma,x]{g}{d}$ and $\judgebalance{g'}{0}$
-then $\judgebalance[\Gamma']{g[g'/x]}{d}$. 
-\end{theorem}
-
-\begin{proof}
-  This proceeds by induction on the derivation of $g$. 
-
-  \begin{caseblock}
-    \begin{case}{$g \in \{\sigma, \bot, \epsilon\}$}
-      By rule $\judgebalance{g[g'/x]}{d}$, and we know $g[g'/x] = g$ since
-      these terms have no free variables in them. 
-      Hence $\judgebalance{g[g'/x]}{d}$
-    \end{case}
-
-    \begin{case}{$\judgebalance[\Gamma,x]{g*}{0}$}
-      By inversion, we have $\judgebalance{g}{0}$. 
-
-      By induction, we have $\judgebalance{g[g'/x]}{0}$.
-
-      By rule \textsc{TStar}, we have $\judgebalance{(g[g'/x])*}{0}$. 
-
-      By definition of substitution, $\judgebalance{(g*)[g'/x]}{0}$. 
-    \end{case}
-
-    \begin{case}{$\judgebalance[\Gamma, x]{g_1\cdot g_2}{d}$}
-      By inversion, we have $\judgebalance[\Gamma, x]{g_1}{d_1}$, and
-        $\judgebalance[\Gamma, x]{g_2}{d_2}$, and $d = d_1 + d_2$. 
-      
-      By induction, we have $\judgebalance{g_1[g'/x]}{d_1}$ and 
-      $\judgebalance{g_2[g'/x]}{d_2}$. 
-
-      By rule \textsc{TCat}, we have $\judgebalance{(g_1[g'/x])\cdot(g_2[g'/x])}{d_1 + d_2}$. 
-      
-      By definition, we have $\judgebalance{(g_1\cdot g_2)[g'/x]}{d}$. 
-    \end{case}
-
-    \begin{case}{$\judgebalance[\Gamma, x]{g_1\vee g_2}{d}$}
-      By inversion, we have $\judgebalance[\Gamma, x]{g_1}{d}$, and
-        $\judgebalance[\Gamma, x]{g_2}{d}$.
-      
-      By induction, we have $\judgebalance{g_1[g'/x]}{d}$ and 
-      $\judgebalance{g_2[g'/x]}{d}$. 
-
-      By rule \textsc{TCat}, we have $\judgebalance{(g_1[g'/x])\vee(g_2[g'/x])}{d}$. 
-      
-      By definition, we have $\judgebalance{(g_1\vee g_2)[g'/x]}{d}$. 
-    \end{case}
-    
-    \begin{case}{$\judgebalance[\Gamma, y]{\lft{a}\cdot y \cdot\rgt{b}}{0}$}
-      There are two cases, depending on whether $x = y$ or not. 
-
-      \begin{itemize}
-        \item If $x \not= y$, then $y \in \Gamma$, therefore
-          $\judgebalance{\lft{a}\cdot y \cdot\rgt{b}}{0}$. 
-
-        \item If $x = y$:
-          
-          By hypothesis, $\judgebalance{g'}{0}$.
-
-          By rule \textsc{TCat} twice, $\judgebalance{\lft{a}\cdot g'\cdot\rgt{b}}{0}$. 
-
-          By definition, $\judgebalance{(\lft{a}\cdot x \cdot\rgt{b})[g'/x]}{0}$
-      \end{itemize}
-    \end{case}
-
-    \begin{case}{$\judgebalance[\Gamma, x]{\fix{y}{g}}{0}$}
-      By inversion, we have $\judgebalance[\Gamma, x, y]{g}{0}$
-
-      By induction, we have $\judgebalance[\Gamma, y]{g[g'/x]}{0}$
-
-      By rule \textsc{TFix}, $\judgebalance{\fix{y}{g[g'/x]}}{0}$
-
-      By definition, $\judgebalance{(\fix{y}{g})[g'/x]}{0}$
-    \end{case}
-  \end{caseblock}
-\end{proof}
-
-
-
-\subsection{Semantics of Bracketed Grammars}
-
-First, let's take the set of strings to be the free monoid $\Word$
-over the set of characters, writing $\epsilon$ and $s\cdot s'$ for the
-unit and join of the monoid. Now, since our language has recursive
-calls, we'll need to interpret grammars as fixed points of monotone
-operators.
+To give this syntax a semantics, let's take the set of strings to be
+the free monoid $\Word$ over the set of characters, writing $\epsilon$
+and $s\cdot s'$ for the unit and join of the monoid. Now, since our
+language has recursive calls, we'll need to interpret grammars as
+fixed points of monotone operators.
 
 \begin{mathpar}
 \boxed{\interp{-} :  (\Gamma \to \powerset{\Word}) \to G \to \powerset{\Word}}
@@ -366,9 +209,195 @@ to languages, we have that $\interp{g}(\gamma, \interp{g'}\gamma) = \interp{g[g'
   \end{caseblock}
 \end{proof}
 
-\subsubsection{Properties of Languages}
+\subsection{Bracketed Languages}
 
-Next, we'll say a word $\sigma$ is strictly well-nested if there is a
+To define the bracketed languages, we will impose \emph{typing
+  restrictions} on our syntax of grammatical expressions, to ensure
+that open and close parentheses match up, and that every recursive
+call is wrapped with an explicit open and close symbol.
+
+\begin{mathpar}
+  \begin{array}{llcl}
+    \mbox{Contexts} & \Gamma & ::= & \cdot \bnfalt \Gamma, x \\
+    \mbox{Types}    & d      & \in  & \nats \times \nats \\
+  \end{array}
+\\
+\boxed{\judgebalance{g}{d}}
+\\
+\inferrule*[right=TEpsilon]
+           { }
+           {\judgebalance{\epsilon}{\zero}}
+\and
+\inferrule*[right=TChar]
+          { }
+          {\judgebalance{c}{0}}
+\and
+\inferrule*[right=TOpen]
+          { }
+          {\judgebalance{\rgt{b}}{(1, 0)}}
+\and
+\inferrule*[right=TClose]
+          { }
+          {\judgebalance{\rgt{b}}{(0, 1)}}
+\and
+\inferrule*[right=TCat]
+          {\judgebalance{g_1}{d_1} \\ 
+           \judgebalance{g_2}{d_2} }
+          {\judgebalance{g_1\cdot g_2}{d_1 \oplus d_2}}
+\and
+\inferrule*[right=TStar]
+          {\judgebalance{g}{\zero}}
+          {\judgebalance{g*}{\zero}}
+\and
+\inferrule*[right=TBot]
+          { }
+          {\judgebalance{\bot}{d}}
+\and
+\inferrule*[right=TAlt]
+          {\judgebalance{g_1}{d} \\ 
+           \judgebalance{g_2}{d} }
+          {\judgebalance{g_1 \vee g_2}{d}}
+\and
+\inferrule*[right=TVar]
+          {x \in \Gamma}
+          {\judgebalance{\lft{a} x \rgt{b}}{\zero}}
+\and
+\inferrule*[right=TFix]
+          {\judgebalance[\Gamma, x]{g}{\zero}}
+          {\judgebalance{\fix{x}{g}}{\zero}}
+\\
+\combine{(R_1, L_1)}{(R_2, L_2)} = 
+  \left[\begin{array}{l}
+           \mathrm{let}\; N = L_1 - R_2 \;\mathrm{in}\\ 
+           \IfThenElse{N < 0}{(R_1 - N, L_2)}{(R_1, N + L_2)} \\
+         \end{array}
+  \right.
+      
+\end{mathpar}
+
+Here, we ascribe integers as types to our grammars, with the idea that
+the type of a grammar is a pair describing the number of unbalanced
+(right, left)-parentheses in each sentence of the grammar's language.
+So a properly bracketed string will have a type of $\zero$, and if a
+string has type $(r, l)$, then it will have $r$ unbalanced right
+parentheses on the left and $l$ unbalanced left parentheses on the
+right.
+
+
+\begin{itemize}
+\item The grammar $\rgt{a} \vee \rgt{b}\cdot(\lft{c}\cdot x\cdot
+  \rgt{d})*$ should have type $(1, 0)$, since every sentence of this
+  language has one unbalanced right-bracket.
+
+\item The grammar $(a \vee c)\cdot\lft{a}\cdot\lft{b}$ has type $(0, 2)$, since 
+  each word in this language has two right parentheses on the left, and 
+  no left parentheses on the right. 
+
+\item The grammar $\rgt{b}\cdot\lft{a}$ has type $(1, 1)$, since this
+  grammar has one unbalanced right-bracket and one unbalanced left-bracket. 
+
+\item A language like $\epsilon \vee \rgt{a}$ will fail to typecheck,
+  since each of its two sentences $\setof{\epsilon, \rgt{a}}$ has a
+  different number of unbalanced parentheses in them. 
+\end{itemize}
+
+The rule \textsc{TVar} is the only rule that lets us introduce 
+variables, and it ensures that every call is guarded with a left-
+and right-bracket.  
+
+The \textsc{TStar} and \textsc{TFix} rules restrict their subterms to
+be balanced (i.e., have a type of $\zero$) to ensure that a fixed type
+$d = (R, L)$ can accurately describe every string in the language --
+otherwise different strings in the grammar's language could have
+different types due to unbalanced parentheses being repeated a variable
+number of times.
+
+\begin{theorem}{(Substitution)}
+If $\judgebalance[\Gamma,x]{g}{d}$ and $\judgebalance{g'}{\zero}$
+then $\judgebalance[\Gamma']{g[g'/x]}{d}$. 
+\end{theorem}
+
+\begin{proof}
+  This proceeds by induction on the derivation of $g$. 
+
+  \begin{caseblock}
+    \begin{case}{$g \in \{\sigma, \bot, \epsilon\}$}
+      By rule $\judgebalance{g[g'/x]}{d}$, and we know $g[g'/x] = g$ since
+      these terms have no free variables in them. 
+      Hence $\judgebalance{g[g'/x]}{d}$
+    \end{case}
+
+    \begin{case}{$\judgebalance[\Gamma,x]{g*}{\zero}$}
+      By inversion, we have $\judgebalance{g}{\zero}$. 
+
+      By induction, we have $\judgebalance{g[g'/x]}{\zero}$.
+
+      By rule \textsc{TStar}, we have $\judgebalance{(g[g'/x])*}{\zero}$. 
+
+      By definition of substitution, $\judgebalance{(g*)[g'/x]}{\zero}$. 
+    \end{case}
+
+    \begin{case}{$\judgebalance[\Gamma, x]{g_1\cdot g_2}{d}$}
+      By inversion, we have $\judgebalance[\Gamma, x]{g_1}{d_1}$, and
+        $\judgebalance[\Gamma, x]{g_2}{d_2}$, and $d = d_1 + d_2$. 
+      
+      By induction, we have $\judgebalance{g_1[g'/x]}{d_1}$ and 
+      $\judgebalance{g_2[g'/x]}{d_2}$. 
+
+      By rule \textsc{TCat}, we have $\judgebalance{(g_1[g'/x])\cdot(g_2[g'/x])}{d_1 + d_2}$. 
+      
+      By definition, we have $\judgebalance{(g_1\cdot g_2)[g'/x]}{d}$. 
+    \end{case}
+
+    \begin{case}{$\judgebalance[\Gamma, x]{g_1\vee g_2}{d}$}
+      By inversion, we have $\judgebalance[\Gamma, x]{g_1}{d}$, and
+        $\judgebalance[\Gamma, x]{g_2}{d}$.
+      
+      By induction, we have $\judgebalance{g_1[g'/x]}{d}$ and 
+      $\judgebalance{g_2[g'/x]}{d}$. 
+
+      By rule \textsc{TCat}, we have $\judgebalance{(g_1[g'/x])\vee(g_2[g'/x])}{d}$. 
+      
+      By definition, we have $\judgebalance{(g_1\vee g_2)[g'/x]}{d}$. 
+    \end{case}
+    
+    \begin{case}{$\judgebalance[\Gamma, y]{\lft{a}\cdot y \cdot\rgt{b}}{\zero}$}
+      There are two cases, depending on whether $x = y$ or not. 
+
+      \begin{itemize}
+        \item If $x \not= y$, then $y \in \Gamma$, therefore
+          $\judgebalance{\lft{a}\cdot y \cdot\rgt{b}}{\zero}$. 
+
+        \item If $x = y$:
+          
+          By hypothesis, $\judgebalance{g'}{\zero}$.
+
+          By rule \textsc{TCat} twice, $\judgebalance{\lft{a}\cdot g'\cdot\rgt{b}}{\zero}$. 
+
+          By definition, $\judgebalance{(\lft{a}\cdot x \cdot\rgt{b})[g'/x]}{\zero}$
+      \end{itemize}
+    \end{case}
+
+    \begin{case}{$\judgebalance[\Gamma, x]{\fix{y}{g}}{\zero}$}
+      By inversion, we have $\judgebalance[\Gamma, x, y]{g}{\zero}$
+
+      By induction, we have $\judgebalance[\Gamma, y]{g[g'/x]}{\zero}$
+
+      By rule \textsc{TFix}, $\judgebalance{\fix{y}{g[g'/x]}}{\zero}$
+
+      By definition, $\judgebalance{(\fix{y}{g})[g'/x]}{\zero}$
+    \end{case}
+  \end{caseblock}
+\end{proof}
+
+\subsection{Semantics of Bracketed Grammars}
+
+To verify the claims above, we'll need to give a refined semantics for bracketed 
+languages. 
+
+\subsubsection{Properties of Bracketing}
+
+Next, we'll say a word $\sigma$ is \emph{strictly well-bracketed} if there is a
 relation $R$ on the positions in the word, such that
 
 \begin{enumerate}
@@ -379,14 +408,34 @@ relation $R$ on the positions in the word, such that
 \item Brackets match up uniquely: if $R(i, j)$ and $R(i', j')$ holds, then $i = i'$ iff $j = j'$. 
 \end{enumerate}
 
-This condition is natural, but will prove a little too stringent to be
-univerally applicable. Instead, we will relax it just a little, and
-say a word $\sigma$ is well-nested with depth $d \in \nats$ if it can
-be broken up into $|d| + 1$ strictly well-nested substrings separated
-by characters from $\Sigma_r$.
+Now, we will relax this condition, and say a word $\sigma$ is
+bracketed up to $d = (R, L) \in \nats \times \nats$ if it can
+be broken up into $L + R + 1$ strictly well-bracketed substrings, with 
+the first $R$ substrings separated by characters from $\Sigma_r$ and
+the last $L$ substrings separated by characters from $\Sigma_l$. 
 
-Finally, we will say a language $L$ is well-nested to depth $d$, if
-every string $\sigma$ in $L$ is well-nested to depth $d$.
+So a string of type $\zero$ is just a strictly well-bracketed string, whereas
+one of type $(0, 1)$ will be split into two strictly well-bracketed pieces
+
+\begin{lemma}{(Every String Has a Unique Type)}
+For every string $s$, there is a unique $d$ such that $s$ is bracketed
+up to $d$.
+\end{lemma}
+
+\begin{proof}
+We proceed by induction on the length of $s$. 
+
+If $s$ is empty, then it is strictly well-bracketed. Hence it has type $\zero$. 
+Since it is empty, it cannot have any other bracketing, since that would require
+it to contain parenthesis characters, which it does not. 
+
+If $s$ is nonempty, then it is equal to $\sigma\cdot s'$ for some $\sigma$ and $s$. 
+Now, by induction we know that $s'$ is uniquely bracketed by a type $(R, L)$. 
+\end{proof}
+
+
+Finally, we will say a language $L$ is well-bracketed up to $d$, if every
+string $\sigma$ in $L$ is well-bracketed to depth $d$.
 
 \begin{prop}{(Semantic Nesting Lemma)}
 If $\sigma_1$ is nested to depth $d_1$ and $\sigma_2$ is nested to depth $d_2$, then 
@@ -418,12 +467,12 @@ The proof is by induction on the typing derivation of $g$. Assume we have a cont
 languages.
 
 \begin{caseblock}
-  \begin{case}{$\judgebalance{\epsilon}{0}$}
+  \begin{case}{$\judgebalance{\epsilon}{\zero}$}
     We see $\interp{\epsilon}{\gamma} = \setof{\epsilon}$, which is a one-element set consisting 
     of a single well-nested word (since it has no characters in it at all). 
   \end{case}
 
-  \begin{case}{$\judgebalance{c}{0}$}
+  \begin{case}{$\judgebalance{c}{\zero}$}
     We see $\interp{c}{\gamma} = \setof{c}$, which is a one-element set consisting 
     of a single well-nested word (since it has no brackets in it at all). 
   \end{case}
@@ -445,10 +494,10 @@ languages.
     \end{enumerate}
   \end{case}
 
-  \begin{case}{$\judgebalance{g*}{0}$}
+  \begin{case}{$\judgebalance{g*}{\zero}$}
     We reason as follows: 
     \begin{enumerate}
-      \item By inversion, we know that $\judgebalance{g}{0}$, so every string in $\interp{g}\gamma$ is 
+      \item By inversion, we know that $\judgebalance{g}{\zero}$, so every string in $\interp{g}\gamma$ is 
         well-nested. 
       \item By the semantics of languages, every word $\sigma$ in $\interp{g*}\gamma$ is a concatenation of 
         $n$ well-nested words for some $n$. 
@@ -456,7 +505,7 @@ languages.
     \end{enumerate}
   \end{case}
 
-  \begin{case}{$\judgebalance{\lft{a}x\rgt{b}}{0}$}
+  \begin{case}{$\judgebalance{\lft{a}x\rgt{b}}{\zero}$}
     We reason as follows: 
     \begin{enumerate}
       \item By hypothesis, we know that $\gamma(x)$ is a well-nested language of depth 0. 
@@ -468,10 +517,10 @@ languages.
     \end{enumerate}
   \end{case}
 
-  \begin{case}{$\judgebalance{\fix{x}{g}}{0}$}
+  \begin{case}{$\judgebalance{\fix{x}{g}}{\zero}$}
     We reason as follows: 
     \begin{enumerate}
-      \item By inversion, we know that $\judgebalance[\Gamma, x]{g}{0}$ holds. 
+      \item By inversion, we know that $\judgebalance[\Gamma, x]{g}{\zero}$ holds. 
       \item By induction, given a zero-balanced language $L$ as an argument, $f = \fun{L}{\interp{g}(\gamma,L)}$
         returns a zero-balanced language. 
       \item Since the empty language is zero-balanced, $f\;\emptyset$ is
@@ -667,7 +716,7 @@ If $\judgebalance{g}{d}$ is well-typed, and $\emptify{g}$, then $d = 0$.
 
       Suppose it is $g_i$. Then by induction $d = 0$. 
 
-      Hence $\judgebalance{g_1 \vee g_2}{0}$. 
+      Hence $\judgebalance{g_1 \vee g_2}{\zero}$. 
     \end{case}
 
     \begin{case}{$\judgebalance{\fix{x}{g}}{d}$}
@@ -862,14 +911,14 @@ and that $\gamma(\deriv{\sigma}{g}) = \deriv{\sigma}{\gamma(g)}$.
       \end{itemize}
     \end{case}
 
-    \begin{case}{$\judgebalance{\fix{x}{g}}{0}$}
-      By inversion, we know that $\judgebalance[\Gamma, x]{g}{0}$. 
+    \begin{case}{$\judgebalance{\fix{x}{g}}{\zero}$}
+      By inversion, we know that $\judgebalance[\Gamma, x]{g}{\zero}$. 
       
       So, by induction we know that $\deriv{\sigma}{g}$ is well-defined, and hence 
       $\deriv{\sigma}{\fix{x}{g}}$ is well-defined. 
 
       Now, suppose that we have $\judgesubst{\Gamma'}{\gamma}{\Gamma}$. Now, note that 
-      by substitution, $\judgebalance[\Gamma']{\gamma(\fix{x}{g})}{0}$ holds. Hence
+      by substitution, $\judgebalance[\Gamma']{\gamma(\fix{x}{g})}{\zero}$ holds. Hence
       $\judgesubst{\Gamma'}{\gamma_x = \gamma, [\gamma(\fix{x}{g})/x]}{\Gamma,x}$. 
 
       Therefore by induction hypothesis, we know that
@@ -894,8 +943,8 @@ and that $\gamma(\deriv{\sigma}{g}) = \deriv{\sigma}{\gamma(g)}$.
 
     \end{case}
 
-    \begin{case}{$\judgebalance{g*}{0}$}
-      By inversion, we know that $\judgebalance{g}{0}$. 
+    \begin{case}{$\judgebalance{g*}{\zero}$}
+      By inversion, we know that $\judgebalance{g}{\zero}$. 
 
       Therefore by induction we know that $\deriv{\sigma}{g}$ exists, and so the 
       derivative $\deriv{\sigma}{g*} = \deriv{\sigma}{g}\cdot g*$ exists. 
@@ -905,7 +954,7 @@ and that $\gamma(\deriv{\sigma}{g}) = \deriv{\sigma}{\gamma(g)}$.
       By induction we know that $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g})}{-\mathrm{sgn}(\sigma)}$ holds,
       and that $\gamma(\deriv{\sigma}{g}) = \deriv{\sigma}{\gamma(g)}$. 
 
-      By substitution we know that $\judgebalance[\Gamma']{(\gamma(g*)}{0}$ holds. 
+      By substitution we know that $\judgebalance[\Gamma']{(\gamma(g*)}{\zero}$ holds. 
 
       By rule \textsc{TCat}, we know that $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g})\cdot\gamma(g*)}{-\mathrm{sgn}(\sigma)}$ holds. 
 
@@ -925,7 +974,7 @@ and that $\gamma(\deriv{\sigma}{g}) = \deriv{\sigma}{\gamma(g)}$.
       \end{mathpar}
     \end{case}
 
-    \begin{case}{$\judgebalance{\lft{a}\cdot x \cdot\rgt{b}}{0}$}
+    \begin{case}{$\judgebalance{\lft{a}\cdot x \cdot\rgt{b}}{\zero}$}
       If $\sigma = \lft{a}$, then $\deriv{\sigma}{\lft{a}\cdot x \cdot\rgt{b}} = x \cdot \rgt{b}$, and
       if it is not, then the derivative is $\bot$. Either way, the derivative exists. 
 
@@ -933,7 +982,7 @@ and that $\gamma(\deriv{\sigma}{g}) = \deriv{\sigma}{\gamma(g)}$.
 
       If the derivative is $\bot$, then the conclusion is immediate. 
 
-      Otherwise, we know that $\judgebalance[\Gamma']{\gamma(x)}{0}$, and so by rule 
+      Otherwise, we know that $\judgebalance[\Gamma']{\gamma(x)}{\zero}$, and so by rule 
       \textsc{TCat}, we know that $\judgebalance[\Gamma']{\gamma(x)\cdot \rgt{b}}{+1}$. 
 
       Furthermore, it is immediate that $\gamma(\deriv{\sigma}{\lft{a}\cdot x\cdot\rgt{b}}) = \gamma(x \cdot \rgt{b})$
@@ -1202,22 +1251,24 @@ grammar, where $f$ ranges over elements of $F$.
   \end{array}
 \end{mathpar}
 
-We say a grammatical expression $g$ is based in $B$, when $g$ and all
-of its derivatives are derived from a basis $B$. 
+We say a closed grammatical expression $g$ is based in $B$, when $g$
+and all of its derivatives are derived from a basis $B$.
 \end{definition}
 
 In Brzozowski's derivative algorithm, the states of a state machine
-recognizing a regular language are regular expressions which describe
-the language recognizable from that state. In our case, this simple
-intuition is not quite good enough. A balanced language cannot be
-recognized with a finite state machine, since we need a stack to match
-the open and closing parentheses. 
+recognizing a regular language are identified with regular expressions
+which describe the language recognizable from that state. In our case,
+this simple intuition is not quite powerful enough. A balanced
+language cannot be recognized with a finite state machine, since we
+need a stack to match the open and closing parentheses. So the
+derivatives ought to correspond to the state and the stack of a
+push-down automaton.
 
-So, to capture this intuition, we use basis expressions, which are
-trees of 0-balanced grammatical expressions, with each 0-balanced
+To capture this intuition, we use basis expressions, which are trees
+of 0-balanced grammatical expressions, with each 0-balanced
 grammatical expression separated by right-parentheses. The idea is
-that each time we see a left-parenthesis, we can ``push a state on
-the stack''. The tree structure arises from the fact that 
+that each time we see a left-parenthesis, we can ``push a state on the
+stack''. The tree structure arises from [...]
 
 Now, define the \emph{height} of a basis expression as follows: 
 
@@ -1233,7 +1284,7 @@ Now, define the \emph{height} of a basis expression as follows:
 \end{mathpar}
 
 \begin{prop}{(The Set of Derivatives Is Finitely Based)}
-For any $\judgebalance{\Gamma}{g}{0}$ there is a finite set $G$ of
+For any $\judgebalance{\Gamma}{g}{\zero}$ there is a finite set $G$ of
 $\Gamma$-typed terms such that for any grounding substitution $\gamma$
 for $\Gamma$ based in any $X$, $\gamma(g)$ is based in $\gamma(G) \cup
 X$. Furthermore, for any string $s$ of depth $-d$, the derivative
@@ -1317,8 +1368,8 @@ $d + 1$.
     induction we can establish that there is a $t \simeq t_1\cdot g_2$. 
   \end{case}
 
-  \begin{case}{$\judgebalance{g'*}{0}$}
-    By inversion we have $\judgebalance{g'}{0}$.
+  \begin{case}{$\judgebalance{g'*}{\zero}$}
+    By inversion we have $\judgebalance{g'}{\zero}$.
     
     By induction we have $G'$ such that for all $\gamma$ grounding $\Gamma$ 
     based in all $X$, $\gamma(g')$ is based in $\gamma(G') \cup X$. 
@@ -1344,9 +1395,9 @@ $d + 1$.
   \end{case}
 
   \begin{case}{$g = \fix{x}{g'}$}
-    By hypothesis, we have $\judgebalance{\fix{x}{g'}}{0}$.
+    By hypothesis, we have $\judgebalance{\fix{x}{g'}}{\zero}$.
 
-    By inversion, we know that $\judgebalance[\Gamma, x]{g'}{0}$. 
+    By inversion, we know that $\judgebalance[\Gamma, x]{g'}{\zero}$. 
 
     As induction hypothesis, we have a set $G'$ such that for all $\gamma'$ for $\Gamma,x$ 
     we have $\gamma'(g')$ is based in $\gamma'(G')$. 
@@ -1378,7 +1429,7 @@ $d + 1$.
     basis $\gamma'(G') \cup X$, and hence is derived from $\gamma(G) \cup X$. 
   \end{case}
 
-  \begin{case}{$\judgebalance{\lft{a}x\rgt{b}}{0}$}
+  \begin{case}{$\judgebalance{\lft{a}x\rgt{b}}{\zero}$}
     In this case, let $G = \setof{\lft{a}, \rgt{b}}$. 
 
     Now, suppose we have a grounding substitution $\gamma$ based in $X$. 
