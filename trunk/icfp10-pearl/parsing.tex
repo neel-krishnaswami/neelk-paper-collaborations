@@ -266,12 +266,12 @@ call is wrapped with an explicit open and close symbol.
           {\judgebalance[\Gamma, x]{g}{\zero}}
           {\judgebalance{\fix{x}{g}}{\zero}}
 \\
+\\
 \combine{(R_1, L_1)}{(R_2, L_2)} = 
-  \left[\begin{array}{l}
-           \mathrm{let}\; N = L_1 - R_2 \;\mathrm{in}\\ 
-           \IfThenElse{N < 0}{(R_1 - N, L_2)}{(R_1, N + L_2)} \\
+         \begin{array}{l}
+           \IfThenElse{L_1 < R_2}{(R_1 + R_2 - L_1, L_2)}{(R_1, L_1 +  L_2 - R_2)} 
          \end{array}
-  \right.
+  
       
 \end{mathpar}
 
@@ -311,6 +311,9 @@ $d = (R, L)$ can accurately describe every string in the language --
 otherwise different strings in the grammar's language could have
 different types due to unbalanced parentheses being repeated a variable
 number of times.
+
+
+
 
 \begin{theorem}{(Substitution)}
 If $\judgebalance[\Gamma,x]{g}{d}$ and $\judgebalance{g'}{\zero}$
@@ -390,6 +393,199 @@ then $\judgebalance[\Gamma']{g[g'/x]}{d}$.
   \end{caseblock}
 \end{proof}
 
+\begin{lemma}{(Associativity of $\oplus$)}
+  For all $d_1, d_2, d_3$, we have that 
+  $\combine{(\combine{d_1}{d_2})}{d_3} = \combine{d_1}{(\combine{d_2}{d_3})} $. 
+\end{lemma}
+
+\begin{proof}
+  Let $d_i = (R_i, L_i)$ for $i \in \setof{1,2,3}$. 
+
+  First, let us consider the two cases for whether $R_2 < L_1$
+  \begin{caseblock}
+    \begin{case}{$L_1 < R_2$}
+      In this case $\combine{d_1}{d_2} = (R_1 + R_2 - L_1, L_2)$. 
+      Now consider whether $L_2 < R_3$: 
+      \begin{caseblock}
+        \begin{case}{$L_2 < R_3$}
+          In this case $\combine{(\combine{d_1}{d_2})}{d_3} = (R_1 + R_2 + R_3 - L_1 - L_2, L_3)$. 
+
+          Next, observe that $\combine{d_2}{d_3} = (R_2 + R_3 - L_2, L_3)$. 
+
+          Since $R_3 < L_2$,  we know that $R_3 - L_2 < 0$, so $R_1 + R_3 - L_2 < R_2 < L_1$.  
+          
+          Hence $\combine{d_1}{(\combine{d_2}{d_3})} = (R_1 + R_2 + R_3 - L_1 - L_2, L_3)$. 
+        \end{case}
+
+        \begin{case}{$R_3 \geq L_2$}
+          In this case $\combine{(\combine{d_1}{d_2})}{d_3} = (R_1 + R_2 - L_1,  L_2 + L_3 - R_3)$
+          
+          Next, observe that $\combine{d_2}{d_3} = (R_2, L_2 + L_3 - R_3)$. 
+
+          Since $R_2 < L_1$, it follows that $\combine{d_1}{(\combine{d_2}{d_3})} = (R_1 + R_2 - L_1, L_2 + L_3 - R_3)$. 
+        \end{case}
+      \end{caseblock}
+    \end{case}
+
+    \begin{case}{$L_1\geq R_2$}
+      In this case $\combine{d_1}{d_2} = (R_1, L_1 + L_2 - R_2)$
+
+      Now consider whether $L_1 + L_2 - R_2 < R_3$
+      \begin{caseblock}
+        \begin{case}{$L_1 + L_2 - R_2 < R_3$}
+          In this case $\combine{(\combine{d_1}{d_2})}{d_3} = (R_1 + R_2 + R_3 - L_1 - L_2, L_3)$. 
+
+          Since $L_1 \geq R_2$, it follows that $L_2 < R_3$, and so $\combine{d_2}{d_3} = (R_2 + R_3 - L_2, L_3)$. 
+
+          Then, since $L_1 < R_2 + R_3 - L_2$, we have $\combine{d_1}{(\combine{d_2}{d_3})} = (R_1 + R_2 + R_3 - L_1 - L_2, L_3)$. 
+        \end{case}
+
+        \begin{case}{$L_1 + L_2 - R_2 \geq R_3$}
+          In this case $\combine{(\combine{d_1}{d_2})}{d_3} = (R_1, L_1 + L_2 + L_3 - R_2 - R_3)$.
+        \end{case}
+      \end{caseblock}
+    \end{case}
+  \end{caseblock}
+\end{proof}
+
+\begin{lemma}{(Equivalence is Type-Preserving)}
+For the following equivalences, if $\judgebalance{g}{d}$ and $g \simeq g'$, then $\judgebalance{g'}{d}$.   
+\end{lemma}
+
+\begin{proof}
+  \begin{caseblock}
+    \begin{case}{$g_1 \vee g_2 \simeq g_2 \vee g_1$}
+      By inversion $\judgebalance{g_1}{d}$ and $\judgebalance{g_2}{d}$. By 
+      rule \textsc{TAlt}, $\judgebalance{g_2 \vee g_2}{d}$. 
+    \end{case}
+
+    \begin{case}{$g \vee g \simeq g$}
+      By inversion $\judgebalance{g}{d}$. 
+    \end{case}
+
+    \begin{case}{$g \simeq g \vee g$}
+      By rule \textsc{TAlt}, $\judgebalance{g \vee g}{d}$. 
+    \end{case}
+
+    \begin{case}{$g \vee \bot \simeq g$}
+      By inversion, $\judgebalance{g}{d}$. 
+    \end{case}
+
+    \begin{case}{$g \simeq g \vee \bot$}
+      By rule \textsc{TBot}, $\judgebalance{\bot}{d}$. 
+
+      By rule \textsc{TAlt}, $\judgebalance{g \vee \bot}{d}$. 
+    \end{case}
+
+    \begin{case}{$g_1 \vee (g_2 \vee g_3) \simeq (g_1 \vee g_2) \vee g_3$}
+      By inversion $\judgebalance{g_1}{d}$ and $\judgebalance{g_2 \vee g_3}{d}$. 
+
+      By inversion $\judgebalance{g_2}{d}$ and $\judgebalance{g_3}{d}$.
+
+      By rule \textsc{TAlt}, $\judgebalance{g_1 \vee g_2}{d}$.
+      
+      By rule \textsc{TAlt}, $\judgebalance{(g_1 \vee g_2) \vee g_3}{d}$. 
+    \end{case}
+
+    \begin{case}{$(g_1 \vee g_2) \vee g_3 \simeq g_1 \vee (g_2 \vee g_3)$}
+      By inversion $\judgebalance{g_3}{d}$ and $\judgebalance{g_1 \vee g_2}{d}$. 
+
+      By inversion $\judgebalance{g_1}{d}$ and $\judgebalance{g_2}{d}$.
+
+      By rule \textsc{TAlt}, $\judgebalance{g_2 \vee g_3}{d}$.
+      
+      By rule \textsc{TAlt}, $\judgebalance{g_1 \vee (g_2 \vee g_3)}{d}$. 
+    \end{case}
+
+    \begin{case}{$\epsilon\cdot g \simeq g$}
+      By inversion, $\judgebalance{\epsilon}{\zero}$ and $\judgebalance{g}{d}$. 
+    \end{case}
+
+    \begin{case}{$g \simeq g\cdot\epsilon$}
+      By inversion, $\judgebalance{\epsilon}{\zero}$ and $\judgebalance{g}{d'}$,
+      where $d = \combine{\zero}{d'}$. 
+
+      Hence $d' = d$ and $\judgebalance{g}{d}$. 
+    \end{case}
+    
+
+    \begin{case}{$g \simeq g \cdot \epsilon$}
+      By rule \textsc{TEpsilon}, $\judgebalance{\epsilon}{\zero}$. 
+
+      Since $\combine{d}{\zero} = d$, by rule \textsc{TCat}, $\judgebalance{g \cdot \epsilon}{d}$. 
+    \end{case}
+
+    \begin{case}{$g\cdot\epsilon \simeq g$}
+      By inversion, $\judgebalance{\epsilon}{\zero}$ and $\judgebalance{g}{d'}$,
+      where $d = \combine{d'}{0}$. 
+
+      Hence $d' = d$ and $\judgebalance{g}{d}$. 
+    \end{case}
+    
+    \begin{case}{$g_1\cdot(g_2\cdot g_3) \simeq (g_1\cdot g_2)\cdot g_3$}
+      By inversion, $\judgebalance{g_1}{d_1}$ and $\judgebalance{g_2\cdot g_3}{d'}$, 
+      where $d = \combine{d_1}{d'}$. 
+      
+      By inversion, $\judgebalance{g_2}{d_2}$ and $\judgebalance{g_3}{d_3}$, where
+      $d' = \combine{d_2}{d_3}$. 
+
+      So $d = \combine{d_1}{(\combine{d_2}{d_3})}$. By associativity of $\oplus$, 
+      $d = \combine{(\combine{d_1}{d_2})}{d_3}$. 
+    \end{case}
+
+    \begin{case}{$\bot \cdot g \simeq \bot$}
+      By rule \textsc{TBot}, $\judgebalance{\bot}{d}$.
+    \end{case}
+
+    \begin{case}{$g \cdot \bot \simeq \bot$}
+      By rule \textsc{TBot}, $\judgebalance{\bot}{d}$.
+    \end{case}
+
+    \begin{case}{$(g_1 \vee g'_1)\cdot g_2 \simeq g_1\cdot g_2 \vee g'_1\cdot g_2$}
+      By inversion we know that $\judgebalance{g_1 \vee g'_1}{d_1}$ and 
+      $\judgebalance{g_2}{d_2}$ where $d = \combine{d_1}{d_2}$. 
+
+      By inversion $\judgebalance{g_1}{d_1}$ and $\judgebalance{g'_1}{d_1}$.
+
+      By rule \textsc{TCat} that $\judgebalance{g_1\cdot g_2}{d}$. 
+
+      By rule \textsc{TCat} that $\judgebalance{g'_1\cdot g_2}{d}$. 
+
+      By rule \textsc{TOr} that $\judgebalance{g_1\cdot g_2 \vee g'_1\cdot g_2}{d}$. 
+    \end{case}
+
+    \begin{case}{$g* \simeq \epsilon \vee g\cdot(g*)$}
+      By inversion, $\judgebalance{g}{\zero}$. 
+
+      By rule $\judgebalance{\epsilon}{\zero}$
+
+      Since $\zero = \combine{\zero}{\zero}$, $\judgebalance{g\cdot(g*)}{\zero}$
+      
+      By rule, $\judgebalance{\epsilon \vee g\cdot(g*)}{\zero}$
+    \end{case}
+
+    \begin{case}{$\fix{x}{g} \simeq g[\fix{x}{g}/x]$}
+      By inversion $\judgebalance[\Gamma, x]{g}{\zero}$. 
+
+      By substitution, $\judgebalance{g[\fix{x}{g}/x]}{\zero}$
+    \end{case}
+  \end{caseblock}
+
+  Here are some equivalences that don't work the way we might expect: 
+  \begin{caseblock}
+    \begin{case}{$\bot \not\simeq g \cdot \bot$ and $\bot \not\simeq \bot \cdot g$}
+      In general this doesn't hold since $g$ isn't necessarily well-typed. But if it is,
+      it does hold. 
+    \end{case}
+
+    \begin{case}{$g_1\cdot g_2 \vee g'_1\cdot g_2 \not\simeq (g_1 \vee g'_1)\cdot g_2$}
+      This direction does not have to hold. Consider $(\lft{a}\cdot\bot) \vee (\rgt{a}\cdot\bot)$. 
+      This can be given a type, but after ``undistributing'' it won't. Luckily we won't
+      use this direction of rewriting!
+    \end{case}
+  \end{caseblock}
+\end{proof}
+
 \subsection{Semantics of Bracketed Grammars}
 
 To verify the claims above, we'll need to give a refined semantics for bracketed 
@@ -414,12 +610,17 @@ be broken up into $L + R + 1$ strictly well-bracketed substrings, with
 the first $R$ substrings separated by characters from $\Sigma_r$ and
 the last $L$ substrings separated by characters from $\Sigma_l$. 
 
-So a string of type $\zero$ is just a strictly well-bracketed string, whereas
-one of type $(0, 1)$ will be split into two strictly well-bracketed pieces
+So a string of type $\zero$ is just a strictly well-bracketed string,
+whereas one of type $(0, 1)$ will be split into two strictly
+well-bracketed pieces with a right-parenthesis separating them. We
+will also say a language $L$ is well-bracketed up to $d$, if every
+string $\sigma$ in $L$ is well-bracketed to depth $d$.
+
+
 
 \begin{lemma}{(Every String Has a Unique Type)}
-For every string $s$, there is a unique $d$ such that $s$ is bracketed
-up to $d$.
+For every string $s$, there is a unique $d$ such that $s$ is uniquely
+bracketed up to $d$.
 \end{lemma}
 
 \begin{proof}
@@ -430,29 +631,44 @@ Since it is empty, it cannot have any other bracketing, since that would require
 it to contain parenthesis characters, which it does not. 
 
 If $s$ is nonempty, then it is equal to $\sigma\cdot s'$ for some $\sigma$ and $s$. 
-Now, by induction we know that $s'$ is uniquely bracketed by a type $(R, L)$. 
+Now, by induction we know that $s'$ is uniquely bracketed by a type $(R, L)$. Suppose
+the bracketing of $s'$ is of the form $s_0 \rgt{a_1} s_1 \ldots \rgt{a_R} s_{R} \lft{b_1} \ldots \lft{b_L} \sigma_{R+L}$
+
+Now, we proceed by cases on $\sigma$. If $\sigma \in \Sigma_i$, then we can use the
+same bracketing only with a $s'_0 = \sigma\cdot s_0$, leaving the type as $(R, L)$. 
+
+If $\sigma = \rgt{a} \in \Sigma_r$, then we can take the type to be $(R+1, L)$, with a 
+bracketing:
+\begin{mathpar}
+\epsilon \rgt{a} s_0 \rgt{a_1} s_1 \ldots \rgt{a_R} s_{R} \lft{b_1} \ldots \lft{b_L} \sigma_{R+L}  
+\end{mathpar}
+
+This bracketing is unique, since there's no other way to bracket $s'$. 
+
+If $\sigma = \lft{b} \in \Sigma_r$, then we have two cases depending on whether or not $R > 0$. 
+
+If $R > 0$, we can take the type to be $(R-1, L)$, with a 
+bracketing: 
+\begin{mathpar}
+(\lft{b} s_0 \rgt{a_1} s_1) \ldots \rgt{a_R} s_{R} \lft{b_1} \ldots \lft{b_L} \sigma_{R+L}
+\end{mathpar}
+
+That is, the left-parenthesis we introduces matches the first unbalanced left parenthesis, 
+creating a longer balanced string at the front. 
+
+If $R = 0$, then we can take the type to be $(0, L+1)$, since $s' =
+s_{0} \lft{b_1} \ldots \lft{b_L} \sigma_{L}$, and we can append
+$\epsilon \lft{a}$ to the front.
+
 \end{proof}
 
-
-Finally, we will say a language $L$ is well-bracketed up to $d$, if every
-string $\sigma$ in $L$ is well-bracketed to depth $d$.
-
 \begin{prop}{(Semantic Nesting Lemma)}
-If $\sigma_1$ is nested to depth $d_1$ and $\sigma_2$ is nested to depth $d_2$, then 
-$\sigma_1\cdot\sigma_2$ is nested to depth $d_1 + d_2$.
+If $s_1$ is nested to depth $d_1$ and $s_2$ is nested to depth $d_2$, then 
+$s_1\cdot s_2$ is nested to depth $\combine{d_1}{d_2}$.
 \end{prop}
 
 \begin{proof}
-  This follows from an induction on $d_1$. Written more suggestively with ellipses, 
-the proof is as follows: 
-
-  We know $\sigma_1 = \sigma^1_1\rgt{a_1}\ldots\rgt{a_{d_1}}\sigma^{d_1+1}_1$
-
-  We know $\sigma_2 = \sigma^1_2\rgt{b_1}\ldots\rgt{b_{d_2}}\sigma^{d_2+1}_2$.
-  
-  So $\sigma_1\cdot\sigma_2 = \sigma^1_1\rgt{a_1}\ldots\rgt{a_{d_1}}\sigma^{d_1+1}_1\cdot\sigma^1_2\rgt{b_1}\ldots\rgt{b_{d_2}}\sigma^{d_2+1}_2$.
-
-  This is obviously well-nested with depth $d_1 + d_2$. 
+FIXME
 
 \end{proof}
 
