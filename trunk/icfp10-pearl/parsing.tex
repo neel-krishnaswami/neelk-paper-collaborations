@@ -29,9 +29,10 @@
 \newcommand{\Let}[2]{\mbox{let }{#1} = {#2}}
 \newcommand{\nullable}[1]{\mathit{null}(#1)}
 \newcommand{\emptify}[1]{\delta({#1})}
-
+\newcommand{\bump}[2]{\mathrm{bump}({#1}, {#2})}
+\newcommand{\sgn}[1]{\mathrm{sgn}({#1})}
 \newcommand{\guard}[2]{{#1}\rhd{#2}}
-
+\newcommand{\pieces}[1]{P({#1})}
 \newcommand{\depth}[1]{|{#1}|}
 
 \newtheorem{prop}{Proposition}
@@ -405,48 +406,69 @@ then $\judgebalance[\Gamma']{g[g'/x]}{d}$.
   \begin{caseblock}
     \begin{case}{$L_1 < R_2$}
       In this case $\combine{d_1}{d_2} = (R_1 + R_2 - L_1, L_2)$. 
+
       Now consider whether $L_2 < R_3$: 
       \begin{caseblock}
         \begin{case}{$L_2 < R_3$}
-          In this case $\combine{(\combine{d_1}{d_2})}{d_3} = (R_1 + R_2 + R_3 - L_1 - L_2, L_3)$. 
+          In this case $\combine{d_2}{d_3} = (R_2 + R_3 - L_2, L_3)$. 
 
-          Next, observe that $\combine{d_2}{d_3} = (R_2 + R_3 - L_2, L_3)$. 
+          Furthermore, $\combine{(\combine{d_1}{d_2})}{d_3} = (R_1 + R_2 - L_1 + R_3 - L_2, L_3)$
 
-          Since $R_3 < L_2$,  we know that $R_3 - L_2 < 0$, so $R_1 + R_3 - L_2 < R_2 < L_1$.  
-          
-          Hence $\combine{d_1}{(\combine{d_2}{d_3})} = (R_1 + R_2 + R_3 - L_1 - L_2, L_3)$. 
+          Since $L_1 < R_2$ and $L_2 < R_3$, we know $L_1 + L_2 < R_2 + R_3$, and so 
+          $L_1 < R_2 + R_3 - L_2$. Therefore $\combine{d_1}{(\combine{d_2}{d_3})} = (R_1 + R_2 + R_3 - L_2 - L_1, L_3)$. 
         \end{case}
 
-        \begin{case}{$R_3 \geq L_2$}
-          In this case $\combine{(\combine{d_1}{d_2})}{d_3} = (R_1 + R_2 - L_1,  L_2 + L_3 - R_3)$
-          
-          Next, observe that $\combine{d_2}{d_3} = (R_2, L_2 + L_3 - R_3)$. 
+        \begin{case}{$L_2 \geq R_3$}
+          In this case $\combine{d_2}{d_3} = (R_2, L_2 + L_3 - R_3)$. 
 
-          Since $R_2 < L_1$, it follows that $\combine{d_1}{(\combine{d_2}{d_3})} = (R_1 + R_2 - L_1, L_2 + L_3 - R_3)$. 
+          Furthermore, $\combine{(\combine{d_1}{d_2})}{d_3} = (R_1 + R_2 - L_1, L_2 + L_3 - R_3)$. 
+
+          Furthermore, $\combine{d_1}{(\combine{d_2}{d_3})} = (R_1 + R_2 - L_1, L_2 + L_3 - R_3)$. 
         \end{case}
       \end{caseblock}
     \end{case}
 
-    \begin{case}{$L_1\geq R_2$}
-      In this case $\combine{d_1}{d_2} = (R_1, L_1 + L_2 - R_2)$
+    \begin{case}{$L_1 \geq R_2$}
+      In this case $\combine{d_1}{d_2} = (R_1, L_1 + L_2 - R_2)$. 
 
-      Now consider whether $L_1 + L_2 - R_2 < R_3$
+      Now consider whether $L_2 < R_3$: 
       \begin{caseblock}
-        \begin{case}{$L_1 + L_2 - R_2 < R_3$}
-          In this case $\combine{(\combine{d_1}{d_2})}{d_3} = (R_1 + R_2 + R_3 - L_1 - L_2, L_3)$. 
+        \begin{case}{$L_2 < R_3$}
+          In this case, $\combine{d_2}{d_3} = (R_2 + R_3 - L_2, L_3)$. 
 
-          Since $L_1 \geq R_2$, it follows that $L_2 < R_3$, and so $\combine{d_2}{d_3} = (R_2 + R_3 - L_2, L_3)$. 
+          Now consider whethere $L_1 + L_2 - R_2 < R_3$: 
+          \begin{caseblock}
+            \begin{case}{$L_1 + L_2 - R_2 < R_3$}
+              In this case $\combine{(\combine{d_1}{d_2})}{d_3} = (R_1 + R_3 + R_2 - L_1 - L_2, L_3)$.
+              
+              Furthermore, since $L_1 < R_2 + R_3 - L_2$, we know 
+              $\combine{d_1}{(\combine{d_2}{d_3})} = (R_1 + R_2 + R_3 - L_2 - L_1, L_3)$. 
+            \end{case}
 
-          Then, since $L_1 < R_2 + R_3 - L_2$, we have $\combine{d_1}{(\combine{d_2}{d_3})} = (R_1 + R_2 + R_3 - L_1 - L_2, L_3)$. 
+            \begin{case}{$L_1 + L_2 - R_2 \geq R_3$}
+              In this case $\combine{(\combine{d_1}{d_2})}{d_3} = (R_1, L_1 + L_2 - R_2 + L_3 - R_3)$. 
+
+              Furthermore, since $L_1 \geq R_2 + R_2 - L_2$, we know that 
+              $\combine{d_1}{(\combine{d_2}{d_3})} = (R_1, L_1 + L_3 - R_2 - R_3 + L_2)$. 
+            \end{case}
+          \end{caseblock}
         \end{case}
 
-        \begin{case}{$L_1 + L_2 - R_2 \geq R_3$}
-          In this case $\combine{(\combine{d_1}{d_2})}{d_3} = (R_1, L_1 + L_2 + L_3 - R_2 - R_3)$.
+        \begin{case}{$L_2 \geq R_3$}
+          In this case, $\combine{d_2}{d_3} = (R_2, L_2 + L_3 - R_3)$. 
+
+          Since $L_1 + L_2 \geq R_2 + R_3$, we know that $L_1 + L_2 - R_2 \geq R_3$. Hence
+          $\combine{(\combine{d_1}{d_2})}{d_3} = (R_1, L_1 + L_2 - R_2 + L_3 - R_3)$. 
+
+          Since $L_1 + L_2 \geq R_2 + R_3$, we know that $L_1 \geq R_2 + R_3 - L_2$, Hence
+          $\combine{d_1}{(\combine{d_2}{d_3})} = (R_1, L_1 + L_2 + L_3 - R_3 - R_2)$
         \end{case}
       \end{caseblock}
     \end{case}
   \end{caseblock}
 \end{proof}
+
+
 
 \begin{lemma}{(Equivalence is Type-Preserving)}
 For the following equivalences, if $\judgebalance{g}{d}$ and $g \simeq g'$, then $\judgebalance{g'}{d}$.   
@@ -617,58 +639,32 @@ will also say a language $L$ is well-bracketed up to $d$, if every
 string $\sigma$ in $L$ is well-bracketed to depth $d$.
 
 
-
-\begin{lemma}{(Every String Has a Unique Type)}
-For every string $s$, there is a unique $d$ such that $s$ is uniquely
-bracketed up to $d$.
-\end{lemma}
-
-\begin{proof}
-We proceed by induction on the length of $s$. 
-
-If $s$ is empty, then it is strictly well-bracketed. Hence it has type $\zero$. 
-Since it is empty, it cannot have any other bracketing, since that would require
-it to contain parenthesis characters, which it does not. 
-
-If $s$ is nonempty, then it is equal to $\sigma\cdot s'$ for some $\sigma$ and $s$. 
-Now, by induction we know that $s'$ is uniquely bracketed by a type $(R, L)$. Suppose
-the bracketing of $s'$ is of the form $s_0 \rgt{a_1} s_1 \ldots \rgt{a_R} s_{R} \lft{b_1} \ldots \lft{b_L} \sigma_{R+L}$
-
-Now, we proceed by cases on $\sigma$. If $\sigma \in \Sigma_i$, then we can use the
-same bracketing only with a $s'_0 = \sigma\cdot s_0$, leaving the type as $(R, L)$. 
-
-If $\sigma = \rgt{a} \in \Sigma_r$, then we can take the type to be $(R+1, L)$, with a 
-bracketing:
-\begin{mathpar}
-\epsilon \rgt{a} s_0 \rgt{a_1} s_1 \ldots \rgt{a_R} s_{R} \lft{b_1} \ldots \lft{b_L} \sigma_{R+L}  
-\end{mathpar}
-
-This bracketing is unique, since there's no other way to bracket $s'$. 
-
-If $\sigma = \lft{b} \in \Sigma_r$, then we have two cases depending on whether or not $R > 0$. 
-
-If $R > 0$, we can take the type to be $(R-1, L)$, with a 
-bracketing: 
-\begin{mathpar}
-(\lft{b} s_0 \rgt{a_1} s_1) \ldots \rgt{a_R} s_{R} \lft{b_1} \ldots \lft{b_L} \sigma_{R+L}
-\end{mathpar}
-
-That is, the left-parenthesis we introduces matches the first unbalanced left parenthesis, 
-creating a longer balanced string at the front. 
-
-If $R = 0$, then we can take the type to be $(0, L+1)$, since $s' =
-s_{0} \lft{b_1} \ldots \lft{b_L} \sigma_{L}$, and we can append
-$\epsilon \lft{a}$ to the front.
-
-\end{proof}
-
 \begin{prop}{(Semantic Nesting Lemma)}
-If $s_1$ is nested to depth $d_1$ and $s_2$ is nested to depth $d_2$, then 
-$s_1\cdot s_2$ is nested to depth $\combine{d_1}{d_2}$.
+If $s$ is nested to depth $d$ and $s'$ is nested to depth $d'$, then 
+$s\cdot s'$ is nested to depth $\combine{d}{d'}$.
 \end{prop}
 
 \begin{proof}
-FIXME
+  Suppose that $d = (r, l)$ and $d' = (r', l')$. By definition, we know that 
+  \begin{mathpar}
+    s = s_0 \cdot \rgt{a_1} \cdot \ldots \rgt{a_r} \cdot s_r \cdot \lft{b_1} \cdot \ldots \cdot \lft{b_l} \cdot s_{r+l}    
+    \\
+    s' = s'_0 \cdot \rgt{a_1} \cdot \ldots \rgt{a_{r'}} \cdot s_{r'} \cdot \lft{b_1} \cdot \ldots \cdot \lft{b_{l'}} \cdot s_{r'+l'}    
+    \\
+  \end{mathpar}
+
+  Therefore the concatenation is 
+  \begin{mathpar}
+    s\cdot s' = s_0 \cdot \rgt{a_1} \cdot \ldots \rgt{a_r} \cdot s_r \cdot \lft{b_1} \cdot \ldots \cdot \lft{b_l} \cdot (s_{r+l} \cdot s'_0) \cdot \rgt{a'_1} \cdot \ldots \rgt{a'_{r'}} \cdot s_{r'} \cdot \lft{b'_1} \cdot \ldots \cdot \lft{b'_{l'}} \cdot s_{r'+l'}     
+  \end{mathpar}
+
+  Now, suppose that $l < r'$. Then we know that 
+  $s_r \cdot \lft{b_1} \cdot \ldots \cdot \lft{b_l} \cdot (s_{r+l} \cdot s'_0) \cdot \rgt{a'_1} s'_{1} \cdot \cdot \ldots \rgt{a'_l} \cdot s'_{l}$ is strictly well-bracketed. Therefore the concatenation has $r + r' - l$ leading
+unbalanced right parentheses, and $l'$ unbalanced left-parentheses. So $s\cdot s'$ is nested to depth $\combine{d}{d'}$
+
+  On the other hand, suppose $l \geq r'$. Then we know that $s_{r+l-r'-1} \cdot \lft{b_{l-r}} \cdot \ldots \cdot \lft{b_l} \cdot (s_{r+l} \cdot s'_0) \cdot \rgt{a'_0} \cdot \ldots \rgt{a'_{r'}} \cdot s'_{r'}$ is strictly well-bracketed.
+So the concatenation has $r$ leading unbalanced right parentheses, and $l-r+l'$ unbalanced left parentheses. As a
+result, $s\cdot s'$ is nested to depth $\combine{d}{d'}$. 
 
 \end{proof}
 
@@ -883,14 +879,14 @@ This proof is by induction on $g$.
 \end{proof}
 
 \begin{lemma}{Emptiness and Balance}
-If $\judgebalance{g}{d}$ is well-typed, and $\emptify{g}$, then $d = 0$. 
+If $\judgebalance{g}{d}$ is well-typed, and $\emptify{g}$, then $d = \zero$. 
 \end{lemma}
 
 \begin{proof}
   This is by induction over the derivation of $g$. 
   \begin{caseblock}
     \begin{case}{$\judgebalance{\epsilon}{d}$}
-      By inversion on the derivation, we know that $d = 0$
+      By inversion on the derivation, we know that $d = \zero$
     \end{case}
 
     \begin{case}{$\judgebalance{\sigma}{d}$}
@@ -900,7 +896,7 @@ If $\judgebalance{g}{d}$ is well-typed, and $\emptify{g}$, then $d = 0$.
 
     \begin{case}{$\judgebalance{g_1\cdot g_2}{d}$}
       By inversion, we know that $\judgebalance{g_1}{d_1}$, and
-      $\judgebalance{g_2}{d_2}$, and that $d_1 + d_2 = d$.  
+      $\judgebalance{g_2}{d_2}$, and that $\combine{d_1}{d_2} = d$.  
 
       By hypothesis, we know that $\emptify{g_1\cdot g_2} = \true$. 
 
@@ -909,11 +905,11 @@ If $\judgebalance{g}{d}$ is well-typed, and $\emptify{g}$, then $d = 0$.
 
       Hence $\emptify{g_1} = \true$ and $\emptify{g_2} = \true$.
 
-      By induction, $d_1 = 0$ and $d_2 = 0$. Hence $d = d_1 + d_2 = 0$. 
+      By induction, $d_1 = \zero$ and $d_2 = \zero$. Hence $d = \combine{d_1}{d_2} = \zero$. 
     \end{case}
 
     \begin{case}{$\judgebalance{g*}{d}$}
-      By inversion, $d = 0$. 
+      By inversion, $d = \zero$. 
     \end{case}
 
     \begin{case}{$\judgebalance{\bot}{d}$}
@@ -930,13 +926,13 @@ If $\judgebalance{g}{d}$ is well-typed, and $\emptify{g}$, then $d = 0$.
       
       Hence either $\emptify{g_1}$ or $\emptify{g_2}$ is $\true$. 
 
-      Suppose it is $g_i$. Then by induction $d = 0$. 
+      Suppose it is $g_i$. Then by induction $d = \zero$. 
 
       Hence $\judgebalance{g_1 \vee g_2}{\zero}$. 
     \end{case}
 
     \begin{case}{$\judgebalance{\fix{x}{g}}{d}$}
-      By inversion, $d = 0$. 
+      By inversion, $d = \zero$. 
     \end{case}
   \end{caseblock}
 \end{proof}
@@ -1006,12 +1002,30 @@ differentiated to $x\cdot\rgt{b}$, but it will be the case that any
 \emph{substitution} of a derivative will also be well-typed, since
 any ``bare'' variables will be replaced by well-typed terms. 
 
+Of course, if we take the derivative with respect to a parenthesis,
+the nesting depth of the language will change. Since a parsing
+algorithm only ever proceeds from left to right, we only need to
+consider the effect on types with zero excess left parentheses on the
+right -- that is, we will never generate a derivative of the form $(r,
+l > 0)$. So we can define a function to adjust the derivative as 
+follows: 
+
+\begin{mathpar}
+  \begin{array}{lcll}
+    \bump{\sigma \in \Sigma_i}{(r, 0)} & = & (r, 0) \\
+    \bump{\lft{a}}{(r, 0)} & = & (r+1, 0) \\
+    \bump{\rgt{b}}{(r, 0)} & = & (r-1, 0) \\
+  \end{array}
+\end{mathpar}
+
 \begin{lemma}{(Existence and Well-Typedness of Derivatives)}
-For any grammatical expression $g$ such that $\judgebalance{g}{d}$, 
-we have that $\deriv{\sigma}{g}$ is defined and that for all 
-substitutions $\gamma$ such that $\judgesubst{\Gamma'}{\gamma}{\Gamma}$, 
-we have that $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g})}{d - \mathrm{sgn}(\sigma)}$
-and that $\gamma(\deriv{\sigma}{g}) = \deriv{\sigma}{\gamma(g)}$. 
+For any grammatical expression $g$ such that $\judgebalance{g}{d}$, we
+have that $\deriv{\sigma}{g}$ is defined and that for all
+substitutions $\gamma$ such that
+$\judgesubst{\Gamma'}{\gamma}{\Gamma}$, we have that
+$\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g})}{\bump{\sigma}{d}}$ with 
+and that
+$\gamma(\deriv{\sigma}{g}) = \deriv{\sigma}{\gamma(g)}$.
 \end{lemma}
 
 \begin{proof}
@@ -1024,13 +1038,8 @@ and that $\gamma(\deriv{\sigma}{g}) = \deriv{\sigma}{\gamma(g)}$.
     \end{case}
 
     \begin{case}{$\judgebalance{\sigma}{d}$}
-      In this case, the derivative is $\epsilon$, which has a balance of 0 in all 
-      contexts. 
-
-      If $\sigma \in \Sigma_i$, then $d = 0$, and $\mathrm{sgn}(\sigma) = 0$. 
-      If $\sigma \in \Sigma_r$, then $d = 1$, and $\mathrm{sgn}(\sigma) = 1$. 
-
-      Either way, $0 = d - \mathrm{sgn}(\sigma)$. 
+      In this case, the derivative is $\epsilon$, which has a balance of $\zero$ in all 
+      contexts. Furthermore $\bump{\sigma}{\sgn{\sigma}} = \zero$. 
 
       Again, the substitution condition is trivially satisfied, since $\epsilon$ has
       no free variables. 
@@ -1044,15 +1053,15 @@ and that $\gamma(\deriv{\sigma}{g}) = \deriv{\sigma}{\gamma(g)}$.
       \deriv{\sigma}{g_2}$ is defined.
 
       Suppose that we have $\judgesubst{\Gamma'}{\gamma}{\Gamma}$. Then, by 
-      induction we know that $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g_1})}{d}$ and 
-      $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g_2})}{d}$, and furthermore 
+      induction we know that $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g_1})}{\bump{\sigma}{d}}$ and 
+      $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g_2})}{\bump{\sigma}{d}}$, and furthermore 
       we know that $\gamma(\deriv{\sigma}{g_1}) = \deriv{\sigma}{\gamma(g_1)}$ and 
       $\gamma(\deriv{\sigma}{g_2}) = \deriv{\sigma}{\gamma(g_2)}$. 
 
-      By rule \textsc{TOr}, we know that $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g_1}) \vee \gamma(\deriv{\sigma}{g_2})}{d}$. 
+      By rule \textsc{TOr}, we know that $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g_1}) \vee \gamma(\deriv{\sigma}{g_2})}{\bump{\sigma}{d}}$. 
 
       This is equal to $\gamma(\deriv{\sigma}{g_1 \vee g_2})$, so we
-      know $\judgebalance[\Gamma']{\gamma(g_1 \vee g_2)}{d}$.
+      know $\judgebalance[\Gamma']{\gamma(g_1 \vee g_2)}{\bump{\sigma}{d}}$.
 
       Furthermore, we can reason that: 
       \begin{mathpar}
@@ -1069,7 +1078,7 @@ and that $\gamma(\deriv{\sigma}{g}) = \deriv{\sigma}{\gamma(g)}$.
 
     \begin{case}{$g = g_1\cdot g_2$}
       By inversion, we know that $\judgebalance{g_1}{d_1}$ and 
-      $\judgebalance{g_2}{d_2}$ and $d = d_1 + d_2$. 
+      $\judgebalance{g_2}{d_2}$ and $d = \combine{d_1}{d_2}$. 
 
       By induction, we know that $\deriv{\sigma}{g_1}$ and $\deriv{\sigma}{g_2}$ 
       exist. Since emptiness is defined on all well-typed grammars, it follows
@@ -1077,22 +1086,23 @@ and that $\gamma(\deriv{\sigma}{g}) = \deriv{\sigma}{\gamma(g)}$.
 
       Now suppose that $\judgesubst{\Gamma'}{\gamma}{\Gamma}$. 
 
-      By induction we know that $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g_1})}{d_1 - i}$ and
+      By induction we know that $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g_1})}{\bump{\sigma}{d_1}}$ and
       that $\gamma(\deriv{\sigma}{g_1}) = \deriv{\sigma}{\gamma(g_1)}$. 
       
       By substitution, we know that $\judgebalance[\Gamma']{\gamma(g_2)}{d_2}$
         
-      Therefore we know that \textsc{TCat}, we know that $\judgebalance[\Gamma']{\gamma(g_1\cdot g_2)}{d - i}$. 
+      Therefore we know that \textsc{TCat}, we know that $\judgebalance[\Gamma']{\gamma(g_1\cdot g_2)}{\combine{\bump{\sigma}{d_1}}{d_2}}$. Furthermore, $\combine{\bump{\sigma}{d_1}}{d_2} = \bump{\sigma}{\combine{d_1}{d_2}}$. 
 
       We now proceed by  case analysis on $\emptify{g_1}$. 
 
       \begin{itemize}
-        \item If $\emptify{g_1}$ is true, then we know that $d_1 = 0$. 
+        \item If $\emptify{g_1}$ is true, then we know that $d_1 = \zero$. 
         
-          By induction, we know that $\judgebalance[\Gamma]{\gamma(\deriv{\sigma}{g_2})}{d - i}$, and 
+          Therefore we know that $d_2 = d$, and by induction, we know 
+          that $\judgebalance[\Gamma]{\gamma(\deriv{\sigma}{g_2})}{\bump{\sigma}{d}}$, and 
           that $\deriv{\sigma}{\gamma(g_2)} = \gamma(\deriv{\sigma}{g_2})$. 
           
-          Therefore we know that $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g})}{d - i}$. 
+          Therefore we know that $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g})}{\bump{\sigma}{d}}$. 
 
           Furthermore, we can reason that: 
           \begin{mathpar}
@@ -1109,9 +1119,9 @@ and that $\gamma(\deriv{\sigma}{g}) = \deriv{\sigma}{\gamma(g)}$.
 
         \item If $\emptify{g_2}$ is false, 
 
-          We know by rule \textsc{TBot} that $\judgebalance[\Gamma']{\bot}{d - i}$. 
+          We know by rule \textsc{TBot} that $\judgebalance[\Gamma']{\bot}{\bump{\sigma}{d}}$. 
 
-          Therefore we know that $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g})}{d - i}$. 
+          Therefore we know that $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g})}{\bump{\sigma}{d}}$. 
           Furthermore, we can reason that: 
           \begin{mathpar}
             \begin{array}{lcl}
@@ -1138,12 +1148,12 @@ and that $\gamma(\deriv{\sigma}{g}) = \deriv{\sigma}{\gamma(g)}$.
       $\judgesubst{\Gamma'}{\gamma_x = \gamma, [\gamma(\fix{x}{g})/x]}{\Gamma,x}$. 
 
       Therefore by induction hypothesis, we know that
-      $\judgebalance[\Gamma']{\gamma_x(\deriv{\sigma}{g})}{-\mathrm{sgn}(\sigma)}$ and that $\deriv{\sigma}{\gamma_x(g)} = \gamma_x(\deriv{\sigma}{g})$. 
+      $\judgebalance[\Gamma']{\gamma_x(\deriv{\sigma}{g})}{\bump{\sigma}{\zero}}$ and that $\deriv{\sigma}{\gamma_x(g)} = \gamma_x(\deriv{\sigma}{g})$. 
 
       By the definition of $\gamma_x$, substitution and the derivative, we know that $\gamma_x(\deriv{\sigma}{g}) = \gamma(\deriv{\sigma}{g}[\fix{x}{g}/x]) = \gamma(\deriv{\sigma}{\fix{x}{g}})$. 
 
 
-      Therefore $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{\fix{x}{g}})}{-\mathrm{sgn}(\sigma)}$.
+      Therefore $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{\fix{x}{g}})}{\bump{\sigma}{\zero}}$.
 
       Furthermore, we can reason that: 
       \begin{mathpar}
@@ -1167,15 +1177,15 @@ and that $\gamma(\deriv{\sigma}{g}) = \deriv{\sigma}{\gamma(g)}$.
       
       Assume that we have $\judgesubst{\Gamma'}{\gamma}{\Gamma}$. 
       
-      By induction we know that $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g})}{-\mathrm{sgn}(\sigma)}$ holds,
+      By induction we know that $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g})}{\bump{\sigma}{\zero}}$ holds,
       and that $\gamma(\deriv{\sigma}{g}) = \deriv{\sigma}{\gamma(g)}$. 
 
-      By substitution we know that $\judgebalance[\Gamma']{(\gamma(g*)}{\zero}$ holds. 
+      By substitution we know that $\judgebalance[\Gamma']{\gamma(g*)}{\zero}$ holds. 
 
-      By rule \textsc{TCat}, we know that $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g})\cdot\gamma(g*)}{-\mathrm{sgn}(\sigma)}$ holds. 
+      By rule \textsc{TCat}, we know that $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g})\cdot\gamma(g*)}{\bump{\sigma}{\zero}}$ holds. 
 
-      Therefore $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g}\cdot(g*))}{-\mathrm{sgn}(\sigma)}$ holds, and
-      so $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g*})}{-\mathrm{sgn}(\sigma)}$ holds. 
+      Therefore $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g}\cdot(g*))}{\bump{\sigma}{\zero}}$ holds, and
+      so $\judgebalance[\Gamma']{\gamma(\deriv{\sigma}{g*})}{\bump{\sigma}{\zero}}$ holds. 
 
       Furthermore, we can reason that: 
       \begin{mathpar}
@@ -1199,7 +1209,8 @@ and that $\gamma(\deriv{\sigma}{g}) = \deriv{\sigma}{\gamma(g)}$.
       If the derivative is $\bot$, then the conclusion is immediate. 
 
       Otherwise, we know that $\judgebalance[\Gamma']{\gamma(x)}{\zero}$, and so by rule 
-      \textsc{TCat}, we know that $\judgebalance[\Gamma']{\gamma(x)\cdot \rgt{b}}{+1}$. 
+      \textsc{TCat}, we know that $\judgebalance[\Gamma']{\gamma(x)\cdot \rgt{b}}{\combine{\zero}{(1, 0)}}$. But
+      we know $\bump{\lft{a}}{\zero} = (1, 0)$. 
 
       Furthermore, it is immediate that $\gamma(\deriv{\sigma}{\lft{a}\cdot x\cdot\rgt{b}}) = \gamma(x \cdot \rgt{b})$
     \end{case}
@@ -1431,60 +1442,53 @@ $\interp{\deriv{\sigma}{g}}\gamma = \semderiv{\sigma}{\interp{g}\gamma}$.
 
 Now, our definition is sound, in the sense that it means the right
 thing. Unfortunately, it won't give us a finite set of derivatives. 
-For example,  consider the grammar $i := \epsilon \vee \lft{a} i \rgt{b}$. 
+For example,  consider the grammar $\fix{x}{\epsilon \vee \lft{a} i \rgt{b}}$. 
 When we  differentiate with respect to $\lft{a}$, the result is equivalent to 
 \begin{mathpar}
-(\epsilon \vee \lft{a} i \rgt{b}) \cdot \rgt{b}
+(\fix{x}{\epsilon \vee \lft{a} i \rgt{b}}) \cdot \rgt{b}
 \end{mathpar}
 
 \noindent When we differentiate this again, we get
 \begin{mathpar}
-(\epsilon \vee \lft{a} i \rgt{b}) \cdot \rgt{b} \cdot \rgt{b}  
+(\fix{x}{\epsilon \vee \lft{a} i \rgt{b}}) \cdot \rgt{b} \cdot \rgt{b}  
 \end{mathpar}
 
-\noindent and so on for arbitrary $n$-fold derivatives.  Of course, this
-shouldn't be terribly surprising --- we're interpreting expressions as states,
-and there's no finite state machine that can recognize this language! 
+\noindent and so on for arbitrary $n$-fold derivatives.  Of course,
+this shouldn't be terribly surprising --- if we try to interpreting
+expressions as states, we \emph{should} founder on the fact there's no
+finite state machine that can recognize this language!
 
 So what we need to do is find some generalization of the notion of
 derivative, from which we some kind of stack machine will fall out in
 the same way that finite-state automata fall out of derivatives of
-regular expressions.
-
-To do this, we'll proceed in two steps. First, we'll give a
-non-deterministic version of the Brzozowski derivative algorithm, and
-then show how to determinize it.
-
-\begin{definition}{(Finite Base)}
-We say a grammatical expression $g$ is derived from a basis set $F$, when
-$F$ is a finite set of closed grammatical expressions of type $0$, and
-$g$ is equivalent to a sum of concatenations of elements of $F$. That
-is, $g$ should be generated (up to $\simeq$) via the following
-grammar, where $f$ ranges over elements of $F$. 
-\begin{mathpar}
-  \begin{array}{lcl}
-    t & ::= & \epsilon \bnfalt t \cdot t' \bnfalt \bot \bnfalt t \vee t' \bnfalt \rgt{b}\cdot f \bnfalt f 
-  \end{array}
-\end{mathpar}
-
-We say a closed grammatical expression $g$ is based in $B$, when $g$
-and all of its derivatives are derived from a basis $B$.
-\end{definition}
+regular expressions. To do this, we'll proceed in two steps. First,
+we'll give a generalized version of the Brzozowski derivative
+algorithm, and then show how to construct a stack machine from it.
 
 In Brzozowski's derivative algorithm, the states of a state machine
 recognizing a regular language are identified with regular expressions
 which describe the language recognizable from that state. In our case,
-this simple intuition is not quite powerful enough. A balanced
-language cannot be recognized with a finite state machine, since we
-need a stack to match the open and closing parentheses. So the
+this simple intuition is not quite powerful enough. A recursive
+grammar cannot be recognized with a finite state machine, and so the
 derivatives ought to correspond to the state and the stack of a
 push-down automaton.
 
-To capture this intuition, we use basis expressions, which are trees
-of 0-balanced grammatical expressions, with each 0-balanced
-grammatical expression separated by right-parentheses. The idea is
-that each time we see a left-parenthesis, we can ``push a state on the
-stack''. The tree structure arises from [...]
+
+\begin{definition}{(Finite Base)}
+We say a grammatical expression $g$ is derived from a basis set $G$,
+when $G$ is a finite set of grammatical expressions, and $g$ is
+equivalent to a sum of concatenations of elements of $G$. That is, $g$
+should be generated (up to $\simeq$) via the following grammar, where
+$g$ ranges over elements of $G$.
+\begin{mathpar}
+  \begin{array}{llcl}
+    T_G & t & ::= & \epsilon \bnfalt t \cdot t' \bnfalt \bot \bnfalt t \vee t' \bnfalt g \in G
+  \end{array}
+\end{mathpar}
+
+We say a grammatical expression $g$ is based in $G$, when for all $s$, if 
+whenever $\deriv{s}{g}$ exists, it is also derived from the basis set $G$.
+\end{definition}
 
 Now, define the \emph{height} of a basis expression as follows: 
 
@@ -1499,13 +1503,27 @@ Now, define the \emph{height} of a basis expression as follows:
   \end{array}
 \end{mathpar}
 
+\begin{mathpar}
+  \begin{array}{lcl}
+    \pieces{\sigma}       & = & \setof{\sigma} \\
+    \pieces{\epsilon}     & = & \emptyset \\
+    \pieces{g_1\cdot g_2} & = & \pieces{g_1} \cup \pieces{g_2} \\
+    \pieces{\bot}         & = & \emptyset \\
+    \pieces{g_1 \vee g_2} & = & \pieces{g_1} \cup \pieces{g_2} \\
+    \pieces{g*}           & = & \pieces{g} \cup \pieces{g*} \\
+    \pieces{x}            & = & \setof{x} \\
+    \pieces{\fix{x}{g}}   & = & \pieces{g} \cup \setof{\fix{x}{g}} \\
+  \end{array}
+\end{mathpar}
+
+
 \begin{prop}{(The Set of Derivatives Is Finitely Based)}
+
 For any $\judgebalance{\Gamma}{g}{\zero}$ there is a finite set $G$ of
 $\Gamma$-typed terms such that for any grounding substitution $\gamma$
 for $\Gamma$ based in any $X$, $\gamma(g)$ is based in $\gamma(G) \cup
 X$. Furthermore, for any string $s$ of depth $-d$, the derivative
-$\deriv{s}{g}$ is equivalent to a basis expression of height 
-$d + 1$. 
+$\deriv{s}{g}$ is equivalent to a basis expression of height $d + 1$.
 \end{prop}
 
 \begin{proof}
