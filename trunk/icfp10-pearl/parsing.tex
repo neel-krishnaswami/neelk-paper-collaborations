@@ -12,6 +12,7 @@
 \newcommand{\judgebalance}[3][\Gamma]{{#1} \vdash {#2} : {#3}}
 \newcommand{\judgecat}[3]{{#1} \circ {#2} \equiv {#3}}
 \newcommand{\judgesubst}[3]{{#1} \vdash {#2} : {#3}}
+\newcommand{\judgeok}[2][\Gamma]{{#1} \vdash {#2} \;\mathsf{ok}}
 \newcommand{\combine}[2]{{#1} \oplus {#2}}
 \newcommand{\true}{\mathsf{true}}
 \newcommand{\false}{\mathsf{false}}
@@ -1476,10 +1477,10 @@ push-down automaton.
 
 \begin{definition}{(Finite Base)}
 We say a grammatical expression $g$ is derived from a basis set $G$,
-when $G$ is a finite set of grammatical expressions, and $g$ is
-equivalent to a sum of concatenations of elements of $G$. That is, $g$
-should be generated (up to $\simeq$) via the following grammar, where
-$g$ ranges over elements of $G$.
+when $G$ is a finite set of grammatical expressions, and $g$ is a sum
+of concatenations of elements of $G$. That is, $g$ should be generated
+(up to $\simeq$) via the following grammar, where $g$ ranges over
+elements of $G$.
 \begin{mathpar}
   \begin{array}{llcl}
     T_G & t & ::= & \epsilon \bnfalt t \cdot t' \bnfalt \bot \bnfalt t \vee t' \bnfalt g \in G
@@ -1516,186 +1517,121 @@ Now, define the \emph{height} of a basis expression as follows:
   \end{array}
 \end{mathpar}
 
-
-\begin{prop}{(The Set of Derivatives Is Finitely Based)}
-
-For any $\judgebalance{\Gamma}{g}{\zero}$ there is a finite set $G$ of
-$\Gamma$-typed terms such that for any grounding substitution $\gamma$
-for $\Gamma$ based in any $X$, $\gamma(g)$ is based in $\gamma(G) \cup
-X$. Furthermore, for any string $s$ of depth $-d$, the derivative
-$\deriv{s}{g}$ is equivalent to a basis expression of height $d + 1$.
+\begin{prop}{}
+  For all $g$, $g \in T_{\pieces{g}}$. 
 \end{prop}
 
 \begin{proof}
-\begin{caseblock}
-  \begin{case}{$g = \epsilon$}
-    Let $G = \emptyset$. If $s$ is the empty string, 
-    then $D_\epsilon(\epsilon) = \epsilon$. If it is nonempty, then $D_{c\cdot s'}(\epsilon) = \bot$. 
-    The maximum height in this case is 1. 
-  \end{case}
+  By induction on $g$. 
 
-  \begin{case}{$g = \sigma$}
-    Let $G = \setof{\sigma}$. If $s$ is empty, the derivative is $\sigma$. 
-    If $s$ is $\sigma$, the derivative is $\epsilon$. Otherwise, it is $\bot$. 
-    The maximum size in this case is at most 1. 
-  \end{case}
-
-  \begin{case}{$g = \bot$}
-    Let $G = \emptyset$. All derivatives of $\bot$ are $\bot$. 
-    The maximum height in this case is at most 1. 
-  \end{case}
-
-  \begin{case}{$g = g_1 \vee g_2$}
-    Let $G_1$ and $G_2$ be the basis sets of $g_1$ and $g_2$. Then, we know 
-    that $\deriv{s}{\gamma(g_1 \vee g_2)} = \deriv{s}{\gamma(g_1)} \vee \deriv{s}{\gamma(g_2)}$. Since
-    $\deriv{s}{g_1}$ is finitely based in $\gamma(G_1) \cup X$ and $\deriv{s}{g_2}$ is finitely based in $\gamma(G_2) \cup X$, 
-    it follows that $\deriv{s}{g_1} \vee \deriv{s}{g_2}$ is finitely based in $\gamma(G) \cup X$. 
-
-    Similarly, if $s$ has depth $-d$, then $\deriv{s}{g_1}$ has a height of at most $d + 1$,
-    as does $\deriv{s}{g_2}$. Hence $\deriv{s}{g_1} \vee \deriv{s}{g_2}$ does too, and this is 
-    equivalent to $\deriv{s}{g_1 \vee g_2}$. 
-  \end{case}
-
-  \begin{case}{$\judgebalance{g_1\cdot g_2}{d}$}
-    By inversion, we know that $\judgebalance{g_1}{d_1}$ and $\judgebalance{g_2}{d_2}$.
+  \begin{caseblock}
+    \begin{case}{$g \in \setof{x, \sigma, \bot, \epsilon, g*, \fix{x}{g}}$}
+      Immediate. 
+    \end{case}
     
-    By induction we have $G_1$ and $G_2$ as finite bases for $\gamma(g_1)$ and $\gamma(g_2)$. 
-    
-    Take $G = \comprehend{g\cdot g_2}{g \in G_1 } \cup G_2$. 
+    \begin{case}{$g = g_1 \cdot g_2$}
+      By induction, we know that $g_1 \in T_{\pieces{g_1}}$ and $g_2 \in T_{\pieces{g_2}}$. 
+      Therefore $g_1, g_2 \in T_{\pieces{g_1} \cup \pieces{g_2}} = T_{\pieces{g}}$, and so $g_1 \cdot g_2 \in T_{\pieces{g}}$. 
+    \end{case}
 
-    Now let $\gamma$ be a grounding substitution based in $X$. Then 
-    $\gamma(G_1) \cup X$ is a basis for $\gamma(g_1)$ and $\gamma(G_2)$ is a basis
-    for $\gamma(g_2) \cup X$. 
-
-    Now we proceed by induction on the length of an arbitrary string $s$. 
-    
-    If the string is empty, then the derivative is equal to $g_1\cdot
-    g_2$. Because of the finite basis property, there is an expression
-    $t_1$ equivalent to $g_1$ generated from from $\gamma(G_1) \cup
-    X$. Then, by induction on $t_1$, we can show that there is a term
-    equivalent to $t_1 \cdot g_2$ derived from the basis $\gamma(G_1
-    \cup G_2) \cup X$.
-
-    If the string is nonempty, it is of the form $s = \sigma\cdot s'$. 
-
-    Therefore 
-    \begin{mathpar}
-      \begin{array}{lcl}
-        \deriv{s}{g_1\cdot g_2} 
-        & = & \deriv{s'}{\deriv{\sigma}{g_1\cdot g_2}} \\
-        & = & \deriv{s'}{\deriv{\sigma}{g_1}\cdot g_2 \vee \IfThenElse{\emptify{g_1}}{\deriv{\sigma}{g_2}}{\bot}}\\
-        & \simeq & \deriv{s'}{t'_1\cdot g_2 \vee \IfThenElse{\emptify{g_1}}{t_2}{\bot}}\\
-      \end{array}
-    \end{mathpar}
-
-    Now, note that $t'_1 \simeq \deriv{\sigma}{g_1}$ is based in
-    $\gamma(G_1) \cup X$, and $t'_2 \simeq \deriv{\sigma}{g_2}$ is
-    based in $\gamma(G_2) \cup X$.  Then, by induction on $t'_1$, we
-    can see that there is a $t \simeq t'_1 \cdot g_2$ based in
-    $\comprehend{g\cdot g_2}{g \in G_1} \cup X$. Then by induction 
-    we know that the whole thing is based in $G$. 
-
-    Next, suppose we have a string of depth $-d$. 
-
-    If $s = \epsilon$, then we know that $d = 0$. We know that there is a
-    $t_1 \simeq g_1$ based in $\gamma(G_1) \cup X$ of height 1, and then by 
-    induction we can establish that there is a $t \simeq t_1\cdot g_2$. 
-  \end{case}
-
-  \begin{case}{$\judgebalance{g'*}{\zero}$}
-    By inversion we have $\judgebalance{g'}{\zero}$.
-    
-    By induction we have $G'$ such that for all $\gamma$ grounding $\Gamma$ 
-    based in all $X$, $\gamma(g')$ is based in $\gamma(G') \cup X$. 
-
-    Take $G$ to be $G' \cup g'*$. 
-
-    Now assume that we have $\gamma$ grounding $\Gamma$ based in $X$. 
-
-    Now suppose we have some string $s$. If it is empty, then obviously 
-    $\gamma(g'*) \in \gamma(G)$. Otherwise, the string is $s = \sigma\cdot s'$
-    for some $s'$. Then:
-    \begin{mathpar}
-      \begin{array}{lcl}
-        \deriv{s}{\gamma(g'*)} 
-         & = & \deriv{s}{(\gamma(g'))*} \\
-         & = & \deriv{s'}{\deriv{\sigma}{(\gamma(g'))*}} \\
-         & = & \deriv{s'}{\deriv{\sigma}{\gamma(g')}\cdot\gamma(g')*} \\
-      \end{array}
-    \end{mathpar}
-    By hypothesis $\deriv{\sigma}{\gamma(g')}$ is derived from $\gamma(G) \cup X$, 
-    and likewise for $\gamma(g')$. Hence every derivative of this is also based 
-    in $\gamma(G) \cup X$. 
-  \end{case}
-
-  \begin{case}{$g = \fix{x}{g'}$}
-    By hypothesis, we have $\judgebalance{\fix{x}{g'}}{\zero}$.
-
-    By inversion, we know that $\judgebalance[\Gamma, x]{g'}{\zero}$. 
-
-    As induction hypothesis, we have a set $G'$ such that for all $\gamma'$ for $\Gamma,x$ 
-    we have $\gamma'(g')$ is based in $\gamma'(G')$. 
-
-    Let $G = G'[\fix{x}{g'}/x] \cup \setof{\fix{x}{g'}}$. 
-
-    Suppose we have a grounding substitution $\gamma$ for $\Gamma$ finitely based in $X$. 
-
-    Now, we want to show that $\gamma(g)$ is finitely based in $\gamma(G) \cup X$.  
-
-    First, observe that if we let $\gamma' = \gamma, \gamma(\fix{x}{g})$, then $\gamma'(g')$
-    is based in $\gamma'(G')$, which is a subset of $\gamma(G)$. 
-
-    Now, consider an arbitrary string $s$. If it is empty, then $\deriv{\epsilon}{\gamma(g))} = g \in \gamma(G)$. 
-
-    Otherwise, $s = \sigma\cdot s'$. Now observe that 
-    \begin{mathpar}
-      \begin{array}{lcl}
-        \deriv{s}{\gamma(\fix{x}{g'})} 
-        & = & \deriv{s'}{\deriv{\sigma}{\gamma(\fix{x}{g'})}} \\
-        & = & \deriv{s'}{\deriv{\sigma}{\gamma(g')}[\gamma(\fix{x}{g'})/x]} \\
-        & = & \deriv{s'}{\deriv{\sigma}{\gamma'(g')}} \\
-      \end{array}
-    \end{mathpar}
-
-    Since we know that $\deriv{\sigma}{\gamma'(g')}$ is derived from
-    the basis $\gamma'(G') \cup X$, we know that 
-    $\deriv{s'}{\deriv{\sigma}{\gamma'(g')}}$ is also derived from the
-    basis $\gamma'(G') \cup X$, and hence is derived from $\gamma(G) \cup X$. 
-  \end{case}
-
-  \begin{case}{$\judgebalance{\lft{a}x\rgt{b}}{\zero}$}
-    In this case, let $G = \setof{\lft{a}, \rgt{b}}$. 
-
-    Now, suppose we have a grounding substitution $\gamma$ based in $X$. 
-
-    Now suppose that we have an arbitrary string $s$. 
-
-    If $s$ is empty, the derivative is the trivial $\lft{a}\cdot\gamma(x)\cdot\rgt{b}$. 
-    Since $\gamma(x)$ is based in $X$, there is some derivation of it from $X$ -- call
-    it $g_x$. Then $\lft{a}\cdot g_x \cdot \rgt{b}$ is based in $G \cup X$. 
-
-    If $s$ is non-empty, then it is some string $\sigma\cdot s'$. If $\sigma$ is 
-    not $\lft{a}$, then this is trivial. Otherwise, we have 
-    \begin{mathpar}
-      \begin{array}{lcl}
-        \deriv{s}{\lft{a}\cdot g_x \cdot \rgt{b}} 
-        & = & \deriv{s'}{\deriv{\lft{a}}{\lft{a}\cdot g_x \cdot \rgt{b}}} \\
-        & = & \deriv{s'}{g_x \cdot \rgt{b}} \\
-      \end{array}
-    \end{mathpar}
-  \end{case}
-    
-  Since both $g_x$ and $\rgt{b}$ are based in $G \cup X$, all their derivatives
-  are based in $G \cup X$. 
-\end{caseblock}
+    \begin{case}{$g = g_1 \vee g_2$}
+      By induction, we know that $g_1 \in T_{\pieces{g_1}}$ and $g_2 \in T_{\pieces{g_2}}$. 
+      Therefore $g_1, g_2 \in T_{\pieces{g_1} \cup \pieces{g_2}} = T_{\pieces{g}}$, and so $g_1 \vee g_2 \in T_{\pieces{g}}$. 
+    \end{case}
+  \end{caseblock}
 \end{proof}
 
+\begin{prop}{}
+  For any $g$ with free variables in $\Gamma$ and any grounding substitution $\gamma$, we 
+  have that $\gamma(g) \in T_{\gamma(\pieces{g}) \cup \pieces{\gamma}}$. 
+\end{prop}
 
-In fact, we actually need a stronger theorem than the above. 
+\begin{proof}
+  By induction on $g$:
+  \begin{caseblock}
+    \begin{case}{$g \in \setof{\bot, \epsilon, \sigma}$}
+      Immediate. 
+    \end{case}
+
+    \begin{case}{$g = x$}
+      In this case, $\gamma(g) = \gamma(x)$, which is in $T_{\pieces{\gamma(x)}}$. Hence it is 
+      in $T_{\gamma(\pieces{g}) \cup \pieces{\gamma}}$. 
+    \end{case}
+
+    \begin{case}{$g = g_1 \oplus g_2$, where $\oplus \in \setof{\cdot, \vee}$}
+      By induction, we know that $g_i \in T_{\gamma(\pieces{g_i}) \cup \pieces{\gamma}}$. 
+
+      Hence we know that $g_i \in T_{\gamma(\pieces{g_1}) \cup \gamma(\pieces{g_2}) \cup \pieces{\gamma}}$. 
+
+      Hence we know that $g_i \in T_{\gamma(\pieces{g_1 \oplus g_2}) \cup \pieces{\gamma}}$. 
+
+      Hence $g_1 \oplus g_2 \in T_{\gamma(\pieces{g_1 \oplus g_2}) \cup \pieces{\gamma}}$. 
+    \end{case}
+
+    \begin{case}{$g \in \setof{g'*, \fix{x}{g'}}$}
+      In both of these cases, $g \in \pieces{g}$. So we can see immediately 
+      that $\gamma(g) \in T_{\gamma(\pieces{g}) \cup \pieces{\gamma}}$. 
+    \end{case}
+  \end{caseblock}
+\end{proof}
+
+\begin{prop}{(Pieces of Derivatives)}
+  For all $\judgeok{g}$, and for all $s$ and $\gamma$ grounding $\Gamma$, we have
+  that if $\deriv{s}{\gamma(g)}$ is defined, then it is in $T_{\gamma(\pieces{g}) \cup \pieces{\gamma}}$.
+\end{prop}
 
 
+\begin{prop}{(Derivatives Are Finitely Based)}
+  For any $\judgeok{g}$, we have that $g$ is based in $\pieces{g}$. Furthermore, for any
+  $s$, the size of the basis expression is bounded by $O(|s|)$. 
+\end{prop}
+
+\begin{proof}
+  This proof is by induction on $g$: 
+
+  \begin{caseblock}
+    \begin{case}{$g = a\cdot x$}
+      In this case, $\pieces{a\cdot x} = \setof{a, x}$. 
+
+      Now, consider an arbitrary string $s$. If $s = \epsilon$, then $\deriv{\epsilon}{x} = x$, 
+      which is in $\setof{x}$. 
+
+      If $s = b\cdot s'$, where $b \not= a$, then the derivative is either
+      $\bot$, either of which are clearly based in $\pieces{a\cdot x}$.
+
+      If $s = a\cdot \epsilon$, then the derivative is $\epsilon$, which is 
+      clearly based in $\pieces{a\cdot x}$. 
+
+      If $s = a\cdot s'$, for $s'$ nonempty, then the derivative is undefined,
+      which vacuously satisfies the condition. 
+    \end{case}
+
+    \begin{case}{$g = \fix{x}{g'}$}
+      We know that $\pieces{g} = \pieces{g'}[\fix{x}{g}/x] \cup \setof{\fix{x}{g}}$. 
+
+      Now, we proceed by induction on the length of $s$. 
+
+      If $s = \epsilon$, then it is the empty string, and $\deriv{\epsilon}{g} = g$, which is
+      in $\pieces{g}$. Its size is also a constant 1. 
+
+      If $s = \sigma\cdot s'$. Now assume that $\deriv{s}{g}$ exists. We then know that: 
+
+      \begin{mathpar}
+        \begin{array}{lcl}
+          \deriv{s}{g} & = & \deriv{s'}{\deriv{\sigma}{\fix{x}{g'}}} \\
+                       & = & \deriv{s'}{\deriv{\sigma}{g'}[\fix{x}{g'}/x]} \\
+        \end{array}
+      \end{mathpar}
+
+      Now, since $g$ is well-formed, we know that $\deriv{\sigma}{\fix{x}{g}}$ exists, and 
+      hence $\deriv{\sigma}{g'}$ exists, since it is used in the definition. Then, by the induction 
+      hypothesis, we know that $\deriv{\sigma}{g'} \simeq t \in T_{\pieces{g'}}$.  Therefore, we 
+      know that $\deriv{\sigma}{g'}[\fix{x}{g'}/x] \simeq t[\fix{x}{g'}/x] \in T_{\pieces{g'}[\fix{x}{g'}/x]}$. 
+      Since $\pieces{g'}[\fix{x}{g'}/x \subseteq \pieces{g}$, we know that $t[\fix{x}{g'}/x] \in T_\pieces{g}$. 
 
 
-
+    \end{case}
+  \end{caseblock}
+\end{proof}
 
 \end{document}
