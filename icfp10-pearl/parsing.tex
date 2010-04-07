@@ -20,6 +20,8 @@
 \newcommand{\powerset}[1]{\mathcal{P}({#1})}
 \newcommand{\powersetfin}[1]{\mathcal{P}^{\mathrm{fin}}({#1})}
 \newcommand{\interp}[1]{[\![{#1}]\!]}
+\newcommand{\Interp}[1]{(\!|{#1}|\!)}
+\newcommand{\derivhat}[2]{\hat{d}_{#1}({#2})}
 \newcommand{\setof}[1]{\{{#1}\}}
 \newcommand{\comprehend}[2]{\setof{{#1}\;|\;{#2}}}
 \newcommand{\semderiv}[2]{D_{#1}({#2})}
@@ -51,7 +53,7 @@
 
 
 \author{Neel Krishnaswami}
-\title{Partial Parsing with Nested Words}
+\title{Derivatives of Grammars}
 
 \begin{document}
 \maketitle
@@ -1542,8 +1544,8 @@ Now, define the \emph{height} of a basis expression as follows:
 \end{proof}
 
 \begin{prop}{}
-  For any $g$ with free variables in $\Gamma$ and any grounding substitution $\gamma$, we 
-  have that $\gamma(g) \in T_{\gamma(\pieces{g}) \cup \pieces{\gamma}}$. 
+  For any $g$ with free variables in $\Gamma$ and any substitution $\gamma$, we 
+  have that $\gamma(g) \in T_{\gamma(\pieces{g}) \cup \pieces{\gamma}}$, and $|\gamma(g)| \leq |gamma| \times |g|$. 
 \end{prop}
 
 \begin{proof}
@@ -1575,63 +1577,190 @@ Now, define the \emph{height} of a basis expression as follows:
   \end{caseblock}
 \end{proof}
 
-\begin{prop}{(Pieces of Derivatives)}
-  For all $\judgeok{g}$, and for all $s$ and $\gamma$ grounding $\Gamma$, we have
-  that if $\deriv{s}{\gamma(g)}$ is defined, then it is in $T_{\gamma(\pieces{g}) \cup \pieces{\gamma}}$.
-\end{prop}
-
-
-\begin{prop}{(Derivatives Are Finitely Based)}
-  For any $\judgeok{g}$, we have that $g$ is based in $\pieces{g}$. Furthermore, for any
-  $s$, the size of the basis expression is bounded by $O(|s|)$. 
+\begin{prop}{(One-Step Derivatives)}
+  For any $g$, if $\deriv{\sigma}{g}$ is defined, it is based in $T_{\pieces{g}}$, and there 
+  exists a $k$ such that $|\deriv{\sigma}{g}| \leq k$. 
 \end{prop}
 
 \begin{proof}
-  This proof is by induction on $g$: 
+  This proof is by induction on $g$.
 
   \begin{caseblock}
-    \begin{case}{$g = a\cdot x$}
-      In this case, $\pieces{a\cdot x} = \setof{a, x}$. 
-
-      Now, consider an arbitrary string $s$. If $s = \epsilon$, then $\deriv{\epsilon}{x} = x$, 
-      which is in $\setof{x}$. 
-
-      If $s = b\cdot s'$, where $b \not= a$, then the derivative is either
-      $\bot$, either of which are clearly based in $\pieces{a\cdot x}$.
-
-      If $s = a\cdot \epsilon$, then the derivative is $\epsilon$, which is 
-      clearly based in $\pieces{a\cdot x}$. 
-
-      If $s = a\cdot s'$, for $s'$ nonempty, then the derivative is undefined,
-      which vacuously satisfies the condition. 
-    \end{case}
-
     \begin{case}{$g = \fix{x}{g'}$}
-      We know that $\pieces{g} = \pieces{g'}[\fix{x}{g}/x] \cup \setof{\fix{x}{g}}$. 
-
-      Now, we proceed by induction on the length of $s$. 
-
-      If $s = \epsilon$, then it is the empty string, and $\deriv{\epsilon}{g} = g$, which is
-      in $\pieces{g}$. Its size is also a constant 1. 
-
-      If $s = \sigma\cdot s'$. Now assume that $\deriv{s}{g}$ exists. We then know that: 
-
+      Suppose $\deriv{\sigma}{g}$ is defined. Then we can reason as follows:
       \begin{mathpar}
         \begin{array}{lcl}
-          \deriv{s}{g} & = & \deriv{s'}{\deriv{\sigma}{\fix{x}{g'}}} \\
-                       & = & \deriv{s'}{\deriv{\sigma}{g'}[\fix{x}{g'}/x]} \\
+          \deriv{\sigma}{g} 
+          & = & \deriv{\sigma}{\fix{x}{g'}} \\
+          & = & \deriv{\sigma}{g'}[\fix{x}{g'}/x] \\
         \end{array}
       \end{mathpar}
+      Hence we know that $\deriv{\sigma}{g'}$, and by induction we know that it is 
+      based in $T_{\pieces{g'}}$. 
 
-      Now, since $g$ is well-formed, we know that $\deriv{\sigma}{\fix{x}{g}}$ exists, and 
-      hence $\deriv{\sigma}{g'}$ exists, since it is used in the definition. Then, by the induction 
-      hypothesis, we know that $\deriv{\sigma}{g'} \simeq t \in T_{\pieces{g'}}$.  Therefore, we 
-      know that $\deriv{\sigma}{g'}[\fix{x}{g'}/x] \simeq t[\fix{x}{g'}/x] \in T_{\pieces{g'}[\fix{x}{g'}/x]}$. 
-      Since $\pieces{g'}[\fix{x}{g'}/x \subseteq \pieces{g}$, we know that $t[\fix{x}{g'}/x] \in T_\pieces{g}$. 
+      Therefore, we know that $\deriv{\sigma}{g'}[\fix{x}{g'}/x]$ is in $T_{\pieces{g'}[g/x] \cup \pieces{g}}$.
 
+      Thus $\deriv{\sigma}{g'}[\fix{x}{g'}/x]$ is in $T_{\pieces{g}}$.
+    \end{case}
 
+    \begin{case}{$g = x$}
+      In this case, the derivative is not defined. 
+    \end{case}
+
+    \begin{case}{$g \in \setof{\epsilon, \bot, \sigma'}$} 
+      By definition, $\deriv{\sigma}{g} \in \setof{\epsilon, \bot}$.
+
+      Therefore $\deriv{\sigma}{g} \in T_\emptyset$.
+
+      Therefore $\deriv{\sigma}{g} \in T_{\pieces{g}}$. 
+    \end{case}
+
+    \begin{case}{$g = g'*$}
+      Assume $\deriv{\sigma}{g}$ is defined. 
+
+      By definition, $\deriv{\sigma}{g} = \deriv{\sigma}{g'}\cdot g'*$. 
+
+      By induction $\deriv{\sigma}{g'} \in T_{\pieces{g'}}$
+
+      Therefore $\deriv{\sigma}{g'}\cdot g'* \in T_{\pieces{g'} \cup \setof{g*}}$
+
+      Therefore $\deriv{\sigma}{g'}\cdot g'* \in T_{\pieces{g'*}}$
+    \end{case}
+
+    \begin{case}{$g = g_1 \cdot g_2$}
+      Assume $\deriv{\sigma}{g}$ is defined. 
+
+      Then $\deriv{\sigma}{g} = \deriv{\sigma}{g_1}\cdot g_2 \vee (\IfThenElse{\emptify{g_1}}{\deriv{\sigma}{g_2}}{\bot}$
+
+      By induction, we know that $\deriv{\sigma}{g_1} \in T_{\pieces{g_1}}$. 
+
+      By induction, we know that $\deriv{\sigma}{g_2} \in T_{\pieces{g_2}}$. 
+      
+      By lemma, we know that $g_2 \in T_{\pieces{g_2}}$. 
+
+      Then, regardless of the value of the if-then-else, we know $\deriv{\sigma}{g} \in T_{\pieces{g_1} \cup \pieces{g_2}}$. 
+
+      Then we know $\deriv{\sigma}{g} \in T_{\pieces{g}}$. 
+    \end{case}
+
+    \begin{case}{$g = g_1 \vee g_2$}
+      Assume $\deriv{\sigma}{g}$ is defined. 
+
+      Then $\deriv{\sigma}{g} = \deriv{\sigma}{g_1} \vee \deriv{\sigma}{g_2}$. 
+
+      So by induction, we know $\deriv{\sigma}{g_1} \in T_{\pieces{g_1}}$. 
+
+      So by induction, we know $\deriv{\sigma}{g_2} \in T_{\pieces{g_2}}$. 
     \end{case}
   \end{caseblock}
 \end{proof}
+
+\begin{prop}{(Derivatives Are Finitely Based)}
+  For any $\judgeok[\cdot]{g}$, we have that $g$ is totally based in
+  $\pieces{g}$. Furthermore, for any $s$, the height of the basis
+  expression is bounded by $O(|s|)$.
+\end{prop}
+
+\begin{proof}
+  The first claim follows from the fact that the single-character
+  derivative of a well-formed, closed expression (a) is well-formed
+  and closed, and (b) always exists. 
+
+  The second claim follows from the fact that we only ever substitute
+  fixed point expressions for variables, which necessarily always have
+  a height of 1, and so don't change the height. As a result, we can
+  increase the height by at most a constant at any step.
+\end{proof}
+
+\section{The Dioid Structure of Bases}
+
+Now, we know that the height of a derivative is bounded, but we still
+are not quite where we need to be. The reason is that a basis expression is 
+a \emph{tree}, and not a \emph{list}. 
+
+\begin{mathpar}
+  \begin{array}{lcl}
+    s & ::= & (g, g) \bnfalt s \otimes s' \bnfalt 0 \bnfalt s \oplus s'
+  \end{array}
+\end{mathpar}
+
+\begin{mathpar}
+  \begin{array}{lcl}
+    \Interp{(g, g)}       & = & \setof{[g, g']} \\
+    \Interp{s_1 \otimes s_2} & = & \comprehend{ {gs}_1 :: g :: {gs}_2 }
+                                              { ({gs}_1 :: g) \in \Interp{s_1} \land
+                                                (g :: {gs}_2) \in \Interp{s_2} } \\
+    \Interp{0} & = & \emptyset \\
+    \Interp{s_1 \oplus s_2} & = & \Interp{s_1} \cup \Interp{s_2} \\[1em]
+
+    
+  \end{array}
+\end{mathpar}
+
+\begin{lemma}{(Axioms)}
+  The following equations hold:
+
+  \begin{enumerate}
+    \item $s \oplus s' = s' \oplus s$
+    \item $s \oplus s = s$
+    \item $s \oplus 0 = s$
+    \item $0 \otimes s = 0$
+    \item $s \otimes 0 = 0$
+    \item $(s \otimes s') \otimes s'' = s \otimes (s' \otimes s'')$
+    \item $(s_1 \oplus s_2) \otimes s_3 = (s_1 \otimes s_3) \oplus (s_2 \otimes s_3)$
+    \item $(g, g') \otimes (g'', g''') = 0$ when $g' \not= g''$
+    \item $(g, \epsilon) \otimes (\epsilon, g') = (g, g')$
+    \item $(\epsilon, g) = (g, \epsilon)$
+  \end{enumerate}
+\end{lemma}
+
+The critical properties are the last four. They will enable us to take a
+tree of height $k$ -- the basis expression -- and turn it into a list
+of \emph{length} $k$. 
+
+\begin{lemma}{(Undistribution)}
+  We know that
+  \begin{mathpar}
+  [(g_1, g_2) \otimes (g_3, g_4)] \oplus [(g'_1, g'_2) \otimes (g'_3, g'_4)] = 
+  [(g_1, g_2) \oplus (g'_1, g'_2)] \otimes [(g_3, g_4) \oplus (g'_3, g'_4)]
+  \end{mathpar}
+\end{lemma}
+
+\begin{proof}
+  Suppose $g_2 = g_3$ and $g'_2 = g'_3$. 
+
+  Then 
+\end{proof}
+
+\begin{mathpar}
+  \begin{array}{lcl}
+    \emptify{(g_1, g_2)} & = & \emptify{g_1} \land \emptify{g_2} \\
+    \emptify{s_1 \otimes s_2} & = & \emptify{s_1} \land \emptify{s_2} \\
+    \emptify{0} & = & \false \\
+    \emptify{s_1 \oplus s_2} & = & \emptify{s_1} \vee \emptify{s_2} \\
+  \end{array}
+  \\
+  \begin{array}{lcl}
+    \derivhat{\sigma}{(g_1, g_2)} 
+    & = & \IfThenElse{\emptify{g_1}}
+                     {(\deriv{\sigma}{g_1}, g_2) \oplus (\epsilon, \deriv{\sigma}{g_2})}
+                     {(\deriv{\sigma}{g_1}, g_2)} 
+    \\
+    \derivhat{\sigma}{s_1 \otimes s_2} 
+    & = & (\derivhat{\sigma}{s_1} \otimes s_2) \oplus 
+          (\IfThenElse{\emptify{s_1}}{\derivhat{\sigma}{s_2}}{0}) 
+    \\
+    \derivhat{\sigma}{0} 
+    & = &
+    0
+    \\
+    \derivhat{\sigma}{s_1 \oplus s_2}
+    & = & 
+    \derivhat{\sigma}{s_1} \oplus \derivhat{\sigma}{s_2}
+    \\
+  \end{array}
+\end{mathpar}
+
+
 
 \end{document}
