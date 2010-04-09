@@ -37,7 +37,7 @@
 \newcommand{\guard}[2]{{#1}\rhd{#2}}
 \newcommand{\pieces}[1]{P({#1})}
 \newcommand{\depth}[1]{|{#1}|}
-
+\newcommand{\covers}[2]{\mathsf{covers}({#1}, {#2})}
 \newtheorem{prop}{Proposition}
 \newtheorem{lemma}{Lemma}
 \newtheorem{theorem}{Theorem}
@@ -1441,7 +1441,7 @@ $\interp{\deriv{\sigma}{g}}\gamma = \semderiv{\sigma}{\interp{g}\gamma}$.
 
 
 
-\section{Nondeterministic Brzozowski Derivatives}
+\section{Brzozowski Derivatives as a Closure Operator}
 
 Now, our definition is sound, in the sense that it means the right
 thing. Unfortunately, it won't give us a finite set of derivatives. 
@@ -1476,291 +1476,208 @@ grammar cannot be recognized with a finite state machine, and so the
 derivatives ought to correspond to the state and the stack of a
 push-down automaton.
 
+\subsection{Brzozowski's Algorithm Reconstructed}
 
-\begin{definition}{(Finite Base)}
-We say a grammatical expression $g$ is derived from a basis set $G$,
-when $G$ is a finite set of grammatical expressions, and $g$ is a sum
-of concatenations of elements of $G$. That is, $g$ should be generated
-(up to $\simeq$) via the following grammar, where $g$ ranges over
-elements of $G$.
-\begin{mathpar}
-  \begin{array}{llcl}
-    T_G & t & ::= & \epsilon \bnfalt t \cdot t' \bnfalt \bot \bnfalt t \vee t' \bnfalt g \in G
-  \end{array}
-\end{mathpar}
-
-We say a grammatical expression $g$ is based in $G$, when for all $s$, if 
-whenever $\deriv{s}{g}$ exists, it is also derived from the basis set $G$.
-\end{definition}
-
-Now, define the \emph{height} of a basis expression as follows: 
+To give our algorithm, we will first show the central theorem of
+Brzozowski's algorithm acts as a kind of closure operator on sets of
+regular expressions. First, we'll give a simple definition of when a
+regular expression $r$ is \emph{covered} by a set of regular expressions $R$:
 
 \begin{mathpar}
   \begin{array}{lcl}
-    \depth{b}            & = & 1 \\
-    \depth{\epsilon}     & = & 0 \\
-    \depth{\rgt{b}}      & = & 1 \\
-    \depth{t_1\cdot t_2} & = & \depth{t_1} + \depth{t_2} \\
-    \depth{\bot}         & = & 0 \\ 
-    \depth{t_1 \vee t_2} & = &  \max(\depth{t_1}, \depth{t_2}) \\
+    \covers{\bot}{R} & = & \true \\
+    \covers{r_1 \vee r_2}{R} & = & \covers{r_1}{R} \land \covers{r_2}{R} \\
+    \covers{r}{R} & = & r \in R \\
   \end{array}
 \end{mathpar}
 
-\begin{mathpar}
-  \begin{array}{lcl}
-    \pieces{\sigma}       & = & \setof{\sigma} \\
-    \pieces{\epsilon}     & = & \emptyset \\
-    \pieces{g_1\cdot g_2} & = & \pieces{g_1} \cup \pieces{g_2} \\
-    \pieces{\bot}         & = & \emptyset \\
-    \pieces{g_1 \vee g_2} & = & \pieces{g_1} \cup \pieces{g_2} \\
-    \pieces{g*}           & = & \pieces{g} \cup \pieces{g*} \\
-    \pieces{x}            & = & \setof{x} \\
-    \pieces{\fix{x}{g}}   & = & \pieces{g} \cup \setof{\fix{x}{g}} \\
-  \end{array}
-\end{mathpar}
+The idea here is that when $\covers{r}{R}$ is true, then $r$ is equal
+to a disjunction of a subset of the given set of regular expressions
+$R$. We can lift this to sets in the obvious way -- $\covers{S}{R}$ is
+true when for every $s \in S$, $\covers{s}{R}$ is true. (Note that
+this is a sound, but very crude and incomplete, approximation. Part of
+the charm of Brzozowski's algorithm is precisely that such a simple
+approximation works!)
 
-\begin{prop}{}
-  For all $g$, $g \in T_{\pieces{g}}$. 
+\begin{prop}{(Brzozowski's Algorithm is Correct)}
+For any regular expression $r$, there exists a finite set of regular
+expressions $R$ containing $r$, such that for any $R' \subseteq R$, 
+we have $\covers{\deriv{\sigma}{R'}}{R}$ is true. 
 \end{prop}
 
-\begin{proof}
-  By induction on $g$. 
+This proof follows from a simple induction on $r$. Essentially, what
+is going on is that there is a set $R$ upon which the action of the
+derivative is closed -- every derivative can always be formed from a
+disjunction of elements of $R$. Then, since $R$ is finite, it follows
+that there are finitely many subsets of $R$, and so finitely many
+distinct $n$-step derivatives.
 
-  \begin{caseblock}
-    \begin{case}{$g \in \setof{x, \sigma, \bot, \epsilon, g*, \fix{x}{g}}$}
-      Immediate. 
-    \end{case}
-    
-    \begin{case}{$g = g_1 \cdot g_2$}
-      By induction, we know that $g_1 \in T_{\pieces{g_1}}$ and $g_2 \in T_{\pieces{g_2}}$. 
-      Therefore $g_1, g_2 \in T_{\pieces{g_1} \cup \pieces{g_2}} = T_{\pieces{g}}$, and so $g_1 \cdot g_2 \in T_{\pieces{g}}$. 
-    \end{case}
+This is also why Brzozowski's algorithm requires considering the
+equality of regular expressions up to the unit, associativity,
+commutativity and idempotence properties of the disjunction $r \vee
+r'$ -- this is exactly the quotienting needed to represent finite
+sets using a monoidal binary operation.
 
-    \begin{case}{$g = g_1 \vee g_2$}
-      By induction, we know that $g_1 \in T_{\pieces{g_1}}$ and $g_2 \in T_{\pieces{g_2}}$. 
-      Therefore $g_1, g_2 \in T_{\pieces{g_1} \cup \pieces{g_2}} = T_{\pieces{g}}$, and so $g_1 \vee g_2 \in T_{\pieces{g}}$. 
-    \end{case}
-  \end{caseblock}
-\end{proof}
+\subsection{Generalizing to Grammars}
 
-\begin{prop}{}
-  For any $g$ with free variables in $\Gamma$ and any substitution $\gamma$, we 
-  have that $\gamma(g) \in T_{\gamma(\pieces{g}) \cup \pieces{\gamma}}$, and $|\gamma(g)| \leq |gamma| \times |g|$. 
-\end{prop}
+Now, as we mentioned earlier, this same argument must be generalized
+somewhat before it will work for grammars. Two things change. First,
+we have variables, and so we must introduce an environment in the
+statement of the theorem. Second, the closure property itself changes,
+to reflect the fact that grammars may be non-finite-state. The basic
+idea is that if we view a subset of some set $G$ as a state, then
+reading a character and should let us ``push states on the stack''.
 
-\begin{proof}
-  By induction on $g$:
-  \begin{caseblock}
-    \begin{case}{$g \in \setof{\bot, \epsilon, \sigma}$}
-      Immediate. 
-    \end{case}
+We'll formalize this by saying that the derivative of a state set $G$
+can be covered by a concatenation of possibly more than one state
+set. That is, we define $G^k = \bigcup\limits_{j \leq k} \comprehend{
+  g_1\cdot\ldots\cdot g_k }{ g_i \in G \mbox{ for } i \in
+  [1,\ldots,j]}$.  Then, we can state the derivative theorem for
+grammatical expressions as follows:
 
-    \begin{case}{$g = x$}
-      In this case, $\gamma(g) = \gamma(x)$, which is in $T_{\pieces{\gamma(x)}}$. Hence it is 
-      in $T_{\gamma(\pieces{g}) \cup \pieces{\gamma}}$. 
-    \end{case}
 
-    \begin{case}{$g = g_1 \oplus g_2$, where $\oplus \in \setof{\cdot, \vee}$}
-      By induction, we know that $g_i \in T_{\gamma(\pieces{g_i}) \cup \pieces{\gamma}}$. 
-
-      Hence we know that $g_i \in T_{\gamma(\pieces{g_1}) \cup \gamma(\pieces{g_2}) \cup \pieces{\gamma}}$. 
-
-      Hence we know that $g_i \in T_{\gamma(\pieces{g_1 \oplus g_2}) \cup \pieces{\gamma}}$. 
-
-      Hence $g_1 \oplus g_2 \in T_{\gamma(\pieces{g_1 \oplus g_2}) \cup \pieces{\gamma}}$. 
-    \end{case}
-
-    \begin{case}{$g \in \setof{g'*, \fix{x}{g'}}$}
-      In both of these cases, $g \in \pieces{g}$. So we can see immediately 
-      that $\gamma(g) \in T_{\gamma(\pieces{g}) \cup \pieces{\gamma}}$. 
-    \end{case}
-  \end{caseblock}
-\end{proof}
-
-\begin{prop}{(One-Step Derivatives)}
-  For any $g$, if $\deriv{\sigma}{g}$ is defined, it is based in $T_{\pieces{g}}$, and there 
-  exists a $k$ such that $|\deriv{\sigma}{g}| \leq k$. 
-\end{prop}
+\begin{theorem}{(Derivatives of Grammatical Expressions)}
+For any $\judgeok{g}$, there exists a natural number $k$ and a finite
+set $G$ of well-formed grammatical expressions containing $g$, such
+that for all closing well-formed substitutions $\gamma:\Gamma$, and
+for any $H \subseteq G$, $\covers{\deriv{\sigma}{\gamma(H)}}{(\gamma(G) \cup
+\gamma)^k}$.
+\end{theorem}
 
 \begin{proof}
-  This proof is by induction on $g$.
-
+  This theorem can be shown by induction on the derivation of $g$: 
   \begin{caseblock}
-    \begin{case}{$g = \fix{x}{g'}$}
-      Suppose $\deriv{\sigma}{g}$ is defined. Then we can reason as follows:
+    \begin{case}{$\judgeok{a\cdot x}$}
+      In this case, we take $G = \setof{a\cdot x}$ and $k = 1$. 
+
+      Now suppose $H \subseteq G$, and that we have an arbitrary element
+      of $H$. 
+
+      If it is $a\cdot x$, then when we take $\deriv{\sigma}{\gamma(a\cdot
+        x)}$, then if $\sigma \not= a$ then the derivative is $\bot$,
+      which is always covered. Otherwise the derivative is
+      $\gamma(x)$, which is also in $\gamma(G) \cup \gamma$. So in all
+      these cases it is covered, and hence the subset $H$ is covered.
+      
+    \end{case}
+
+    \begin{case}{$\judgeok{\fix{x}{g'}}$}
+      By inversion, we know that $\judgeok[\Gamma,x]{g'}$. 
+
+      By induction, we have $G'$ containing $g'$ and $k'$ such that for all 
+      $\gamma':(\Gamma,x)$ and $h \in G'$, $\deriv{\sigma}{\gamma'(h)} \in (\gamma'(G') \cup \gamma')^{k'}$. 
+      
+      Now take $G = G'[\fix{x}{g'}/x] \cup \setof{\fix{x}{g'}}$ and $k$ to be $k'$. 
+
+      Assume we have $\gamma:\Gamma$ and $H \subseteq G$. Define
+      $\gamma' = \gamma, [\fix{x}{\gamma(g')}/x]$. 
+
+      Now take an arbitrary $h \in H$, and consider
+      $\deriv{\sigma}{\gamma(h)}$. We want to show that this is
+      covered by $(\gamma(G) \cup \gamma)^k$. There are two
+      possibilities:
+
+      First, suppose $h = \fix{x}{g'}$. Now, we can reason as follows: 
+      
       \begin{mathpar}
         \begin{array}{lcl}
-          \deriv{\sigma}{g} 
-          & = & \deriv{\sigma}{\fix{x}{g'}} \\
-          & = & \deriv{\sigma}{g'}[\fix{x}{g'}/x] \\
+          \deriv{\sigma}{\gamma(\fix{x}{g'})} 
+          & = & \deriv{\sigma}{\fix{x}{\gamma(g')}} \\
+          & = & \deriv{\sigma}{\gamma(g')[\fix{x}{\gamma(g')}/x]} \\
+          & = & \deriv{\sigma}{\gamma'(g')} \\
         \end{array}
       \end{mathpar}
-      Hence we know that $\deriv{\sigma}{g'}$, and by induction we know that it is 
-      based in $T_{\pieces{g'}}$. 
 
-      Therefore, we know that $\deriv{\sigma}{g'}[\fix{x}{g'}/x]$ is in $T_{\pieces{g'}[g/x] \cup \pieces{g}}$.
+      Then, by appeal to the induction hypothesis we know that $\deriv{\sigma}{\gamma'(g')}$
+      is covered by $(\gamma'(G') \cup \gamma')^k$, which is exactly equal to 
+      $(\gamma(G) \cup \gamma)^k$. 
 
-      Thus $\deriv{\sigma}{g'}[\fix{x}{g'}/x]$ is in $T_{\pieces{g}}$.
+      On the other hand, suppose that $h \in G'[\fix{x}{g'}/x]$. Then
+      we can see that $\gamma(h)$ is also in $\gamma'(G')$, since
+      there is some element $h'$ of $G'$ such that $h =
+      h'[\fix{x}{g'}/x]$, and $\gamma(h) = \gamma'(h')$. 
+
+      Therefore by the induction hypothesis we know that
+      $\deriv{\sigma}{\gamma(h)} = \deriv{\sigma}{\gamma'(h')} \in
+      (\gamma'(G') \cup \gamma')^k$, which is exactly equal to $(\gamma(G)
+      \cup \gamma)^k$.
     \end{case}
 
-    \begin{case}{$g = x$}
-      In this case, the derivative is not defined. 
-    \end{case}
+    \begin{case}{$\judgeok{g_1\cdot g_2}$}
+      By induction, we know thatthere exists $G_1$ containing $g_1$ and $k_1$ such that 
+      for any substitutions $\gamma$ and $H_1 \subseteq G_1$, $\covers{\deriv{\sigma}{H_1}}{G_1}$.
 
-    \begin{case}{$g \in \setof{\epsilon, \bot, \sigma'}$} 
-      By definition, $\deriv{\sigma}{g} \in \setof{\epsilon, \bot}$.
+      By induction, we know thatthere exists $G_2$ containing $g_2$ and $k_2$ such that 
+      for any substitutions $\gamma$ and $H_2 \subseteq G_2$, $\covers{\deriv{\sigma}{H_2}}{G_2}$.
 
-      Therefore $\deriv{\sigma}{g} \in T_\emptyset$.
-
-      Therefore $\deriv{\sigma}{g} \in T_{\pieces{g}}$. 
-    \end{case}
-
-    \begin{case}{$g = g'*$}
-      Assume $\deriv{\sigma}{g}$ is defined. 
-
-      By definition, $\deriv{\sigma}{g} = \deriv{\sigma}{g'}\cdot g'*$. 
-
-      By induction $\deriv{\sigma}{g'} \in T_{\pieces{g'}}$
-
-      Therefore $\deriv{\sigma}{g'}\cdot g'* \in T_{\pieces{g'} \cup \setof{g*}}$
-
-      Therefore $\deriv{\sigma}{g'}\cdot g'* \in T_{\pieces{g'*}}$
-    \end{case}
-
-    \begin{case}{$g = g_1 \cdot g_2$}
-      Assume $\deriv{\sigma}{g}$ is defined. 
-
-      Then $\deriv{\sigma}{g} = \deriv{\sigma}{g_1}\cdot g_2 \vee (\IfThenElse{\emptify{g_1}}{\deriv{\sigma}{g_2}}{\bot}$
-
-      By induction, we know that $\deriv{\sigma}{g_1} \in T_{\pieces{g_1}}$. 
-
-      By induction, we know that $\deriv{\sigma}{g_2} \in T_{\pieces{g_2}}$. 
+      Now, take $G = G_1\cdot\setof{g_2} \cup G_2 \cup \setof{\epsilon}$, and
+      take $k = \max(k_1 + 1, k_2)$.
       
-      By lemma, we know that $g_2 \in T_{\pieces{g_2}}$. 
+      Now, take $H \subseteq G$ and consider an arbitrary $h \in H$. This can take
+      on one of the following forms: 
 
-      Then, regardless of the value of the if-then-else, we know $\deriv{\sigma}{g} \in T_{\pieces{g_1} \cup \pieces{g_2}}$. 
+      If $h \in G_1\cdot\setof{g_2}$, then by induction we know that $h = g'_1\cdot g_2$. 
+      So we know that
+      \begin{mathpar}
+        \begin{array}{lcl}
+          \deriv{\sigma}{\gamma(g'_1\cdot g_2)} 
+          & = & \deriv{\sigma}{\gamma(g'_1)}\cdot\gamma(g_2) \vee (\IfThenElse{\emptify{g'_1}}{\deriv{\sigma}{\gamma(g_2)}}{\bot}) \\
+        \end{array}
+      \end{mathpar}
 
-      Then we know $\deriv{\sigma}{g} \in T_{\pieces{g}}$. 
+      By induction we know that $\covers{\deriv{\sigma}{\gamma(g'_1)}}{(\gamma(G'_1)\cup \gamma)^{k_1}}$. 
+      Hence we know that $\covers{\deriv{\sigma}{\gamma(g'_1)}\cdot g_2}{(\gamma(G)\cup\gamma)^{k_1 + 1}}$. 
+
+      If $\emptify{g'_1}$ is false, then
+      $\covers{\bot}{(\gamma(G)\cup\gamma)^{k_1 + 1}}$ is trivially
+      true.  If it is true, then by induction we know that
+      $\covers{\deriv{\sigma}{\gamma(g'_2)}}{(\gamma(G'_1)\cup
+        \gamma)^{k_2}}$. Hence we know that
+      $\covers{\deriv{\sigma}{\gamma(g'_2)}}{(\gamma(G)\cup
+        \gamma)^{k_2}}$.
+
+      Hence both of them are covered by $(\gamma(G)\cup
+      \gamma)^{\max(k_1+1,k_2)}$. Hence the disjunction is also
+      covered.
     \end{case}
 
-    \begin{case}{$g = g_1 \vee g_2$}
-      Assume $\deriv{\sigma}{g}$ is defined. 
+    \begin{case}{$\judgeok{g'*}$}
+      By induction, we know that there is a $G'$ containing $g'$ and
+      $k'$ such that for all $\gamma$ and $H \subseteq G'$,
+      $\covers{\deriv{\sigma}{H}}{(\gamma(G') \cup \gamma)^{k'}}$. 
 
-      Then $\deriv{\sigma}{g} = \deriv{\sigma}{g_1} \vee \deriv{\sigma}{g_2}$. 
+      Now take $G = G' \cup \setof{g'*}$ and $k = k'+1$. 
 
-      So by induction, we know $\deriv{\sigma}{g_1} \in T_{\pieces{g_1}}$. 
+      Assume we have $\gamma$, and a subset $H \subseteq G$. Now take an
+      arbitrary $h \in H$, and consider $\deriv{\sigma}{\gamma(h)}$. There
+      are two cases to consider. 
 
-      So by induction, we know $\deriv{\sigma}{g_2} \in T_{\pieces{g_2}}$. 
+      If $h$ is $g'*$, then $\deriv{\sigma}{\gamma(g'*)} = \deriv{\sigma}{\gamma(g')}\cdot\gamma(g'*)$. 
+
+      By induction we know that $\covers{\deriv{\sigma}{\gamma(g'*)}}{(\gamma(G') \cup \gamma)^{k'}}$. 
+      Hence it is clear that $\covers{\deriv{\sigma}{\gamma(g'*)}}{(\gamma(G') \cup \setof{g'*} \gamma)^{k'+1}}$. 
+
+      Now, suppose that $h \in G'$. Then by induction we get the result that we want. 
     \end{case}
+
+    \begin{case}{$\judgeok{\sigma'}$}
+      Let $G = \setof{\sigma', \epsilon}$, and $k = 1$. 
+
+      Now, for any $\gamma$, $\gamma(\sigma') = \sigma'$. Take $H$ to be 
+      a subset of $G$, and let $h$ be an element of it. 
+
+      If $h = \sigma'$, then the derivative is either $\bot$ or $\epsilon$. 
+      Either way, it is covered by $\gamma(G) \cup \gamma$.  
+
+      If $h = \epsilon$, then the derivative is $\bot$, which is always
+      covered. 
+    \end{case}
+
   \end{caseblock}
 \end{proof}
 
-\begin{prop}{(Derivatives Are Finitely Based)}
-  For any $\judgeok[\cdot]{g}$, we have that $g$ is totally based in
-  $\pieces{g}$. Furthermore, for any $s$, the height of the basis
-  expression is bounded by $O(|s|)$.
-\end{prop}
-
-\begin{proof}
-  The first claim follows from the fact that the single-character
-  derivative of a well-formed, closed expression (a) is well-formed
-  and closed, and (b) always exists. 
-
-  The second claim follows from the fact that we only ever substitute
-  fixed point expressions for variables, which necessarily always have
-  a height of 1, and so don't change the height. As a result, we can
-  increase the height by at most a constant at any step.
-\end{proof}
-
-\section{The Dioid Structure of Bases}
-
-Now, we know that the height of a derivative is bounded, but we still
-are not quite where we need to be. The reason is that a basis expression is 
-a \emph{tree}, and not a \emph{list}. 
-
-\begin{mathpar}
-  \begin{array}{lcl}
-    s & ::= & (g, g) \bnfalt s \otimes s' \bnfalt 0 \bnfalt s \oplus s'
-  \end{array}
-\end{mathpar}
-
-\begin{mathpar}
-  \begin{array}{lcl}
-    \Interp{(g, g)}       & = & \setof{[g, g']} \\
-    \Interp{s_1 \otimes s_2} & = & \comprehend{ {gs}_1 :: g :: {gs}_2 }
-                                              { ({gs}_1 :: g) \in \Interp{s_1} \land
-                                                (g :: {gs}_2) \in \Interp{s_2} } \\
-    \Interp{0} & = & \emptyset \\
-    \Interp{s_1 \oplus s_2} & = & \Interp{s_1} \cup \Interp{s_2} \\[1em]
-
-    
-  \end{array}
-\end{mathpar}
-
-\begin{lemma}{(Axioms)}
-  The following equations hold:
-
-  \begin{enumerate}
-    \item $s \oplus s' = s' \oplus s$
-    \item $s \oplus s = s$
-    \item $s \oplus 0 = s$
-    \item $0 \otimes s = 0$
-    \item $s \otimes 0 = 0$
-    \item $(s \otimes s') \otimes s'' = s \otimes (s' \otimes s'')$
-    \item $(s_1 \oplus s_2) \otimes s_3 = (s_1 \otimes s_3) \oplus (s_2 \otimes s_3)$
-    \item $(g, g') \otimes (g'', g''') = 0$ when $g' \not= g''$
-    \item $(g, \epsilon) \otimes (\epsilon, g') = (g, g')$
-    \item $(\epsilon, g) = (g, \epsilon)$
-  \end{enumerate}
-\end{lemma}
-
-The critical properties are the last four. They will enable us to take a
-tree of height $k$ -- the basis expression -- and turn it into a list
-of \emph{length} $k$. 
-
-\begin{lemma}{(Undistribution)}
-  We know that
-  \begin{mathpar}
-  [(g_1, g_2) \otimes (g_3, g_4)] \oplus [(g'_1, g'_2) \otimes (g'_3, g'_4)] = 
-  [(g_1, g_2) \oplus (g'_1, g'_2)] \otimes [(g_3, g_4) \oplus (g'_3, g'_4)]
-  \end{mathpar}
-\end{lemma}
-
-\begin{proof}
-  Suppose $g_2 = g_3$ and $g'_2 = g'_3$. 
-
-  Then 
-\end{proof}
-
-\begin{mathpar}
-  \begin{array}{lcl}
-    \emptify{(g_1, g_2)} & = & \emptify{g_1} \land \emptify{g_2} \\
-    \emptify{s_1 \otimes s_2} & = & \emptify{s_1} \land \emptify{s_2} \\
-    \emptify{0} & = & \false \\
-    \emptify{s_1 \oplus s_2} & = & \emptify{s_1} \vee \emptify{s_2} \\
-  \end{array}
-  \\
-  \begin{array}{lcl}
-    \derivhat{\sigma}{(g_1, g_2)} 
-    & = & \IfThenElse{\emptify{g_1}}
-                     {(\deriv{\sigma}{g_1}, g_2) \oplus (\epsilon, \deriv{\sigma}{g_2})}
-                     {(\deriv{\sigma}{g_1}, g_2)} 
-    \\
-    \derivhat{\sigma}{s_1 \otimes s_2} 
-    & = & (\derivhat{\sigma}{s_1} \otimes s_2) \oplus 
-          (\IfThenElse{\emptify{s_1}}{\derivhat{\sigma}{s_2}}{0}) 
-    \\
-    \derivhat{\sigma}{0} 
-    & = &
-    0
-    \\
-    \derivhat{\sigma}{s_1 \oplus s_2}
-    & = & 
-    \derivhat{\sigma}{s_1} \oplus \derivhat{\sigma}{s_2}
-    \\
-  \end{array}
-\end{mathpar}
-
-
+Now, the basic idea is that we can generate a machine from this
+description by taking our initial state to be $\setof{g}$. A machine
+configuration is a collection 
 
 \end{document}
