@@ -1,0 +1,57 @@
+\documentclass{article}
+\usepackage{mathpartir}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\newcommand{\bnfalt}{\;\;|\;\;}
+\newcommand{\lolli}{\multimap}
+\newcommand{\tensor}{\otimes}
+\newcommand{\letv}[3]{\mathsf{let}\;{#1} = {#2} \;\mathsf{in}\;{#3}}
+\newcommand{\letunit}[2]{\letv{()}{#1}{#2}}
+\newcommand{\letpair}[4]{\letv{({#1},{#2})}{#3}{#4}}
+\newcommand{\fun}[2]{\lambda{#1}.\;{#2}}
+
+\newcommand{\judge}[3][\Gamma]{{#1}\vdash {#2} : {#3}}
+
+\title{Linearity and Free-ness}
+
+\begin{document}
+
+\begin{mathpar}
+  \begin{array}{lcl}
+    A & ::= & 1 \bnfalt A \tensor B \bnfalt A \lolli B \bnfalt \top
+  \end{array}
+\end{mathpar}
+
+\begin{mathpar}
+  \inferrule*[]
+            { }
+            {\judge[\cdot]{()}{1}}
+\and
+  \inferrule*[]
+            {\judge[\Gamma]{e}{1} \\
+             \judge[\Gamma']{e'}{C}}
+            {\judge[\Gamma,\Gamma']{\letunit{e}{e'}}{C}}
+   
+\and
+  \inferrule*[]
+            {\judge[\Gamma]{e}{A} \\
+             \judge[\Gamma']{e'}{B}}
+            {\judge[\Gamma,\Gamma']{(e,e')}{A \tensor B}}
+\and
+  \inferrule*[]
+            {\judge[\Gamma]{e}{A \tensor B} \\
+             \judge[\Gamma', x:A, y:B]{e'}{C}}
+            {\judge[\Gamma,\Gamma']{\letpair{x}{y}{e}{e'}}{C}}
+\and
+  \inferrule*[]
+            {\judge[\Gamma, x:A]{e}{B}}
+            {\judge{\fun{x}{e}}{A \lolli B}}
+\and
+  \inferrule*[]
+            {\judge[\Gamma]{e}{A \lolli B} \\
+             \judge[\Gamma']{e'}{A}}
+            {\judge[\Gamma,\Gamma']{e\;e'}{B}}
+\end{mathpar}
+
+\end{document}

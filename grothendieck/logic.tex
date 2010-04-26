@@ -1,0 +1,219 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathpartir}
+
+\newcommand{\powerset}[1]{\mathcal{P}(#1)}
+\newcommand{\setof}[1]{\left\{{#1}\right\}}
+\newcommand{\comprehend}[2]{\setof{{#1}\;|\;{#2}}}
+\newcommand{\interp}[1]{[\![{#1}]\!]}
+\renewcommand{\implies}{\Rightarrow}
+\newcommand{\wand}{-\!\!\!*}
+\newcommand{\smallprop}[1]{\mathsf{S}_s({#1})}
+\newcommand{\pointsto}{\mapsto}
+\title{Deforming Separation Logic}
+\author{Neel Krishnaswami}
+
+\begin{document}
+\maketitle
+
+\section{Grothendieck Topological Monoids}
+
+What follows is basically a copy of what Pym, O'Hearn and Yang did in their ``Possible Worlds
+and Resources: The Semantics of BI'' paper. They basically combine topological models of 
+logic with monoidal resource semantics by viewing the monoid as a category and equipping it 
+with a Grothendieck topology. To do this, they equip the monoid with preorder structure
+(so that it can be viewed as a skeletal category) and then give that category a Grothendieck
+topology. 
+
+The idea behind a Grothendieck topology is to take the notion of open
+cover from topology and formally apply it to settings where we don't
+necessarily have all the union/intersection operations available in a
+real topology.
+
+So, given a preordered monoid $M = (M, \circ, e, \sqsubseteq)$, a
+Grothendieck topology $J$ is an assignment $M \to
+\powerset{\powerset{M}}$. That is, for each element $m$ of $M$, $J$ gives us 
+a set of formal open covers for $m$. So if $S \in J(m)$, the idea is that
+the elements of $S$ ``cover'' $m$. Naturally, not every function $J$ is
+a Grothendieck topology -- there are some axioms that need to be satisfied. 
+(Caveat: we're already cheating, since a real Grothendieck topology assigns
+a family of sets of incoming morphisms to each object. But since a preorder
+is a degenerate category it's ok to just assign a family of sets of objects.)
+
+I'm just going to take the properties given in POY paper. This is also a bit
+confusing, since presheaves are functors $\mathbb{C}^{op} \to \mathrm{Set}$, and
+I think they flipped the directionality of all the arrows in their axioms, relative 
+to the standard ones for Grothendieck topologies. It should all be equivalent,
+but it's also a bit hairy. For now I'll just follow their development, but it
+might make sense to restate them more conventionally. 
+
+\begin{enumerate}
+\item Sieve: For all $m \in M, S \in J(m)$, we have that for all $m' \in S, m \sqsubseteq m'$. (That is,
+``$m \sqsubseteq S$''.) 
+
+\item Maximality: For any $m, m' \in M$, if $m \sqsubseteq m'$ and $m' \sqsubseteq m$, then $\setof{m} \in J(m')$. 
+
+\item Stability: For any $m, n \in M$ such that $m \sqsubseteq n$, and for all $S \in J(m)$, there
+  exists $S' \in J(n)$ such that for any $n' \in S'$, there exists $m' \in S$ such that $m' \sqsubseteq n'$. (That is
+  ``$S \sqsubseteq S'$''.)
+
+\item Transitivity: For any $m \in M$ and $S \in J(m)$, we have 
+\begin{mathpar}
+  \left(\bigcup\limits_{m' \in S} \bigcup\limits_{S' \in J(m')} S'\right)$$\in J(m)
+\end{mathpar}
+
+\item Continuity: For any $m,n \in M$ and $S \in J(m)$, we have that 
+\begin{mathpar}
+\comprehend{ m' \circ n}{m' \in S}$$\in J(m \circ n)
+\end{mathpar}
+(So ``$S \circ n \in J(m \circ n)$'')
+\end{enumerate}
+
+\begin{figure}
+\begin{center}
+
+\begin{mathpar}
+  \begin{array}{lcl}
+    m \models p 
+    & \iff &  m \in \interp{p} \\
+
+    m \models \top 
+    & \iff & \mbox{always} \\
+
+    m \models \phi \land \psi 
+    & \iff & m \models \phi \mbox{ and } m \models \psi \\
+
+    m \models \phi \implies \psi 
+    & \iff & \forall n \sqsubseteq m.\; \mbox{if } n \models \phi \mbox{ then } n \models \psi \\
+
+    m \models \bot 
+    & \iff & \emptyset \in J(m) \\
+
+    m \models \phi \vee \psi 
+    & \iff & \exists S \in J(m).\; \forall m' \in S.\; m' \models \phi \mbox{ or } m' \models \psi \\
+
+    m \models I 
+    & \iff & \exists S \in J(m).\; \forall m' \in S.\; m' \sqsubseteq e \\
+
+    m \models \phi \star \psi 
+    & \iff & \exists S \in J(m).\; \forall m' \in S.\; \exists n_\phi, n_\psi.\\
+    &      & \qquad m' \sqsubseteq n_\phi \circ n_\psi \mbox{ and } n_\phi \models \phi \mbox{ and } n_\psi \models \psi \\
+
+    m \models \phi \wand \psi
+    & \iff & \forall n \in M.\; \mbox{if } n \models \phi \mbox{ then } n \circ m \models \psi \\
+  \end{array}
+\end{mathpar}
+\end{center}
+\label{sheaf-semantics}
+\caption{Sheaf Semantics}
+\end{figure}
+
+So, if we have a preordered monoid with a Grothendieck topology, we
+can give a forcing relation for separation logic, which is described
+in Figure~\ref{sheaf-semantics}. Observe that we use the covering
+relation in the cases of disjunction and the separating conjunction. 
+
+Now, this semantics satisfies two properties (assuming the atomic formulas do): 
+
+\begin{enumerate}
+\item Kripke Monotonicity:  For any $n, m \in M$ such that $n \sqsubseteq m$, if $m \models \phi$ then $n \models \phi$
+
+\item Sheaf Condition: For any $m \in M$ and $S \in J(m)$, if for all $m' \in S$ we have $m' \models \phi$, then $m \models \phi$. 
+\end{enumerate}
+
+\section{From Partial to Total Monoids}
+
+One thing that we've done so far is to assume that the monoids in
+question are total. One nice thing about the Grothendieck semantics is
+that it gives a simple way of completing any partial monoid into a
+total one, without changing the resulting separation logic continues
+working the way we expect.
+
+So if $(M', \circ', e')$ is a partial commutative monoid, we can define a
+partially ordered total commutative monoid as follows: 
+
+\begin{enumerate}
+\item Let $M = M' \uplus \setof{0}$. (That is, adjoin a new element to $M'$, disjoint from
+  the existing elements.)
+
+\item Define $m_1 \circ m_2$ as follows:
+  \begin{mathpar}
+    \begin{array}{lcll}
+      m'_1 \circ m'_2 & = & m'_1 \circ' m'_2 & \mbox{ when defined } \\
+      m'_1 \circ m'_2 & = & \bot            & \mbox{ when undefined } \\
+      m \circ \bot & = & \bot & \\
+      \bot \circ m & = & \bot & \\
+    \end{array}
+  \end{mathpar}
+
+\item Let $e = e'$. 
+
+\item Equip $M$ with the flat order where $\bot \sqsubseteq m$, and otherwise $m'_1 \sqsubseteq m'_2$
+  if and only if $m'_1 = m'_2$. 
+\end{enumerate}
+
+Now, we can equip this preordered monoid with a Grothendieck topology as follows:
+
+\begin{mathpar}
+  \begin{array}{lcll}
+    J(0)  & = & \setof{\setof{0}, \emptyset} & \\
+    J(m)  & = & \setof{\setof{m}} & \mbox{when } m \not= 0 \\
+  \end{array}
+\end{mathpar}
+
+POY show that propositional entailment coincides between this semantics for the partial
+monoid of heaps, and the standard semantics of separation logic. 
+
+\section{Toward Finite Memory}
+
+The reason I'm interested in this model of BI is that it seems to give a systematic way 
+to talk about enriching separation logic along several dimensions. For example, we can
+vary the monoid we use, vary the preorder to require respecting some invariants, and
+perhaps most importantly we can use relations between monoids to explain the new modal 
+operators that creep into every separation logic paper. 
+
+As a simple example, let's consider how separation logic for finite memory might work. 
+
+So, as our first step, let's define a family of partial commutative
+monoids $H'_n$. Each $H'_n$ is the restriction of the usual heap
+monoid to heaps of size at most $n$, with the partial commutative
+monoid operation being undefined if the join of two heaps is bigger
+than $n$, in addition to being undefined if the two heaps overlap. 
+Observe the existence of functions $s : H'_n \to H'_m$, the
+inclusion function from $H'_n$ to $H'_m$, which exist when $n < m$.
+
+Now, note that as in the previous section, we can add formal zero 
+elements to get a total commutative monoid, as well as using it to 
+get a Grothendieck topology for each of these monoids. 
+
+This gives us a family of separation logics, one for each memory
+size. The question is, can we integrate these logics into one big
+one? Furthermore, can we do it \emph{without} building a crazy super
+model?
+
+So, for simplicity let's consider $H_n$ and $H_m$ for fixed $n < m$,
+and let $s$ be some chosen embedding. Now, in $H_m$, we can add a
+modal operator $\smallprop{\phi}$, whose intuitive meaning is ``I am
+modelled by those smaller heaps that are in the image of $H_n$''. 
+
+\begin{mathpar}
+  \begin{array}{lcl}
+    m \models \smallprop{\phi} & \iff & \forall n.\; \mbox{if } s^{-1}(m) \in J(n) \mbox{ then } n \models \phi\\
+  \end{array}
+\end{mathpar}
+
+I think (i.e., I haven't yet completely checked) that this satisfies
+the Kripke monotonicity and sheaf conditions, and so this is a fine 
+connective of the big logic. 
+
+The nice thing is that this lets us state a lot of properties about sizeful
+computations in an ``internal'' way. We can show that $\smallprop{\bot} \implies \bot$, and
+then we can reason under a modal operator using size-specific logical principles. For example, 
+if $n = 1$, then we know that $x \pointsto 3 \star y \pointsto 7$ is false, since we only
+have one word of memory. So this means that $\smallprop{x \pointsto 3 \star y \pointsto 7}
+\implies \smallprop{\bot} \implies \bot$. 
+
+
+
+\end{document}

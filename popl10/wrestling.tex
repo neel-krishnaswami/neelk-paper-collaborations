@@ -1,0 +1,250 @@
+\documentclass{article}
+\usepackage{mathpartir}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\newcommand{\ST}[2]{{#1} \mapsto {#2}}
+\newcommand{\List}[1]{\mathsf{List}\;{#1}}
+\newcommand{\Set}{\mathrm{Set}}
+\newcommand{\I}{\mathbf{I}}
+\newcommand{\Hom}{\mathrm{Hom}}
+\newcommand{\Event}{\mathsf{Event}}
+\newcommand{\Events}{\Event^{\omega}}
+\newcommand{\To}{\Rightarrow}
+\newcommand{\setof}[1]{\left\{{#1}\right\}}
+\newcommand{\comprehend}[2]{\setof{{#1}\;|\;{#2}}}
+\newtheorem{prop}{Proposition}
+\newtheorem{definition}{Definition}
+
+\title{A New Semantics of Functional Reactive Programs}
+
+\author{Neelakantan R. Krishnaswami \texttt{<neelk@microsoft.com>}}
+
+\begin{document}
+\maketitle
+
+
+\section{Functional Reactive Programming}
+
+Traditional functional reactive programming is programming with \emph{stream transducers}. That is,
+we introduce a type $\ST{A}{B} \equiv A^\omega \to B^\omega$. From this, we can define an API something
+like:
+
+\begin{mathpar}
+  \begin{array}{lcl}
+    \mathtt{par} & : & (\ST{A}{B}) \to (\ST{X}{Y}) \to (\ST{A \times X}{B \times Y}) \\
+    \mathtt{seq} & : & (\ST{A}{B}) \to (\ST{B}{C}) \to (\ST{A}{C}) \\
+    \mathtt{map} & : & (A \to B) \to (\ST{A}{B}) \\
+    \mathtt{loop} & : & A \to (\ST{A \times B}{A \times C}) \to (\ST{B}{C}) \\
+  \end{array}
+\end{mathpar}
+
+When we try to define the semantics of loop, we realize that we didn't
+mean \emph{all} stream functions, but rather only the \emph{causal} ones. These
+are functions that ``depend only their history''. 
+
+This idea can be formalized as follows: 
+
+\begin{prop}{(Causality)}
+  A function $f \in A^\omega \to B^\omega$ is causal, if for all streams $a, a' \in A^\omega$ and all $n$ 
+  \begin{mathpar}
+    (\forall i \leq n.\; a_i = a'_i) \implies (\forall i \leq n.\; (f\;a)_i = (f\;a')_i)
+  \end{mathpar}
+\end{prop}
+%
+This captures the idea the value of the first $n$ elements of $f\;a$ can only depend on at most the 
+first $n$ elements of $a$, since we are free to vary $a$ and $a'$ past $n$. 
+
+Now, this is a perfectly nice definition and allows giving a sensible
+semantics to $\mathtt{loop}$. But it has several problems:
+
+\begin{itemize}
+\item There can be false sharing in the input.
+\item The type of stream transducers is a ``first-order function type'', which limits our
+  opportunities for abstraction.
+\item The $\mathtt{loop}$ combinator seems a bit \emph{ad-hoc}. 
+\end{itemize}
+
+The question is, can we do better?
+
+\section{Ultrametrics}
+
+A \emph{1-bounded ultrametric} $(X, d)$ is a set $X$ paired with a
+distance function $d \in X \times X \to \mathbb{R}$, satisfying the
+following properties:
+
+\begin{itemize}
+\item $d(x, y) \in [0,1]$
+\item $d(x, x) = 0$
+\item $d(x, y) = d(y, x)$
+\item $d(x, z) \leq \max\setof{d(x,y), d(y, z)}$
+\end{itemize}
+
+What makes it an \emph{ultra}metric is the fact that the triangle inequality is stronger than the normal
+Euclidean triangle inequality. 
+
+The category of ultrametric spaces (actually, complete 1-bounded ultrametric spaces) is cartesian closed. 
+
+\begin{itemize}
+\item The objects of this category are ultrametric spaces.
+\item The morphisms are ``nonexpansive maps''. A nonexpansive map $f : (X, d_X) \to (Y, d_Y)$ is a function 
+from $X \to Y$ with the property that it is non-distance-increasing:
+\begin{mathpar}
+  \forall x, x'.  d_Y(f\;x, f\;x') \leq d_x(x, x')
+\end{mathpar}
+
+\item The product of two ultrametric spaces $(X, d_x)$ and $(Y, d_Y)$ is the space $(X \times Y, d_{X\times Y})$, 
+where 
+\begin{mathpar}
+  d_{X\times Y}((x,y), (x',y')) = \max \setof{d_X(x,x'), d_Y(y,y')}
+\end{mathpar}
+This is called the ``sup-metric''. 
+
+\item The exponential $X \to Y$ is the set of nonexpansive maps from $X \to Y$, with the distance given by:
+  \begin{mathpar}
+    d_{X \to Y}(f, g) = \max \comprehend{d_Y(f\;x, g\;x)}{x \in X}
+  \end{mathpar}
+\end{itemize}
+
+
+\subsection{Streams as Ultrametric Spaces}
+
+The type of streams $A^\omega$ can be equipped with an ultrametric distance function: 
+
+\begin{mathpar}
+  d_{A^\omega}(a, a') = 2^{-\min\comprehend{n \in \mathbb{N}}{a_n \not= a'_n}}
+\end{mathpar}
+
+So the distance between two streams measures ``how soon'' they differ from one another. Two streams
+that never differ from each other will have a distance of 0, and two streams that differ at the first
+element will have a distance of 1. 
+
+Verifying that this forms an ultrametric is straightforward. 
+
+Now, the fun part is the following theorem: 
+
+\begin{prop}{(Causality Coincides with the Ultrametric Function Space)}
+The function $f \in A^\omega \to B^\omega$ is causal if and only if it
+is a nonexpansive map according to the distance metric for streams.
+\end{prop}
+
+\noindent The proof is largely just unfolding some definitions. 
+
+But despite its easiness, it's still really useful! It means that we now have a firm base to 
+generalize FRP from. That is, we now interpret transducers as nonexpansive maps $A^\omega \to B^\omega$,
+and so we can easily generalize t
+
+\begin{itemize}
+\item False sharing goes away. We can now have a sensible interpretation to $A^\omega \times B^\omega \to C^\omega$,
+which lets us write functions that (for example) don't necessarily assume that the $A$s can depend on the $B$s.
+
+\item We can curry! We now know what $A^\omega \to (B^\omega \to C^\omega)$ means, for example! 
+
+\item The syntax of a FRP DSL greatly simplifies: it's the lambda calculus. (Actually, we need a bit more
+  than this to handle feedback.) So we have a coherent, familiar story about variables and binding and
+  so on. 
+
+  Q: Can we get Simon to let us rebind application, variable references, and abstractions in GHC?
+\end{itemize}
+
+\subsection{Feedback}
+
+One of the more fun things about functional reactive programming is \emph{feedback}. A stream's value at
+time $t$ can depend on its values at earlier times. For example, consider \texttt{(fix xs. 0 :: map (+1) xs)}. 
+
+These kinds of definitions are pervasive in reactive programming, and are probably the most distinctive
+thing about it. It would be nice to have a clean, general account of them. Luckily, ultrametrics help here,
+too. 
+
+\begin{definition}{(Strictly Contractive Maps)}
+  An endofunction on ultrametrics $f : A \to B$ is \emph{strictly contractive} when there is a $q \in [0,1)$
+  such that for all $a, a' \in A$, we have that $d_B(f\;a, f\;a') \leq q \cdot d_A(a, a')$. 
+\end{definition}
+
+The idea behind a strictly contractive map is that applying it shrinks
+the distance between any two points. (A nonexpansive map can be seen as the case when $q$ is 1.)
+This suggests that when we have an endofunction, we can find fixed points. 
+
+\begin{prop}{(Banach's Fixed Point Theorem)}
+If $A$ is a complete metric space, and $f : A \to A$ is a strictly contractive map, then $f$ has a
+\emph{unique} fixed point in $A$. 
+\end{prop}
+
+Now, a delay operator like \texttt{cons} (of type $A \to A^\omega \to
+A^\omega$) is strictly contractive in its second argument. This is
+because it adds an initial value at time 0, and so if two arguments disagreed at
+time $n$, then the results will disagree at time $n+1$ -- which means the distance
+between the result is  $\frac{1}{2}$ the distance of the arguments. 
+
+Furthermore, since strictly contractive functions are preserved by
+composition, application, pairing, and basically everything else, this
+means that \texttt{$\lambda$xs. 0 :: map (+1) xs} is also strictly
+contractive, and so by Banach's fixed point theorem we know it has a
+fixed point.
+
+Some interesting issues in implementing these fixed points, both in
+the API and in the implementation. 
+
+\section{Imperative Streams}
+
+Define the category $\I$ as follows. The objects of $\I$ are finite
+sets $D$ -- think of the elements of $D$ as a set of names for input
+channels.  The $\I$-morphisms $f : D \to D'$ are injective maps from
+$D \to D'$. Intuitively, the maps are embeddings up to renaming.
+
+Next, we'll consider the functor category $[\I, \Set]$. The objects of this
+category are functors from $\I$ to $\Set$, and the morphisms are the natural
+transformations. That is,
+\begin{mathpar}
+\Hom(F, G) = \comprehend{\eta \in \Pi X \in\I_0.\; F(X) \to G(X)}
+                        {\forall X,Y\in \I_0, f \in X \to Y.\; \eta_X;G f = F f;\eta_Y}
+\end{mathpar}
+
+Products and coproducts are given pointwise. The exponential $F \To G$ is also definable.
+Its action on objects is:
+\begin{mathpar}
+(F \To G)(X) = \Hom(\I(X, -) \times F, G)
+\end{mathpar}
+
+Intuitively, this is a generalization of implication in Kripke
+semantics. Recall that in a Kripke semantics, the implication $p
+\implies q$ holds at a world $\tau$ when for all $\tau \sqsubseteq
+\sigma$, if $p$ holds at $\sigma$, then $q$ holds at $\sigma$.
+This is a uncurried version of that idea, generalized to reflect
+the possibility that in $\I$, there may be multiple distinct ways
+for one element to be larger than another. (More concretely, note that
+$\I(X, -)$ is nonempty only when there is a map from $X$ --- and $X$
+is injective.)
+
+We now define a monad which supports reading and dynamic allocation,
+whose action on objects is:
+\begin{mathpar}
+  T(A) (X) = \exists D.\; \Pi Y.\; \left(\I(X + D, Y) \times (Y \to \Events)) \to A(Y)
+\end{mathpar}
+
+\noindent (The $X + D \to Y$ is an injection.)
+
+The action on morphisms is
+\begin{mathpar}
+  T(A)(f : X \to Y) = \lambda(D, \eta).\;(D, \lambda Z.\;\lambda (e,h).\; \eta_Z(e \circ [f, id_D], h)
+\end{mathpar}
+
+This is a strong commutative monad, which remains to be checked. 
+
+Now, to be ambitious, we'll try to use Nick's construction of a adjoint
+model from a commutative monad. (Then we'll try and do it using ultrametric-valued
+covariant presheaves, whee!)
+
+This means that we need to consider the Eilenberg-Moore category $[\I,\Set]^T$. 
+
+The objects of this category are pairs $(F, u)$, where $F \in [\I,\Set]$, and 
+$u : T(F) \to F$, such that $u$ is a $T$-action. (A $T$-action is a morphism 
+such that $u \circ T(u) = u \circ \mu : T(T(F)) \to F$, and $u \circ \mu = id_F$.)
+
+The morphisms in $\Hom((F,u), (G,v))$ are maps $\eta : F \to G$ such
+that $\eta \circ u = v \circ T(\eta)$.
+
+Now let's play the game ``unwind the definitions''. 
+
+\end{document}
+        
