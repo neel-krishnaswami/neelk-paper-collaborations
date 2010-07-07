@@ -1,0 +1,1190 @@
+%-----------------------------------------------------------------------------
+%
+%               Template for sigplanconf LaTeX Class
+%
+% Name:         sigplanconf-template.tex
+%
+% Purpose:      A template for sigplanconf.cls, which is a LaTeX 2e class
+%               file for SIGPLAN conference proceedings.
+%
+% Author:       Paul C. Anagnostopoulos
+%               Windfall Software
+%               978 371-2316
+%               paul@windfall.com
+%
+% Created:      15 February 2005
+%
+%-----------------------------------------------------------------------------
+
+
+\documentclass[preprint]{sigplanconf}
+
+% The following \documentclass options may be useful:
+%
+% 10pt          To set in 10-point type instead of 9-point.
+% 11pt          To set in 11-point type instead of 9-point.
+% authoryear    To obtain author/year citation style instead of numeric.
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathpartir}
+\usepackage{verbatim}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\setof}[1]{\left\{{#1}\right\}}
+\newcommand{\comprehend}[2]{\setof{{#1}\;|\;{#2}}}
+\newcommand{\betterstate}[3]{{#2}\, {\sqsupseteq}^{#1} {#3}}
+\newcommand{\worsestate}[5]{{#4} {\sqsubseteq}^{(#1,#2)}_{#3} {#5}}
+% \newcommand{\satisfies}[4]{({#1}, {#2}, {#3}) \;\mathsf{sat}\; {#4}}
+\newcommand{\dom}[1]{\mathrm{dom}({#1})}
+
+\newcommand{\ready}[3]{\mathsf{ready}({#1}, {#2}, {#3})}
+\newcommand{\unready}[2]{\mathsf{unready}({#1}, {#2})}
+\newcommand{\cells}[1]{\mathrm{cells}({#1})}
+\newcommand{\refs}[1]{\mathrm{refs}({#1})}
+\newcommand{\hasref}[3]{\mathsf{hasref}({#1}, {#2}, {#3})}
+\renewcommand{\implies}{\Rightarrow}
+
+\newcommand{\stream}[1]{\mathbf{#1}}
+\newcommand{\term}[1]{\ensuremath{\mathtt{{#1}}}}
+\newcommand{\spec}[4]{\setof{{#1}}\;{#2}\;\setof{{#3}.\;{#4}}}
+
+\newcommand{\streams}{\mathit{streams}}
+\newcommand{\thunks}{\mathit{thunks}}
+\newcommand{\lags}{\mathit{lags}}
+\newcommand{\locs}{\mathit{locs}}
+
+\newcommand{\discrete}[1]{D({#1})}
+\newcommand{\To}{\Rightarrow}
+\newcommand{\shrink}{\rightsquigarrow}
+\newcommand{\interp}[1]{[\![{#1}]\!]}
+\newcommand{\unitval}{\left<\right>}
+
+\newcommand{\interps}[1]{[\![{#1}]\!]_s}
+\newcommand{\interpu}[1]{[\![{#1}]\!]_u}
+
+\newcommand{\Head}{\mathit{Head}}
+\newcommand{\Tail}{\mathit{Tail}}
+\newcommand{\Code}{\mathit{Code}}
+\newcommand{\Build}{\mathit{Build}}
+\newcommand{\Local}{\mathit{Local}}
+\newcommand{\Ref}{\mathit{Ref}}
+\newcommand{\Stream}{\mathit{Stream}}
+\newcommand{\Mem}[1]{\mathit{Mem}(#1)}
+\newcommand{\Seq}{\mathit{Seq}}
+\newcommand{\Update}{\mathit{Update}}
+\newcommand{\StableRef}{\mathit{StableRefs}}
+\newcommand{\StableImp}{\mathit{StableImps}}
+
+\newcommand{\unittype}{\mathsf{unit}}
+\newcommand{\celltype}[1]{\mathsf{cell}\;{#1}}
+\newcommand{\opttype}[1]{\mathsf{option}\;{#1}}
+\newcommand{\reftype}[1]{\mathsf{ref}\;{#1}}
+\newcommand{\monad}[1]{\bigcirc{#1}}
+\newcommand{\clock}{\mathsf{clock}}
+\newcommand{\comp}[1]{\mathsf{code}\;{#1}}
+\newcommand{\thunk}[1]{\mathsf{thunk}\;{#1}}
+\newcommand{\streamtype}[1]{\mathsf{stream}\;{#1}}
+\newcommand{\contracttype}{\mathsf{bool}}
+\newcommand{\lolli}{\multimap}
+\newcommand{\lollishrink}{-\!\!\!\,\bullet}
+\newcommand{\valtype}[1]{\mathsf{value}\;{#1}}
+\newcommand{\None}{\mathsf{None}}
+\newcommand{\Some}[1]{\mathsf{Some}({#1})}
+\newcommand{\stateok}[2]{\mathsf{updateok}({#1}, {#2})}
+
+\newcommand{\counit}{\epsilon}
+\newcommand{\tails}{\delta}
+
+\newcommand{\cellminus}[2]{\mathsf{cell}^{-}({#1}, {#2})}
+\newcommand{\cellplus}[4]{\mathsf{cell}^{+}({#1}, {#2}, {#3}, {#4})}
+
+\newenvironment{proof}[1][(Sketch)]{\noindent \textsc{Proof {#1}} }{}
+
+\newcommand{\judge}[3][\Gamma]{{#1} \vdash {#2} : {#3}}
+\newcommand{\judgec}[4][\Gamma]{{#1};{#2} \vdash {#3} : {#4}}
+% Contractive commands
+\newcommand{\const}[1]{\left<{#1}\right>}
+\newcommand{\pair}[2]{({#1}, {#2})}
+\newcommand{\fst}[1]{\pi_1{#1}}
+\newcommand{\snd}[1]{\pi_2{#1}}
+\newcommand{\unit}{()}
+\newcommand{\letc}[3]{\mathsf{letc}\;{#1} = {#2}\;\mathsf{in}\;{#3}}
+\newcommand{\fun}[2]{\lambda {#1}.\;{#2}}
+\newcommand{\sfun}[2]{\hat{\lambda} {#1}.\;{#2}}
+
+\newcommand{\Delays}{\mathbb{D}}
+\newcommand{\U}{\mathsf{u}}
+\newcommand{\D}{\mathsf{d}}
+
+%
+\newcommand{\fixme}[1]{\texttt{FIXME: {#1}}}
+\newcommand{\head}[1]{\mathit{head}(#1)}
+\newcommand{\tail}[1]{\mathit{tail}(#1)}
+\newcommand{\ramify}[1]{\mathsf{U}(\mathtt{clock}, {#1})}
+
+\newcommand{\einvariant}[3]{{#2} \stackrel{#1}{=} {#3}}
+\newcommand{\satisfy}[2]{\mathrm{sat}({#1},{#2})}
+\newcommand{\satisfyext}[2]{\mathrm{extsat}({#1}, {#2})}
+\newcommand{\complete}[1]{\mathrm{complete}(#1)}
+
+
+\begin{document}
+
+\conferenceinfo{POPL '11}{date, City.} 
+\copyrightyear{2011} 
+\copyrightdata{[to be supplied]} 
+
+\titlebanner{banner above paper title}        % These are ignored unless
+\preprintfooter{short description of paper}   % 'preprint' option specified.
+
+\title{An Ultrametric Model of Reactive Programming}
+\subtitle{Subtitle Text, if any}
+
+\authorinfo{Neelakantan R. Krishnaswami}
+           {Microsoft Research}
+           {neelk@microsoft.com}
+\authorinfo{Nick Benton}
+           {Microsoft Research}
+           {nick@microsoft.com}
+
+\maketitle
+
+\begin{abstract}
+This is the text of the abstract.
+\end{abstract}
+
+\newtheorem{prop}{Proposition}
+\newtheorem{lemma}{Lemma}
+
+\category{CR-number}{subcategory}{third-level}
+
+\terms
+term1, term2
+
+\keywords
+keyword1, keyword2
+
+\section{Introduction}
+
+The contributions of this work are as follows:
+
+\begin{itemize}
+\item We give a new semantic model of functional reactive programming
+  based on ultrametric spaces, which builds upon prior work in two
+  ways. First, it generalizes existing models by supporting full
+  cartesian closed structure, rather than more restrictive structures
+  such as arrows, while still respecting important concepts such as
+  the causality of stream functions (and in fact extending them
+  naturally to higher-order). 
+
+  In particular, the use of metric spaces means that we can use
+  Banach's fixed point theorem to give semantics to feedback. This
+  means that unlike earlier semantics based on domain models of
+  streams, we can restrict our semantics to \emph{total, well-founded}
+  stream programs. Furthermore, by using an abstract notion of
+  contractiveness instead of an explicit notion of guardedness, our
+  semantics lifts easily to model higher-order streams and recursion
+  at higher type.
+
+\item Second, we give a reasonably efficient implementation of this
+  semantics in terms of an imperative dataflow graph, and prove the
+  correctness of our implementation with respect to the semantics.  
+
+  In doing so, we discover that our implementation strategy for
+  reactive programs actually lies in the co-Kleisli category of
+  streams over ultrametric spaces. This category is also Cartesian
+  closed, which means that there are in fact \emph{two} natural
+  notions of lambda calculus for reactive programs, which are related
+  to one another by an adjunction. This lets us adapt Benton and
+  Wadler's adjoint calculus~\cite{benton-wadler} for linear logic to
+  this setting to give a domain-specific language for reactive
+  programs.
+
+  Furthermore, we believe our correctness proof for our library is of
+  independent interest. It integrates techniques from verification ---
+  such as separation logic and rely-guarantee -- with techniques from
+  semantics, such as step-indexed models and logical relations. The
+  upshot is that clients of the library can reason as if it were
+  purely a mathematical object, even though it is implemented in terms
+  of complex imperative higher-order code. The full suite of equations
+  --- $\beta$, $\eta$ and fixed-point equations --- are all sound
+  reasoning principles.
+
+\item Third, GUI toolkits often expose an essentially imperative
+  interface to certain resources (such as the display). We address the
+  question of how to smoothly integrate these kinds of effectful
+  operations into our model. 
+\end{itemize}
+
+\section{Functional Reactive Programs, Stream Transformers and Causal Functions}
+
+
+\section{An Ultrametric Model of Reactive Programming}
+
+A complete 1-bounded \emph{ultrametric space} is a pair $(A, d_A)$,
+where $A$ is a set and $d_A \in A \times A \to \R$ is a distance
+function, satisfying the following four axioms:
+
+\begin{itemize}
+\item $d_A(x, y) = 0$ if and only if $x = y$
+\item $d_A(x, x') \in [0,1]$
+\item $d_A(x, x') = d_A(x', x)$
+\item $d_A(x, x') \leq \max(d_A(x, y), d_A(y, x'))$
+\end{itemize}
+
+Completeness means that the limit of every Cauchy sequence in $A$
+converges to a value in $A$. What distinguishes ultrametric spacesfrom
+ordinary metric spaces is that the triangle inequality is more
+stringent; instead of requiring the usual triangle inequality that
+$d(x,x')$ be less than or equal to $d_A(x, y) + d_A(y, x')$,
+ultrametrics require it to be less than or equal to $\max(d_A(x, y),
+d_A(y, x'))$.
+
+When there is no ambiguity, we will write $A$ for a metric space $(A, d_A)$. 
+
+A map $f : A \to B$ between ultrametric spaces is \emph{nonexpansive} when 
+it is non-distance-increasing:
+\begin{mathpar}
+  d_B(f\;x, f\;x') \leq d_A(x, x')
+\end{mathpar}
+
+A map $f : A \to B$ between ultrametric spaces is said to be
+\emph{strictly contractive} when it shrinks the distance between 
+any two points by a nonzero factor:
+\begin{mathpar}
+  \exists q \in [0,1).\; d_B(f\;x, f\;x') \leq q \cdot d_A(x, x')
+\end{mathpar}
+
+Complete 1-bounded ultrametric spaces and nonexpansive maps form a 
+Cartesian closed category. The product metric on spaces $A$ and $B$
+is given by the cartesian product of the underlying sets and the sup-metric
+on pairs:
+\begin{mathpar}
+  d_{A \times B}((a,b), (a',b')) = \max \setof{d_A(a,a'), d_B(b,b')}
+\end{mathpar}
+
+Similarly, the exponential metric is given by the sup-metric over all
+inputs:
+\begin{mathpar}
+  d_{A \to B}((a,b), (a',b')) = \sup \comprehend{d_B(f\;a,f\;a')}{a \in A}
+\end{mathpar}
+
+We can equip streams on $A^\omega$ (i.e, functions $\N \to A$) with an
+ultrametric $d$ as follows: 
+\begin{mathpar}
+  d_{A^\omega}(\stream{a}, \stream{a}') = \sup \comprehend{2^{-n}\cdot d_A(\stream{a}_n, \stream{a}'_n)}{n \in \N}
+
+% 2^{-\min\comprehend{n \in \N}{d(\stream{a}_n, \stream{a}'_n) > 0}}
+\end{mathpar}
+
+As a notational convenience, here we take $0$ as the formal
+maximum of the empty set.
+
+The interpretation of the stream metric is easiest to understand in
+the case of streams of discrete elements. In this case, the metric
+says that two streams are closer, the later the time at which they
+first disagree. So two streams which have differing values at time $0$
+are at a distance of $1$, whereas two streams which never disagree
+will have a distance of $0$ (and hence will be equal streams).
+
+\begin{prop}{(Banach's Fixed Point Theorem)}
+For any complete metric space $A$ and strictly contractive endofunction
+$f : A \to A$, there exists a unique fixed point of $f$. 
+\end{prop}
+
+\section{CoKleisli Category of Streams}
+
+Now, the stream functor $S$ over the category of ultrametric spaces is
+a \emph{Cartesian comonadic} functor. The co-Kleisli category of
+streams over ultrametric spaces is Cartesian closed (though
+exponentials in ultrametric spaces are not necessarily sent to
+exponentials in the co-Kleisli category by $S$).
+
+\begin{mathpar}
+  \begin{array}{lcl}
+    \mathsf{id}   & = & \counit \\
+    \mathsf{f;g}  & = & \tails; S(f); g \\[1em]
+
+    \mathsf{fst} & = & \mathsf{unzip}; \fst{}; \counit \\
+    \mathsf{snd} & = & \mathsf{unzip}; \snd{}; \counit \\
+    \mathsf{pair}(f,g) & = & (f,g) \\[1em]
+
+    \mathsf{curry}(f) & = & \lambda(\mathsf{zip}; f) \\
+    \mathsf{eval}     & = & \mathsf{unzip}; (\counit \times \mathit{id}); \mathit{eval} \\
+ \end{array}
+\end{mathpar}
+
+The temporal intuition behind working with the co-Kleisli category is that this 
+
+\section{DSL}
+
+\fixme{This needs to be reworked in light of the new adjoint logic presentation}
+
+\begin{mathpar}
+\inferrule*[right=CConst]
+          {\judge{e}{A}}
+          {\judgec{\Delta}{\const{e}}{A}}
+\and
+\inferrule*[right=CApp]
+          {\judgec{\Delta}{c}{A \shrink B} \\
+           \judge[\Gamma, \Delta]{e}{A}}
+          {\judgec{\Delta}{c\;e}{B}}
+\and
+\inferrule*[right=CPair]
+          {\judgec{\Delta}{c}{A} \\ 
+           \judgec{\Delta}{c'}{B}}
+          {\judgec{\Delta}{\pair{c}{c'}}{A \times B}}
+\and
+\inferrule*[right=CFst]
+          {\judgec{\Delta}{c}{A \times B}}
+          {\judgec{\Delta}{\fst{c}}{A}}
+\and
+\inferrule*[right=CSnd]
+          {\judgec{\Delta}{c}{A \times B}}
+          {\judgec{\Delta}{\snd{c}}{A}}
+\and
+\inferrule*[right=CUnit]
+          { }
+          {\judgec{\Delta}{\unit}{1}}
+\and
+\inferrule*[right=CLet]
+          {\judgec{\Delta}{c}{A} \\ 
+           \judgec[\Gamma, x:A]{\Delta}{c'}{B}}
+          {\judgec{\Delta}{\letc{x}{c}{c'}}{B}}
+\and
+\inferrule*[right=CLam]
+          {\judgec[\Gamma, x:A]{\Delta}{c}{b}}
+          {\judgec{\Delta}{\fun{x:A}{c}}{A \To B}}
+\and
+\inferrule*[right=CSLam]
+          {\judgec{\Delta, x:A}{c}{B}}
+          {\judgec{\Delta}{\sfun{x:A}{c}}{A \shrink B}}
+\end{mathpar}
+
+\section{The Programming Language and Library}
+
+\section{The Implementation}
+
+We have two cartesian closed categories in play, which are
+represented a bit differently. 
+
+\begin{mathpar}
+  \begin{array}{lcl}
+    \interpu{1}           & = & \unittype \\
+    \interpu{X \times Y}  & = & \interpu{X} \star \interpu{Y} \\
+    \interpu{X \to Y}     & = & \interpu{X} \to \interpu{Y} \\
+    \interpu{X \shrink Y} & = & \interpu{X} \to \interpu{Y} \\
+    \interpu{A^\omega}     & = & \comp{\streamtype{\interps{A}}}
+    \\[1em]
+    \interps{I}           & = & \unittype \\
+    \interps{A \otimes B} & = & \interps{A} \star \interps{B} \\
+    \interps{A \lolli B}  & = & \streamtype{\interps{A}} \to \comp{\streamtype{\interps{B}}} \\
+    \interps{A \lollishrink\, B}  & = & \streamtype{\interps{A}} \to \comp{\streamtype{\interps{B}}} \\
+    \interps{S(A)}        & = & \streamtype{\interps{A}}  \\
+    \interps{\valtype{X}} & = & \interpu{X} 
+    \\[1em]
+    \streamtype{\tau}     & = & \celltype{\opttype{\tau}} \\
+  \end{array}
+\end{mathpar}
+
+Most of the types of ultrametric world can be represented using ML
+types. One interesting fact is that we have a type of strictly
+contractive functions $A \shrink B$. This is represented in exactly
+the same way as the ordinary ML function space, but must be kept
+isolated in order to support the extra operation of fixed points.
+
+The interesting case is the $A^\omega$ case which represents the type
+of streams of values of type $A$, which are drawn from the objects of
+the co-Kleisli category of streams over ultrametric spaces.  This
+clause is interpreted as $\comp{\interps{A}}$, which can be understood
+as follows. In the category of ultrametric spaces, we want to
+\emph{understand} streams as having no temporal status at all -- they
+are pure values. However, we want to \emph{represent} streams by
+imperative data structures which change over time. This conflict is
+resolved by representing an infinite stream as a computation which
+constructs and initalizes a stream data structure. So each time we
+evaluate a value of type $A^\omega$, we construct a fresh stream,
+ready to begin counting regardless of when it was created.
+
+In contrast, the interpretation of the co-Kleisli category is one in
+which time plays a very significant part. The intuition is that a
+dataflow graph realizes a collections of streams in the following way
+--- the state of the dataflow graph is the seed of an unfold.  So time
+is essentially a hidden argument to everything.
+
+The argument to a function $A \lolli B$ comes as a stream, and the
+return value is term of type $\comp{\streamtype{B}}$. The code
+constructor permits the implementation to read and extend the dataflow
+graph, doing some initialization to return a stream cell. Surpisingly,
+this result is a stream, and not a point value, the way that the
+intepretation of morphisms in the co-Kleisli category might initially
+suggest. The corresponding clause of our logical relation in fact
+takes the coextension of the function argument, and requires that the
+result $d$-approximate the result of applying a stream to the lifting. 
+
+\section{The Invariant}
+
+Q: What is the underlying intuition?
+
+\noindent A: A stream is a node in a dataflow graph, which represents a stream value. 
+
+The values are coinductively generated, and the \emph{state} of the
+dataflow graph gives the \emph{seed} of the unfold operation which
+generates the stream. That is, we want a recursive specification 
+which looks something like this: 
+
+\begin{tabbing}
+$\mathit{Stream}(xs, \term{x}, \theta) \triangleq$  \\
+\;\;\=$\setof{H(\theta)}$  \\
+    \>\term{read(x)} \\
+    \>$\setof{\term{a}.\;\exists \theta'. H(\theta') \land a = \head{xs} \land 
+                           \mathit{Stream}(\tail{xs},\term{x}, \theta')}$ \\
+\end{tabbing}
+
+When we try to put this into practice, several complications to this
+simple picture arise.
+
+\begin{enumerate}
+
+\item First, we have values other than streams -- we need to support
+  units, tuples, streams, and most significantly \emph{functions}.
+  To handle the wide variety of types of object we can construct, we
+  will need to use a logical relation which relates a mathematical
+  value to a program value \emph{plus} the state of the dataflow 
+  graph. 
+
+  In fact, since we have two categories of expressions, we will need
+  two mutually-recursive logical relations, one for values which
+  belong to the category of ultrametrics, and the other for values
+  which belong to the co-Kleisli category of streams.
+
+\item Next, multiple streams may share the dataflow graph.
+
+  If we have two cells $a$ and $b$, both of whose code reads a cell
+  $c$, then on a timestep in which we read both $a$ and $b$, one of
+  them will $c$ in a state when it has already been updated by the
+  other one. Therefore we need to specify what makes this interference
+  safe --- we need to say what it means for a subgraph to ``already
+  have been updated''. To do this, we must specify the values a term's
+  dependencies will take on as they are evaluated, so that our
+  specification can say that we are happy with a dataflow cell as long
+  as it produces the appropriate value. We call this the \emph{rely},
+  in analogy to rely-guarantee. Then, we can say that a state is
+  ``more defined'' than another one when more of its cells are ready,
+  and give a Kripke semantics which asserts that an expression good in
+  one state is also good in all ``more defined'' states.
+
+  Since we relate mathematical values to program values, and this
+  relation includes the memory, we are lead to the further
+  complication that stream cells in the dataflow graph may have types
+  which are larger than the type of the current clause of the logical
+  relation. Therefore, we cannot define our logical relation by
+  induction on the type structure --- we need to borrow some ideas
+  from step-indexed models, and define the rely mutually-recursively
+  with the logical relation.
+
+\item Next, we need to make our Kripke relation on states bigger than
+  merely increasing as cells get evaluated. We build our dataflow
+  graph incrementally and dynamically, and so we need to know that
+  operations which add cells to the graph will not break existing
+  code. So the Kripke relation on memories also needs to support a
+  notion of the dataflow graph getting bigger, in addition to 
+  getting more defined. 
+
+\item Since we are implementing streams with stateful dataflow 
+  cells, we need to ensure that there are no cyclic dependencies 
+  in the flow graph. Therefore we need to ensure that a cell will
+  not write to anything which depends upon it, to avoid event storms. 
+
+\item Our dataflow graph is not pure; operations like accumulators and
+  fixed points are implemented with imperative reference cells.  Each
+  reference is owned by a dataflow cell, but ownership does not imply
+  strict separation -- other dataflow cells may read owned state (and
+  in general, they must do this in order to communicate information
+  without creating a dependency cycles).
+
+  Furthermore, cells may depend upon reference cells owned by cells
+  which don't exist yet! For example, in the code for \term{fix}, the
+  input uses a reference cell owned by the output, which will write
+  its values into this cell for the input to feed back in. But at the
+  time of creation of the input cell, the output has yet to be
+  created.
+
+\item The next problem connected with state in the dataflow graphs is
+  that in order to correctly realize a stream, a cell with auxilliary
+  state must have been evaluated on every tick. For example, consider
+  a cell $c$ which realizes the stream 1, 2, 3, \ldots by maintaining
+  a counter which it updates. If the cell is not evaluated at a
+  particular time step, then the values it produces will fall behind
+  the global clock.
+
+  However, not all cells need to be evaluated every time step. For
+  example, suppose we have a cell $c'$ which produces $2, 4, 6,
+  \ldots$ by reading $c$ and returning twice its value. In this case,
+  the computation at $c'$ is stateless, and so it does not need to be
+  evaluated except on the ticks when its value is actually needed.
+
+  So our program must maintain a list of the state-modifying cells in
+  the dataflow graph, so that the event loop can evaluate the ones
+  that have yet to be read before it advances time by a step.
+
+\item Finally, when computing the fixed point of a stream function
+  $f$, we proceed by giving $f$ a dummy input on the first time step,
+  and giving the output at time $n$ as the input at time $n+1$. This
+  means that each stream object in our rely may also contain a delay
+  -- that is, it may lack a value (ie, be $\None$) at this time step,
+  and only contain values beginning at the next time step.
+
+  Here, the relational case for functions must also be adjusted, to 
+  ensure that 
+\end{enumerate}
+Consequently, we specify a rely $R$ as:
+\begin{enumerate}
+\item A finite set of stream cells and metric types $C$. 
+\item An assignment of streams values $V_S : C \to \mathit{Value}^\omega$ 
+  of the appropriate type to each cell.\footnote{We should write this 
+  as a dependent product, with a stream cell being an element of type 
+  $\Sigma A:\mathrm{type}.\;\celltype{\opttype{\interps{A}}}$, and $V_S$ having
+  the type $V_S : \Pi (A, \_) \in C.\; A^\omega$. However, we will suppress these 
+  dependencies to reduce notational clutter.}
+\item A ``delay flag'' $D : C \to \Delays$ which says for each cell whether 
+  its output is delayed $\D$ or whether it is undelayed $\U$. 
+\item A set of reference cells $L$. 
+\item An assignment of a stream of values $V^L : L \to \mathit{(1 +
+  \mathit{Value})^\omega}$ for each local reference. Note in
+  particular that our local state is given as a stream of
+  \emph{options}: this is because we might want to use some state for
+  ``only a little while''. (This can arise with the \term{cons}
+  function.)
+\item A ``getter'' for each reference cell $G : L \rightharpoonup
+  C$. This is the cell which will read that reference cell. Note that
+  this is a \emph{partial} function, which means that there can be
+  reference cells which are not yet going to be read by anyone. This
+  will let us build up the dataflow graph incrementally, while still
+  remaining within the rely. 
+\item A ``setter'' for each reference cell $S : L \rightharpoonup
+  C$. This is the cell which has responsibility for writing the next
+  value of the reference cell. Like the getter $G$, the getter $S$ is
+  also partial. However, we require that its domain be a superset of $G$'s ---
+  that is, we will always define getters before setters. 
+\item A partial order $\Delta \subseteq C \times C$ on the stream
+  cells. The idea is that $\term{\Delta(c',c)}$ means that the
+  evaluation of \term{c} may depend upon \term{c'}. As a notational
+  convenience, we will write $\Delta(\term{c})$ to refer to the set 
+  of cells less than or equal to $\term{c}$ in this partial order. 
+\end{enumerate}
+
+Often, we will be dealing with multiple relies, and as a matter of
+notation we will name the appropriate component using the name
+superscripted with the rely. So if $R$ is a rely, then we will write
+$C_R$ for its cells, $V_R$ for the values of the cells, and so on.
+
+We equip relies with a partial order as follows. We say that $R
+\sqsubseteq R'$, when $C_R \subseteq C_{R'}$ and $E_R = E_{R'}$, and
+furthermore each function is extended pointwise. That is, if $c \in
+\dom{R}$, then $V_{R'}(c) = V_{R}(c)$, and similarly for $D_S$, $L$,
+$V_L$, $G$,and $S$. The dependency relation $\Delta_{R'}$ must be a
+superset of $\Delta_R$, and also have the property that $\Delta_{R'}
+\cap (C_R \times C_R) = \Delta_R$. (This means that as the heap grows
+over time, cells can come to depend on new cells, but we won't create
+dependencies between pre-existing cells.)
+
+Given this, we can now say when a graph $\phi$ \emph{satisfies} a rely $R$ to
+distance $d$, (written ``$\satisfy{(\phi, R)}{d}$'') when:
+\begin{itemize}
+  \item Every cell in the graph is derivably either ready or unready. 
+  \item The cells of the graph are the domain of the rely. If a cell
+    is ready, then its contents realize (to distance $d$) the head of
+    the corresponding value given by the rely if it is undelayed, and
+    $\None$ if it is delayed.
+  \item The reference cells in the graph are exactly the references
+    of all the cells in the rely.
+  \item Every local reference has contents realizing the head of its
+    stream if its setter is unready, and the head of the tail of its
+    stream if its setter is ready. 
+  \item It is never the case that a setter is ready while the
+    corresponding getter is unready. (This is to prevent a setter
+    from updating a reference before the getter sees it.)
+  \item The imperative update list \term{i} contains a subset of 
+    the getters and setters. 
+\end{itemize}
+
+These conditions are formalized in Figure~\ref{satisfaction-relation}. 
+
+Notice that this satisfaction relation does not say what the values of
+references without setters are. Likewise, the imperative update list
+\term{i} is less precise that the event loop will eventually want.
+
+This is a deliberate design decision: the reason we make this choice
+is to let us say what our programs will do given incompletely
+constructed networks -- and we will set up our logical relation to
+guarantee they will only ever make things better. This way, we can
+start off with a trivially complete input, and know that we will
+construct a complete output, even though in the middle of evaluation
+the dataflow graph may go through many stages of temporary
+incompleteness.
+
+
+\subsection{Theorems}
+
+\begin{prop}{(Kripke Monotonicity)}
+We have that for all $d' \geq d$
+\begin{enumerate}
+\item If $U^d_X(v, \term{v})$ then $U^{d'}_X(v, \term{v})$. 
+\item If $V^d_A(v, \term{v}, \mu)$ then $V^{d'}_A(v, \term{v}, \mu)$. 
+\item If $\satisfy{\mu}{d}$ then $\satisfy{\mu}{d'}$. 
+\item If $V^d_A(v, \term{v}, \mu)$ and $\betterstate{d}{\mu'}{\mu}$, then $V^d_A(v, \term{v}, \mu')$.
+\end{enumerate}
+\end{prop}
+
+\begin{lemma}{(Approximation Lemma)}
+\begin{enumerate}
+  \item If $\forall d' > d.\; U^{d'}_A(v, \term{v})$ then $U^d_A(v, \term{v})$. 
+  \item If $\forall d' > d.\; V^{d'}_A(v, \term{v}, \mu)$ then $V^d_A(v, \term{v}, \mu)$. 
+  \item If $\forall d' > d.\; \satisfy{\mu}{d'}$ then $\satisfy{\mu}{d}$. 
+\end{enumerate}
+\end{lemma}
+
+\begin{lemma}{(Induction Lemma)}
+\begin{enumerate}
+  \item If $\forall d' > 2\cdot d.\; U^{d'}_A(v, \term{v}) \implies U^{d'/2}_A(v, \term{v})$ then $U^d_A(v, \term{v})$. 
+  \item If $\forall d' > 2\cdot d.\; V^{d'}_A(v, \term{v}, \mu) \implies V^{d'}_A(v, \term{v}, \mu)$ then $V^d_A(v, \term{v}, \mu)$. 
+  \item If $\forall d' > 2\cdot d.\; \satisfy{\mu}{d'} \implies \satisfy{\mu}{d'/2}$ then $\satisfy{\mu}{d}$. 
+\end{enumerate}
+\end{lemma}
+
+\begin{lemma}{(State Decomposition)}
+Suppose we have $\satisfy{(\theta_0, R_0)}{d}$ 
+  
+\end{lemma}
+
+
+\begin{lemma}{(Allocation Lemma)}\\
+Define a predicate $\Seq^d(\term{code}, v, (\term{r_i}, v_i, A_i)_{i \in I}, \mu \in \Mem{d}, \delta, L)$ as follows: 
+\begin{tabbing}
+$\Seq^d(\term{code}, v, \{(\term{r_i}, v_i, A_i)\}_{i \in I}, \mu \in \Mem{d}) = $ \\
+\;\; $\forall d' > 2\cdot d, \betterstate{d'}{\mu'}{\mu}, (\term{v_i})_{i \in I}.\;$ \\
+\qquad\= $\{H(\phi(\mu) \otimes (\mathsf{ref}(\term{r_i, v_i}))) \;\land (\Re^{d'}_{A_i}(\head{v_i}, \term{v_i}, \mu')_{i \in I}$ \\
+      \> \;\;$\land\;\satisfyext{\mu'}{d'}\}$ \\
+\> \term{code} \\
+\> $\{(\term{a}, \_).\;\exists$\=$\betterstate{d'}{\mu''}{\mu}, (\term{v'_i})_{i \in I}, u.\; u \subseteq C_{R''} \land u \cap C_{R'} \subseteq \delta \;\land$\\
+\> \> $H(\phi(\mu'') \otimes (\mathsf{ref}\term{(r_i, v'_i}))_{i \in I}) \;\land$ \\
+\> \> $(\Re^{d'}_{A_i}(\head{\tail{v_i}}, \term{v'_i}, \mu''))_{i \in I} \;\land$ \\
+\> \> $\Upsilon^{d'}_A(v, \term{a}, \mu'', L) \;\land$ \\
+\> \> $\forall \term{v'} \not\in \delta.\;\unready{\phi(\mu')}{\term{v'}} \implies \unready{\phi(\mu'')}{\term{v'}}\}$\\
+\> and \\
+\> $\complete{\mu'} \implies$ \\
+\> \;\;\= $(L = \D \implies \Seq^{d'}(\term{code}, v, (\term{r_i}, \tail{v_i}, A_i)_{i \in I}, \tail{\mu'}, \delta, \U)) \;\land$ \\
+\> \> $(L = \U \implies \Seq^{d'}(\term{code}, \tail{v}, (\term{r_i}, \tail{v_i}, A_i)_{i \in I}, \tail{\mu'}, \delta, \U)$ \\
+\end{tabbing}
+
+\noindent Now, suppose we have $\mu = (\theta, R)$ such that $\satisfy{\mu}{d}$, and also that 
+$\Seq^d(\term{code}, v, (\term{r_i}, v_i, A_i)_{i \in I}, \mu \in \Mem{d}, \delta, L)$. Then
+for 
+\begin{itemize}
+\item $(\Re^{2\cdot d}_{A_i}(\head{v_i}, \term{v_i}, \mu))_{i \in I}$
+\item $\theta' = \theta \otimes \cellminus{\term{v}}{\term{code}} \otimes (\mathsf(\term{r_i}, \term{v'_i}))_{i \in I}$
+\item $R'$ such that
+  \begin{itemize}
+    \item $C_{R'} = C_R \cup \setof{\term{v}}$
+    \item $V_{R'} = [V_R|\term{v}:v]$
+    \item $D_{R'} = L$
+    \item $L_{R'} = [L_R|\term{v}:(\term{r_i})_{i \in I}]$
+    \item $V^L_{R'} = [V_R_L|\term{v} : (\term{r_i} \mapsto v_i)_{i \in I}]$
+    \item $\Delta_{R'} = [\Delta_R|\term{v} : \delta]$
+    \item $E_{R'} = E_R$
+    \item $V_{R'}_E = V_R_E$ 
+  \end{itemize}
+\end{itemize}
+\noindent we have that $\satisfy{(\theta', R')}{d}$. 
+\end{lemma}
+
+\begin{figure}
+\label{logical-relation}  
+\begin{tabbing}
+$U^d_1(\unitval, \unitval) = $ true 
+\\[1em]
+
+$U^d_{X \times Y}((x,y), (\term{x}, \term{y})) = U^d_X(x, \term{x}) \land U^d_Y(y, \term{y})$ 
+\\[1em]
+
+$U^d_{X \To Y}(f, \term{f}) = \forall d' > 2\cdot d, v, \term{v}.\; 
+    U^{d'}_X(v, \term{v}) \implies U^{d'}_Y(f\;v, \term{f\;v})$ 
+\\[1em]
+
+$U^d_{X \shrink Y}(f, \term{f}) = \forall d' > 4\cdot d, v, \term{v}.\; 
+    U^{d'}_X(v, \term{v}) \implies U^{d'/2}_Y(f\;v, \term{f\;v})$ 
+\\[1em]
+
+$U^d_{A^\omega}(vs, \term{code}) = $ \\
+\;\;\= $\forall d' > 2\cdot d, \mu \in \Mem{d'}.\;\Build^{d'}_A(vs, \term{code}, \mu, \U, \emptyset)$ \\
+\\[1em]
+
+$V^d_I(\unitval, \unitval, \mu) = $ true
+\\[1em]
+
+$V^d_{A \otimes B}((a,b), \term{(a,b)}, \mu) = V^d_A(a, \term{a}, \mu) \land V^d_B(b, \term{b}, \mu)$
+\\[1em]
+
+$V^d_{A \lolli B}(f, \term{f}, \mu) = $ \\
+\> $\forall d' > 2\cdot d, \betterstate{d'}{\mu'}{\mu}, v, \term{v}$ \\
+\> \;\;\=$V^{d'}_{S(A)}(vs, \term{v}, \mu') \implies 
+          \exists L \sqsupseteq D_R(\term{v}).\; \Build^{d'}_{B}(f\;vs, \term{f\;v}, \theta', L, \Delta'(\term{v}))$
+\\[1em]
+
+$V^d_{A \lollishrink B}(f, \term{f}, \mu) = $ \\
+\> $\forall d' > 2\cdot d, \betterstate{d'}{\mu'}{\mu}, v, \term{v}.$ \\
+\> \> $V^{d'}_{S(A)}(vs, \term{v}, \mu') \implies 
+      \Build^{d'}_{B}(f\;vs, \term{f\;v}, \mu', \U, \Delta'(\term{v}))$
+\\[1em]
+
+$V^d_{\valtype{X}}(v, \term{v}, \mu) = U^d_{X}(v, \term{v})$ 
+\\[1em]
+
+$V^d_{S(A)}(vs, \term{v}, \mu) = V_R(\term{v}) = vs$ 
+\\[1em]
+
+$\Build^d_A(vs, \term{code}, (\theta,R) \;\mathrm{as}\;\mu, L, I) = $ \\
+\> $\{H(\theta) \land \satisfyext{(\theta,R)}{d} \}$ \\
+\> $\term{code}$ \\
+\> $\{(\term{a},\_).\;\exists$\=$\betterstate{d}{(\theta,R')}{(\theta,R)}.\; \term{a} \in C_{R'} \land \exists u \subseteq\Delta_{R'}(\term{a}).$ \\
+\> \> $(\Delta_{R'}(\term{a}) \cap C_R \subseteq I) \;\land$ \\
+\> \> $H(\theta') \;\land$ \\
+\> \> $V^d_{S(A)}(vs, \term{a}, (\theta',R')) \land D_{R'}(\term{a}) = L \;\land$\\
+\> \> $\Update(u, \theta, \theta') \;\land$ \\
+\> \> $\StableRef(R, R') \;\land$ \\
+\> \> $\StableImp((\theta, R), (\theta',R'))\}$ 
+\\[1em]
+
+$\Update(u, \theta, \theta') = $ \\
+\> $\forall \term{c}.\;\ready{\theta'}{c}{-} \land \unready{\theta}{c} \iff c \in u$ 
+\\[1em]
+
+$\StableRef(R, R') = $ \\
+\> $\forall \term{r} \in L_{R'}.\; S_{R'}(\term{r}) \mbox{ undef} \iff \term{r} \in L_R \land  S_{R}(\term{r}) \mbox{ undef}$ and \\
+\> $\forall \term{r} \in L_{R'}.\; G_{R'}(\term{r}) \mbox{ undef} \iff \term{r} \in L_R \land  G_{R}(\term{r}) \mbox{ undef}$ 
+\\[1em]
+
+$\StableImp((\theta, R), (\theta',R'))\} = $ \\
+\> $\forall I,I'.\;\hasref{\theta}{\term{i}}{I} \land \hasref{\theta}{\term{i}}{I'} \implies $ \\
+\>\;\; $[I' - S^{-1}_{R'}(L_{R'}) - G^{-1}_{R}(L_{R})] = [I - S^{-1}_{R}(L_{R}) - G^{-1}_{R}(L_{R})]$ \\
+
+\end{tabbing}
+\caption{The Logical Relation}
+\end{figure}
+
+\begin{figure}
+\begin{tabbing}
+$\satisfy{(\theta,R)}{d} \triangleq$ \\
+\;\;\=$\forall d' > 2 \cdot d.\; \satisfy{(\theta,R)}{d'}$ and \\
+    \>$\cells{\theta} = C_R$ and \\
+    \>$\refs{\theta} = L_R$ and \\
+    \>$\forall \term{c}:A \in C_R.\;$\=$\unready{\theta}{\term{c}} \;\vee$ \\
+    \>                               \>$\exists \term{v}.\; $\=$\ready{\theta}{\term{c}}{\term{v}} \;\land$ \\
+    \>                               \>                     \>$\forall d' > 2\cdot d.\;\Upsilon^{d'}_A(V_R(\term{c}),\term{v}, (\theta,R), D_R(\term{v})))$\\
+    \>$\exists I.\;\hasref{\theta}{\term{i}}{I} \land I \subseteq (G_R(L_R) \cup S_R(L_R))$ and \\
+    \>$\forall \term{c}:A \in \cells{\theta}.\;\Head^d_A(\term{c}, (\theta, R))$ and \\
+    \>$\forall \term{r}:A \in L_R.\; \Local^d_A(\term{r}, (\theta, R))$ and \\
+    \>$\Tail(\theta, R, d)$
+\\[1em]
+
+$\Mem{d} = \comprehend{(\theta,R)}{\satisfy{(\theta,R)}{d}}$ 
+\\[1em]
+
+$(\sqsupseteq^d) \subseteq \Mem{d} \times \Mem{d}$ \\[0.2em]
+
+$\betterstate{d}{(\theta',R')}{(\theta,R)}$ iff \\
+\> $R' \sqsupseteq R$ and \\
+\> $\forall \term{c}:A \in C_R, \term{v}.\; \ready{\theta}{\term{c}}{\term{v}} \implies \ready{\theta'}{\term{c}}{\term{v}}$ and \\
+\> $\forall \term{c}:A \in C_R, \term{code}.\; \mathsf{code}(\theta, \term{c}, \term{code}) \implies \mathsf{code}(\theta', \term{c}, \term{code})$ and \\
+\> $\forall \term{r}\in E_R, \term{v}.\; \mathsf{ref}(\theta, \term{r}, \term{v}) \iff 
+                                         \mathsf{ref}(\theta', \term{r}, \term{v}) $
+
+\\[1em]
+
+$\Head^d_A(\term{v}, (\theta,R)) = $\\
+\> $\forall d' > 2\cdot d, \betterstate{d'}{(\theta',R')}{(\theta,R)}.\;$ \\
+\> \;\;\= $\{H(\theta') \land \satisfyext{(\theta',R')}{d'}\} $\\
+\> \> \term{read\;v} \\
+\> \> $\{(\term{a},\_).\;$\\ 
+\> \> $\;\;\;\exists$ \=$\betterstate{d'}{(\theta'', R'')}{(\theta',R')}, u \subseteq \Delta_{R''}(\term{v}).$\\
+\> \> \> $H(\phi(\mu'')) \land$ \\
+\> \> \> $\Upsilon^{d'}_A(V_R(\term{v}), \term{a}, \mu'', D_{R}(\term{v})) \;\land$ \\
+\> \> \> $\Update(u, \theta', \theta'') \;\land$ \\ 
+\> \> \> $\StableRef(R', R'') \;\land$ \\
+\> \> \> $\StableImp((\theta'',R''), (\theta',R'))\} $
+\\[1em]
+
+$\Local^d_A(\term{r}, (\theta, R)) = $ \\
+\> $S_R(\term{r})$ defined $\implies$ \\
+\> \> $\unready{\theta}{S_R(\term{r})} \implies \Ref^d_A(\head{V_R_L(r)}, \term{r}, \mu)$ and \\
+\> \> $\ready{\theta}{S_R(\term{r})}{-} \implies \Ref^d_A(\head{\tail{V_R_L(r)}}, \term{r}, \mu)$ \\[1em]
+
+$\Ref^d_A(v, \term{r}, (\theta,R)) = $ \\
+\> $\forall d' > 2\cdot d. \exists \term{v}.\;\hasref{\theta}{r}{\term{v}} \land \Re^{d'}_A(v, \term{v}, (\theta,R))$ 
+\\[1em]
+
+$\Re^d_A(v, \term{v}, \mu) = $ \\
+\> \> $v = \None \implies \term{v} = \None$ and \\
+\> \> $\forall v'.\; v = \Some{v'} \implies \exists \term{v'}.\; \term{v} = \Some{\term{v'}} \land
+       V^{d'}_A(v', \term{v'}, \mu)$  \\[1em]
+
+$\Upsilon^d_A(vs, \term{v}, \mu, L) = $ \\
+\> $(L = \D \implies \term{v = \None}) \;\land$ \\
+\> $(L = \U \implies \term{v}=\Some{\term{v'}} \land \exists \term{v'}.\;V^{d}_A(\head{vs}, \term{v'}, \mu))$
+\\[1em]
+
+$\complete{\theta,R} = \forall c \in \cells{\theta}.\; L_R(c) \not= \emptyset \implies \exists \term{v}.\;\ready{\theta}{c}{\term{v}}$
+\\[1em]
+
+$\Tail(\theta, R, d) = $ \\
+\>$\forall d' > 2\cdot d.\; \complete{\theta, R} \implies \satisfy{(\ramify{\theta}, \tail{R})}{d'}$  
+\\[1em]
+
+$\satisfyext{(\theta,R)}{d} = $ \\
+\> $\forall \term{r}:A \in L_R.\; S_R(\term{r}) \mbox{ undef} \implies \Ref^d_A(V^L_R(\term{r}), \term{r}, (\theta,R))$ \\[1em]
+
+$\einvariant{E_R}{\theta}{\theta'} = \forall \term{r} \in E_R, \term{v}.\; \hasref{\theta}{\term{r}}{\term{v}} \iff \hasref{\theta'}{\term{r}}{\term{v}}$
+\end{tabbing}
+\caption{The Satisfaction Relation}
+\label{satisfaction-relation}
+\end{figure}
+
+
+
+
+
+\section{Related Work}
+
+In our work, we use ultrametric spaces to give semantics to streamt
+ransformers. In the special case of functions from streams to
+streams, causality and nonexpansiveness precisely coincide, but due to
+cartesian closure function types at all orders are well-defined.
+Furthermore, to support efficient implementation, we also need to make
+use of the co-Kleisli category over the stream comonad, which we 
+connect to the base category via an adjunction. 
+
+There are four main strands of related work: synchronous dataflow
+languages, purely functional reactive programming systems, imperative
+FRP systems, and metric methods in denotational semantics.
+
+The family of synchronous dataflow languages (such as Esterel, Lustre,
+and Lucid Synchrone) are languages based on a model of synchronous
+time. The discrete ultrametric semantics we use is related to these
+systems, most especially to Lucid Synchrone (which supports
+higher-order functions).
+
+Pouzet and Caspi extended synchronous dataflow programming to higher
+order with their co-iterative semantics. They illustrated how that
+this generated a Cartesian closed category (of size-preserving
+functions), which they used to interpret functions. Uustalu and Vene
+subsequently observed that size-preserving functions could be
+understood more abstractly as the co-Kleisli category of
+streams. However, in both of these works, feedback was handled in a
+somewhat \emph{ad hoc} fashion.
+
+The proper treatment of this issue is delicate, and disentangling the
+two main pieces of it kept us busy for a long time. First, we use
+ultrametrics to give a semantic criterion for causality, which permits
+us to avoid explicitly looking at the syntax of a program to identify
+dependencies. This is essential for the smooth treatment of
+higher-order functions, since the dependencies may not be statically
+apparent in this case.
+
+Sceond, we needed to make explicit use of the adjunction between the
+base category of ultrametric spaces and the co-Kleisli category of
+streams. The reason is that taking the fixed point of (the coextension
+of) a contractive function $A \lollishrink A$ in the co-Kleisli
+category yields a \emph{stream} of values. Essentially, feedback lets
+us take a function and turn it into a stream, but since we are
+receiving a stream of functions as an input, the natural fixed point
+operator will yield a new stream at each timestep.  However, there are
+no maps in the co-Kleisli category which take a stream of streams and
+fix the outputs as the successive elements of the stream at a
+particular time --- and this is precisely what we need to do enumerate
+the elements of a fixed point over time.
+
+This is why we have two categories -- the operations we need for
+reative programming live naturally in both. This permits us to
+preserve the equational theory of the programming language:
+programmers can reasoning using full rules for $\beta\eta$-equality,
+as well as the equations for fixed points. We do not need to
+compromise on our reasoning principles in any way, which is quite
+remarkable given the low-level, imperative nature of our
+implementation.
+
+Functional reactive programming was introduced by Eliot and Hudak, and
+was given a semantics in terms of event streams and unrestricted
+functions over them. In subsequent work (Courtney's thesis and the
+2000 PLDI paper), and semantics of fixed points were given
+denotationally. This gives semantics to all FRP expressions, including
+non-well-founded programs (which will go into infinite loops).
+
+Due to the problem of space leaks, arrowized FRP was introduced in
+order to restrict the set of definable stream transformers to the the
+causal ones. This restriction is roughly equivalent to first-order
+functional programming, though \emph{ad-hoc} combinators were
+introduced to describe dynamic behavior. Our semantics can be seen as
+a way of eliminating these restrictions, and admitting higher-order
+and dynamic behavior in a very uniform way.
+
+Metric methods were introduced into semantics in the early 1980s, in
+order to simplify the denotational semantics of concurrency. The
+applications to stream programming were recognized early, but not
+followed up on: in a little-cited 1985 paper, de Bakker and Kok
+proposed an ultrametric semantics for a language of first-order stream
+programs over integers. In their paper, they wrote ``We think there
+are no problems when we allow functions of higher order[\ldots]''.
+This is a conjecture which we have attended to, a full quarter-century
+later: we can confirm that it turns out to be true, but only if we
+make it true twice over!
+
+More recently, Birkedal and his coworkers have used ultrametric models
+to give semantics to sequential programs involving advanced features
+such as higher-order state and polymorphism, and has suggested
+connections between these ideas and the more operationally-flavored
+method of step-indexed models. We believe 
+
+\appendix
+
+\section{Implementation}
+
+We give the implementation of the code for the dynamic lambda calculus
+in Figure~\ref{cokleisli-implementation}, and the implementation of the
+program for the static lambda calculus in Figure~\ref{ultrametric-implementation}. 
+
+The implementation is relatively straightforward, with two exceptions:
+the implementation of the \term{zip} operation. Given two stream
+cells, it returns a cell which pairs the successive elements of its
+two inputs. This is a tricky function to verify, since the function
+must work with lagged inputs, and we may receive a pair of inputs in
+which one component is lagged and the other not. However, our
+mathematical specification does not mention delays in it at all. So
+even if one input yields $(a_0, a_1, a_2, \ldots)$ and the other
+yields $(\None, b_0, b_1, b_2, \ldots)$, the programmer is still
+entitled to assume that $a_0$ is paired with $b_0$, and that $a_1$ is
+paired with $b_1$, and so on.
+
+To implement this, \term{zip} tests the two inputs, and introduces an
+artificial delay, if one cell is delayed and the other is not.
+Otherwise, it simply returns a cell which performs the pairing. Since
+implementing a delay uses auxilliary state, we need to register the
+cell --- but we only \term{register} the cell in the case it needs the
+state. This reduces the number of cells that will get forced at the
+end of each trip through the event loop, and so lets the dataflow
+graph remain as lazy as we can manage. 
+
+Secondly, the implementation of \term{fix} is quite subtle. It works
+takes a stream of functions, and returns a stream of streams.
+
+Our actual implementation does some further optimizations not visible
+in this source. In particular, we exploit the isomorphism $S(A \times
+B) \simeq S(A) \times S(B)$ to maintain the context in product form.
+This permits us to avoid excessive conservatism in managing
+dependencies.
+
+\begin{figure}
+\begin{tabbing}
+\term{id = \lambda xs.\;return(xs)} 
+\\[1em]
+
+\term{compose\;f\;g =\lambda as.\; do\;}
+ \=\term{bs \leftarrow f(as);} \\
+ \>\term{cs \leftarrow g(bs);} \\
+ \>\term{return(cs)} 
+\\[1em]
+
+\term{one\;xs = return(\unitval)}
+\\[1em]
+
+\term{pair\;f\;g = \lambda as.\;do\;}
+  \=\term{bs \leftarrow f(as);} \\
+  \>\term{cs \leftarrow g(as);} \\
+  \>\term{zip(bs,cs)}
+\\[1em]
+
+\term{fst = \lambda abs.\;cell(do}
+  \= \term{ab' \leftarrow read(abs);} \\
+  \>\term{case \; ab'\; of} \\
+  \>\term{\;\None \to return(\None)} \\
+  \>\term{\;\Some{a,b} \to return(\Some{a}))} 
+\\[1em]
+
+
+\term{snd = \lambda abs.\;cell(do}
+  \= \term{ab' \leftarrow read(abs);} \\
+  \>\term{case \; ab'\; of} \\
+  \>\term{\;\None \to return(\None)} \\
+  \>\term{\;\Some{a,b} \to return(\Some{b}))} 
+\\[1em]
+
+\term{eval = \lambda fas.\;do}\;
+              \=\term{fs \leftarrow \;fst(fas);}\\
+              \>\term{as \leftarrow \;snd(fas);}\\
+              \>\term{cell(do\;}\=\term{f' \leftarrow read(fs)}\\
+              \>                  \>\term{case\;f'\;of}\\
+              \>                  \>\term{\;\None \to return\;\None} \\
+              \>                  \>\term{\;\Some{f} \to do\;}\=\term{bs \leftarrow f(as);} \\
+              \>                  \>                            \>$\term{read(bs)})$ 
+\\[1em]
+
+\term{curry\;f =\lambda as.\;cell(\mathsf{Some}(\lambda bs.\;do\;}
+  \=\term{abs \leftarrow zip(as,bs);}\\
+  \>\term{f(abs)))}
+\\[1em]
+
+\term{zip(as, bs) =} \\
+\;\;\= \term{do\;}\=\term{a' \leftarrow read(as);} \\
+\>              \>\term{b' \leftarrow read(bs);} \\
+\>              \>\term{case \;(a',b')\;of}\\ 
+\>           \>\;\;\=\term{(\None, \None)} \\
+\>           \>    \>\term{(\Some{\_}, \Some{\_}) \to} \\
+\>           \>    \> \qquad \term{cell(do\;}\=\term{a' \leftarrow read(as);} \\
+\>           \>    \>                      \>\term{b' \leftarrow read(bs);} \\
+\>           \>    \>                      \>\term{case \;(a',b')\; of} \\
+\>           \>    \>                      \>\;\;\=\term{(\Some{a}, \Some{b}) \to return(\Some{(a,b)})} \\
+\>           \>    \>                      \>\;\;\=\term{(\_, \_) \to return(\None))} \\
+\>           \>    \>\term{(\None, \Some{\_}) \to}\\
+\>           \>    \> \qquad\term{do\;}\=
+                                      \term{r \leftarrow ref(\None);} \\
+\>           \>    \>               \>\term{abs \leftarrow cell(do\;}\=\term{a \leftarrow read(as);} \\
+\>           \>    \>               \>                               \>\term{new \leftarrow read(bs);} \\
+\>           \>    \>               \>                               \>\term{old \leftarrow !r;}\\
+\>           \>    \>               \>                               \>\term{r := new;}\\
+\>           \>    \>               \>                               \>\term{return(a,old));}\\
+\>           \>    \>               \>\term{register(abs);} \\
+\>           \>    \>               \>\term{return(abs)} \\
+\>           \>    \>\term{(\Some{\_}, \None) \to}\\
+\>           \>    \> \qquad\term{do\;}\=
+                                      \term{r \leftarrow ref(\None);} \\
+\>           \>    \>               \>\term{abs \leftarrow cell(do\;}\=\term{b \leftarrow read(bs);} \\
+\>           \>    \>               \>                               \>\term{new \leftarrow read(as);} \\
+\>           \>    \>               \>                               \>\term{old \leftarrow !r;}\\
+\>           \>    \>               \>                               \>\term{r := new;}\\
+\>           \>    \>               \>                               \>\term{return(old,b));}\\
+\>           \>    \>               \>\term{register(abs);} \\
+\>           \>    \>               \>\term{return(abs)} 
+\\[1em]
+
+\term{register(xs) = do\;}\=\term{dummy \leftarrow read(xs);}\\
+                          \>\term{lst \leftarrow !i;} \\
+                          \>\term{i := pack(xs) :: lst} 
+\end{tabbing}
+\caption{The Implementation of the co-Kleisli Category}
+\label{cokleisli-implementation}
+\end{figure}
+
+\begin{figure}
+\begin{tabbing}
+$\term{fix} : (A \lollishrink A) \lolli S(A)$ \\
+\term{fix = \lambda fs.\;cell(do}
+  \=\term{f' \leftarrow read(fs);} \\
+  \>\term{case\;f'\;of}\\
+  \>\;\;\=\term{\None \to return(\None)}\\
+  \>    \>\term{Some(f) \to} \\
+  \>    \>\;\;\term{do} \=\term{r \leftarrow ref(\None);}\\
+  \>    \>  \>\term{input \leftarrow cell(do\;}\=\term{() \leftarrow clock;}\\
+  \>    \>  \>                                 \>\term{v \leftarrow !r;}\\
+  \>    \>  \>                                 \>\term{return(v));}\\
+  \>    \>  \>\term{pre \leftarrow f(input);}\\
+  \>    \>  \>\term{out \leftarrow cell(do\;}\=\term{\_ \leftarrow read(input);} \\
+  \>    \>  \>                               \>\term{v \leftarrow read(pre);}\\
+  \>    \>  \>                               \>\term{r := v;}\\
+  \>    \>  \>                               \>\term{return(v));}\\
+  \>    \>  \>\term{register(out);}\\
+  \>    \>  \>\term{return(\Some{out})})\\
+\end{tabbing}
+\caption{Implementing Fixed Points in the co-Kleisli Category}  
+\label{cokleisli-implementation-2}
+\end{figure}
+
+
+\begin{figure}
+\begin{tabbing}
+
+\term{id = \fun{x}{x}} 
+\\[1em]
+\term{compose\;f\;g = \fun{x}{g(f(x))}}
+\\[1em]
+\term{one = \fun{x}{\unitval}}
+\\[1em]
+\term{fst = \fun{(x,y)}{x}}
+\\[1em]
+\term{snd = \fun{(x,y)}{y}}
+\\[1em]
+\term{pair\;f\;g = \fun{x}{(f(x),g(x))}}
+\\[1em]
+\term{eval = \fun{(f,x)}{f(x)}}
+\\[1em]
+\term{curry\;f = \fun{x}{\fun{y}{f(x,y)}}}
+\\[1em]
+\term{cons = \lambda x.\; cell(return(\Some{f}))} \\[0.1em]
+with 
+\term{f = \lambda ys.\;do} \= \term{r \leftarrow \Some{x};} \\
+\>     \term{zs \leftarrow cell(}\= 
+      \term{do} \=\term{old \leftarrow !r;} \\
+\> \> \> \term{new \leftarrow read(ys);} \\
+\> \> \> \term{case\;old\;of} \\
+\> \> \> \;\;\= \term{\None \to return(new)} \\
+\> \> \> \>     \term{\Some{\_} \to do} \=\term{r := new;} \\
+\> \> \> \>  \>                           \term{return(old));} \\                 
+\> \term{register(zs);} \\
+\> \term{return(zs)}\\
+
+
+\\
+\term{head\;thunk =} \\
+\;\;\term{do\;}
+  \=\term{xss \leftarrow thunk;} \\
+  \>\term{xs' \leftarrow read(xss);} \\
+  \>\term{case\;xs'\;of} \\
+  \>\;\;\=\term{\Some{xs} \to return(xs)}\\
+  \>    \>\term{\None \to ERROR} (invariant ensures this case cannot happen) \\
+
+\end{tabbing}
+\caption{The Implementation of the Ultrametric Category}
+\label{ultrametric-implementation}
+\end{figure}
+
+\begin{figure}
+\begin{tabbing}
+$(-)^\omega : U^S(A,B) \to U(A^\omega, B^\omega)$ \\
+\term{omega\;f = \lambda athunk.\;do} \=\term{as \leftarrow athunk;} \\
+                                      \>\term{bs \leftarrow f(as);} \\
+                                      \>\term{return(bs)} 
+\\[1em]
+
+$\mathit{Value} : U(X,Y) \to U^S(\valtype{X}, \valtype{Y})$ \\[0.2em]
+\term{value\;f = \lambda xs.\;cell(do} \=\term{x' \leftarrow read(xs);}\\
+                                       \>\term{case\;x'\;of}\\
+                                       \>\;\;\=\term{\None \to return(\None)} \\
+                                       \>\>    \term{\Some{x} \to return(\Some{f(x)}))}
+
+  
+\end{tabbing}
+\caption{Implementing the Adjunction}
+\label{adjoint-implementation}  
+\end{figure}
+
+
+\acks
+
+Acknowledgments, if needed.
+
+% We recommend abbrvnat bibliography style.
+
+\bibliographystyle{abbrvnat}
+
+% The bibliography should be embedded for final submission.
+
+\begin{thebibliography}{}
+\softraggedright
+
+\bibitem[Smith et~al.(2009)Smith, Jones]{smith02}
+P. Q. Smith, and X. Y. Jones. ...reference text...
+
+\end{thebibliography}
+
+\end{document}
