@@ -35,6 +35,7 @@
 \newcommand{\setof}[1]{\left\{{#1}\right\}}
 \newcommand{\comprehend}[2]{\setof{{#1}\;|\;{#2}}}
 \newcommand{\betterstate}[3]{{#2}\, {\sqsupseteq}^{#1} {#3}}
+\newcommand{\futurestate}[4]{{#3} \gg^{#1}_{#2} {#4}}
 \newcommand{\worsestate}[5]{{#4} {\sqsubseteq}^{(#1,#2)}_{#3} {#5}}
 % \newcommand{\satisfies}[4]{({#1}, {#2}, {#3}) \;\mathsf{sat}\; {#4}}
 \newcommand{\dom}[1]{\mathrm{dom}({#1})}
@@ -76,6 +77,7 @@
 \newcommand{\Update}{\mathit{Update}}
 \newcommand{\StableRef}{\mathit{StableRefs}}
 \newcommand{\StableImp}{\mathit{StableImps}}
+
 
 \newcommand{\unittype}{\mathsf{unit}}
 \newcommand{\celltype}[1]{\mathsf{cell}\;{#1}}
@@ -121,11 +123,11 @@
 %
 \newcommand{\fixme}[1]{\texttt{FIXME: {#1}}}
 \newcommand{\head}[1]{\mathit{head}(#1)}
-\newcommand{\tail}[1]{\mathit{tail}(#1)}
+\newcommand{\tail}[2][]{\mathit{tail}^{#1}(#2)}
 \newcommand{\ramify}[1]{\mathsf{U}(\mathtt{clock}, {#1})}
 
 \newcommand{\einvariant}[3]{{#2} \stackrel{#1}{=} {#3}}
-\newcommand{\satisfy}[2]{\mathrm{sat}({#1},{#2})}
+\newcommand{\satisfy}[2]{{#1}\;\mathrm{sat}\;{#2}}
 \newcommand{\satisfyext}[2]{\mathrm{extsat}({#1}, {#2})}
 \newcommand{\complete}[1]{\mathrm{complete}(#1)}
 
@@ -655,51 +657,32 @@ We have that for all $d' \geq d$
 \end{enumerate}
 \end{lemma}
 
-\begin{lemma}{(State Decomposition)}
-Suppose we have $\satisfy{(\theta_0, R_0)}{d}$ 
-  
+\begin{lemma}{(Reference Allocation)}
+Suppose that $\satisfy{(\theta, R)}{d}$. Then suppose that $\theta' =
+\theta \otimes \mathsf{ref}(\term{r}{v})$.  Then for $R' \sqsupseteq R$
+such that $R'$ is the same as $R$, except that $L_{R'} = L_R$ and 
+$V_{R'} = [V_R|\term{r}:vs]$ for some $vs$, we have that 
+$\satisfyext{(\theta', R')}{d}$.
 \end{lemma}
 
 
-\begin{lemma}{(Allocation Lemma)}\\
-Define a predicate $\Seq^d(\term{code}, v, (\term{r_i}, v_i, A_i)_{i \in I}, \mu \in \Mem{d}, \delta, L)$ as follows: 
-\begin{tabbing}
-$\Seq^d(\term{code}, v, \{(\term{r_i}, v_i, A_i)\}_{i \in I}, \mu \in \Mem{d}) = $ \\
-\;\; $\forall d' > 2\cdot d, \betterstate{d'}{\mu'}{\mu}, (\term{v_i})_{i \in I}.\;$ \\
-\qquad\= $\{H(\phi(\mu) \otimes (\mathsf{ref}(\term{r_i, v_i}))) \;\land (\Re^{d'}_{A_i}(\head{v_i}, \term{v_i}, \mu')_{i \in I}$ \\
-      \> \;\;$\land\;\satisfyext{\mu'}{d'}\}$ \\
-\> \term{code} \\
-\> $\{(\term{a}, \_).\;\exists$\=$\betterstate{d'}{\mu''}{\mu}, (\term{v'_i})_{i \in I}, u.\; u \subseteq C_{R''} \land u \cap C_{R'} \subseteq \delta \;\land$\\
-\> \> $H(\phi(\mu'') \otimes (\mathsf{ref}\term{(r_i, v'_i}))_{i \in I}) \;\land$ \\
-\> \> $(\Re^{d'}_{A_i}(\head{\tail{v_i}}, \term{v'_i}, \mu''))_{i \in I} \;\land$ \\
-\> \> $\Upsilon^{d'}_A(v, \term{a}, \mu'', L) \;\land$ \\
-\> \> $\forall \term{v'} \not\in \delta.\;\unready{\phi(\mu')}{\term{v'}} \implies \unready{\phi(\mu'')}{\term{v'}}\}$\\
-\> and \\
-\> $\complete{\mu'} \implies$ \\
-\> \;\;\= $(L = \D \implies \Seq^{d'}(\term{code}, v, (\term{r_i}, \tail{v_i}, A_i)_{i \in I}, \tail{\mu'}, \delta, \U)) \;\land$ \\
-\> \> $(L = \U \implies \Seq^{d'}(\term{code}, \tail{v}, (\term{r_i}, \tail{v_i}, A_i)_{i \in I}, \tail{\mu'}, \delta, \U)$ \\
-\end{tabbing}
+\begin{lemma}{(Cell Allocation)} \\
+Suppose that $\satisfy{(\theta, R)}{d}$ and
+$\satisfyext{(\theta,R)}{d}$ and let $\theta' = \theta \otimes
+\cellminus{\term{c}}{\term{code}}$. Further suppose we have $R'
+\sqsupseteq R$ such that $C_{R'} = C_R \cup \setof{\term{c}}$, $L_{R'}
+= L_R$, $G_{R'} = [G_R | \term{r_i : c}]$ for some set of references
+indexed by $I$, and $S_{R'} = [G_R | \term{r_j : c}]$ for some set of
+references indexed by $J$.
 
-\noindent Now, suppose we have $\mu = (\theta, R)$ such that $\satisfy{\mu}{d}$, and also that 
-$\Seq^d(\term{code}, v, (\term{r_i}, v_i, A_i)_{i \in I}, \mu \in \Mem{d}, \delta, L)$. Then
-for 
-\begin{itemize}
-\item $(\Re^{2\cdot d}_{A_i}(\head{v_i}, \term{v_i}, \mu))_{i \in I}$
-\item $\theta' = \theta \otimes \cellminus{\term{v}}{\term{code}} \otimes (\mathsf(\term{r_i}, \term{v'_i}))_{i \in I}$
-\item $R'$ such that
-  \begin{itemize}
-    \item $C_{R'} = C_R \cup \setof{\term{v}}$
-    \item $V_{R'} = [V_R|\term{v}:v]$
-    \item $D_{R'} = L$
-    \item $L_{R'} = [L_R|\term{v}:(\term{r_i})_{i \in I}]$
-    \item $V^L_{R'} = [V_R_L|\term{v} : (\term{r_i} \mapsto v_i)_{i \in I}]$
-    \item $\Delta_{R'} = [\Delta_R|\term{v} : \delta]$
-    \item $E_{R'} = E_R$
-    \item $V_{R'}_E = V_R_E$ 
-  \end{itemize}
-\end{itemize}
-\noindent we have that $\satisfy{(\theta', R')}{d}$. 
+Then if we can show that for all $d' > 2 \cdot d$,
+$\satisfy{(\theta',R')}{d'}$ implies $\Stream^{d'/2}_A(\term{c},
+(\theta', R'))$, we can conclude that $\satisfy{(\theta',R')}{d}$. 
+
 \end{lemma}
+
+
+
 
 \begin{figure}
 \label{logical-relation}  
@@ -785,9 +768,8 @@ $\satisfy{(\theta,R)}{d} \triangleq$ \\
     \>                               \>$\exists \term{v}.\; $\=$\ready{\theta}{\term{c}}{\term{v}} \;\land$ \\
     \>                               \>                     \>$\forall d' > 2\cdot d.\;\Upsilon^{d'}_A(V_R(\term{c}),\term{v}, (\theta,R), D_R(\term{v})))$\\
     \>$\exists I.\;\hasref{\theta}{\term{i}}{I} \land I \subseteq (G_R(L_R) \cup S_R(L_R))$ and \\
-    \>$\forall \term{c}:A \in \cells{\theta}.\;\Head^d_A(\term{c}, (\theta, R))$ and \\
-    \>$\forall \term{r}:A \in L_R.\; \Local^d_A(\term{r}, (\theta, R))$ and \\
-    \>$\Tail(\theta, R, d)$
+    \>$\forall \term{c}:A \in \cells{\theta}.\;\Stream^d_A(\term{c}, (\theta, R))$ and \\
+    \>$\forall \term{r}:A \in L_R.\; \Local^d_A(\term{r}, (\theta, R))$ \\
 \\[1em]
 
 $\Mem{d} = \comprehend{(\theta,R)}{\satisfy{(\theta,R)}{d}}$ 
@@ -801,7 +783,15 @@ $\betterstate{d}{(\theta',R')}{(\theta,R)}$ iff \\
 \> $\forall \term{c}:A \in C_R, \term{code}.\; \mathsf{code}(\theta, \term{c}, \term{code}) \implies \mathsf{code}(\theta', \term{c}, \term{code})$ and \\
 \> $\forall \term{r}\in E_R, \term{v}.\; \mathsf{ref}(\theta, \term{r}, \term{v}) \iff 
                                          \mathsf{ref}(\theta', \term{r}, \term{v}) $
+\\[1em]
 
+$\Stream^d_A(vs, \term{v}, \mu) = $ \\
+\> $\forall d' > 2\cdot d, n \leq \log(1/d'), \futurestate{d'}{n}{\mu'}{\mu}.\; \Head^{d'\cdot 2^n}_A(\term{v}, \mu')$ 
+\\[1em]
+
+$\futurestate{d}{0}{\mu'}{\mu} \;\;\;\,= \betterstate{d}{\mu'}{\mu}$ \\
+$\futurestate{d}{n+1}{\mu'}{\mu} = $ \\
+\> $\exists \mu_0 \in \Mem{d}.\; \betterstate{d}{\mu_0}{\mu} \land \complete{\mu_0} \land \futurestate{2\cdot d}{n}{\mu'}{\tail{\mu_0}}$ 
 \\[1em]
 
 $\Head^d_A(\term{v}, (\theta,R)) = $\\
@@ -810,7 +800,7 @@ $\Head^d_A(\term{v}, (\theta,R)) = $\\
 \> \> \term{read\;v} \\
 \> \> $\{(\term{a},\_).\;$\\ 
 \> \> $\;\;\;\exists$ \=$\betterstate{d'}{(\theta'', R'')}{(\theta',R')}, u \subseteq \Delta_{R''}(\term{v}).$\\
-\> \> \> $H(\phi(\mu'')) \land$ \\
+\> \> \> $H(\theta'') \land$ \\
 \> \> \> $\Upsilon^{d'}_A(V_R(\term{v}), \term{a}, \mu'', D_{R}(\term{v})) \;\land$ \\
 \> \> \> $\Update(u, \theta', \theta'') \;\land$ \\ 
 \> \> \> $\StableRef(R', R'') \;\land$ \\
@@ -819,8 +809,8 @@ $\Head^d_A(\term{v}, (\theta,R)) = $\\
 
 $\Local^d_A(\term{r}, (\theta, R)) = $ \\
 \> $S_R(\term{r})$ defined $\implies$ \\
-\> \> $\unready{\theta}{S_R(\term{r})} \implies \Ref^d_A(\head{V_R_L(r)}, \term{r}, \mu)$ and \\
-\> \> $\ready{\theta}{S_R(\term{r})}{-} \implies \Ref^d_A(\head{\tail{V_R_L(r)}}, \term{r}, \mu)$ \\[1em]
+\> \> $\unready{\theta}{S_R(\term{r})} \implies \Ref^d_A(\head{V^R_L(r)}, \term{r}, \mu)$ and \\
+\> \> $\ready{\theta}{S_R(\term{r})}{-} \implies \Ref^d_A(\head{\tail{V^R_L(r)}}, \term{r}, \mu)$ \\[1em]
 
 $\Ref^d_A(v, \term{r}, (\theta,R)) = $ \\
 \> $\forall d' > 2\cdot d. \exists \term{v}.\;\hasref{\theta}{r}{\term{v}} \land \Re^{d'}_A(v, \term{v}, (\theta,R))$ 
@@ -836,17 +826,12 @@ $\Upsilon^d_A(vs, \term{v}, \mu, L) = $ \\
 \> $(L = \U \implies \term{v}=\Some{\term{v'}} \land \exists \term{v'}.\;V^{d}_A(\head{vs}, \term{v'}, \mu))$
 \\[1em]
 
-$\complete{\theta,R} = \forall c \in \cells{\theta}.\; L_R(c) \not= \emptyset \implies \exists \term{v}.\;\ready{\theta}{c}{\term{v}}$
-\\[1em]
-
-$\Tail(\theta, R, d) = $ \\
-\>$\forall d' > 2\cdot d.\; \complete{\theta, R} \implies \satisfy{(\ramify{\theta}, \tail{R})}{d'}$  
+$\complete{\theta,R} = $ \\
+\> $\forall \term{r} \in L_R. \exists \term{c} \in C_R.\; S_R(\term{r}) = \term{c} \land \exists \term{v}.\;\ready{\theta}{\term{c}}{\term{v}}$ 
 \\[1em]
 
 $\satisfyext{(\theta,R)}{d} = $ \\
-\> $\forall \term{r}:A \in L_R.\; S_R(\term{r}) \mbox{ undef} \implies \Ref^d_A(V^L_R(\term{r}), \term{r}, (\theta,R))$ \\[1em]
-
-$\einvariant{E_R}{\theta}{\theta'} = \forall \term{r} \in E_R, \term{v}.\; \hasref{\theta}{\term{r}}{\term{v}} \iff \hasref{\theta'}{\term{r}}{\term{v}}$
+\> $\forall \term{r}:A \in L_R.\; S_R(\term{r}) \mbox{ undef} \implies \Ref^d_A(V^L_R(\term{r}), \term{r}, (\theta,R))$
 \end{tabbing}
 \caption{The Satisfaction Relation}
 \label{satisfaction-relation}
@@ -893,7 +878,7 @@ dependencies. This is essential for the smooth treatment of
 higher-order functions, since the dependencies may not be statically
 apparent in this case.
 
-Sceond, we needed to make explicit use of the adjunction between the
+Second, we needed to make explicit use of the adjunction between the
 base category of ultrametric spaces and the co-Kleisli category of
 streams. The reason is that taking the fixed point of (the coextension
 of) a contractive function $A \lollishrink A$ in the co-Kleisli
