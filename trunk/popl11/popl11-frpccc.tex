@@ -71,13 +71,14 @@
 \newcommand{\Build}{\mathit{Build}}
 \newcommand{\Local}{\mathit{Local}}
 \newcommand{\Ref}{\mathit{Ref}}
+\newcommand{\Opt}{\mathit{Opt}}
 \newcommand{\Stream}{\mathit{Stream}}
 \newcommand{\Mem}[1]{\mathit{Mem}(#1)}
 \newcommand{\Seq}{\mathit{Seq}}
 \newcommand{\Update}{\mathit{Update}}
 \newcommand{\StableRef}{\mathit{StableRefs}}
 \newcommand{\StableImp}{\mathit{StableImps}}
-
+\newcommand{\Stable}{\mathit{Stable}}
 
 \newcommand{\unittype}{\mathsf{unit}}
 \newcommand{\celltype}[1]{\mathsf{cell}\;{#1}}
@@ -99,6 +100,7 @@
 \newcommand{\counit}{\epsilon}
 \newcommand{\tails}{\delta}
 
+\newcommand{\powerset}[1]{\mathcal{P}(#1)}
 \newcommand{\cellminus}[2]{\mathsf{cell}^{-}({#1}, {#2})}
 \newcommand{\cellplus}[4]{\mathsf{cell}^{+}({#1}, {#2}, {#3}, {#4})}
 
@@ -131,6 +133,10 @@
 \newcommand{\satisfyext}[2]{\mathrm{extsat}({#1}, {#2})}
 \newcommand{\complete}[1]{\mathrm{complete}(#1)}
 
+\newcounter{lineno}
+\newenvironment{tabbingspec}{\setcounter{lineno}{0}\begin{tabbing}\refstepcounter{lineno}{\small \arabic{lineno}}\;\;\;\=}{\end{tabbing}}
+\newcommand{\Newline}[1][0em]{\refstepcounter{lineno}\\[#1]{\small \arabic{lineno}}\>}
+
 
 \begin{document}
 
@@ -154,7 +160,12 @@
 \maketitle
 
 \begin{abstract}
-This is the text of the abstract.
+We describe a model of higher-order functional reactive programming
+using ultrametric spaces, which provide a natural Cartesian closed
+generalization of causal stream functions. We then show how reactive
+programs may be implemented efficiently using an imperatively updated
+dataflow graph and prove that this implementation is correct with
+respect to the declarative semantics.
 \end{abstract}
 
 \newtheorem{prop}{Proposition}
@@ -169,6 +180,15 @@ term1, term2
 keyword1, keyword2
 
 \section{Introduction}
+
+Typical interactive programs such as web applications, games, and GUIs
+are written in a very imperative style. A program models dynamic
+behavior by modifying state, and accepting callbacks to modify its own
+state. These programs have complex uses of aliasing, tricky control
+flow through callback functions living in the heap, and in general are
+very difficult to reason about.
+
+
 
 The contributions of this work are as follows:
 
@@ -189,6 +209,9 @@ The contributions of this work are as follows:
   contractiveness instead of an explicit notion of guardedness, our
   semantics lifts easily to model higher-order streams and recursion
   at higher type.
+
+\item Next, we give a domain specific langauge for writing reactive
+  programs. This DSL is 
 
 \item Second, we give a reasonably efficient implementation of this
   semantics in terms of an imperative dataflow graph, and prove the
@@ -214,13 +237,15 @@ The contributions of this work are as follows:
   --- $\beta$, $\eta$ and fixed-point equations --- are all sound
   reasoning principles.
 
-\item Third, GUI toolkits often expose an essentially imperative
+\item Finally, GUI toolkits often expose an essentially imperative
   interface to certain resources (such as the display). We address the
   question of how to smoothly integrate these kinds of effectful
   operations into our model. 
 \end{itemize}
 
 \section{Functional Reactive Programs, Stream Transformers and Causal Functions}
+
+Functional reactive programming~\cite{fran} is an attempt to abstract
 
 
 \section{An Ultrametric Model of Reactive Programming}
@@ -487,13 +512,13 @@ simple picture arise.
   from step-indexed models, and define the rely mutually-recursively
   with the logical relation.
 
-\item Next, we need to make our Kripke relation on states bigger than
-  merely increasing as cells get evaluated. We build our dataflow
-  graph incrementally and dynamically, and so we need to know that
+\item Next, we need to make our Kripke relation on states more complex
+  than merely increasing as cells get evaluated. Since we build our
+  dataflow graph incrementally and dynamically, we need to know that
   operations which add cells to the graph will not break existing
   code. So the Kripke relation on memories also needs to support a
-  notion of the dataflow graph getting bigger, in addition to 
-  getting more defined. 
+  notion of the dataflow graph getting bigger, in addition to getting
+  more defined.
 
 \item Since we are implementing streams with stateful dataflow 
   cells, we need to ensure that there are no cyclic dependencies 
@@ -571,11 +596,20 @@ Consequently, we specify a rely $R$ as:
   value of the reference cell. Like the getter $G$, the getter $S$ is
   also partial. However, we require that its domain be a superset of $G$'s ---
   that is, we will always define getters before setters. 
-\item A partial order $\Delta \subseteq C \times C$ on the stream
-  cells. The idea is that $\term{\Delta(c',c)}$ means that the
-  evaluation of \term{c} may depend upon \term{c'}. As a notational
-  convenience, we will write $\Delta(\term{c})$ to refer to the set 
-  of cells less than or equal to $\term{c}$ in this partial order. 
+
+\item A function $\Delta \to \powerset{C}$, giving the
+  ``static dependencies'' of each cell. The intuition for this
+  relation is that for each cell \term{c}, the inhabitation of the
+  relation at $\Delta(\term{c'},\term{c})$ tells us that \term{c'} is
+  a cell in the \emph{current} heap which the evaluation of \term{c} may
+  update. 
+
+  The conditions on this function are as follows. First, viewed as a
+  relation, $\Delta$ must be a partial order, to ensure that there
+  will be no cycles in the dependency graph. Second, these are only
+  the \emph{static} dependencies in that the evaluation of \term{c}
+  may in turn create new cells which are evaluated, but which do not
+  appear in $\Delta$. 
 \end{enumerate}
 
 Often, we will be dealing with multiple relies, and as a matter of
@@ -587,11 +621,9 @@ We equip relies with a partial order as follows. We say that $R
 \sqsubseteq R'$, when $C_R \subseteq C_{R'}$ and $E_R = E_{R'}$, and
 furthermore each function is extended pointwise. That is, if $c \in
 \dom{R}$, then $V_{R'}(c) = V_{R}(c)$, and similarly for $D_S$, $L$,
-$V_L$, $G$,and $S$. The dependency relation $\Delta_{R'}$ must be a
-superset of $\Delta_R$, and also have the property that $\Delta_{R'}
-\cap (C_R \times C_R) = \Delta_R$. (This means that as the heap grows
-over time, cells can come to depend on new cells, but we won't create
-dependencies between pre-existing cells.)
+$V_L$, $G$, $S$, and $\Delta$. (Note in particular that the static
+dependencies for a given cell do not grow -- the extension order for
+$\Delta$ is more stringent than simply
 
 Given this, we can now say when a graph $\phi$ \emph{satisfies} a rely $R$ to
 distance $d$, (written ``$\satisfy{(\phi, R)}{d}$'') when:
@@ -657,9 +689,12 @@ We have that for all $d' \geq d$
 \end{enumerate}
 \end{lemma}
 
+In the following lemmas, we use the notation $[f|x:v]$ to denote the function which extends $f$'s domain 
+by $x$ and gives it the value $v$ at that point. 
+
 \begin{lemma}{(Reference Allocation)}
 Suppose that $\satisfy{(\theta, R)}{d}$. Then suppose that $\theta' =
-\theta \otimes \mathsf{ref}(\term{r}{v})$.  Then for $R' \sqsupseteq R$
+\theta \otimes \mathsf{ref}(\term{r,v})$.  Then for $R' \sqsupseteq R$
 such that $R'$ is the same as $R$, except that $L_{R'} = L_R$ and 
 $V_{R'} = [V_R|\term{r}:vs]$ for some $vs$, we have that 
 $\satisfyext{(\theta', R')}{d}$.
@@ -678,165 +713,155 @@ references indexed by $J$.
 Then if we can show that for all $d' > 2 \cdot d$,
 $\satisfy{(\theta',R')}{d'}$ implies $\Stream^{d'/2}_A(\term{c},
 (\theta', R'))$, we can conclude that $\satisfy{(\theta',R')}{d}$. 
-
 \end{lemma}
-
 
 
 
 \begin{figure}
 \label{logical-relation}  
-\begin{tabbing}
+\begin{tabbingspec}
 $U^d_1(\unitval, \unitval) = $ true 
-\\[1em]
+\Newline[1em]
 
 $U^d_{X \times Y}((x,y), (\term{x}, \term{y})) = U^d_X(x, \term{x}) \land U^d_Y(y, \term{y})$ 
-\\[1em]
+\Newline[1em]
 
 $U^d_{X \To Y}(f, \term{f}) = \forall d' > 2\cdot d, v, \term{v}.\; 
     U^{d'}_X(v, \term{v}) \implies U^{d'}_Y(f\;v, \term{f\;v})$ 
-\\[1em]
+\Newline[1em]
 
-$U^d_{X \shrink Y}(f, \term{f}) = \forall d' > 4\cdot d, v, \term{v}.\; 
-    U^{d'}_X(v, \term{v}) \implies U^{d'/2}_Y(f\;v, \term{f\;v})$ 
-\\[1em]
+$U^d_{X \shrink Y}(f, \term{f}) = \forall d' > 2\cdot d, v, \term{v}.\; 
+    U^{d'}_X(v, \term{v}) \implies U^{d'}_Y(f\;v, \term{f\;v})$ 
+\Newline[1em]
 
-$U^d_{A^\omega}(vs, \term{code}) = $ \\
-\;\;\= $\forall d' > 2\cdot d, \mu \in \Mem{d'}.\;\Build^{d'}_A(vs, \term{code}, \mu, \U, \emptyset)$ \\
-\\[1em]
+$U^d_{A^\omega}(vs, \term{code}) = $ \Newline
+\;\;\= $\forall d' > 2\cdot d, \mu \in \Mem{d'}.\;\Build^{d'}_A(vs, \term{code}, \mu, \U, \emptyset)$ 
+\Newline[1em]
 
 $V^d_I(\unitval, \unitval, \mu) = $ true
-\\[1em]
+\Newline[1em]
 
 $V^d_{A \otimes B}((a,b), \term{(a,b)}, \mu) = V^d_A(a, \term{a}, \mu) \land V^d_B(b, \term{b}, \mu)$
-\\[1em]
+\Newline[1em]
 
-$V^d_{A \lolli B}(f, \term{f}, \mu) = $ \\
-\> $\forall d' > 2\cdot d, \betterstate{d'}{\mu'}{\mu}, v, \term{v}$ \\
-\> \;\;\=$V^{d'}_{S(A)}(vs, \term{v}, \mu') \implies 
-          \exists L \sqsupseteq D_R(\term{v}).\; \Build^{d'}_{B}(f\;vs, \term{f\;v}, \theta', L, \Delta'(\term{v}))$
-\\[1em]
+$V^d_{A \lolli B}(f, \term{f}, \mu) = $ \Newline
+\> $\forall d' > 2\cdot d, \betterstate{d'}{\mu'}{\mu}, v, \term{v}$ \Newline
+\> \;\;\=$V^{d'}_{S(A)}(vs, \term{v}, \mu') \implies $ \Newline
+\>     \> \;\;$\exists L \sqsupseteq D_R(\term{v}).\; \Build^{d'}_{B}(f\;vs, \term{f\;v}, \theta', L, \Delta'(\term{v}))$
+\Newline[1em]
 
-$V^d_{A \lollishrink B}(f, \term{f}, \mu) = $ \\
-\> $\forall d' > 2\cdot d, \betterstate{d'}{\mu'}{\mu}, v, \term{v}.$ \\
+$V^d_{A \lollishrink B}(f, \term{f}, \mu) = $ \Newline
+\> $\forall d' > 2\cdot d, \betterstate{d'}{\mu'}{\mu}, v, \term{v}.$ \Newline
 \> \> $V^{d'}_{S(A)}(vs, \term{v}, \mu') \implies 
       \Build^{d'}_{B}(f\;vs, \term{f\;v}, \mu', \U, \Delta'(\term{v}))$
-\\[1em]
+\Newline[1em]
 
 $V^d_{\valtype{X}}(v, \term{v}, \mu) = U^d_{X}(v, \term{v})$ 
-\\[1em]
+\Newline[1em]
 
 $V^d_{S(A)}(vs, \term{v}, \mu) = V_R(\term{v}) = vs$ 
-\\[1em]
+\Newline[1em]
 
-$\Build^d_A(vs, \term{code}, (\theta,R) \;\mathrm{as}\;\mu, L, I) = $ \\
-\> $\{H(\theta) \land \satisfyext{(\theta,R)}{d} \}$ \\
-\> $\term{code}$ \\
-\> $\{(\term{a},\_).\;\exists$\=$\betterstate{d}{(\theta,R')}{(\theta,R)}.\; \term{a} \in C_{R'} \land \exists u \subseteq\Delta_{R'}(\term{a}).$ \\
-\> \> $(\Delta_{R'}(\term{a}) \cap C_R \subseteq I) \;\land$ \\
-\> \> $H(\theta') \;\land$ \\
-\> \> $V^d_{S(A)}(vs, \term{a}, (\theta',R')) \land D_{R'}(\term{a}) = L \;\land$\\
-\> \> $\Update(u, \theta, \theta') \;\land$ \\
-\> \> $\StableRef(R, R') \;\land$ \\
-\> \> $\StableImp((\theta, R), (\theta',R'))\}$ 
-\\[1em]
+$\Build^d_A(vs, \term{code}, (\theta,R) \;\mathrm{as}\;\mu, L, Z) = $ \Newline
+\> $\{H(\theta) \land \satisfyext{(\theta,R)}{d} \}$ \Newline
+\> $\term{code}$ \Newline
+\> $\{(\term{a},\_).\;\exists$\=$\betterstate{d}{(\theta,R')}{(\theta,R)}, u.\; H(\theta') \;\land$ \Newline
+\> \> $V^d_{S(A)}(vs, \term{a}, (\theta',R')) \;\land$\Newline
+\> \> $\term{a} \in C_{R'} \land D_{R'}(\term{a}) = L \;\land $ \Newline
+\> \> $\Delta_{R'}(\term{a}) \supseteq \bigcup\limits_{\term{c} \in Z} \Delta_{R}(\term{c}) \;\land$ \Newline
+\> \> $\Update(u, (\theta, R), (\theta', R'), \term{a}) \;\land$ \Newline
+\> \> $\Stable((\theta, R), (\theta',R'))\}$
+\Newline[1em]
 
-$\Update(u, \theta, \theta') = $ \\
-\> $\forall \term{c}.\;\ready{\theta'}{c}{-} \land \unready{\theta}{c} \iff c \in u$ 
-\\[1em]
+$\Update(u, (\theta, R), (\theta', R'), \term{a}) = $ \Newline
+\> $\forall \term{c}.\;\ready{\theta'}{c}{-} \land \unready{\theta}{c} \iff c \in u \;\land$ \Newline
+\> $\forall \term{c} \in u.\; \term{c} \in \Delta_R(\term{a}) \vee \term{c} \in (C_{R'} - C_R)$ 
+\Newline[1em]
 
-$\StableRef(R, R') = $ \\
-\> $\forall \term{r} \in L_{R'}.\; S_{R'}(\term{r}) \mbox{ undef} \iff \term{r} \in L_R \land  S_{R}(\term{r}) \mbox{ undef}$ and \\
-\> $\forall \term{r} \in L_{R'}.\; G_{R'}(\term{r}) \mbox{ undef} \iff \term{r} \in L_R \land  G_{R}(\term{r}) \mbox{ undef}$ 
-\\[1em]
+$\Stable(\mu, \mu') = \StableRef(\mu, \mu') \land \StableImp(\mu, \mu')$ \Newline[1em]
 
-$\StableImp((\theta, R), (\theta',R'))\} = $ \\
-\> $\forall I,I'.\;\hasref{\theta}{\term{i}}{I} \land \hasref{\theta}{\term{i}}{I'} \implies $ \\
-\>\;\; $[I' - S^{-1}_{R'}(L_{R'}) - G^{-1}_{R}(L_{R})] = [I - S^{-1}_{R}(L_{R}) - G^{-1}_{R}(L_{R})]$ \\
+$\StableRef((\theta,R), (\theta'R')) = $ \Newline
+\> $\forall \term{r} \in L_{R'}.\; S_{R'}(\term{r}) \mbox{ undef} \iff \term{r} \in L_R \land  S_{R}(\term{r}) \mbox{ undef}$ and \Newline
+\> $\forall \term{r} \in L_{R'}.\; G_{R'}(\term{r}) \mbox{ undef} \iff \term{r} \in L_R \land  G_{R}(\term{r}) \mbox{ undef}$ and \Newline
+\> $\forall \term{r} \in L_{R} - \dom{G_R}.\;\exists \term{v}.\;\hasref{\theta}{\term{r}}{\term{v}} \land \hasref{\theta'}{\term{r}}{\term{v}}$
+\Newline[1em]
 
-\end{tabbing}
+$\StableImp((\theta, R), (\theta',R'))\} = $ \Newline
+\> $\forall I,I'.\;\hasref{\theta}{\term{i}}{I} \land \hasref{\theta}{\term{i}}{I'} \implies $ \Newline
+\>\;\;\= $[I' - S^{-1}_{R'}(L_{R'}) - G^{-1}_{R}(L_{R})] = [I - S^{-1}_{R}(L_{R}) - G^{-1}_{R}(L_{R})]$ \Newline
+\> \> and $\forall \term{c} \in I'.\; \unready{\theta'}{\term{c}} \implies \term{c} \in I \land \unready{\theta}{c}$
+\end{tabbingspec}
 \caption{The Logical Relation}
 \end{figure}
 
 \begin{figure}
-\begin{tabbing}
-$\satisfy{(\theta,R)}{d} \triangleq$ \\
-\;\;\=$\forall d' > 2 \cdot d.\; \satisfy{(\theta,R)}{d'}$ and \\
-    \>$\cells{\theta} = C_R$ and \\
-    \>$\refs{\theta} = L_R$ and \\
-    \>$\forall \term{c}:A \in C_R.\;$\=$\unready{\theta}{\term{c}} \;\vee$ \\
-    \>                               \>$\exists \term{v}.\; $\=$\ready{\theta}{\term{c}}{\term{v}} \;\land$ \\
-    \>                               \>                     \>$\forall d' > 2\cdot d.\;\Upsilon^{d'}_A(V_R(\term{c}),\term{v}, (\theta,R), D_R(\term{v})))$\\
-    \>$\exists I.\;\hasref{\theta}{\term{i}}{I} \land I \subseteq (G_R(L_R) \cup S_R(L_R))$ and \\
-    \>$\forall \term{c}:A \in \cells{\theta}.\;\Stream^d_A(\term{c}, (\theta, R))$ and \\
-    \>$\forall \term{r}:A \in L_R.\; \Local^d_A(\term{r}, (\theta, R))$ \\
-\\[1em]
+\begin{tabbingspec}
+$\satisfy{(\theta,R)}{d} \triangleq$ \Newline
+\;\;\=$\cells{\theta} = C_R$ and \Newline
+    \>$\refs{\theta} = L_R$ and \Newline
+    \>$\forall \term{c}:A \in C_R.\;$\=$\unready{\theta}{\term{c}} \vee \exists \term{v}.\; $\=$\ready{\theta}{\term{c}}{\term{v}}$ and \Newline
+    \>$\exists I.\;\hasref{\theta}{\term{i}}{I} \land I \subseteq (G_R(L_R) \cup S_R(L_R))$ and \Newline
+    \>$\forall \term{c}:A \in \cells{\theta}.\;\Stream^d_A(\term{c}, (\theta, R))$ and \Newline
+    \>$\forall \term{r}:A \in L_R.\; \Local^d_A(\term{r}, (\theta, R))$ 
+\Newline[1em]
 
 $\Mem{d} = \comprehend{(\theta,R)}{\satisfy{(\theta,R)}{d}}$ 
-\\[1em]
+\Newline[1em]
 
-$(\sqsupseteq^d) \subseteq \Mem{d} \times \Mem{d}$ \\[0.2em]
+$(\sqsupseteq^d) \subseteq \Mem{d} \times \Mem{d}$ \Newline[0.2em]
 
-$\betterstate{d}{(\theta',R')}{(\theta,R)}$ iff \\
-\> $R' \sqsupseteq R$ and \\
-\> $\forall \term{c}:A \in C_R, \term{v}.\; \ready{\theta}{\term{c}}{\term{v}} \implies \ready{\theta'}{\term{c}}{\term{v}}$ and \\
-\> $\forall \term{c}:A \in C_R, \term{code}.\; \mathsf{code}(\theta, \term{c}, \term{code}) \implies \mathsf{code}(\theta', \term{c}, \term{code})$ and \\
+$\betterstate{d}{(\theta',R')}{(\theta,R)}$ iff \Newline
+\> $R' \sqsupseteq R$ and \Newline
+\> $\forall \term{c}:A \in C_R, \term{v}.\; \ready{\theta}{\term{c}}{\term{v}} \implies \ready{\theta'}{\term{c}}{\term{v}}$ and \Newline
+\> $\forall \term{c}:A \in C_R, \term{code}.\; \mathsf{code}(\theta, \term{c}, \term{code}) \implies \mathsf{code}(\theta', \term{c}, \term{code})$ and \Newline
 \> $\forall \term{r}\in E_R, \term{v}.\; \mathsf{ref}(\theta, \term{r}, \term{v}) \iff 
                                          \mathsf{ref}(\theta', \term{r}, \term{v}) $
-\\[1em]
+\Newline[1em]
 
-$\Stream^d_A(vs, \term{v}, \mu) = $ \\
+$\Stream^d_A(vs, \term{v}, \mu) = $ \Newline
 \> $\forall d' > 2\cdot d, n \leq \log(1/d'), \futurestate{d'}{n}{\mu'}{\mu}.\; \Head^{d'\cdot 2^n}_A(\term{v}, \mu')$ 
-\\[1em]
+\Newline[1em]
 
-$\futurestate{d}{0}{\mu'}{\mu} \;\;\;\,= \betterstate{d}{\mu'}{\mu}$ \\
-$\futurestate{d}{n+1}{\mu'}{\mu} = $ \\
+$\futurestate{d}{0}{\mu'}{\mu} \;\;\;\,= \betterstate{d}{\mu'}{\mu}$ \Newline
+$\futurestate{d}{n+1}{\mu'}{\mu} = $ \Newline
 \> $\exists \mu_0 \in \Mem{d}.\; \betterstate{d}{\mu_0}{\mu} \land \complete{\mu_0} \land \futurestate{2\cdot d}{n}{\mu'}{\tail{\mu_0}}$ 
-\\[1em]
+\Newline[1em]
 
-$\Head^d_A(\term{v}, (\theta,R)) = $\\
-\> $\forall d' > 2\cdot d, \betterstate{d'}{(\theta',R')}{(\theta,R)}.\;$ \\
-\> \;\;\= $\{H(\theta') \land \satisfyext{(\theta',R')}{d'}\} $\\
-\> \> \term{read\;v} \\
-\> \> $\{(\term{a},\_).\;$\\ 
-\> \> $\;\;\;\exists$ \=$\betterstate{d'}{(\theta'', R'')}{(\theta',R')}, u \subseteq \Delta_{R''}(\term{v}).$\\
-\> \> \> $H(\theta'') \land$ \\
-\> \> \> $\Upsilon^{d'}_A(V_R(\term{v}), \term{a}, \mu'', D_{R}(\term{v})) \;\land$ \\
-\> \> \> $\Update(u, \theta', \theta'') \;\land$ \\ 
-\> \> \> $\StableRef(R', R'') \;\land$ \\
-\> \> \> $\StableImp((\theta'',R''), (\theta',R'))\} $
-\\[1em]
+$\Head^d_A(\term{v}, (\theta,R)) = $\Newline
+\> $\{H(\theta) \land \satisfyext{(\theta,R)}{d}\} $\Newline
+\> \term{read\;v} \Newline
+\> $\{(\term{a},\_).\;\exists$\=$\betterstate{d}{(\theta', R')}{(\theta,R)}, u.\; H(\theta') \;\land$ \Newline
+\> \> $\Opt^{d}_A(\mbox{if } D_R(\term{v}) \mbox{ then } \None \mbox{ else } \Some{V_R(\term{v})}, \term{a}, \mu') \;\land$ \Newline
+\> \> $\Update(u, (\theta,R), (\theta', R'), \term{v}) \;\land$ \Newline 
+\> \> $\Stable((\theta,R), (\theta',R')) \}$ 
+\Newline[1em]
 
-$\Local^d_A(\term{r}, (\theta, R)) = $ \\
-\> $S_R(\term{r})$ defined $\implies$ \\
-\> \> $\unready{\theta}{S_R(\term{r})} \implies \Ref^d_A(\head{V^R_L(r)}, \term{r}, \mu)$ and \\
-\> \> $\ready{\theta}{S_R(\term{r})}{-} \implies \Ref^d_A(\head{\tail{V^R_L(r)}}, \term{r}, \mu)$ \\[1em]
+$\Local^d_A(\term{r}, (\theta, R)) = $ \Newline
+\> $\forall d' > 2\cdot d.\; S_R(\term{r})$ defined $\implies$ \Newline
+\> \;\;\= $\unready{\theta}{S_R(\term{r})} \implies \Ref^{d'}_A(\head{V^R_L(r)}, \term{r}, \mu)$ and \Newline
+\> \> $\ready{\theta}{S_R(\term{r})}{-} \implies \Ref^{d'}_A(\head{\tail{V^R_L(r)}}, \term{r}, \mu)$ \Newline[1em]
 
-$\Ref^d_A(v, \term{r}, (\theta,R)) = $ \\
-\> $\forall d' > 2\cdot d. \exists \term{v}.\;\hasref{\theta}{r}{\term{v}} \land \Re^{d'}_A(v, \term{v}, (\theta,R))$ 
-\\[1em]
+$\Ref^d_A(v, \term{r}, (\theta,R)) = \exists \term{v}.\;\hasref{\theta}{r}{\term{v}} \land \Opt^{d'}_A(v, \term{v}, (\theta,R))$ 
+\Newline[1em]
 
-$\Re^d_A(v, \term{v}, \mu) = $ \\
-\> \> $v = \None \implies \term{v} = \None$ and \\
-\> \> $\forall v'.\; v = \Some{v'} \implies \exists \term{v'}.\; \term{v} = \Some{\term{v'}} \land
-       V^{d'}_A(v', \term{v'}, \mu)$  \\[1em]
+$\Opt^d_A(v, \term{v}, \mu) = $ \Newline
+\> $(v = \None \land \term{v} = \None) \;\vee$ \Newline
+\> $(\exists v', \term{v'}.\; v = \Some{v'} \land \term{v} = \Some{\term{v'}} \land V^d_A(v', \term{v'}, \mu))$ 
+\Newline[1em]
 
-$\Upsilon^d_A(vs, \term{v}, \mu, L) = $ \\
-\> $(L = \D \implies \term{v = \None}) \;\land$ \\
-\> $(L = \U \implies \term{v}=\Some{\term{v'}} \land \exists \term{v'}.\;V^{d}_A(\head{vs}, \term{v'}, \mu))$
-\\[1em]
-
-$\complete{\theta,R} = $ \\
+$\complete{\theta,R} = $ \Newline
 \> $\forall \term{r} \in L_R. \exists \term{c} \in C_R.\; S_R(\term{r}) = \term{c} \land \exists \term{v}.\;\ready{\theta}{\term{c}}{\term{v}}$ 
-\\[1em]
+\Newline[1em]
 
-$\satisfyext{(\theta,R)}{d} = $ \\
-\> $\forall \term{r}:A \in L_R.\; S_R(\term{r}) \mbox{ undef} \implies \Ref^d_A(V^L_R(\term{r}), \term{r}, (\theta,R))$
-\end{tabbing}
+$\satisfyext{(\theta,R)}{d} = $ \Newline
+\> $\forall \term{r}:A \in L_R.\; S_R(\term{r}) \mbox{ undef} \implies \Ref^d_A(\head{V^L_R(\term{r})}, \term{r}, (\theta,R))$
+\end{tabbingspec}
 \caption{The Satisfaction Relation}
 \label{satisfaction-relation}
 \end{figure}
 
+
+\section{Future Work}
 
 
 
@@ -855,20 +880,21 @@ There are four main strands of related work: synchronous dataflow
 languages, purely functional reactive programming systems, imperative
 FRP systems, and metric methods in denotational semantics.
 
-The family of synchronous dataflow languages (such as Esterel, Lustre,
-and Lucid Synchrone) are languages based on a model of synchronous
-time. The discrete ultrametric semantics we use is related to these
-systems, most especially to Lucid Synchrone (which supports
+The family of synchronous dataflow languages (such as
+Esterel~\cite{esterel}, Lustre~\cite{lustre}, and Lucid
+Synchrone~\cite{synchrone}) are languages based on a model of
+synchronous time. The discrete ultrametric semantics we use is related
+to these systems, most especially to Lucid Synchrone (which supports
 higher-order functions).
 
-Pouzet and Caspi extended synchronous dataflow programming to higher
-order with their co-iterative semantics. They illustrated how that
-this generated a Cartesian closed category (of size-preserving
-functions), which they used to interpret functions. Uustalu and Vene
-subsequently observed that size-preserving functions could be
-understood more abstractly as the co-Kleisli category of
-streams. However, in both of these works, feedback was handled in a
-somewhat \emph{ad hoc} fashion.
+Pouzet and Caspi~\cite{coiterative} extended synchronous dataflow
+programming to higher order with their co-iterative semantics. They
+illustrated how that this generated a Cartesian closed category (of
+size-preserving functions), which they used to interpret
+functions. Uustalu and Vene~\cite{essence-dataflow} subsequently
+observed that size-preserving functions could be understood more
+abstractly as the co-Kleisli category of streams. However, in both of
+these works, feedback was handled in a somewhat \emph{ad hoc} fashion.
 
 The proper treatment of this issue is delicate, and disentangling the
 two main pieces of it kept us busy for a long time. First, we use
@@ -900,37 +926,59 @@ compromise on our reasoning principles in any way, which is quite
 remarkable given the low-level, imperative nature of our
 implementation.
 
-Functional reactive programming was introduced by Eliot and Hudak, and
-was given a semantics in terms of event streams and unrestricted
-functions over them. In subsequent work (Courtney's thesis and the
-2000 PLDI paper), and semantics of fixed points were given
+Functional reactive programming was introduced by Eliot and
+Hudak~\cite{fran}, and was given a semantics in terms of event streams
+and unrestricted functions over them. In this and subsequent
+work~\cite{courtney-thesis}, the semantics of fixed points were given
 denotationally. This gives semantics to all FRP expressions, including
-non-well-founded programs (which will go into infinite loops).
+non-well-founded programs (which will go into infinite loops). 
 
-Due to the problem of space leaks, arrowized FRP was introduced in
-order to restrict the set of definable stream transformers to the the
-causal ones. This restriction is roughly equivalent to first-order
-functional programming, though \emph{ad-hoc} combinators were
-introduced to describe dynamic behavior. Our semantics can be seen as
-a way of eliminating these restrictions, and admitting higher-order
-and dynamic behavior in a very uniform way.
+One notable feature of this line work is a treatment of continuous
+time. We believe that our proof framework should extend to proving an
+sampling theorem as in Wan and Hudak~\cite{frp-first-principles}.  On
+the semantic side, continuous streams can be modelled as functions
+$\mathbb{R} \to A$, and the causal ultrametric extends naturally to
+this case. On the implementation side, the \term{clock} can supply
+time deltas (in contrast to its current delivery of pure ticks).
 
-Metric methods were introduced into semantics in the early 1980s, in
-order to simplify the denotational semantics of concurrency. The
-applications to stream programming were recognized early, but not
-followed up on: in a little-cited 1985 paper, de Bakker and Kok
-proposed an ultrametric semantics for a language of first-order stream
-programs over integers. In their paper, they wrote ``We think there
-are no problems when we allow functions of higher order[\ldots]''.
-This is a conjecture which we have attended to, a full quarter-century
-later: we can confirm that it turns out to be true, but only if we
-make it true twice over!
+Due to the problem of space leaks, arrowized FRP~\cite{arrowized-frp}
+was introduced in order to restrict the set of definable stream
+transformers to the the causal ones. The restriction to arrows is
+roughly equivalent to first-order functional programming, though
+Nilsson~\emph{et al.}  introduced additional combinators to recover
+higher-order and dynamic behavior. Our semantics gives a way of
+eliminating these restrictions and admitting higher-order and dynamic
+behavior in a very uniform way.
 
-More recently, Birkedal and his coworkers have used ultrametric models
-to give semantics to sequential programs involving advanced features
-such as higher-order state and polymorphism, and has suggested
-connections between these ideas and the more operationally-flavored
-method of step-indexed models. We believe 
+Metric methods were introduced into semantics in the late
+1970s~\cite{nivat} and early 1980s, in order to simplify the
+denotational semantics of
+concurrency~\cite{concurrency-semantics}. The applications to stream
+programming were recognized early, but not followed up on: in a
+surprisingly little-cited 1985 paper~\cite{metric-dataflow}, de Bakker
+and Kok proposed an ultrametric semantics for a language of
+first-order stream programs over integers. In their paper, they wrote
+``We think there are no problems when we allow functions of higher
+order[\ldots]''.  This is a conjecture which we have attended to, a
+full quarter-century later: we can confirm that it turns out to be
+true, but only if we make it true twice over!
+
+More recently, Birkedal and his coworkers~\cite{birkedal-ultrametrics}
+have used ultrametric models to give semantics to sequential programs
+involving advanced features such as higher-order state and
+polymorphism, and has suggested connections between these ideas and
+the more operationally-flavored technique of step-indexed
+models~\cite{appel-mcallester}. Our logical relation can be seen as
+similar to these models, only ``one level down'' -- we define
+\emph{values} as fixed points of metric spaces, whereas Birkedal
+\emph{et al.} define \emph{types} as fixed points of metric spaces.
+
+There is also a fascinating and suggestive paper by
+Escardo~\cite{escardo-metric}, who observed that metric models seem to
+correspond to PCF extended with timeout operators. Since cancels and
+interrupt operations pervade interactive programs, this suggests we
+should investigate whether they can be supported without harming the
+reasoning principles of the language.
 
 \appendix
 
@@ -967,8 +1015,7 @@ takes a stream of functions, and returns a stream of streams.
 Our actual implementation does some further optimizations not visible
 in this source. In particular, we exploit the isomorphism $S(A \times
 B) \simeq S(A) \times S(B)$ to maintain the context in product form.
-This permits us to avoid excessive conservatism in managing
-dependencies.
+This permits us to avoid excessive conservatism in managing dependencies.
 
 \begin{figure}
 \begin{tabbing}
@@ -981,7 +1028,7 @@ dependencies.
  \>\term{return(cs)} 
 \\[1em]
 
-\term{one\;xs = return(\unitval)}
+\term{one\;xs = cell(return(\Some{\unitval}))}
 \\[1em]
 
 \term{pair\;f\;g = \lambda as.\;do\;}
@@ -1164,12 +1211,7 @@ Acknowledgments, if needed.
 
 % The bibliography should be embedded for final submission.
 
-\begin{thebibliography}{}
-\softraggedright
+\bibliography{popl11-frpccc}
 
-\bibitem[Smith et~al.(2009)Smith, Jones]{smith02}
-P. Q. Smith, and X. Y. Jones. ...reference text...
-
-\end{thebibliography}
 
 \end{document}
