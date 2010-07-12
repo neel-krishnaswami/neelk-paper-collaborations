@@ -184,9 +184,18 @@ keyword1, keyword2
 Typical interactive programs such as web applications, games, and GUIs
 are written in a very imperative style. A program models dynamic
 behavior by modifying state, and accepting callbacks to modify its own
-state. These programs have complex uses of aliasing, tricky control
+state. These programs exhibit complex uses of aliasing, tricky control
 flow through callback functions living in the heap, and in general are
-very difficult to reason about.
+very difficult to reason about. Part of the difficulty are the
+inherent complexity of verifying programs using such powerful
+features, but an even more fundamental problem is that it is not
+immediately clear even what the semantics of such programs should be
+--- and even the most powerful verification techniques are useless
+without a specification for a program to meet.
+
+One of the oldest and most successful proposals for giving semantics
+to interactive programs is the paradigm of \emph{dataflow programming}. 
+The basic idea is that instead of viewing a 
 
 
 
@@ -199,33 +208,42 @@ The contributions of this work are as follows:
   cartesian closed structure, rather than more restrictive structures
   such as arrows, while still respecting important concepts such as
   the causality of stream functions (and in fact extending them
-  naturally to higher-order). 
+  naturally to higher-order).
 
   In particular, the use of metric spaces means that we can use
-  Banach's fixed point theorem to give semantics to feedback. This
-  means that unlike earlier semantics based on domain models of
-  streams, we can restrict our semantics to \emph{total, well-founded}
+  Banach's contraction map theorem to interpret feedback. This means
+  that unlike earlier semantics based on domain models of streams, we
+  can restrict our semantics to only cover \emph{total, well-founded}
   stream programs. Furthermore, by using an abstract notion of
   contractiveness instead of an explicit notion of guardedness, our
-  semantics lifts easily to model higher-order streams and recursion
-  at higher type.
+  semantics lifts easily to model higher-type streams (e.g., streams
+  of streams) and recursion at higher type. 
 
 \item Next, we give a domain specific langauge for writing reactive
-  programs. This DSL is 
+  programs. Since streams distribute over products and form a comonad,
+  the co-Kleisli category of streams is also Cartesian closed, thus
+  giving us \emph{two} natural notions of function for reactive
+  programs.  Prior work~\cite{coiterative, essence-dataflow} has
+  focused primarily on this category, but the interpretation of fixed
+  points is significantly less natural in the co-Kleisli category than
+  in the base category of ultrametric spaces.
+
+  Instead, we extend Benton and Wadler's adjoint calculus for linear
+  logic~\cite{benton-wadler} to give a language for writing reactive
+  programs. The idea is to decompose the stream comonad into a pair of
+  adjoint functors, which in the term calculus become modal operators
+  connecting the two lambda calculi. We can then interpret fixed
+  points in the category of ultrametrics (thereby retaining a simple
+  equational theory for them) while still enabling programming
+  implicitly with streams, as is common in dataflow languages such as
+  Synchrone~\cite{synchrone}. Furthermore, we extend the adjoint
+  calculus with additional judgements to track contractiveness, so
+  that we can use typechecking to ensure that clients can only take
+  fixed points of well-defined, strictly-contractive functions.
 
 \item Second, we give a reasonably efficient implementation of this
   semantics in terms of an imperative dataflow graph, and prove the
   correctness of our implementation with respect to the semantics.  
-
-  In doing so, we discover that our implementation strategy for
-  reactive programs actually lies in the co-Kleisli category of
-  streams over ultrametric spaces. This category is also Cartesian
-  closed, which means that there are in fact \emph{two} natural
-  notions of lambda calculus for reactive programs, which are related
-  to one another by an adjunction. This lets us adapt Benton and
-  Wadler's adjoint calculus~\cite{benton-wadler} for linear logic to
-  this setting to give a domain-specific language for reactive
-  programs.
 
   Furthermore, we believe our correctness proof for our library is of
   independent interest. It integrates techniques from verification ---
@@ -245,7 +263,36 @@ The contributions of this work are as follows:
 
 \section{Functional Reactive Programs, Stream Transformers and Causal Functions}
 
-Functional reactive programming~\cite{fran} is an attempt to abstract
+Reactive programs are usuall interpreted as \emph{stream
+  transformers}. The idea is that a time-varying value of type $X$ can
+be viewed as a stream of $X$s, and so a program that takes a
+time-varying $X$ and produces a time-varying $Y$ is then a function
+that takes a stream of $X$s and produces a stream of $Y$s. Then,
+interactive programs can be specified in terms of the usual suite
+of function operations on streams. 
+
+However, the full function space on streams is too generous: there are
+stream programs which do not have a sensible interpretation as a
+reactive program. For example, consider the following simple example:
+
+\begin{tabbingspec}
+\term{profit : Prices^\omega \to Orders^\omega} \Newline
+\term{profit\; prices = } \Newline
+\;\;\= \term{let\; prices\_tomorrow = tail(prices) \;in} \Newline
+    \> \term{if\; head(prices) < head(prices\_tomorrow)\;then} \Newline
+    \> \qquad\= \term{Buy :: profit(tail(prices))} \Newline
+    \> \term{else} \Newline
+    \> \> \term{Sell :: profit(tail(prices))} 
+\end{tabbingspec}
+
+Here, the \term{profit} function receives a stream denoting a stream
+of daily stock prices. If all the usual stream functions were
+available, it could take the tail of this stream, and then compare the
+head of today and tomorrow's stream to determine whether it should buy
+or sell. Since compiler writers cannot yet generate code which travels
+in time, we need some kind of semantic condition to explain which 
+stream functions should be ruled out, and which should be ruled in.  
+
 
 
 \section{An Ultrametric Model of Reactive Programming}
@@ -273,38 +320,38 @@ When there is no ambiguity, we will write $A$ for a metric space $(A, d_A)$.
 
 A map $f : A \to B$ between ultrametric spaces is \emph{nonexpansive} when 
 it is non-distance-increasing:
-\begin{mathpar}
+\begin{displaymath}
   d_B(f\;x, f\;x') \leq d_A(x, x')
-\end{mathpar}
+\end{displaymath}
 
 A map $f : A \to B$ between ultrametric spaces is said to be
 \emph{strictly contractive} when it shrinks the distance between 
 any two points by a nonzero factor:
-\begin{mathpar}
+\begin{displaymath}
   \exists q \in [0,1).\; d_B(f\;x, f\;x') \leq q \cdot d_A(x, x')
-\end{mathpar}
+\end{displaymath}
 
 Complete 1-bounded ultrametric spaces and nonexpansive maps form a 
 Cartesian closed category. The product metric on spaces $A$ and $B$
 is given by the cartesian product of the underlying sets and the sup-metric
 on pairs:
-\begin{mathpar}
+\begin{displaymath}
   d_{A \times B}((a,b), (a',b')) = \max \setof{d_A(a,a'), d_B(b,b')}
-\end{mathpar}
+\end{displaymath}
 
 Similarly, the exponential metric is given by the sup-metric over all
 inputs:
-\begin{mathpar}
+\begin{displaymath}
   d_{A \to B}((a,b), (a',b')) = \sup \comprehend{d_B(f\;a,f\;a')}{a \in A}
-\end{mathpar}
+\end{displaymath}
 
 We can equip streams on $A^\omega$ (i.e, functions $\N \to A$) with an
 ultrametric $d$ as follows: 
-\begin{mathpar}
+\begin{displaymath}
   d_{A^\omega}(\stream{a}, \stream{a}') = \sup \comprehend{2^{-n}\cdot d_A(\stream{a}_n, \stream{a}'_n)}{n \in \N}
 
 % 2^{-\min\comprehend{n \in \N}{d(\stream{a}_n, \stream{a}'_n) > 0}}
-\end{mathpar}
+\end{displaymath}
 
 As a notational convenience, here we take $0$ as the formal
 maximum of the empty set.
@@ -451,7 +498,9 @@ suggest. The corresponding clause of our logical relation in fact
 takes the coextension of the function argument, and requires that the
 result $d$-approximate the result of applying a stream to the lifting. 
 
-\section{The Invariant}
+\section{The Program Invariant}
+
+\subsection{Discussion}
 
 Q: What is the underlying intuition?
 
@@ -567,7 +616,42 @@ simple picture arise.
   Here, the relational case for functions must also be adjusted, to 
   ensure that 
 \end{enumerate}
+
+\subsection{The Formal Specification}
+
+In Figures \ref{logical-relation} and \ref{satisfaction-relation}, we
+give three mutually-dependent definitions of values and memory
+states. To explain this relation, we will proceed iteratively, first
+giving a quick intuitive reading of each of the three definitions, 
+and then proceeding to describe them in detail. 
+
+The relation $U^d_A(v, \term{v})$ relates elements $v$ of a metric
+space $A$ to a concrete program term \term{v}. Intuitively, it can be
+read as saying ``the semantic value $v$ is approximated by the
+computational value \term{v} to at least distance $d$''. 
+
+Next, the relation $V^d_A(v, \term{v}, \mu)$ relates values in the
+co-Kleisli category of streams to the program terms \term{v}. The
+relation $V^d_A(v, \term{v}, \mu)$ has the intuitive reading ``the
+semantic value $v$ is approximated by computational value \term{v} and
+memory state $\mu$ to at least distance $d$''.
+
+A memory state is a pair $(\theta, R)$, where $\theta$ is a formula
+describing a dataflow network, and $R$ is a \emph{rely} describing the
+stream of semantic values each cell in the network is expected to
+produce. To relate these two, we have a satisfaction relation
+$\satisfy{(\theta, R)}{d}$, which can be read as saying, roughly, that
+$\theta$ implements the streams in $R$ to distance $d$. This
+satisfaction relation is the most complicated part of the definition,
+since we have to account for all of the issues discussed in the
+previous section.
+
+Our satisfaction relation is given in Figure~\ref{satisfaction-relation}. 
+
+
+
 Consequently, we specify a rely $R$ as:
+
 \begin{enumerate}
 \item A finite set of stream cells and metric types $C$. 
 \item An assignment of streams values $V_S : C \to \mathit{Value}^\omega$ 
@@ -718,7 +802,6 @@ $\satisfy{(\theta',R')}{d'}$ implies $\Stream^{d'/2}_A(\term{c},
 
 
 \begin{figure}
-\label{logical-relation}  
 \begin{tabbingspec}
 $U^d_1(\unitval, \unitval) = $ true 
 \Newline[1em]
@@ -792,6 +875,7 @@ $\StableImp((\theta, R), (\theta',R'))\} = $ \Newline
 \> \> and $\forall \term{c} \in I'.\; \unready{\theta'}{\term{c}} \implies \term{c} \in I \land \unready{\theta}{c}$
 \end{tabbingspec}
 \caption{The Logical Relation}
+\label{logical-relation}  
 \end{figure}
 
 \begin{figure}
