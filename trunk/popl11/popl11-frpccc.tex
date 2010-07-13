@@ -30,6 +30,7 @@
 \usepackage{mathpartir}
 \usepackage{verbatim}
 
+\newcommand{\ultrametric}{\mathbb{U}}
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\N}{\mathbb{N}}
 \newcommand{\setof}[1]{\left\{{#1}\right\}}
@@ -61,6 +62,8 @@
 \newcommand{\shrink}{\rightsquigarrow}
 \newcommand{\interp}[1]{[\![{#1}]\!]}
 \newcommand{\unitval}{\left<\right>}
+
+\newcommand{\floor}[1]{\left\lfloor{#1}\right\rfloor}
 
 \newcommand{\interps}[1]{[\![{#1}]\!]_s}
 \newcommand{\interpu}[1]{[\![{#1}]\!]_u}
@@ -137,6 +140,10 @@
 \newenvironment{tabbingspec}{\setcounter{lineno}{0}\begin{tabbing}\refstepcounter{lineno}{\small \arabic{lineno}}\;\;\;\=}{\end{tabbing}}
 \newcommand{\Newline}[1][0em]{\refstepcounter{lineno}\\[#1]{\small \arabic{lineno}}\>}
 
+\newtheorem{prop}{Proposition}
+\newtheorem{lemma}{Lemma}
+\newtheorem{definition}{Definition}
+\newtheorem{theorem}{Theorem}
 
 \begin{document}
 
@@ -168,9 +175,6 @@ dataflow graph and prove that this implementation is correct with
 respect to the declarative semantics.
 \end{abstract}
 
-\newtheorem{prop}{Proposition}
-\newtheorem{lemma}{Lemma}
-
 \category{CR-number}{subcategory}{third-level}
 
 \terms
@@ -195,7 +199,8 @@ without a specification for a program to meet.
 
 One of the oldest and most successful proposals for giving semantics
 to interactive programs is the paradigm of \emph{dataflow programming}. 
-The basic idea is that instead of viewing a 
+The basic idea is that instead of viewing a \fixme{figure out what 
+to say!}
 
 
 
@@ -253,7 +258,8 @@ The contributions of this work are as follows:
   purely a mathematical object, even though it is implemented in terms
   of complex imperative higher-order code. The full suite of equations
   --- $\beta$, $\eta$ and fixed-point equations --- are all sound
-  reasoning principles.
+  reasoning principles from the perspective of the client, even though
+  the implementation is pervasively imperative. 
 
 \item Finally, GUI toolkits often expose an essentially imperative
   interface to certain resources (such as the display). We address the
@@ -261,7 +267,7 @@ The contributions of this work are as follows:
   operations into our model. 
 \end{itemize}
 
-\section{Functional Reactive Programs, Stream Transformers and Causal Functions}
+\section{Reactive Programs and Stream Transformers}
 
 Reactive programs are usuall interpreted as \emph{stream
   transformers}. The idea is that a time-varying value of type $X$ can
@@ -271,12 +277,14 @@ that takes a stream of $X$s and produces a stream of $Y$s. Then,
 interactive programs can be specified in terms of the usual suite
 of function operations on streams. 
 
+\subsection{Causality}
+
 However, the full function space on streams is too generous: there are
-stream programs which do not have a sensible interpretation as a
-reactive program. For example, consider the following simple example:
+stream programs which do not have a sensible interpretation as an
+interactive program. For example, consider the following simple example:
 
 \begin{tabbingspec}
-\term{profit : Prices^\omega \to Orders^\omega} \Newline
+\term{profit : Price^\omega \to Order^\omega} \Newline
 \term{profit\; prices = } \Newline
 \;\;\= \term{let\; prices\_tomorrow = tail(prices) \;in} \Newline
     \> \term{if\; head(prices) < head(prices\_tomorrow)\;then} \Newline
@@ -290,12 +298,79 @@ of daily stock prices. If all the usual stream functions were
 available, it could take the tail of this stream, and then compare the
 head of today and tomorrow's stream to determine whether it should buy
 or sell. Since compiler writers cannot yet generate code which travels
-in time, we need some kind of semantic condition to explain which 
-stream functions should be ruled out, and which should be ruled in.  
+in time, we need some kind of semantic condition to explain which
+stream functions should be ruled out, and which should be ruled in.
 
+To do this, we appeal to the criterion of \emph{causality}~\cite{causality}: 
+the output at time $n$ should depend only on the first $n$ inputs. We can
+formalize this as follows, using the notation $\floor{xs}_n$ to denote the 
+$n$-element prefix of the stream $xs$. 
 
+\begin{definition}{(Causality)}
+A stream function $f : X^\omega \to Y^\omega$ is said to be \emph{causal} when,
+for all for all $n$ and streams $xs$ and $xs'$, if $\floor{xs}_n = \floor{xs'}_n$
+then $\floor{f(xs)}_n = \floor{f(xs')}_n$.   
+\end{definition}
 
-\section{An Ultrametric Model of Reactive Programming}
+This definition rules out the \term{tail} function, since its first
+$n$ outputs are determined by its first $n+1$ inputs. For example, the
+streams $1, 1, 1, \ldots$ and $1, 2, 3, \ldots$ agree on their first
+output, but their tails disagree right away --- and so \term{tail} is
+not causal function.
+
+However, while this is an intuitive and appealing definition for
+streams of basic types (such as integers or booleans), it is not
+immediately clear how to generalize this definition. For example, what
+might causality mean if we have a stream of \emph{streams}, or even a
+stream of stream functions? 
+
+\subsection{Guardedness and Fixed Points}
+
+Next, we can also want to define streams by feedback or recursion; for
+example, we may wish to define an increasing sequence of integers with
+an expression like:
+\begin{displaymath}
+\term{nats = fix(\lambda xs.\; 0 :: map\;succ\;xs)}  
+\end{displaymath}
+  
+The natural question is to ask when fixed points such as this are
+well-defined. An operational way of thinking about this question is to
+observe that the lambda expression \term{\lambda xs.\; 0 :: map\;succ\;xs} 
+can produce its first output without looking at its input. So we can 
+imagine implementing the fixed point by taking the output at time $n$ and 
+feeding it back in as the input at time $n+1$, relying on the fact that at 
+time 0 the input value does not matter.
+
+\begin{definition}{(Guardedness)}
+A function $f : X^\omega \to X^\omega$ is said to be \emph{guarded}
+when there exists a $k > 0$ such that for all for all $n$ and streams
+$xs$ and $xs'$, if $\floor{xs}_n = \floor{xs'}_n$ then
+$\floor{f(xs)}_{n+k} = \floor{f(xs')}_{n+k}$.
+\end{definition}
+
+Then the following theorem about the existence and uniqueness of fixed
+points easily follows: 
+
+\begin{prop}{(Fixed Points of Guarded Functions)}
+Every guarded endofunction $f : X^\omega \to X^\omega$ (where $X$ is a
+nonempty set) has a unique fixed point.
+\end{prop}
+
+As with causality, guardedness is an intuitive and natural property,
+but generalizations to higher types seem both useful and unobvious. For
+example, we can imagine wanting to write a recursive \emph{function}:
+\begin{displaymath}
+\term{fib = fix(\lambda f\; \lambda (j,k).\; j :: f(k,j+k))}
+\end{displaymath}
+So the natural questions to ask are: what does guardedness mean at
+higher type, and how can we interpret fixed points at higher type?
+
+To answer these questions, we will use the basic properties of the
+theory of metric spaces.
+
+\section{An Ultrametric Model of Reactive Programs}
+
+\subsection{Ultrametric Spaces in a Nutshell}
 
 A complete 1-bounded \emph{ultrametric space} is a pair $(A, d_A)$,
 where $A$ is a set and $d_A \in A \times A \to \R$ is a distance
@@ -309,8 +384,8 @@ function, satisfying the following four axioms:
 \end{itemize}
 
 Completeness means that the limit of every Cauchy sequence in $A$
-converges to a value in $A$. What distinguishes ultrametric spacesfrom
-ordinary metric spaces is that the triangle inequality is more
+converges to a value in $A$. What distinguishes ultrametric spaces
+from ordinary metric spaces is that the triangle inequality is more
 stringent; instead of requiring the usual triangle inequality that
 $d(x,x')$ be less than or equal to $d_A(x, y) + d_A(y, x')$,
 ultrametrics require it to be less than or equal to $\max(d_A(x, y),
@@ -345,16 +420,30 @@ inputs:
   d_{A \to B}((a,b), (a',b')) = \sup \comprehend{d_B(f\;a,f\;a')}{a \in A}
 \end{displaymath}
 
-We can equip streams on $A^\omega$ (i.e, functions $\N \to A$) with an
-ultrametric $d$ as follows: 
-\begin{displaymath}
-  d_{A^\omega}(\stream{a}, \stream{a}') = \sup \comprehend{2^{-n}\cdot d_A(\stream{a}_n, \stream{a}'_n)}{n \in \N}
-
-% 2^{-\min\comprehend{n \in \N}{d(\stream{a}_n, \stream{a}'_n) > 0}}
-\end{displaymath}
-
 As a notational convenience, here we take $0$ as the formal
 maximum of the empty set.
+
+Any set $X$ can be trivially made into an ultrametric space $D(X)$ by
+equipping it with the discrete distance function
+\begin{displaymath}
+d(x,x') = \left\{\begin{array}{ll}
+                  0 & \mbox{if } x = x' \\
+                  1 & \mbox{if } x \not= x' \\
+                \end{array}
+          \right.
+\end{displaymath}
+
+Given any ultrametric space $A$, we can define the metric space of
+streams on $A$ by equipping the set $A^\omega$ with an ultrametric $d$
+(which we will call the \emph{causal metric of streams}) as follows:
+\begin{displaymath}
+  d_{A^\omega}(as, as') = \sup \comprehend{2^{-n}\cdot d_A(as_n, as'_n)}{n \in \N}
+\end{displaymath}
+
+\noindent Furthemore, this is a functorial action; given any map $f : A \to B$, 
+we can define a corresponding function $f^\omega : A^\omega \to B^\omega$ which
+takes identities to identities and commutes with composition, by mapping
+$f$ over the elements of the input stream.
 
 The interpretation of the stream metric is easiest to understand in
 the case of streams of discrete elements. In this case, the metric
@@ -363,19 +452,157 @@ first disagree. So two streams which have differing values at time $0$
 are at a distance of $1$, whereas two streams which never disagree
 will have a distance of $0$ (and hence will be equal streams).
 
+Finally, the one classical theorem about metric spaces which we will
+make serious use of is Banach's contraction map theorem.
 \begin{prop}{(Banach's Fixed Point Theorem)}
-For any complete metric space $A$ and strictly contractive endofunction
-$f : A \to A$, there exists a unique fixed point of $f$. 
+For any nonempty, complete metric space $A$ and strictly contractive
+endofunction $f : A \to A$, there exists a unique fixed point of $f$.
 \end{prop}
 
-\section{CoKleisli Category of Streams}
+\subsection{From Ultrametrics to Functional Reactive Programs}
 
-Now, the stream functor $S$ over the category of ultrametric spaces is
-a \emph{Cartesian comonadic} functor. The co-Kleisli category of
-streams over ultrametric spaces is Cartesian closed (though
-exponentials in ultrametric spaces are not necessarily sent to
-exponentials in the co-Kleisli category by $S$).
+Now we can show that for streams of base type, the properties of maps
+in the category of ultrametric spaces correspond exactly to the
+properties of first-order reactive programs we discussed in the
+previous section.
 
+\begin{theorem}{(Causality is Nonexpansiveness)}
+Suppose $X$ and $Y$ are sets. Then a function $f : X^\omega \to
+Y^\omega$ is causal if and only if it is a nonexpansive function under
+the causal metric of streams of elements of the discrete spaces $D(X)$
+and $D(Y)$.
+\end{theorem}
+
+\begin{theorem}{(Guardedness is Contractiveness)}
+Suppose $X$ and $Y$ are sets. Then a function $f : X^\omega \to
+Y^\omega$ is guarded if and only if it is a strictly contractive
+function under the causal metric of streams of elements of the
+discrete spaces $D(X)$ and $D(Y)$.
+\end{theorem}
+
+The proof of these two theorems is nothing more than the unwinding of
+a few definitions. However, the consequences of are quite dramatic! By
+interpreting our programs in the category of ultrametric spaces:
+\begin{enumerate}
+\item We can interpret tuples and functions (with the full $\beta$ and
+  $\eta$ rules) thanks to the Cartesian closure of this category.
+\item Since streams are functorial, we can interpret streams of
+  streams.
+\item Furthermore, contractiveness gives an analogue of guardedness
+  that makes sense at all types, and likewise Banach's fixed point
+  theorem gives an interpretation of fixed points that makes sense at
+  all types.
+\end{enumerate}
+
+\subsection{The Co-Kleisli Category of Streams}
+
+However, when we look at synchronous dataflow languages like Lucid
+Synchrone~\cite{synchrone}, we see that they do not offer this
+API. Instead, in these languages time is implicit, and streams are
+only very rarely directly manipulated. So instead of writing a program
+like:
+\begin{displaymath}
+  \term{f = \fun{(xs,ys)}{map\;(+)\;(zip\;(xs,ys))}}
+\end{displaymath}
+We would instead write the program
+\begin{displaymath}
+  \term{f = \fun{(x,y)}{x + y}}
+\end{displaymath}
+with the expectation that it will be \emph{lifted} to operate over
+streams. The reason for this choice is an essentially operational
+one. Consider a program like the following: 
+%
+\begin{displaymath}
+  \term{skew = \fun{xs}{(xs, 0 :: xs, 2 :: 3 :: xs)}}
+\end{displaymath}
+% 
+This program accepts a stream \term{xs} as an input, and then
+returns three streams --- the original stream \term{xs}; a stream
+which first produces 0 and then the values of \term{xs}; and finally a
+stream which yields 2, 3, and then the values of \term{xs}.
+
+This means that if we implement this stream program as an imperative
+program which modifies some state at each time step to dynamically
+emit the values of the streams it computes, then at time $n+2$, this
+program will also need to know the value of \term{xs} at times $n+1$
+and $n$, in order to correctly emit the values of the second and third
+components of its result. 
+
+If programs which do unbounded buffering can be written, then the
+danger of \emph{space leaks} arises, since the runtime system may need
+to retain potentially arbitrary amounts of history to compute
+values. By making time implicit and having the compiler lift values to
+streams, it becomes harder to write programs which unintentionally
+leak memory under this implementation strategy.
+
+Happily, there is a natural semantic domain corresponding to these
+lifted programs. This is the co-Kleisli category of streams over
+ultrametric spaces is again a Cartesian closed category. A co-Kleisli
+category $\ultrametric^S$ of a comonad $S$ is the category of free
+$S$-coalgebras. Its objects are the objects of $\ultrametric$, but
+each map $f : A \to B$ in $\ultrametric^S$ is a morphism $f : S(A) \to
+B$ in $\ultrametric$.
+
+The motivation for working with the co-Kleisli category is that a map
+$e : A \to B$ in this category can be thought of as a term
+representing a synchronous dataflow program with a free variable of
+type $A$, as is usual for categorical semantics. However, since we
+have committed to implicitly lifting variables to streams, we want to
+know that the free variable is a stream value. So the meaning of the
+term can be read as saying ``at each instant, $e$ will have a value of
+type $B$ depending on the values that its free variable will take
+on''.
+
+To recall the details, a \emph{comonad} on a category $\ultrametric$
+is a functor $S : \ultrametric \to \ultrametric$, equipped with two
+natural transformations $\counit_A : S(A) \to A$ (the counit) and
+$\tails_A : S(A) \to S(S(A))$ (the comultiplication) satisfying the
+equations $\tails_A; S(\tails_A) = \tails_A; \tails_{S(A)}$ and
+$\tails_A; S(\counit_A) = id = \tails_A; \counit_{T(A)}$.  (Here we
+use the semicolon to indicate composition in diagrammatic order.)  In
+the case of streams, the counit $\counit$ is the head function on
+streams, and the comultiplication takes a stream and returns the a
+stream containing the successive tails of the input stream. The action
+of the stream functor is just the map functional for streams.
+
+Furthermore, streams distribute over products (therefore is a
+Cartesian functor) --- that is, $S(A \times B) \simeq S(A) \times
+S(B)$, meaning that a stream of pairs is isomorphic to a pair of
+streams. We will write \term{unzip} and \term{zip} for the components
+of this isomorphism, corresponding to the similarly-named functions in
+functional programs.
+
+The identity map $\mathsf{id_A} : A \to A$ in $\ultrametric^S$ is the
+counit $\counit_A$, and composition of two maps $f : A \to B$ and $g :
+B \to C$ in $\ultrametric^S$ is $\mathsf{f;g} = \delta; S(f); g$. The
+intuitive reading of the identity map is the instantaneous value of a
+stream variable is its value \emph{right now}. The interpretation of
+composition $\mathsf{f;g}$ (i.e., substitution) is that we first lift
+the term $f$ to determine a stream of values by taking the tails of
+its free variables to determine $f$'s sequence of values over time, and
+then plug that into $g$. 
+
+Amazingly, this category is also cartesian closed; the projection,
+pairing, currying and evaluation maps are defined in
+Figure~\ref{cokleisli-defs}.  Checking that these operations do indeed
+satisfy the appropriate equations is a routine verification.
+
+However, while this category is Cartesian closed, and so can interpret
+pairs and function spaces, it does not have coproducts, and so cannot
+interpret sums. What is worse is that the instantaneous interpretation
+of terms makes it difficult to interpret operations acting on streams
+of streams. The key difficulty is that there is no map in this
+category which takes a stream of streams, and whose coextension yields
+the head of the stream of streams.
+
+This makes interpreting fixed points very difficult -- the natural
+fixed point operator inherited from the category of ultrametrics, gets
+the type $(A \lollishrink A) \lolli S(A)$ in the co-Kleisli
+category. This means that we can't take a stream of functions and then
+simply yield the elements of the first function's fixed point. 
+
+
+\begin{figure}
 \begin{mathpar}
   \begin{array}{lcl}
     \mathsf{id}   & = & \counit \\
@@ -389,8 +616,12 @@ exponentials in the co-Kleisli category by $S$).
     \mathsf{eval}     & = & \mathsf{unzip}; (\counit \times \mathit{id}); \mathit{eval} \\
  \end{array}
 \end{mathpar}
+\caption{Definition of operations in the co-Kleisli category}
+\label{cokleisli-defs}
+\end{figure}
 
-The temporal intuition behind working with the co-Kleisli category is that this 
+
+
 
 \section{DSL}
 
@@ -576,10 +807,7 @@ simple picture arise.
 
 \item Our dataflow graph is not pure; operations like accumulators and
   fixed points are implemented with imperative reference cells.  Each
-  reference is owned by a dataflow cell, but ownership does not imply
-  strict separation -- other dataflow cells may read owned state (and
-  in general, they must do this in order to communicate information
-  without creating a dependency cycles).
+  reference is read by a 
 
   Furthermore, cells may depend upon reference cells owned by cells
   which don't exist yet! For example, in the code for \term{fix}, the
@@ -644,13 +872,10 @@ $\satisfy{(\theta, R)}{d}$, which can be read as saying, roughly, that
 $\theta$ implements the streams in $R$ to distance $d$. This
 satisfaction relation is the most complicated part of the definition,
 since we have to account for all of the issues discussed in the
-previous section.
+previous section. Our satisfaction relation is given in
+Figure~\ref{satisfaction-relation}.
 
-Our satisfaction relation is given in Figure~\ref{satisfaction-relation}. 
-
-
-
-Consequently, we specify a rely $R$ as:
+We specify a rely $R$ as 8-tuple:
 
 \begin{enumerate}
 \item A finite set of stream cells and metric types $C$. 
@@ -667,8 +892,8 @@ Consequently, we specify a rely $R$ as:
   \mathit{Value})^\omega}$ for each local reference. Note in
   particular that our local state is given as a stream of
   \emph{options}: this is because we might want to use some state for
-  ``only a little while''. (This can arise with the \term{cons}
-  function.)
+  ``only a little while''. (This arises in the correctness proof of the 
+  \term{cons} function, for example.)
 \item A ``getter'' for each reference cell $G : L \rightharpoonup
   C$. This is the cell which will read that reference cell. Note that
   this is a \emph{partial} function, which means that there can be
@@ -702,31 +927,32 @@ superscripted with the rely. So if $R$ is a rely, then we will write
 $C_R$ for its cells, $V_R$ for the values of the cells, and so on.
 
 We equip relies with a partial order as follows. We say that $R
-\sqsubseteq R'$, when $C_R \subseteq C_{R'}$ and $E_R = E_{R'}$, and
+\sqsubseteq R'$, when $C_R \subseteq C_{R'}$ and $L_R \subseteq L_{R'}$, and
 furthermore each function is extended pointwise. That is, if $c \in
 \dom{R}$, then $V_{R'}(c) = V_{R}(c)$, and similarly for $D_S$, $L$,
 $V_L$, $G$, $S$, and $\Delta$. (Note in particular that the static
 dependencies for a given cell do not grow -- the extension order for
-$\Delta$ is more stringent than simply
+$\Delta$ is more stringent than simply extension of the partial order.)
 
-Given this, we can now say when a graph $\phi$ \emph{satisfies} a rely $R$ to
-distance $d$, (written ``$\satisfy{(\phi, R)}{d}$'') when:
+Given this, we can explain the satisfaction relation in
+Figure~\ref{satisfaction-relation}. We say when a graph $\phi$
+\emph{satisfies} a rely $R$ to distance $d$, (written
+``$\satisfy{(\phi, R)}{d}$'') when:
 \begin{itemize}
-  \item Every cell in the graph is derivably either ready or unready. 
-  \item The cells of the graph are the domain of the rely. If a cell
-    is ready, then its contents realize (to distance $d$) the head of
-    the corresponding value given by the rely if it is undelayed, and
-    $\None$ if it is delayed.
-  \item The reference cells in the graph are exactly the references
-    of all the cells in the rely.
-  \item Every local reference has contents realizing the head of its
+  \item The cells of the graph are equal to $C_R$, and the references
+    of the graph are equal to $L_R$. This is lines 2-3. 
+  \item Every cell in the graph is derivably either ready or unready. (Line 4)
+  \item The reference \term{i} contains a subset of the cells which 
+    read or write state. (Line 5)
+  \item Every reference has contents realizing the head of its
     stream if its setter is unready, and the head of the tail of its
-    stream if its setter is ready. 
+    stream if its setter is ready. (Line 6)
   \item It is never the case that a setter is ready while the
     corresponding getter is unready. (This is to prevent a setter
     from updating a reference before the getter sees it.)
-  \item The imperative update list \term{i} contains a subset of 
-    the getters and setters. 
+  \item Each cell \term{c} in the graph realizes a stream of values corresponding
+    to $V_R(\term{c})$, out to distance $d$. (Line 6)
+
 \end{itemize}
 
 These conditions are formalized in Figure~\ref{satisfaction-relation}. 
@@ -902,7 +1128,7 @@ $\betterstate{d}{(\theta',R')}{(\theta,R)}$ iff \Newline
                                          \mathsf{ref}(\theta', \term{r}, \term{v}) $
 \Newline[1em]
 
-$\Stream^d_A(vs, \term{v}, \mu) = $ \Newline
+$\Stream^d_A(\term{v}, \mu) = $ \Newline
 \> $\forall d' > 2\cdot d, n \leq \log(1/d'), \futurestate{d'}{n}{\mu'}{\mu}.\; \Head^{d'\cdot 2^n}_A(\term{v}, \mu')$ 
 \Newline[1em]
 
@@ -923,7 +1149,10 @@ $\Head^d_A(\term{v}, (\theta,R)) = $\Newline
 $\Local^d_A(\term{r}, (\theta, R)) = $ \Newline
 \> $\forall d' > 2\cdot d.\; S_R(\term{r})$ defined $\implies$ \Newline
 \> \;\;\= $\unready{\theta}{S_R(\term{r})} \implies \Ref^{d'}_A(\head{V^R_L(r)}, \term{r}, \mu)$ and \Newline
-\> \> $\ready{\theta}{S_R(\term{r})}{-} \implies \Ref^{d'}_A(\head{\tail{V^R_L(r)}}, \term{r}, \mu)$ \Newline[1em]
+\> \> $\ready{\theta}{S_R(\term{r})}{-} \implies $(\=$\Ref^{d'}_A(\head{\tail{V^R_L(r)}}, \term{r}, \mu)$ \Newline
+\> \> \> $\;\land\; \exists \term{v}.\;\ready{\theta}{G_R(\term{r})}{\term{v}})$
+\Newline[1em]
+
 
 $\Ref^d_A(v, \term{r}, (\theta,R)) = \exists \term{v}.\;\hasref{\theta}{r}{\term{v}} \land \Opt^{d'}_A(v, \term{v}, (\theta,R))$ 
 \Newline[1em]
