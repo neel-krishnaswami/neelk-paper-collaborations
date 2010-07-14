@@ -610,7 +610,6 @@ time 1 it receives the argument $[0,3,6,\ldots], [0,5,10,\ldots],
 \ldots]$ and so on. So at time 1, we no longer remember what the
 argument at the time 0 was, and so cannot return the right answer.
 
-
 This, in turn, makes defining fixed point operators very difficult: a
 variable of type $A \lolli A$\footnote{we use $A \lolli A$ to denote
 the exponential in $\ultrametric^S$, for reasons that will shortly
@@ -994,7 +993,7 @@ We specify a rely $R$ as 9-tuple:
   also partial. However, we require that its domain be a superset of $G$'s ---
   that is, we will always define getters before setters. 
 
-\item A function $\Delta \to \powerset{C}$, giving the ``static
+\item A function $\Delta : C \to \powerset{C}$, giving the ``static
   dependencies'' of each cell. The intuition for this relation is that
   for each cell \term{c}, then $\term{c'} \in \Delta(\term{c})$ tells
   us that \term{c'} is a cell in the \emph{current} heap which the
@@ -1005,6 +1004,12 @@ We specify a rely $R$ as 9-tuple:
   The conditions on this function are as follows. First, viewed as a
   relation, $\Delta$ must be a partial order, to ensure that there
   will be no cycles in the dependency graph. 
+
+\item A function $\Delta^L : L \to \powerset{C}$, which describes the 
+  static dependencies of the contents of each reference cell. The reason
+  we need to track the dependencies of reference contents is that 
+  cells may read references and use their contents, and so we need to 
+  know what the dependencies for each value may be. 
 \end{enumerate}
 
 Often, we will be dealing with multiple relies, and as a matter of
@@ -1020,6 +1025,18 @@ $V_L$, $G$, $S$, and $\Delta$. (Note in particular that the static
 dependencies for a given cell do not grow -- the extension order for
 $\Delta$ is more stringent than simply extension of the partial order.)
 
+Furthermore, for any rely, we can also define its tail
+$\tail{R}$. First, the footprints of the heap are unchanged
+$C_{\tail{R}} = C_R$ and $L_{\tail{R}}$. Second, the reference values
+all go to their tails $V^L_{\tail{R}} =
+\fun{\term{r}}{\tail{V^L_R(\term{r})}}$.  Third, the stream values for
+cells go to their tails if they are not delayed, and remain unchanged
+if they are. $V_{\tail{R}} = \fun{\term{c}}{\mathsf{if}\;D_R(\term{c})
+  =
+  \U\;\mathsf{then}\;\tail{V_R(\term{c})}\;\mathsf{else}\;V_R(\term{c})}$.
+Fourth, the delay flag becomes $\U$ for all the cells, $D_{\tail{R}} = \fun{\term{c}}{\U}$. 
+Finally, the other components --- $\Delta, \Delta^L, S, G$ --- remain unchanged. 
+
 Given this, we can explain the satisfaction relation in
 Figure~\ref{satisfaction-relation}. We say when a graph $\phi$
 \emph{satisfies} a rely $R$ to distance $d$, (written
@@ -1028,32 +1045,95 @@ Figure~\ref{satisfaction-relation}. We say when a graph $\phi$
   \item The cells of the graph are equal to $C_R$, and the references
     of the graph are equal to $L_R$. This is lines 2-3. 
   \item Every cell in the graph is derivably either ready or unready. (Line 4)
+  \item Every ready cell which touches state has the \term{clock} in its
+    footprint. (Lines 5-6)
   \item The reference \term{i} contains a subset of the cells which 
-    read or write state. (Line 5)
+    read or write state. (Line 7)
   \item Every reference has contents realizing the head of its
     stream if its setter is unready, and the head of the tail of its
-    stream if its setter is ready. (Line 6)
-  \item It is never the case that a setter is ready while the
-    corresponding getter is unready. (This is to prevent a setter
-    from updating a reference before the getter sees it.)
+    stream if its setter is ready. We say nothing about a reference
+    if it does not yet have a setter. (Line 9)
   \item Each cell \term{c} in the graph realizes a stream of values corresponding
-    to $V_R(\term{c})$, out to distance $d$. (Line 6)
+    to $V_R(\term{c})$, out to distance $d$. (Line 8)
 \end{itemize}
 
 These conditions are formalized in Figure~\ref{satisfaction-relation}. 
 
-Notice that this satisfaction relation does not say what the values of
-references without setters are. Likewise, the imperative update list
-\term{i} is less precise that the event loop will eventually want.
+Notice that the satisfaction relation \emph{does not require} the
+contents of references without setters to realize the expected values
+for those references. Similarly, the clause of the satisfaction
+relation for the update list \term{i} is imprecise --- it only
+requires a \emph{subset} of the state-accessing cells. This is a
+deliberate design decision: the reason we make this choice is to let
+incomplete networks be extensions of complete ones. This lets us use
+our logical relation to say something the behavior of programs which
+run in incomplete dataflow networks. This enables us to write programs
+which evaluate some cells while building another part of a dataflow
+network.
 
-This is a deliberate design decision: the reason we make this choice
-is to let us say what our programs will do given incompletely
-constructed networks -- and we will set up our logical relation to
-guarantee they will only ever make things better. This way, we can
-start off with a trivially complete input, and know that we will
-construct a complete output, even though in the middle of evaluation
-the dataflow graph may go through many stages of temporary
-incompleteness.
+As we will see, the way that we reconcile this with our desire to say
+that closed programs always build complete, closed networks, is to
+require that every cell and function in the relation must always
+``make things better''. That is, we never admit values into our
+relation which increase the number of references without setters, or
+which increase the number of stateful references which do not appear
+in the update list \term{i}. Then, since we start a program in a
+complete dataflow graph, we can only procede to complete graphs.
+
+Having described the extension ordering for relies, and the
+satisfaction relation, we can now describe the extension ordering for
+memories (i.e., pairs of a state formula and a rely). This is given in
+Figure~\ref{memory-orderings}. On line 1, we introduce the set
+$\Mem{d}$, which are just pairs of formulas and relies in the
+satisfaction relation. Then, on lines 2-7, we describe what the
+ordering for valid memories is. First, the relies must lie in the rely
+extension ordering, and then the formulas must satisfy a number of
+extra conditions. First, anything ready in the smaller state must
+remain ready in the larger one. Second, all of the code in the cells
+must be the same in the smaller memory and its extension.  Finally,
+any reference which does not have a defined writer must be unchanged
+(be the same physical program value) in the smaller and larger states.
+
+Then, on lines 8-10, we describe the \emph{temporal} ordering of
+states.  The idea is that the Kripke ordering seen so far describes
+how a dataflow graph can change \emph{during} a time step, and the
+temporal ordering describes how it changes \emph{upon} a tick of the
+clock. The idea is that to advance time one step, we update the clock
+to make it invalid. This propagates a wave of invalidations throughout
+the dataflow network, leaving it ready to compute the values of the
+next time step. Then, two memories are in the relation
+$\futurestate{d}{n}{\mu'}{\mu}$ when $\mu'$ is a state that could lie
+$n$ steps in the future of $\mu$. What this means is that if $n = 0$,
+then $\mu'$ and $\mu$ merely need to be in the Kripke order (line 9).
+However, if $n = m + 1$, then there needs to be a state $\mu_0$ which
+(a) larger is in the Kripke order with respect to $\mu$, and whose
+tail is $n$ steps away in time from $\mu'$. Here, $\tail{\theta, R}$
+is $(U(\term{clock}, \theta), \tail{R})$, in accordance with the idea
+that the event loop updates the clock to propagate this notification
+out to the rest of the flow graph. Finally, one additional condition
+we impose on this order is that we only tick on \emph{complete}
+memories (i.e., ones in which all the references have getters and
+setters). 
+
+Now, we can finally describe the $\Stream^d_A(\term{v}, (\theta, R))$
+clause on line 8 of Figure~\ref{satisfaction-relation}. It says that
+for any $n$ less than the log of $1/(2 \times d)$, reading the stream
+cell should return the $n$-th value of the stream. (Or, if the stream
+is delayed, it should return $\None$ on the first timestep, and the
+$n-1$st value of the stream at subsequent times.) It does this by
+appeal to the $\Head^d_A(\term{v}, \mu)$ predicate, defined on lines
+12-18. This predicate says that if we have a heap implementing the
+dataflow network in $\theta$, then reading it should return the
+appropriate value --- either the head of the stream, or $\None$,
+depending on whether the stream is lagged or not. Regardless, the
+updated cells in the network should either be in $\Delta(\term{v})$ or
+new cells (this is the meaning of the $\Update$ predicate, defined on
+27-29 of Figure~\ref{logical-relation}). Furthermore, reading \term{v}
+should change neither the set of references lacking getter or setters,
+nor the set of cells touching mutable state but not appearing in
+\term{i} (this is the $\Stable$ predicate, defined on lines 30-38 of 
+Figure~\ref{logical-relation}). 
+
 
 
 \subsection{Theorems}
@@ -1200,6 +1280,8 @@ $\satisfy{(\theta,R)}{d} \triangleq$ \Newline
 \;\;\=$\cells{\theta} = C_R$ and \Newline
     \>$\refs{\theta} = L_R$ and \Newline
     \>$\forall \term{c}:A \in C_R.\;$\=$\unready{\theta}{\term{c}} \vee \exists \term{v}.\; $\=$\ready{\theta}{\term{c}}{\term{v}}$ and \Newline
+    \>$\forall \term{c} \in G_R(L_R) \cup S_R(L_R).$ \Newline
+    \> \> $\ready{\theta}{\term{c}}{-} \implies \term{clock} \in \mathsf{deps}(\theta, \term{c})$ and \Newline
     \>$\exists I.\;\hasref{\theta}{\term{i}}{I} \land I \subseteq (G_R(L_R) \cup S_R(L_R))$ and \Newline
     \>$\forall \term{c}:A \in \cells{\theta}.\;\Stream^d_A(\term{c}, (\theta, R))$ and \Newline
     \>$\forall \term{r}:A \in L_R.\; \Local^d_A(\term{r}, (\theta, R))$ 
@@ -1208,8 +1290,7 @@ $\satisfy{(\theta,R)}{d} \triangleq$ \Newline
 $\Stream^d_A(\term{v}, \mu) = $ \Newline
 \> $\forall d' > 2\cdot d, n \leq \log(1/d'), \futurestate{d'}{n}{\mu'}{\mu}.\; \Head^{d'\cdot 2^n}_A(\term{v}, \mu')$ \Newline[1em]
 
-
-$\Head^d_A(\term{v}, (\theta,R)}\;\mathrm{as}\;\mu) = $\Newline
+$\Head^d_A(\term{v}, (\theta,R)\;\mathrm{as}\;\mu) = $\Newline
 \> $\{H(\theta) \land \satisfyext{\mu}{d}\} $\Newline
 \> \term{read\;v} \Newline
 \> $\{(\term{a},\_).\;\exists$\=$\betterstate{d}{(\theta', R')\;\mathrm{as}\;\mu'}{\mu}, u.\; H(\theta') \;\land$ \Newline
@@ -1220,8 +1301,10 @@ $\Head^d_A(\term{v}, (\theta,R)}\;\mathrm{as}\;\mu) = $\Newline
 
 $\Local^d_A(\term{r}, (\theta, R)) = $ \Newline
 \> $\forall d' > 2\cdot d.\; S_R(\term{r})$ defined $\implies$ \Newline
-\> \;\;\= $\unready{\theta}{S_R(\term{r})} \implies \Ref^{d'}_A(\head{V^R_L(r)}, \term{r}, \mu, \Delta_R(S_R(\term{r})))$ and \Newline
-\> \> $\ready{\theta}{S_R(\term{r})}{-} \implies $(\=$\Ref^{d'}_A(\head{\tail{V^R_L(r)}}, \term{r}, \mu, \Delta_R(S_R(\term{r})))$ \Newline
+\> \;\;\= $\unready{\theta}{S_R(\term{r})} \implies$ \Newline
+\> \>\;\;\= $\Ref^{d'}_A(\head{V^R_L(r)}, \term{r}, \mu, \Delta_R(S_R(\term{r})))$ and \Newline
+\> \> $\ready{\theta}{S_R(\term{r})}{-} \implies $\Newline
+\> \> \> $\Ref^{d'}_A(\head{\tail{V^R_L(r)}}, \term{r}, \mu, \Delta_R(S_R(\term{r})))$ \Newline
 \> \> \> $\;\land\; \exists \term{v}.\;\ready{\theta}{G_R(\term{r})}{\term{v}})$
 \Newline[1em]
 
@@ -1476,8 +1559,13 @@ This permits us to avoid excessive conservatism in managing dependencies.
 \term{curry\;f =\lambda as.\;cell(\mathsf{Some}(\lambda bs.\;do\;}
   \=\term{abs \leftarrow zip(as,bs);}\\
   \>\term{f(abs)))}
-\\[1em]
+\end{tabbing}
+\caption{The Implementation of the co-Kleisli Category}
+\label{cokleisli-implementation}
+\end{figure}
 
+\begin{figure}
+\begin{tabbing}
 \term{zip(as, bs) =} \\
 \;\;\= \term{do\;}\=\term{a' \leftarrow read(as);} \\
 \>              \>\term{b' \leftarrow read(bs);} \\
@@ -1515,8 +1603,8 @@ This permits us to avoid excessive conservatism in managing dependencies.
                           \>\term{lst \leftarrow !i;} \\
                           \>\term{i := pack(xs) :: lst} 
 \end{tabbing}
-\caption{The Implementation of the co-Kleisli Category}
-\label{cokleisli-implementation}
+\caption{Utility Functions for the co-Kleisli Code}
+\label{cokleisli-util}
 \end{figure}
 
 \begin{figure}
@@ -1537,7 +1625,7 @@ $\term{fix} : (A \lollishrink A) \lolli S(A)$ \\
   \>    \>  \>                               \>\term{r := v;}\\
   \>    \>  \>                               \>\term{return(v));}\\
   \>    \>  \>\term{register(out);}\\
-  \>    \>  \>\term{return(\Some{out})})\\
+  \>    \>  \>\term{return(\Some{out})})
 \end{tabbing}
 \caption{Implementing Fixed Points in the co-Kleisli Category}  
 \label{cokleisli-implementation-2}
@@ -1584,8 +1672,7 @@ with
   \>\term{xs' \leftarrow read(xss);} \\
   \>\term{case\;xs'\;of} \\
   \>\;\;\=\term{\Some{xs} \to return(xs)}\\
-  \>    \>\term{\None \to ERROR} (invariant ensures this case cannot happen) \\
-
+  \>    \>\term{\None \to ERROR} (invariant ensures this case cannot happen)
 \end{tabbing}
 \caption{The Implementation of the Ultrametric Category}
 \label{ultrametric-implementation}
