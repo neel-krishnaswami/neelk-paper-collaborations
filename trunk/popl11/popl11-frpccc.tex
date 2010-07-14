@@ -74,8 +74,10 @@
 \newcommand{\Build}{\mathit{Build}}
 \newcommand{\Local}{\mathit{Local}}
 \newcommand{\Ref}{\mathit{Ref}}
+\newcommand{\Ready}{\mathit{Ready}}
 \newcommand{\Opt}{\mathit{Opt}}
 \newcommand{\Stream}{\mathit{Stream}}
+\newcommand{\NewStream}{\mathit{NewStream}}
 \newcommand{\Mem}[1]{\mathit{Mem}(#1)}
 \newcommand{\Seq}{\mathit{Seq}}
 \newcommand{\Update}{\mathit{Update}}
@@ -526,32 +528,16 @@ program which modifies some state at each time step to dynamically
 emit the values of the streams it computes, then at time $n+2$, this
 program will also need to know the value of \term{xs} at times $n+1$
 and $n$, in order to correctly emit the values of the second and third
-components of its result. 
+components of its result. If programs which do unbounded buffering can
+be written, then the danger of \emph{space leaks} arises, since the
+runtime system may need to retain potentially arbitrary amounts of
+history to compute values. By making time implicit and having the
+compiler lift values to streams, it becomes difficult to write
+programs which leak memory under this implementation strategy.
 
-If programs which do unbounded buffering can be written, then the
-danger of \emph{space leaks} arises, since the runtime system may need
-to retain potentially arbitrary amounts of history to compute
-values. By making time implicit and having the compiler lift values to
-streams, it becomes harder to write programs which unintentionally
-leak memory under this implementation strategy.
-
-Happily, there is a natural semantic domain corresponding to these
-lifted programs. This is the co-Kleisli category of streams over
-ultrametric spaces is again a Cartesian closed category. A co-Kleisli
-category $\ultrametric^S$ of a comonad $S$ is the category of free
-$S$-coalgebras. Its objects are the objects of $\ultrametric$, but
-each map $f : A \to B$ in $\ultrametric^S$ is a morphism $f : S(A) \to
-B$ in $\ultrametric$.
-
-The motivation for working with the co-Kleisli category is that a map
-$e : A \to B$ in this category can be thought of as a term
-representing a synchronous dataflow program with a free variable of
-type $A$, as is usual for categorical semantics. However, since we
-have committed to implicitly lifting variables to streams, we want to
-know that the free variable is a stream value. So the meaning of the
-term can be read as saying ``at each instant, $e$ will have a value of
-type $B$ depending on the values that its free variable will take
-on''.
+Happily, there is a clean mathematical semantics which captures the
+essence of this class of restriction: namely, the co-Kleisli category
+of streams over ultrametric spaces. 
 
 To recall the details, a \emph{comonad} on a category $\ultrametric$
 is a functor $S : \ultrametric \to \ultrametric$, equipped with two
@@ -564,49 +550,84 @@ the case of streams, the counit $\counit$ is the head function on
 streams, and the comultiplication takes a stream and returns the a
 stream containing the successive tails of the input stream. The action
 of the stream functor is just the map functional for streams.
+\footnote{The ``Kleisli triple'' formulation for monads is perhaps
+  more familiar to functional programmers, which is given in terms of
+  an extension operator sending maps $f : A \to T(B)$ to $\term{bind}(f)  : T(A) \to
+  T(B)$.  Dually, the \emph{coextension} for comonads sends maps $f :
+  S(A) \to B$ to $f^\dagger S(A) \to S(B)$, and can be defined as
+  $f^\dagger = \delta; S(f)$.}
 
-Furthermore, streams distribute over products (therefore is a
-Cartesian functor) --- that is, $S(A \times B) \simeq S(A) \times
+We will also make use of the fact that streams distribute over
+products and vice-versa--- that is, $S(A \times B) \simeq S(A) \times
 S(B)$, meaning that a stream of pairs is isomorphic to a pair of
 streams. We will write \term{unzip} and \term{zip} for the components
 of this isomorphism, corresponding to the similarly-named functions in
 functional programs.
 
-The identity map $\mathsf{id_A} : A \to A$ in $\ultrametric^S$ is the
-counit $\counit_A$, and composition of two maps $f : A \to B$ and $g :
-B \to C$ in $\ultrametric^S$ is $\mathsf{f;g} = \delta; S(f); g$. The
-intuitive reading of the identity map is the instantaneous value of a
-stream variable is its value \emph{right now}. The interpretation of
-composition $\mathsf{f;g}$ (i.e., substitution) is that we first lift
-the term $f$ to determine a stream of values by taking the tails of
-its free variables to determine $f$'s sequence of values over time, and
-then plug that into $g$. 
+The co-Kleisli category $\ultrametric^S$ of a comonad $S : \ultrametric
+\to \ultrametric$ is the category of free $S$-coalgebras. Its objects
+are the objects of $\ultrametric$, but each map $f : A \to B$ in
+$\ultrametric^S$ is a morphism $f : S(A) \to B$ in
+$\ultrametric$. Amazingly, this category is also cartesian closed; the
+identity, composition, projection, pairing, currying and evaluation
+maps are defined in Figure~\ref{cokleisli-defs}.
 
-Amazingly, this category is also cartesian closed; the projection,
-pairing, currying and evaluation maps are defined in
-Figure~\ref{cokleisli-defs}.  Checking that these operations do indeed
-satisfy the appropriate equations is a routine verification.
+The motivation for working in this category is that a map $e : A \to
+B$ in this category can be thought of as the interpretation of a
+synchronous dataflow program with a free variable of type $A$, as is
+usual for categorical semantics. The fact we \emph{implicitly} lift
+variables to streams means we need to treat the free variable as a
+stream value. So we want a morphism $e : A \to B$ to be represented
+by a function $e : S(A) \to B$ in the underlying category $\ultrametric$. 
+Intuitively, the meaning of the term can be read as saying ``at each
+instant, $e$ will have a value of type $B$ depending on the values
+that its free variable will take on''.
+
+Then, the way that we can interpret the dynamic behavior of a term is
+via the coextension; $e^\dagger$ is a map $e : S(A) \to S(B)$ in
+$\ultrametric$, and is defined to be the function we get by feeding
+$e$ the successive tails of the original input stream. So this says
+that if the input $A$ takes on the values $as = [a_0, a_1, a_2,
+  \ldots]$, then the output results will be $[e(as), e(\tail{as}),
+  e(\tail{\tail{as}}), \ldots]$.
 
 However, while this category is Cartesian closed, and so can interpret
 pairs and function spaces, it does not have coproducts, and so cannot
-interpret sums. What is worse is that the instantaneous interpretation
-of terms makes it difficult to interpret operations acting on streams
-of streams. The key difficulty is that there is no map in this
-category which takes a stream of streams, and whose coextension yields
-the head of the stream of streams.
+interpret sums. An even bigger difficulty is that the instantaneous
+interpretation of terms makes it very difficult to interpret
+operations acting on streams of streams. The key difficulty is that
+there is no map in this category which takes a stream of streams, and
+whose coextension yields the head of the stream of streams.
 
-This makes interpreting fixed points very difficult -- the natural
-fixed point operator inherited from the category of ultrametrics, gets
-the type $(A \lollishrink A) \lolli S(A)$ in the co-Kleisli
-category. This means that we can't take a stream of functions and then
-simply yield the elements of the first function's fixed point. 
+More concretely, $\ultrametric^S$ does not have a map which
+corresponds to taking an input like $[[0,1,2,\ldots], [0,3,6,\ldots],
+  [0,5,10,\ldots], \ldots]$ and returns 0 on the first time step, 1 on
+the second, 2 on the third, and so on. The reason is that this
+sequence is generated by the coextension of a map of type $S(\N) \to
+\N$ (in $\ultrametric^S$), and so at time 0 it receives the argument
+$[[0,1,2,\ldots], [0,3,6,\ldots], [0,5,10,\ldots], \ldots]$, and at
+time 1 it receives the argument $[0,3,6,\ldots], [0,5,10,\ldots],
+\ldots]$ and so on. So at time 1, we no longer remember what the
+argument at the time 0 was, and so cannot return the right answer.
 
+
+This, in turn, makes defining fixed point operators very difficult: a
+variable of type $A \lolli A$\footnote{we use $A \lolli A$ to denote
+the exponential in $\ultrametric^S$, for reasons that will shortly
+become clear} denotes a stream of functions. If all of these
+functions are contractive, and we take fixed point of coextensions
+pointwise, then we get a stream of streams --- at which point we
+discover that we can never look at the \emph{second} element of any of
+the results.
+
+This temporal amnesia is the very reason that space leaks become
+harder to program, so this is not an accidental difficulty. 
 
 \begin{figure}
 \begin{mathpar}
   \begin{array}{lcl}
     \mathsf{id}   & = & \counit \\
-    \mathsf{f;g}  & = & \tails; S(f); g \\[1em]
+    \mathsf{f; g}  & = & \tails; S(f); g \\[1em]
 
     \mathsf{fst} & = & \mathsf{unzip}; \fst{}; \counit \\
     \mathsf{snd} & = & \mathsf{unzip}; \snd{}; \counit \\
@@ -620,8 +641,66 @@ simply yield the elements of the first function's fixed point.
 \label{cokleisli-defs}
 \end{figure}
 
+\subsection{Adjoint Logic}
 
+At this point, we have two views of reactive programming. One, which
+we might call ``FRP-style'', has a very simple semantics in terms of
+ultrametrics and stream values, and naturally supports fixed points at
+any type. However, it seems difficult to implement efficiently.  On
+the other hand, we can take a ``synchronous dataflow'' view to support
+more efficient implementation techniques, at the price of making it
+difficult to give good semantics to feedback. So it is natural to ask
+if there is some way of combining the strengths of the two approaches.
+We meet this goal by adapting Benton and Wadler's~\cite{benton-wadler}
+adjoint model of the semantics of linear logic. Originally developed
+to give a model of linear logic, it turns out to be abstract enough
+that it applies naturally to the setting of dataflow programming as
+well. 
+\begin{definition}{} 
+An \emph{adjoint model} is specified by:
+\begin{enumerate}
+\item A cartesian closed category $(\ultrametric, 1, \times, \To)$. 
+\item A symmetric monoidal closed category $(\ultrametric^S, I, \otimes, \lolli)$.
+\item A symmetric monoidal adjunction $((-)^\omega, V, \eta, ?, m, n)$ from $\ultrametric$ to $\ultrametric^S$. 
+\end{enumerate}
+\end{definition}
+In our setting, we take the CCC to be the category of ultrametric
+spaces, and take the monoidal closed structure in the definition to be
+the cartesian closed structure of the co-Kleisli category (since any
+Cartesian product is automatically a monoidal product as well). Then,
+to get the adjunction, we we can exploit the fact that any comonad is
+the composition of a pair of adjoint functors, and decompose the
+stream functor into a pair of functors that go between the category of
+ultrametric spaces and the co-Kleisli category of streams over
+it. Then, the functors $(-)^\omega : \ultrametric^S \to \ultrametric$
+and $V(-) : \ultrametric \to \ultrametric^S$ are defined as:
+\begin{mathpar}
+  \begin{array}{lcl} 
+    V(X)           & = & X \\
+    V(f : X \to Y) & = & \epsilon_X; f \\[1em]
 
+    A^\omega             & = & S(X) \\
+    (f : A \to B)^\omega & = & \delta_{A}; S(f) = f^\dagger\\
+  \end{array}
+\end{mathpar}
+
+Intuitively $V(f)$ takes a function $f$ from the general FRP world and
+embeds it into the synchronous dataflow world by having it act at each
+instant on the head of the stream. The action of the other half of the
+adjoint $(g)^\omega$ takes a synchronous dataflow function, and turns
+it into a general function on streams, via the coextension operation. 
+Verifying that $V(f)^\omega = S(f)$ is immediate from the definitions. 
+
+Furthemore, we have the isomorphisms that $V(X \times Y) \simeq V(X)
+\otimes V(Y)$ and $X \To B^\omega \simeq (V(X) \lolli B)^\omega$. This
+latter isomorphism is actually the key property which lets us switch
+our view of a program between the synchronous and the functional
+reactive views.
+
+For example, under the adjoint view, it becomes very straightforward 
+to solve the puzzle at the end of the last subsection. The natural type of
+a fixed point operator in $\ultrametric^S$ is $(A \lollishrink A) \lolli S(A)$,
+which at each instant yields a stream corresponding to the fixed point 
 
 \section{DSL}
 
@@ -832,7 +911,10 @@ simple picture arise.
 
   So our program must maintain a list of the state-modifying cells in
   the dataflow graph, so that the event loop can evaluate the ones
-  that have yet to be read before it advances time by a step.
+  that have yet to be read before it advances time by a step. Furthermore, 
+  every stateful cell also needs to register itself with the global clock
+  cell, so that when the clock is ticked, they will invalidate themselves
+  properly. 
 
 \item Finally, when computing the fixed point of a stream function
   $f$, we proceed by giving $f$ a dummy input on the first time step,
@@ -849,20 +931,23 @@ simple picture arise.
 
 In Figures \ref{logical-relation} and \ref{satisfaction-relation}, we
 give three mutually-dependent definitions of values and memory
-states. To explain this relation, we will proceed iteratively, first
-giving a quick intuitive reading of each of the three definitions, 
-and then proceeding to describe them in detail. 
+states. To explain this relation, we will proceed in multiple passes,
+first giving a quick intuitive reading of each of the three
+definitions, and then proceeding to describe them in detail.
 
 The relation $U^d_A(v, \term{v})$ relates elements $v$ of a metric
 space $A$ to a concrete program term \term{v}. Intuitively, it can be
 read as saying ``the semantic value $v$ is approximated by the
 computational value \term{v} to at least distance $d$''. 
 
-Next, the relation $V^d_A(v, \term{v}, \mu)$ relates values in the
-co-Kleisli category of streams to the program terms \term{v}. The
-relation $V^d_A(v, \term{v}, \mu)$ has the intuitive reading ``the
-semantic value $v$ is approximated by computational value \term{v} and
-memory state $\mu$ to at least distance $d$''.
+Next, the relation $V^d_A(v, \term{v}, \mu, \sigma)$ relates values in
+the co-Kleisli category of streams to the program terms \term{v}. The
+relation $V^d_A(v, \term{v}, \mu, \sigma)$ has the intuitive reading
+``the semantic value $v$ is approximated by computational value
+\term{v} and memory state $\mu$ to at least distance $d$. Furthermore,
+the use of \term{v} may involve evaluating the cells in
+$\sigma$''. These two relations are defined in
+Figure~\ref{logical-relation}.
 
 A memory state is a pair $(\theta, R)$, where $\theta$ is a formula
 describing a dataflow network, and $R$ is a \emph{rely} describing the
@@ -875,7 +960,10 @@ since we have to account for all of the issues discussed in the
 previous section. Our satisfaction relation is given in
 Figure~\ref{satisfaction-relation}.
 
-We specify a rely $R$ as 8-tuple:
+
+\subsubsection{The Memory}
+
+We specify a rely $R$ as 9-tuple:
 
 \begin{enumerate}
 \item A finite set of stream cells and metric types $C$. 
@@ -906,19 +994,17 @@ We specify a rely $R$ as 8-tuple:
   also partial. However, we require that its domain be a superset of $G$'s ---
   that is, we will always define getters before setters. 
 
-\item A function $\Delta \to \powerset{C}$, giving the
-  ``static dependencies'' of each cell. The intuition for this
-  relation is that for each cell \term{c}, the inhabitation of the
-  relation at $\Delta(\term{c'},\term{c})$ tells us that \term{c'} is
-  a cell in the \emph{current} heap which the evaluation of \term{c} may
-  update. 
+\item A function $\Delta \to \powerset{C}$, giving the ``static
+  dependencies'' of each cell. The intuition for this relation is that
+  for each cell \term{c}, then $\term{c'} \in \Delta(\term{c})$ tells
+  us that \term{c'} is a cell in the \emph{current} heap which the
+  evaluation of \term{c} may update. (That is, the effect of reading
+  \term{c} may create new cells it depends on, but since they are not
+  in the current heap they do not appear in $\Delta(\term{c})$.)
 
   The conditions on this function are as follows. First, viewed as a
   relation, $\Delta$ must be a partial order, to ensure that there
-  will be no cycles in the dependency graph. Second, these are only
-  the \emph{static} dependencies in that the evaluation of \term{c}
-  may in turn create new cells which are evaluated, but which do not
-  appear in $\Delta$. 
+  will be no cycles in the dependency graph. 
 \end{enumerate}
 
 Often, we will be dealing with multiple relies, and as a matter of
@@ -952,7 +1038,6 @@ Figure~\ref{satisfaction-relation}. We say when a graph $\phi$
     from updating a reference before the getter sees it.)
   \item Each cell \term{c} in the graph realizes a stream of values corresponding
     to $V_R(\term{c})$, out to distance $d$. (Line 6)
-
 \end{itemize}
 
 These conditions are formalized in Figure~\ref{satisfaction-relation}. 
@@ -977,16 +1062,17 @@ incompleteness.
 We have that for all $d' \geq d$
 \begin{enumerate}
 \item If $U^d_X(v, \term{v})$ then $U^{d'}_X(v, \term{v})$. 
-\item If $V^d_A(v, \term{v}, \mu)$ then $V^{d'}_A(v, \term{v}, \mu)$. 
+\item If $V^d_A(v, \term{v}, \mu, \sigma)$ then $V^{d'}_A(v, \term{v}, \mu, \sigma)$. 
 \item If $\satisfy{\mu}{d}$ then $\satisfy{\mu}{d'}$. 
-\item If $V^d_A(v, \term{v}, \mu)$ and $\betterstate{d}{\mu'}{\mu}$, then $V^d_A(v, \term{v}, \mu')$.
+\item If $V^d_A(v, \term{v}, \mu, \sigma)$ and $\betterstate{d}{\mu'}{\mu}$, then $V^d_A(v, \term{v}, \mu',\sigma)$.
+\item If $V^d_A(v, \term{v}, \mu, \sigma)$ and $\sigma' \sqsupseteq \sigma$, then $V^d_A(v, \term{v}, \mu,\sigma')$.
 \end{enumerate}
 \end{prop}
 
 \begin{lemma}{(Approximation Lemma)}
 \begin{enumerate}
   \item If $\forall d' > d.\; U^{d'}_A(v, \term{v})$ then $U^d_A(v, \term{v})$. 
-  \item If $\forall d' > d.\; V^{d'}_A(v, \term{v}, \mu)$ then $V^d_A(v, \term{v}, \mu)$. 
+  \item If $\forall d' > d.\; V^{d'}_A(v, \term{v}, \mu, \sigma)$ then $V^d_A(v, \term{v}, \mu, \sigma)$. 
   \item If $\forall d' > d.\; \satisfy{\mu}{d'}$ then $\satisfy{\mu}{d}$. 
 \end{enumerate}
 \end{lemma}
@@ -1047,39 +1133,42 @@ $U^d_{A^\omega}(vs, \term{code}) = $ \Newline
 \;\;\= $\forall d' > 2\cdot d, \mu \in \Mem{d'}.\;\Build^{d'}_A(vs, \term{code}, \mu, \U, \emptyset)$ 
 \Newline[1em]
 
-$V^d_I(\unitval, \unitval, \mu) = $ true
+$V^d_I(\unitval, \unitval, \mu, \sigma) = $ true
 \Newline[1em]
 
-$V^d_{A \otimes B}((a,b), \term{(a,b)}, \mu) = V^d_A(a, \term{a}, \mu) \land V^d_B(b, \term{b}, \mu)$
+$V^d_{A \otimes B}((a,b), \term{(a,b)}, \mu, \sigma) = V^d_A(a, \term{a}, \mu, \sigma) \land V^d_B(b, \term{b}, \mu, \sigma)$
 \Newline[1em]
 
-$V^d_{A \lolli B}(f, \term{f}, \mu) = $ \Newline
-\> $\forall d' > 2\cdot d, \betterstate{d'}{\mu'}{\mu}, v, \term{v}$ \Newline
-\> \;\;\=$V^{d'}_{S(A)}(vs, \term{v}, \mu') \implies $ \Newline
-\>     \> \;\;$\exists L \sqsupseteq D_R(\term{v}).\; \Build^{d'}_{B}(f\;vs, \term{f\;v}, \theta', L, \Delta'(\term{v}))$
+$V^d_{A \lolli B}(f, \term{f}, \mu, \sigma) = $ \Newline
+\> $\forall d' > 2\cdot d, \betterstate{d'}{\mu'}{\mu}, \sigma' \supseteq \sigma, v, \term{v}$ \Newline
+\> \;\;\=$V^{d'}_{S(A)}(vs, \term{v}, \mu', \sigma') \implies $ \Newline
+\>     \> \;\;$\exists L \sqsupseteq D_R(\term{v}).\; \Build^{d'}_{B}(f\;vs, \term{f\;v}, \theta', \sigma', L)$
 \Newline[1em]
 
-$V^d_{A \lollishrink B}(f, \term{f}, \mu) = $ \Newline
-\> $\forall d' > 2\cdot d, \betterstate{d'}{\mu'}{\mu}, v, \term{v}.$ \Newline
-\> \> $V^{d'}_{S(A)}(vs, \term{v}, \mu') \implies 
-      \Build^{d'}_{B}(f\;vs, \term{f\;v}, \mu', \U, \Delta'(\term{v}))$
+$V^d_{A \lollishrink B}(f, \term{f}, \mu, \sigma) = $ \Newline
+\> $\forall d' > 2\cdot d, \betterstate{d'}{\mu'}{\mu}, \sigma' \supseteq \sigma, v, \term{v}.$ \Newline
+\> \> $V^{d'}_{S(A)}(vs, \term{v}, \mu', \sigma') \implies 
+      \Build^{d'}_{B}(f\;vs, \term{f\;v}, \mu', \sigma', \U)$
 \Newline[1em]
 
-$V^d_{\valtype{X}}(v, \term{v}, \mu) = U^d_{X}(v, \term{v})$ 
+$V^d_{\valtype{X}}(v, \term{v}, \mu, \sigma) = U^d_{X}(v, \term{v})$ 
 \Newline[1em]
 
-$V^d_{S(A)}(vs, \term{v}, \mu) = V_R(\term{v}) = vs$ 
+$V^d_{S(A)}(vs, \term{v}, (\theta,R), \sigma) = V_R(\term{v}) = vs \land \Delta_R(\term{v}) \subseteq \sigma$ 
 \Newline[1em]
 
-$\Build^d_A(vs, \term{code}, (\theta,R) \;\mathrm{as}\;\mu, L, Z) = $ \Newline
+$\Build^d_A(vs, \term{code}, (\theta,R) \;\mathrm{as}\;\mu, \sigma, L) = $ \Newline
 \> $\{H(\theta) \land \satisfyext{(\theta,R)}{d} \}$ \Newline
 \> $\term{code}$ \Newline
-\> $\{(\term{a},\_).\;\exists$\=$\betterstate{d}{(\theta,R')}{(\theta,R)}, u.\; H(\theta') \;\land$ \Newline
-\> \> $V^d_{S(A)}(vs, \term{a}, (\theta',R')) \;\land$\Newline
-\> \> $\term{a} \in C_{R'} \land D_{R'}(\term{a}) = L \;\land $ \Newline
-\> \> $\Delta_{R'}(\term{a}) \supseteq \bigcup\limits_{\term{c} \in Z} \Delta_{R}(\term{c}) \;\land$ \Newline
-\> \> $\Update(u, (\theta, R), (\theta', R'), \term{a}) \;\land$ \Newline
-\> \> $\Stable((\theta, R), (\theta',R'))\}$
+\> $\{(\term{a},\_).\;\exists$\=$\betterstate{d}{(\theta,R')\;\mathrm{as}\;\mu'}{\mu}, u.\; H(\theta') \land \term{a} \in C_{R'} - C_R \;\land$ \Newline
+\> \> $\NewStream^d_A(vs, \term{a}, \mu', \sigma, L) \;\land$ \Newline
+\> \> $\Update(u, \mu, \mu', \term{a}) \;\land$ \Newline
+\> \> $\Stable(\mu, \mu')\}$
+\Newline[1em]
+
+$\NewStream^d_A(vs, \term{a}, (\theta, R), \sigma, L) = $\Newline
+\> $D_{R}(\term{a}) = L \land \Delta_{R}(\term{a}) \subseteq \sigma \land 
+    V^d_{S(A)}(vs, \term{a}, (\theta,R), \Delta_{R}(\term{a}))$
 \Newline[1em]
 
 $\Update(u, (\theta, R), (\theta', R'), \term{a}) = $ \Newline
@@ -1099,6 +1188,7 @@ $\StableImp((\theta, R), (\theta',R'))\} = $ \Newline
 \> $\forall I,I'.\;\hasref{\theta}{\term{i}}{I} \land \hasref{\theta}{\term{i}}{I'} \implies $ \Newline
 \>\;\;\= $[I' - S^{-1}_{R'}(L_{R'}) - G^{-1}_{R}(L_{R})] = [I - S^{-1}_{R}(L_{R}) - G^{-1}_{R}(L_{R})]$ \Newline
 \> \> and $\forall \term{c} \in I'.\; \unready{\theta'}{\term{c}} \implies \term{c} \in I \land \unready{\theta}{c}$
+
 \end{tabbingspec}
 \caption{The Logical Relation}
 \label{logical-relation}  
@@ -1115,55 +1205,40 @@ $\satisfy{(\theta,R)}{d} \triangleq$ \Newline
     \>$\forall \term{r}:A \in L_R.\; \Local^d_A(\term{r}, (\theta, R))$ 
 \Newline[1em]
 
-$\Mem{d} = \comprehend{(\theta,R)}{\satisfy{(\theta,R)}{d}}$ 
-\Newline[1em]
-
-$(\sqsupseteq^d) \subseteq \Mem{d} \times \Mem{d}$ \Newline[0.2em]
-
-$\betterstate{d}{(\theta',R')}{(\theta,R)}$ iff \Newline
-\> $R' \sqsupseteq R$ and \Newline
-\> $\forall \term{c}:A \in C_R, \term{v}.\; \ready{\theta}{\term{c}}{\term{v}} \implies \ready{\theta'}{\term{c}}{\term{v}}$ and \Newline
-\> $\forall \term{c}:A \in C_R, \term{code}.\; \mathsf{code}(\theta, \term{c}, \term{code}) \implies \mathsf{code}(\theta', \term{c}, \term{code})$ and \Newline
-\> $\forall \term{r}\in E_R, \term{v}.\; \mathsf{ref}(\theta, \term{r}, \term{v}) \iff 
-                                         \mathsf{ref}(\theta', \term{r}, \term{v}) $
-\Newline[1em]
-
 $\Stream^d_A(\term{v}, \mu) = $ \Newline
-\> $\forall d' > 2\cdot d, n \leq \log(1/d'), \futurestate{d'}{n}{\mu'}{\mu}.\; \Head^{d'\cdot 2^n}_A(\term{v}, \mu')$ 
-\Newline[1em]
+\> $\forall d' > 2\cdot d, n \leq \log(1/d'), \futurestate{d'}{n}{\mu'}{\mu}.\; \Head^{d'\cdot 2^n}_A(\term{v}, \mu')$ \Newline[1em]
 
-$\futurestate{d}{0}{\mu'}{\mu} \;\;\;\,= \betterstate{d}{\mu'}{\mu}$ \Newline
-$\futurestate{d}{n+1}{\mu'}{\mu} = $ \Newline
-\> $\exists \mu_0 \in \Mem{d}.\; \betterstate{d}{\mu_0}{\mu} \land \complete{\mu_0} \land \futurestate{2\cdot d}{n}{\mu'}{\tail{\mu_0}}$ 
-\Newline[1em]
 
-$\Head^d_A(\term{v}, (\theta,R)) = $\Newline
-\> $\{H(\theta) \land \satisfyext{(\theta,R)}{d}\} $\Newline
+$\Head^d_A(\term{v}, (\theta,R)}\;\mathrm{as}\;\mu) = $\Newline
+\> $\{H(\theta) \land \satisfyext{\mu}{d}\} $\Newline
 \> \term{read\;v} \Newline
-\> $\{(\term{a},\_).\;\exists$\=$\betterstate{d}{(\theta', R')}{(\theta,R)}, u.\; H(\theta') \;\land$ \Newline
-\> \> $\Opt^{d}_A(\mbox{if } D_R(\term{v}) \mbox{ then } \None \mbox{ else } \Some{V_R(\term{v})}, \term{a}, \mu') \;\land$ \Newline
-\> \> $\Update(u, (\theta,R), (\theta', R'), \term{v}) \;\land$ \Newline 
-\> \> $\Stable((\theta,R), (\theta',R')) \}$ 
+\> $\{(\term{a},\_).\;\exists$\=$\betterstate{d}{(\theta', R')\;\mathrm{as}\;\mu'}{\mu}, u.\; H(\theta') \;\land$ \Newline
+\> \> $\Ready^d_A(\term{v}, \term{a}, \mu') \;\land$ \Newline
+\> \> $\Update(u, \mu, \mu', \term{v}) \;\land$ \Newline 
+\> \> $\Stable(\mu, \mu') \}$ 
 \Newline[1em]
 
 $\Local^d_A(\term{r}, (\theta, R)) = $ \Newline
 \> $\forall d' > 2\cdot d.\; S_R(\term{r})$ defined $\implies$ \Newline
-\> \;\;\= $\unready{\theta}{S_R(\term{r})} \implies \Ref^{d'}_A(\head{V^R_L(r)}, \term{r}, \mu)$ and \Newline
-\> \> $\ready{\theta}{S_R(\term{r})}{-} \implies $(\=$\Ref^{d'}_A(\head{\tail{V^R_L(r)}}, \term{r}, \mu)$ \Newline
+\> \;\;\= $\unready{\theta}{S_R(\term{r})} \implies \Ref^{d'}_A(\head{V^R_L(r)}, \term{r}, \mu, \Delta_R(S_R(\term{r})))$ and \Newline
+\> \> $\ready{\theta}{S_R(\term{r})}{-} \implies $(\=$\Ref^{d'}_A(\head{\tail{V^R_L(r)}}, \term{r}, \mu, \Delta_R(S_R(\term{r})))$ \Newline
 \> \> \> $\;\land\; \exists \term{v}.\;\ready{\theta}{G_R(\term{r})}{\term{v}})$
 \Newline[1em]
 
 
-$\Ref^d_A(v, \term{r}, (\theta,R)) = \exists \term{v}.\;\hasref{\theta}{r}{\term{v}} \land \Opt^{d'}_A(v, \term{v}, (\theta,R))$ 
+$\Ref^d_A(v, \term{r}, (\theta,R), \sigma) = $ \Newline
+\> $\exists \term{v}.\;\hasref{\theta}{\term{r}}{\term{v}} \land \Opt^{d'}_A(v, \term{v}, (\theta,R), \sigma)$ 
 \Newline[1em]
 
-$\Opt^d_A(v, \term{v}, \mu) = $ \Newline
+$\Ready^d_A(\term{c}, \term{v}, (\theta,R)) = $ \Newline
+\> $\Opt^{d}_A(\mbox{if } D_R(\term{v}) \mbox{ then } \None \mbox{ else } \Some{V_R(\term{v})}, 
+              \term{a}, (\theta,R), \Delta_R(\term{c}))$ 
+\Newline[1em]
+
+
+$\Opt^d_A(v, \term{v}, \mu, \sigma) = $ \Newline
 \> $(v = \None \land \term{v} = \None) \;\vee$ \Newline
-\> $(\exists v', \term{v'}.\; v = \Some{v'} \land \term{v} = \Some{\term{v'}} \land V^d_A(v', \term{v'}, \mu))$ 
-\Newline[1em]
-
-$\complete{\theta,R} = $ \Newline
-\> $\forall \term{r} \in L_R. \exists \term{c} \in C_R.\; S_R(\term{r}) = \term{c} \land \exists \term{v}.\;\ready{\theta}{\term{c}}{\term{v}}$ 
+\> $(\exists v', \term{v'}.\; v = \Some{v'} \land \term{v} = \Some{\term{v'}} \land V^d_A(v', \term{v'}, \mu, \sigma))$ 
 \Newline[1em]
 
 $\satisfyext{(\theta,R)}{d} = $ \Newline
@@ -1173,11 +1248,34 @@ $\satisfyext{(\theta,R)}{d} = $ \Newline
 \label{satisfaction-relation}
 \end{figure}
 
+\begin{figure}
+\begin{tabbingspec}
+$\Mem{d} = \comprehend{(\theta,R)}{\satisfy{(\theta,R)}{d}}$ 
+\Newline[1em]
 
-\section{Future Work}
+$(\sqsupseteq^d) \subseteq \Mem{d} \times \Mem{d}$ \Newline[0.2em]
+
+$\betterstate{d}{(\theta',R')}{(\theta,R)}$ iff \Newline
+\;\;\= $R' \sqsupseteq R$ and \Newline
+\> $\forall \term{c}:A \in C_R, \term{v}.\; \ready{\theta}{\term{c}}{\term{v}} \implies \ready{\theta'}{\term{c}}{\term{v}}$ and \Newline
+\> $\forall \term{c}:A \in C_R, \term{code}.\; \mathsf{code}(\theta, \term{c}, \term{code}) \implies \mathsf{code}(\theta', \term{c}, \term{code})$ and \Newline
+\> $\forall \term{r}\in E_R, \term{v}.\; \mathsf{ref}(\theta, \term{r}, \term{v}) \iff 
+                                         \mathsf{ref}(\theta', \term{r}, \term{v}) $
+\Newline[1em]
+
+$\futurestate{d}{0}{\mu'}{\mu} \;\;\;\,= \betterstate{d}{\mu'}{\mu}$ \Newline
+$\futurestate{d}{n+1}{\mu'}{\mu} = $ \Newline
+\> $\exists \mu_0 \in \Mem{d}.\; \betterstate{d}{\mu_0}{\mu} \land \complete{\mu_0} \land \futurestate{2\cdot d}{n}{\mu'}{\tail{\mu_0}}$ 
+\Newline[1em]
+
+$\complete{\theta,R} = $ \Newline
+\> $\forall \term{r} \in L_R. \exists \term{c} \in C_R.\; S_R(\term{r}) = \term{c} \land \exists \term{v}.\;\ready{\theta}{\term{c}}{\term{v}}$ 
 
 
-
+\end{tabbingspec}
+\caption{Orderings on Memories}
+\label{memory-orderings}
+\end{figure}
 
 \section{Related Work}
 
@@ -1332,7 +1430,7 @@ This permits us to avoid excessive conservatism in managing dependencies.
 
 \begin{figure}
 \begin{tabbing}
-\term{id = \lambda xs.\;return(xs)} 
+\term{id = \lambda xs.\;cell(read\;xs)} 
 \\[1em]
 
 \term{compose\;f\;g =\lambda as.\; do\;}
