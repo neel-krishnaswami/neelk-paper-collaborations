@@ -773,10 +773,10 @@ represented a bit differently.
 \end{mathpar}
 
 Most of the types of ultrametric world can be represented using ML
-types. One interesting fact is that we have a type of strictly
+types. One interesting addition is that we have a type of strictly
 contractive functions $A \shrink B$. This is represented in exactly
 the same way as the ordinary ML function space, but must be kept
-isolated in order to support the extra operation of fixed points.
+isolated in order to support their extra operation of fixed points.
 
 The interesting case is the $A^\omega$ case which represents the type
 of streams of values of type $A$, which are drawn from the objects of
@@ -813,7 +813,8 @@ result $d$-approximate the result of applying a stream to the lifting.
 
 Q: What is the underlying intuition?
 
-\noindent A: A stream is a node in a dataflow graph, which represents a stream value. 
+\noindent A: A stream is a node in a dataflow graph, which represents
+a stream value.
 
 The values are coinductively generated, and the \emph{state} of the
 dataflow graph gives the \emph{seed} of the unfold operation which
@@ -858,7 +859,7 @@ simple picture arise.
   as it produces the appropriate value. We call this the \emph{rely},
   in analogy to rely-guarantee. Then, we can say that a state is
   ``more defined'' than another one when more of its cells are ready,
-  and give a Kripke semantics which asserts that an expression good in
+  and give a Kripke relation which asserts that an expression good in
   one state is also good in all ``more defined'' states.
 
   Since we relate mathematical values to program values, and this
@@ -870,29 +871,29 @@ simple picture arise.
   from step-indexed models, and define the rely mutually-recursively
   with the logical relation.
 
-\item Next, we need to make our Kripke relation on states more complex
-  than merely increasing as cells get evaluated. Since we build our
-  dataflow graph incrementally and dynamically, we need to know that
-  operations which add cells to the graph will not break existing
+\item We also build our dataflow graph incrementally and dynamically,
+  adding new cells even as current cells are evaluted. So we need to
+  know that operations which extend the graph will not break existing
   code. So the Kripke relation on memories also needs to support a
   notion of the dataflow graph getting bigger, in addition to getting
   more defined.
 
-\item Since we are implementing streams with stateful dataflow 
-  cells, we need to ensure that there are no cyclic dependencies 
-  in the flow graph. Therefore we need to ensure that a cell will
-  not write to anything which depends upon it, to avoid event storms. 
+\item Since we are implementing streams with stateful dataflow cells,
+  we need to ensure that there are no cyclic dependencies in the flow
+  graph. Therefore we need to ensure that a cell will not write to
+  anything which depends upon it, to prevent event storms.
 
-\item Our dataflow graph is not pure; operations like accumulators and
-  fixed points are implemented with imperative reference cells.  Each
-  reference is read by a 
+\item Our dataflow graph is stateful: operations like accumulators and
+  fixed points are implemented with imperative references, which give
+  a form of state whose access does not create new dependencies.
 
-  Furthermore, cells may depend upon reference cells owned by cells
-  which don't exist yet! For example, in the code for \term{fix}, the
-  input uses a reference cell owned by the output, which will write
-  its values into this cell for the input to feed back in. But at the
-  time of creation of the input cell, the output has yet to be
-  created.
+  Furthermore, these references may need to updated by a collaboration
+  between dataflow cells. For example, in the code for \term{fix}, we
+  want to feed outputs at time $n$ as inputs at time $n+1$. We do this
+  with a reference cell which is read by the input, and written to by
+  the output cell. So the getter and the setter of the cell are
+  different, and the output should not write to the reference before
+  it knows the input has read it.
 
 \item The next problem connected with state in the dataflow graphs is
   that in order to correctly realize a stream, a cell with auxilliary
@@ -908,7 +909,7 @@ simple picture arise.
   the computation at $c'$ is stateless, and so it does not need to be
   evaluated except on the ticks when its value is actually needed.
 
-  So our program must maintain a list of the state-modifying cells in
+  So our program should maintain a list of the state-modifying cells in
   the dataflow graph, so that the event loop can evaluate the ones
   that have yet to be read before it advances time by a step. Furthermore, 
   every stateful cell also needs to register itself with the global clock
@@ -921,9 +922,6 @@ simple picture arise.
   means that each stream object in our rely may also contain a delay
   -- that is, it may lack a value (ie, be $\None$) at this time step,
   and only contain values beginning at the next time step.
-
-  Here, the relational case for functions must also be adjusted, to 
-  ensure that 
 \end{enumerate}
 
 \subsection{The Formal Specification}
@@ -959,6 +957,42 @@ since we have to account for all of the issues discussed in the
 previous section. Our satisfaction relation is given in
 Figure~\ref{satisfaction-relation}.
 
+\subsubsection{The Logical Relation}
+
+In Figure~\ref{logical-relation}, we give the two logical relations,
+one for programs representing values in the category of ultrametric
+spaces, and one for values in the co-Kleisli category. The relation
+for ultrametric values is given in lines 1-6. 
+
+The clauses for the two function types on lines 3 and 4 look like
+identical --- they have the standard Kripke semantics ``in future
+worlds, take related arguments to related results''. However,
+segregating the two types ensures that we know that inhabitants of $X
+\shrink Y$ are contractive, which means that we know the
+\emph{mathematical} fixed points of $X \shrink X$ exist. 
+
+On lines 5-6, we give the relation for streams $A^\omega$. The
+relation $\Build^{d'}_A(vs, code, \mu, \emptyset, \U)$ says that in
+all well-formed memories, running \term{code} will build a fresh piece
+of dataflow graph to represent the stream value $vs$, with no static
+dependencies on any existing piece of the graph (the $\emptyset$) and
+without any delays in the output (the $\U$). This allows multiple uses
+of the stream at different times to all see the same sequence of
+mathematical values. 
+
+Explaining what the $\Build^{d}_A(vs, code, (\theta,R), \sigma, L)$
+relation (defined on lines 18-24) does involves some unavoidable
+forward references, since it depends on the memory, whose details are
+explained in the following subsection. It says that if we begin in a
+state which satisfies the formula $\theta$ (line 19), executing
+\term{code} will put us in a greater state line and return a fresh
+dataflow cell (line 21).  This cell will realize the stream $vs$, and
+its static dependencies will be bounded by $\sigma$ (lines
+22,25-26). Furthermore, all the cells $u$ updated during the execution
+of \term{code} are either in the static dependencies $\sigma$, or 
+are fresh cells (lines 23,27-29). Finally, 
+
+Then, on lines 13-24
 
 \subsubsection{The Memory}
 
@@ -1210,7 +1244,7 @@ $U^d_{X \shrink Y}(f, \term{f}) = \forall d' > 2\cdot d, v, \term{v}.\;
 \Newline[1em]
 
 $U^d_{A^\omega}(vs, \term{code}) = $ \Newline
-\;\;\= $\forall d' > 2\cdot d, \mu \in \Mem{d'}.\;\Build^{d'}_A(vs, \term{code}, \mu, \U, \emptyset)$ 
+\;\;\= $\forall d' > 2\cdot d, \mu \in \Mem{d'}.\;\Build^{d'}_A(vs, \term{code}, \mu, \emptyset, \U)$ 
 \Newline[1em]
 
 $V^d_I(\unitval, \unitval, \mu, \sigma) = $ true
