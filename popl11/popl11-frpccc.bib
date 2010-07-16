@@ -22,12 +22,9 @@
   author    = {Tarmo Uustalu and
                Varmo Vene},
   title     = {The Essence of Dataflow Programming},
-  booktitle = {CEFP},
+  booktitle = {Central European Functional Programming School},
   year      = {2005},
-  pages     = {135-167},
-  ee        = {http://dx.doi.org/10.1007/11894100_5},
-  crossref  = {DBLP:conf/cefp/2005},
-  bibsource = {DBLP, http://dblp.uni-trier.de}
+  series="LNCS", volume=4164, year=2006
 }
 
 @proceedings{DBLP:conf/cefp/2005,
@@ -50,7 +47,6 @@
   title     = {Functional Reactive Animation},
   booktitle = {ICFP},
   year      = {1997},
-  pages     = {263-273},
   ee        = {http://doi.acm.org/10.1145/258948.258973},
   bibsource = {DBLP, http://dblp.uni-trier.de}
 }
@@ -93,23 +89,19 @@
                on Streams},
   booktitle = {ICALP},
   year      = {1985},
-  pages     = {140-148},
-  ee        = {http://dx.doi.org/10.1007/BFb0015739},
-  crossref  = {DBLP:conf/icalp/1985},
-  bibsource = {DBLP, http://dblp.uni-trier.de}
+%  pages     = {140-148},
+%  ee        = {http://dx.doi.org/10.1007/BFb0015739},
+%  crossref  = {DBLP:conf/icalp/1985},
+%  bibsource = {DBLP, http://dblp.uni-trier.de}
 }
 
 @proceedings{DBLP:conf/icalp/1985,
-  editor    = {Wilfried Brauer},
-  title     = {Automata, Languages and Programming, 12th Colloquium, Nafplion,
-               Greece, July 15-19, 1985, Proceedings},
   booktitle = {ICALP},
-  publisher = {Springer},
-  series    = {Lecture Notes in Computer Science},
+  series    = {LNCS},
   volume    = {194},
-  year      = {1985},
-  isbn      = {3-540-15650-X},
-  bibsource = {DBLP, http://dblp.uni-trier.de}
+  year      = {1985}
+  @Comment isbn      = {3-540-15650-X},
+  @Comment bibsource = {DBLP, http://dblp.uni-trier.de}
 }
 
 @TECHREPORT{birkedal-ultrametrics,
@@ -119,23 +111,25 @@
                  metric-space quations},
   institution = {IT University of Copenhagen},
   year = {2009},
-  number = {ITU-2009-119},
-  url = {http://www.itu.dk/~birkedal/papers/ITU-TR-2009-119.pdf}
+  number = {ITU-2009-119}
+%  url = {http://www.itu.dk/~birkedal/papers/ITU-TR-2009-119.pdf}
 }
 
 
-@Unpublished{escardo-metric,
+@inproceedings{escardo-metric,
   author = 	 {M.H. Escard\'o},
   title = 	 {A metric model of {PCF}},
-  note =         {Laboratory for Foundations of Computer Science,
-                  University of Edinburgh. 
-                  Presented at the 
-                  Workshop on Realizability Semantics and Applications, 
-                  June 30-July 1, 1999 (associated to the Federated
-                  Logic Conference, held in Trento, June 29-July 12, 1999)},
-  month =	 {April},
-  year =	 {1998},
+  booktitle="Workshop on Realizability Semantics and Applications",
+  year=1999
 }
+@Comment   note =         {Laboratory for Foundations of Computer Science,
+@Comment                   University of Edinburgh. 
+@Comment                   Presented at the 
+@Comment                   June 30-July 1, 1999 (associated to the Federated
+@Comment                   Logic Conference, held in Trento, June 29-July 12, 1999)},
+@Comment   month =	 {April},
+@Comment   year =	 {1998},
+@Comment }
 
 @article{appel-mcallester,
   author    = {Andrew W. Appel and
@@ -166,10 +160,10 @@
   title = {{Lucid Synchrone}, version 3.
                   {Tutorial and reference manual}},
   organization = {Universit\'e Paris-Sud, LRI},
-  month = {April},
+%  month = {April},
   year = 2006,
-  note = {Distribution available at: 
-                  {\tt www.lri.fr/$\sim$pouzet/lucid-synchrone}}
+%  note = {Distribution available at: 
+%                  {\tt www.lri.fr/$\sim$pouzet/lucid-synchrone}}
 }
 
 @conference{arrowized-frp,
@@ -180,3 +174,68 @@
   year={2002},
   organization={ACM}
 }
+
+@inproceedings{benton:lnl,
+  author="N. Benton",
+  title="A Mixed Linear and Non-Linear Logic: Proofs, Terms and Models",
+  booktitle="Computer Science Logic",
+  year=1995,
+  series="LNCS", volume=933
+}
+
+@inproceedings{vieraetal:hdyrm,
+  author="M. Viera and S. D. Swierstra and E. Lempsink",
+  title="Haskell, Do You Read Me?: Constructing and Composing Efficient Top-Down Parsers at Runtime",
+  booktitle="First {ACM} Symposium on {Haskell}",
+  year=2008
+}
+
+@inproceedings{henglein:optrelational,
+  author="F. Henglein",
+  title="Optimizing Relational Algebra Operations Using Generic Equivalence Discriminators and Lazy Products",
+  booktitle="Partial Evaluation and Program Manipulation",
+  year=2010
+}
+
+@inproceedings{liu:cca,
+  author="H. Liu and E. Cheng and P. Hudak",
+  title="Causal Commutative Arrows and their Optimization",
+  booktitle="ACM International Conference on Functional Programming",
+  year=2009
+}
+
+@inproceedings{sculthorpe:safefrp,
+  author="N. Sculthorpe and H. Nilsson",
+  title="Safe Functional Reactive Programming through Dependent Types",
+  booktitle="ACM International Conference on Functional Programming",
+  year=2009
+}
+
+@inproceedings{lustre,
+ author="P. Caspi and D. Pilaud and N. Halbwachs and J.A. Plaice",
+ title="{LUSTRE}: A Declarative Language for Real-Time Programming",
+ booktitle="Proceedings of the 14th Symposium on Principles of Programming Languages",
+ year=1987
+}
+
+@inproceedings{krishnaswamietal:ramified,
+  author="N. Krishnaswami and L. Birkedal and J. Aldrich",
+  title="Verifying Even-Driven Programs using Ramified Frame Properties",
+  booktitle="Proceedings of Types in Language Design and Implementation",
+  year=2010
+}
+
+@phdthesis{courtney-thesis,
+  author="A. Courtney",
+  title="Modeling User Interfaces in a Functional Language",
+  school="Yale University",
+  year=2004
+}
+
+@article{hosl,
+  author="B. Biering, L. Birkedal and N. Torp-Smith",
+  title="{BI}-hyperdoctrines, Higher-Order Separation Logic and Abstraction",
+  journal="ACM TOPLAS",
+  volume=29, number=5, year=2007
+}
+
