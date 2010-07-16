@@ -17,7 +17,7 @@
 %-----------------------------------------------------------------------------
 
 
-\documentclass[preprint]{sigplanconf}
+\documentclass[nocopyrightspace,preprint]{sigplanconf}
 
 % The following \documentclass options may be useful:
 %
@@ -48,9 +48,11 @@
 \newcommand{\hasref}[3]{\mathsf{hasref}({#1}, {#2}, {#3})}
 \renewcommand{\implies}{\Rightarrow}
 
+\newcommand{\newref}[1]{\term{new}({#1})}
+
 \newcommand{\stream}[1]{\mathbf{#1}}
 \newcommand{\term}[1]{\ensuremath{\mathtt{{#1}}}}
-\newcommand{\spec}[4]{\setof{{#1}}\;{#2}\;\setof{{#3}.\;{#4}}}
+\newcommand{\spec}[4]{\setof{{#1}}{#2}\setof{{#3}.\;{#4}}}
 
 \newcommand{\streams}{\mathit{streams}}
 \newcommand{\thunks}{\mathit{thunks}}
@@ -65,8 +67,8 @@
 
 \newcommand{\floor}[1]{\left\lfloor{#1}\right\rfloor}
 
-\newcommand{\interps}[1]{[\![{#1}]\!]_s}
-\newcommand{\interpu}[1]{[\![{#1}]\!]_u}
+\newcommand{\interps}[1]{(\!|{#1}|\!)_s}
+\newcommand{\interpu}[1]{(\!|{#1}|\!)_u}
 
 \newcommand{\Head}{\mathit{Head}}
 \newcommand{\Tail}{\mathit{Tail}}
@@ -84,12 +86,18 @@
 \newcommand{\StableRef}{\mathit{StableRefs}}
 \newcommand{\StableImp}{\mathit{StableImps}}
 \newcommand{\Stable}{\mathit{Stable}}
+\newcommand{\realize}[5]{\mathit{Realize}_{#1}^{#2 \to #3}({#4}, {#5})}
+\newcommand{\ultrahom}[4]{\realize{\ultrametric}{#1}{#2}{#3}{\term{#4}}}
+\newcommand{\cokleislihom}[4]{\realize{\ultrametric^S}{#1}{#2}{#3}{\term{#4}}}
+
+\newcommand{\Start}[1]{\mathsf{start}(#1)}
 
 \newcommand{\unittype}{\mathsf{unit}}
 \newcommand{\celltype}[1]{\mathsf{cell}\;{#1}}
 \newcommand{\opttype}[1]{\mathsf{option}\;{#1}}
 \newcommand{\reftype}[1]{\mathsf{ref}\;{#1}}
 \newcommand{\monad}[1]{\bigcirc{#1}}
+\newcommand{\suspend}[1]{[{#1}]}
 \newcommand{\clock}{\mathsf{clock}}
 \newcommand{\comp}[1]{\mathsf{code}\;{#1}}
 \newcommand{\thunk}[1]{\mathsf{thunk}\;{#1}}
@@ -97,7 +105,7 @@
 \newcommand{\contracttype}{\mathsf{bool}}
 \newcommand{\lolli}{\multimap}
 \newcommand{\lollishrink}{-\!\!\!\,\bullet}
-\newcommand{\valtype}[1]{\mathsf{value}\;{#1}}
+\newcommand{\valtype}[1]{\mathsf{val}\;{#1}}
 \newcommand{\None}{\mathsf{None}}
 \newcommand{\Some}[1]{\mathsf{Some}({#1})}
 \newcommand{\stateok}[2]{\mathsf{updateok}({#1}, {#2})}
@@ -111,8 +119,13 @@
 
 \newenvironment{proof}[1][(Sketch)]{\noindent \textsc{Proof {#1}} }{}
 
-\newcommand{\judge}[3][\Gamma]{{#1} \vdash {#2} : {#3}}
+\newcommand{\judgeu}[3]{{#1} \vdash {#2} : {#3}}
+\newcommand{\judgek}[4][\Gamma]{{#1};{#2} \vdash {#3} : {#4}}
 \newcommand{\judgec}[4][\Gamma]{{#1};{#2} \vdash {#3} : {#4}}
+\newcommand{\judgekc}[4][\Delta]{\Gamma;{#1};{#2} \vdash {#3} : {#4}}
+
+
+\newcommand{\letval}[3]{\mathsf{letval}\;{#1} = {#2}\;\mathsf{in}\;{#3}}
 % Contractive commands
 \newcommand{\const}[1]{\left<{#1}\right>}
 \newcommand{\pair}[2]{({#1}, {#2})}
@@ -123,9 +136,32 @@
 \newcommand{\fun}[2]{\lambda {#1}.\;{#2}}
 \newcommand{\sfun}[2]{\hat{\lambda} {#1}.\;{#2}}
 
+\newcommand{\eval}{\mathit{eval}}
+\newcommand{\swap}{\mathit{swap}}
+\newcommand{\sweak}{\mathit{sweak}}
+\newcommand{\seval}{\mathit{seval}}
+\newcommand{\scomposer}{\mathit{scomposer}}
+\newcommand{\scomposel}{\mathit{scomposel}}
+\newcommand{\spair}{\mathit{spair}}
+\newcommand{\scurry}{\mathit{scurry}}
+
+\newcommand{\letv}[3]{\term{letv}\;{#1} = {#2}\;\term{in}\;{#3}}
+\newcommand{\fix}[2]{\term{fix}\;{#1}.\;{#2}}
+
 \newcommand{\Delays}{\mathbb{D}}
 \newcommand{\U}{\mathsf{u}}
 \newcommand{\D}{\mathsf{d}}
+
+%
+\newcommand{\bnfalt}{\;\;|\;\;}
+\newcommand{\pointsto}{\mapsto}
+\newcommand{\emp}{\mathsf{emp}}
+\newcommand{\specimp}{\Longrightarrow}
+\newcommand{\specand}{\;\mathrm{and}\;}
+\newcommand{\specor}{\;\mathrm{or}\;}
+
+
+\newcommand{\localref}[2]{\mathsf{ref}\term{(#1, #2)}}
 
 %
 \newcommand{\fixme}[1]{\texttt{FIXME: {#1}}}
@@ -138,14 +174,19 @@
 \newcommand{\satisfyext}[2]{\mathrm{extsat}({#1}, {#2})}
 \newcommand{\complete}[1]{\mathrm{complete}(#1)}
 
+\newcommand{\assert}{\mathsf{prop}}
+
 \newcounter{lineno}
 \newenvironment{tabbingspec}{\setcounter{lineno}{0}\begin{tabbing}\refstepcounter{lineno}{\small \arabic{lineno}}\;\;\;\=}{\end{tabbing}}
 \newcommand{\Newline}[1][0em]{\refstepcounter{lineno}\\[#1]{\small \arabic{lineno}}\>}
+
 
 \newtheorem{prop}{Proposition}
 \newtheorem{lemma}{Lemma}
 \newtheorem{definition}{Definition}
 \newtheorem{theorem}{Theorem}
+
+
 
 \begin{document}
 
@@ -153,11 +194,11 @@
 \copyrightyear{2011} 
 \copyrightdata{[to be supplied]} 
 
-\titlebanner{banner above paper title}        % These are ignored unless
-\preprintfooter{short description of paper}   % 'preprint' option specified.
+\titlebanner{unpublished -- do not circulate}        % These are ignored unless
+\preprintfooter{An Ultrametric Model of Reactive Programming}   % 'preprint' option specified.
 
 \title{An Ultrametric Model of Reactive Programming}
-\subtitle{Subtitle Text, if any}
+%\subtitle{Subtitle Text, if any}
 
 \authorinfo{Neelakantan R. Krishnaswami}
            {Microsoft Research}
@@ -169,179 +210,233 @@
 \maketitle
 
 \begin{abstract}
-We describe a model of higher-order functional reactive programming
-using ultrametric spaces, which provide a natural Cartesian closed
-generalization of causal stream functions. We then show how reactive
-programs may be implemented efficiently using an imperatively updated
-dataflow graph and prove that this implementation is correct with
-respect to the declarative semantics.
+We describe a denotational model of higher-order functional reactive
+programming using ultrametric spaces, which provide a natural
+Cartesian closed generalization of causal stream functions. We define
+a domain-specific language corresponding to the model. We then show
+how reactive programs written in this language may be implemented
+efficiently using an imperatively updated dataflow graph and give a
+higher-order separation logic proof that this low-level implementation
+is correct with respect to the high-level semantics.
 \end{abstract}
 
-\category{CR-number}{subcategory}{third-level}
+%% \category{CR-number}{subcategory}{third-level}
 
-\terms
-term1, term2
+%% \terms
+%% term1, term2
 
-\keywords
-keyword1, keyword2
+%% \keywords
+%% keyword1, keyword2
 
 \section{Introduction}
+%% In many application domains, the designers and implementers of
+%% DSLs and frameworks have to strike a difficult balance between
+%% providing highly expressive, uniform abstractions of the sort
+%% provided by general-purpose languages, and restricting users to a
+%% domain-specific programming model that can be implemented
+%% particularly efficiently, or with extra guarantees, or that is
+%% amenable to specific analyses or transformations. Relational
+%% databases and parser generators provide obvious examples: naive
+%% models of tables and queries, and rich libraries of parser
+%% combinators, are easy to build in a modern general-purpose
+%% language and naturally integrate well with the rest of the
+%% language. But the performance (and other properties) of such
+%% implementations precludes their use in many real
+%% applications. Instead, programs are typically factored into
+%% components written in a general purpose language and components
+%% that are expressed in a restricted language, such as SQL or some
+%% form of BNF, that is implemented quite differently. Much work
+%% then goes into addressing the `impedence mismatch' between the
+%% different models and into gradually enriching the domain-specific
+%% model with more of the features of general-purpose
+%% languages. Within general-purpose languages, well-optimized and
+%% staged libraries with APIs that are carefully restricted to a
+%% well-understood domain-specific model can perform orders of
+%% magnitude better than straightforward implementations
+%% \cite{vieraetal:hdyrm,henglein:optrelational}.
 
-Typical interactive programs such as web applications, games, and GUIs
-are written in a very imperative style. A program models dynamic
-behavior by modifying state, and accepting callbacks to modify its own
-state. These programs exhibit complex uses of aliasing, tricky control
-flow through callback functions living in the heap, and in general are
-very difficult to reason about. Part of the difficulty are the
-inherent complexity of verifying programs using such powerful
-features, but an even more fundamental problem is that it is not
-immediately clear even what the semantics of such programs should be
---- and even the most powerful verification techniques are useless
-without a specification for a program to meet.
+There is a broad spectrum of models for reactive programming.
+Functional reactive programming (FRP), as introduced by Elliott and
+Hudak \cite{fran}, is highly expressive and generally shallowly
+embedded in powerful general-purpose languages.  At the other end,
+synchronous languages such as Esterel \cite{esterel}, Lustre
+\cite{lustre} and Lucid Synchrone \cite{synchrone} provide a
+restricted, domain-specific model of computation supporting
+specialized compilation strategies and analysis
+techniques. Synchronous languages have been extremely successful in
+application areas such as hardware synthesis and embedded control
+software, and provide strong guarantees about bounded usage of space
+and time. FRP was initially aimed at dynamic interactive applications
+running is less resource-constrained environments, such as desktop
+GUIs, games and web applications. Even in such environments, however,
+naive versions of FRP are too unconstrained to be implemented
+efficiently (the implementations are far from naive, but it is still
+all too easy to introduce significant space and time leaks), but also
+too unconstrained from the point of view of the programmer, allowing
+unimplementable programs (e.g. ones that violate causality) to be
+written. More recent variants of FRP \cite{liu:cca,sculthorpe:safefrp}
+restrict the model to rule out non-causal functions and ill-formed
+feedback.
 
-One of the oldest and most successful proposals for giving semantics
-to interactive programs is the paradigm of \emph{dataflow programming}. 
-The basic idea is that instead of viewing a \fixme{figure out what 
-to say!}
+In practice, of course, interactive GUIs and the like are usually
+implemented in general-purpose languages in a very imperative style. A
+program implements dynamic behavior by modifying state, and accepting
+callbacks to modify its own state. These programs exhibit complex uses
+of aliasing, tricky control flow through callback functions living in
+the heap, and in general are very difficult to reason about. Part of
+the difficulty is the inherent complexity of verifying programs using
+such powerful features, but an even more fundamental problem is that
+it is not immediately clear even what the semantics of such programs
+should be --- and even the most powerful verification techniques are
+useless without a specification for a program to meet.
 
+The starting point for the work described here is the
+\emph{synchronous dataflow} paradigm of, for example, Lustre
+\cite{lustre} and Lucid Synchrone \cite{synchrone}. We wish to be able
+to write complex dynamic reactive applications in a high-level
+declarative style, without abandoning the efficient stateful execution
+model that those languages provide, at least for the first-order parts
+of our programs. To this end, we first present a new semantic model
+for reactive programs in terms of ultrametric spaces, which
+generalizes previous models based on causal stream functions. Our
+model supports full Cartesian closed structure, thus giving a
+natural mathematical notion of higher-order reactive programs.
 
+%% We give a new semantic model of functional reactive programming
+%%   based on ultrametric spaces, which builds upon prior work in two
+%%   ways. First, it generalizes existing models by supporting full
+%%   cartesian closed structure, rather than more restrictive structures
+%%   such as arrows, while still respecting important concepts such as
+%%   the causality of stream functions (and in fact extending them
+%%   naturally to higher-order).
 
-The contributions of this work are as follows:
-
-\begin{itemize}
-\item We give a new semantic model of functional reactive programming
-  based on ultrametric spaces, which builds upon prior work in two
-  ways. First, it generalizes existing models by supporting full
-  cartesian closed structure, rather than more restrictive structures
-  such as arrows, while still respecting important concepts such as
-  the causality of stream functions (and in fact extending them
-  naturally to higher-order).
-
-  In particular, the use of metric spaces means that we can use
-  Banach's contraction map theorem to interpret feedback. This means
-  that unlike earlier semantics based on domain models of streams, we
-  can restrict our semantics to only cover \emph{total, well-founded}
+  The use of metric spaces means that we can use
+  Banach's contraction map theorem to interpret feedback. Unlike earlier semantics based on domain models of streams, we
+  can thus restrict our semantics to \emph{total, well-founded}
   stream programs. Furthermore, by using an abstract notion of
   contractiveness instead of an explicit notion of guardedness, our
   semantics lifts easily to model higher-type streams (e.g., streams
   of streams) and recursion at higher type. 
 
-\item Next, we give a domain specific langauge for writing reactive
+Next, we give a domain specific language for writing reactive
   programs. Since streams distribute over products and form a comonad,
   the co-Kleisli category of streams is also Cartesian closed, thus
   giving us \emph{two} natural notions of function for reactive
   programs.  Prior work~\cite{coiterative, essence-dataflow} has
-  focused primarily on this category, but the interpretation of fixed
-  points is significantly less natural in the co-Kleisli category than
-  in the base category of ultrametric spaces.
-
-  Instead, we extend Benton and Wadler's adjoint calculus for linear
-  logic~\cite{benton-wadler} to give a language for writing reactive
-  programs. The idea is to decompose the stream comonad into a pair of
+  focused primarily on the co-Kleisli category, but the interpretation of fixed
+  points is significantly more natural in the base category of ultrametric spaces. By adapting the adjoint calculus presentation of intuitionistic linear logic \cite{benton:lnl,benton-wadler}, our language allows one to work in the two categories simultaneously.
+The idea is to decompose the stream comonad into a pair of
   adjoint functors, which in the term calculus become modal operators
   connecting the two lambda calculi. We can then interpret fixed
   points in the category of ultrametrics (thereby retaining a simple
   equational theory for them) while still enabling programming
-  implicitly with streams, as is common in dataflow languages such as
-  Synchrone~\cite{synchrone}. Furthermore, we extend the adjoint
+  implicitly with streams, as is common in dataflow languages. Furthermore, we extend the adjoint
   calculus with additional judgements to track contractiveness, so
   that we can use typechecking to ensure that clients can only take
   fixed points of well-defined, strictly-contractive functions.
 
-\item Second, we give a reasonably efficient implementation of this
-  semantics in terms of an imperative dataflow graph, and prove the
-  correctness of our implementation with respect to the semantics.  
+In the second part of the paper, we give a reasonably efficient
+implementation of our language in terms of an imperative dataflow
+graph and prove the correctness of the implementation with respect to
+the semantics. The correctness proof uses a rather non-trivial Kripke
+logical relation, built using ideas from separation logic,
+rely-guarantee reasoning and step-indexed models, but ensures that
+clients can reason about programs as well-behaved mathematical
+objects, satisfying the full range of $\beta$, $\eta$ and fixpoint
+equations, with all the complexities of the higher-order imperative
+implementation hidden behind an abstraction barrier.
 
-  Furthermore, we believe our correctness proof for our library is of
-  independent interest. It integrates techniques from verification ---
-  such as separation logic and rely-guarantee -- with techniques from
-  semantics, such as step-indexed models and logical relations. The
-  upshot is that clients of the library can reason as if it were
-  purely a mathematical object, even though it is implemented in terms
-  of complex imperative higher-order code. The full suite of equations
-  --- $\beta$, $\eta$ and fixed-point equations --- are all sound
-  reasoning principles from the perspective of the client, even though
-  the implementation is pervasively imperative. 
+  %% Furthermore, we believe our correctness proof for our library is of
+  %% independent interest. It integrates techniques from verification ---
+  %% such as separation logic and rely-guarantee -- with techniques from
+  %% semantics, such as step-indexed models and logical relations. The
+  %% upshot is that clients of the library can reason as if it were
+  %% purely a mathematical object, even though it is implemented in terms
+  %% of complex imperative higher-order code. The full suite of equations
+  %% --- $\beta$, $\eta$ and fixed-point equations --- are all sound
+  %% reasoning principles from the perspective of the client, even though
+  %% the implementation is pervasively imperative. 
 
-\item Finally, GUI toolkits often expose an essentially imperative
-  interface to certain resources (such as the display). We address the
-  question of how to smoothly integrate these kinds of effectful
-  operations into our model. 
-\end{itemize}
+%% Finally, GUI toolkits often expose an essentially imperative
+%%   interface to certain resources (such as the display). We address the
+%%   question of how to smoothly integrate these kinds of effectful
+%%   operations into our model. 
 
 \section{Reactive Programs and Stream Transformers}
 
-Reactive programs are usuall interpreted as \emph{stream
-  transformers}. The idea is that a time-varying value of type $X$ can
+Reactive programs are usually interpreted as \emph{stream
+  transformers}. A time-varying value of type $X$ can
 be viewed as a stream of $X$s, and so a program that takes a
 time-varying $X$ and produces a time-varying $Y$ is then a function
-that takes a stream of $X$s and produces a stream of $Y$s. Then,
-interactive programs can be specified in terms of the usual suite
-of function operations on streams. 
+that takes a stream of $X$s and produces a stream of $Y$s. 
+%% Then,
+%% interactive programs can be specified in terms of the usual suite
+%% of function operations on streams. 
 
-\subsection{Causality}
+%\subsection{Causality}
 
-However, the full function space on streams is too generous: there are
-stream programs which do not have a sensible interpretation as an
-interactive program. For example, consider the following simple example:
+However, the full function space on streams is too generous: many
+functions on streams do not have sensible interpretations as reactive
+processes.For example, a stock trading program receives a stream of
+prices and emits a stream of orders, but the type
+\term{Price^\omega\to Order^\omega} includes functions that produce
+orders today that are a function of the price tomorrow; such functions
+are (much to our regret) unrealizable.
 
-\begin{tabbingspec}
-\term{profit : Price^\omega \to Order^\omega} \Newline
-\term{profit\; prices = } \Newline
-\;\;\= \term{let\; prices\_tomorrow = tail(prices) \;in} \Newline
-    \> \term{if\; head(prices) < head(prices\_tomorrow)\;then} \Newline
-    \> \qquad\= \term{Buy :: profit(tail(prices))} \Newline
-    \> \term{else} \Newline
-    \> \> \term{Sell :: profit(tail(prices))} 
-\end{tabbingspec}
+%% consider the following simple
+%% example:
 
-Here, the \term{profit} function receives a stream denoting a stream
-of daily stock prices. If all the usual stream functions were
-available, it could take the tail of this stream, and then compare the
-head of today and tomorrow's stream to determine whether it should buy
-or sell. Since compiler writers cannot yet generate code which travels
-in time, we need some kind of semantic condition to explain which
-stream functions should be ruled out, and which should be ruled in.
+%% \begin{tabbingspec}
+%% \term{profit : Price^\omega \to Order^\omega} \Newline
+%% \term{profit\; prices = } \Newline
+%% \;\;\= \term{let\; prices\_tomorrow = tail(prices) \;in} \Newline
+%%     \> \term{if\; head(prices) < head(prices\_tomorrow)\;then} \Newline
+%%     \> \qquad\= \term{Buy :: profit(tail(prices))} \Newline
+%%     \> \term{else} \Newline
+%%     \> \> \term{Sell :: profit(tail(prices))} 
+%% \end{tabbingspec}
 
-To do this, we appeal to the criterion of \emph{causality}~\cite{causality}: 
-the output at time $n$ should depend only on the first $n$ inputs. We can
-formalize this as follows, using the notation $\floor{xs}_n$ to denote the 
-$n$-element prefix of the stream $xs$. 
+%% Here, the \term{profit} function receives a stream denoting a stream
+%% of daily stock prices. If all the usual stream functions were
+%% available, it could take the tail of this stream, and then compare the
+%% head of today and tomorrow's stream to determine whether it should buy
+%% or sell. Since compiler writers cannot yet generate code which travels
+%% in time, we need some kind of semantic condition to explain which
+%% stream functions should be ruled out, and which should be ruled in.
 
+The semantic condition that expresses which functions do correspond to implementable processes is \emph{causality}: 
+the output at time $n$ should depend only on the first $n$ inputs. We 
+formalize this as follows, writing $\floor{xs}_n$ for the 
+$n$-element prefix of the stream $xs$:
 \begin{definition}{(Causality)}
 A stream function $f : X^\omega \to Y^\omega$ is said to be \emph{causal} when,
 for all for all $n$ and streams $xs$ and $xs'$, if $\floor{xs}_n = \floor{xs'}_n$
 then $\floor{f(xs)}_n = \floor{f(xs')}_n$.   
 \end{definition}
+This definition rules out, for example, the \term{tail} function, for which the first
+$n$ outputs depend upon the first $n+1$ inputs. 
+%% For example, the
+%% streams $1, 1, 1, \ldots$ and $1, 2, 3, \ldots$ agree on their first
+%% output, but their tails disagree right away --- and so \term{tail} is
+%% not causal function.
 
-This definition rules out the \term{tail} function, since its first
-$n$ outputs are determined by its first $n+1$ inputs. For example, the
-streams $1, 1, 1, \ldots$ and $1, 2, 3, \ldots$ agree on their first
-output, but their tails disagree right away --- and so \term{tail} is
-not causal function.
-
-However, while this is an intuitive and appealing definition for
-streams of basic types (such as integers or booleans), it is not
-immediately clear how to generalize this definition. For example, what
-might causality mean if we have a stream of \emph{streams}, or even a
+Whilst causality is an intuitive and appealing definition for
+streams of basic types (such as integers), it is not
+immediately clear how to generalize it. What
+might causality mean over a stream of \emph{streams}, or even a
 stream of stream functions? 
 
-\subsection{Guardedness and Fixed Points}
+% \subsection{Guardedness and Fixed Points}
 
-Next, we can also want to define streams by feedback or recursion; for
-example, we may wish to define an increasing sequence of integers with
-an expression like:
+We also want to define streams by feedback or recursion, as in this definition of the increasing sequence of naturals:
 \begin{displaymath}
 \term{nats = fix(\lambda xs.\; 0 :: map\;succ\;xs)}  
 \end{displaymath}
-  
-The natural question is to ask when fixed points such as this are
-well-defined. An operational way of thinking about this question is to
-observe that the lambda expression \term{\lambda xs.\; 0 :: map\;succ\;xs} 
+An operational way of thinking about when such fixed points are well-defined is to
+observe that the function \term{\lambda xs.\; 0 :: map\;succ\;xs} 
 can produce its first output without looking at its input. So we can 
-imagine implementing the fixed point by taking the output at time $n$ and 
-feeding it back in as the input at time $n+1$, relying on the fact that at 
-time 0 the input value does not matter.
+imagine implementing the fixed point by feeding the output at time $n$ back in as the input at time $n+1$, exploiting the fact that at 
+time 0 the input value does not matter. This leads us to define:
 
 \begin{definition}{(Guardedness)}
 A function $f : X^\omega \to X^\omega$ is said to be \emph{guarded}
@@ -350,9 +445,6 @@ $xs$ and $xs'$, if $\floor{xs}_n = \floor{xs'}_n$ then
 $\floor{f(xs)}_{n+k} = \floor{f(xs')}_{n+k}$.
 \end{definition}
 
-Then the following theorem about the existence and uniqueness of fixed
-points easily follows: 
-
 \begin{prop}{(Fixed Points of Guarded Functions)}
 Every guarded endofunction $f : X^\omega \to X^\omega$ (where $X$ is a
 nonempty set) has a unique fixed point.
@@ -360,92 +452,79 @@ nonempty set) has a unique fixed point.
 
 As with causality, guardedness is an intuitive and natural property,
 but generalizations to higher types seem both useful and unobvious. For
-example, we can imagine wanting to write a recursive \emph{function}:
+example, we may want to write a recursive \emph{function}:
 \begin{displaymath}
 \term{fib = fix(\lambda f\; \lambda (j,k).\; j :: f(k,j+k))}
 \end{displaymath}
 So the natural questions to ask are: what does guardedness mean at
 higher type, and how can we interpret fixed points at higher type?
-
-To answer these questions, we will use the basic properties of the
-theory of metric spaces.
+We will answer these questions by moving to metric spaces.
 
 \section{An Ultrametric Model of Reactive Programs}
 
-\subsection{Ultrametric Spaces in a Nutshell}
+%\subsection{Ultrametric Spaces in a Nutshell}
 
 A complete 1-bounded \emph{ultrametric space} is a pair $(A, d_A)$,
-where $A$ is a set and $d_A \in A \times A \to \R$ is a distance
-function, satisfying the following four axioms:
-
+where $A$ is a set and $d_A \in A \times A \to [0,1]$ is a distance
+function, satisfying the following axioms:
 \begin{itemize}
 \item $d_A(x, y) = 0$ if and only if $x = y$
-\item $d_A(x, x') \in [0,1]$
 \item $d_A(x, x') = d_A(x', x)$
 \item $d_A(x, x') \leq \max(d_A(x, y), d_A(y, x'))$
+\item Every Cauchy sequence in $A$ has a limit
 \end{itemize}
-
-Completeness means that the limit of every Cauchy sequence in $A$
-converges to a value in $A$. What distinguishes ultrametric spaces
-from ordinary metric spaces is that the triangle inequality is more
-stringent; instead of requiring the usual triangle inequality that
+A sequence $\langle x_i\rangle$ is Cauchy if for any $\epsilon\in[0,1]$, there is an $n$ such that for all $i>n$, $j>n$, $d(x_i,x_j)\leq \epsilon$. A limit is an $x$ such that for all $\epsilon$, there is an $n$ such that for all $i>n$, $d(x,x_i)\leq \epsilon$. 
+Ultrametric spaces satisfy a stronger version of the triangle inequality than
+ordinary metric spaces, which only ask that
 $d(x,x')$ be less than or equal to $d_A(x, y) + d_A(y, x')$,
-ultrametrics require it to be less than or equal to $\max(d_A(x, y),
-d_A(y, x'))$.
-
-When there is no ambiguity, we will write $A$ for a metric space $(A, d_A)$. 
+rather than $\max(d_A(x, y), d_A(y, x'))$.
+We often just write $A$ rather than $(A, d_A)$. 
 
 A map $f : A \to B$ between ultrametric spaces is \emph{nonexpansive} when 
 it is non-distance-increasing:
 \begin{displaymath}
-  d_B(f\;x, f\;x') \leq d_A(x, x')
+  \forall x\, x', d_B(f\;x, f\;x') \leq d_A(x, x')
 \end{displaymath}
 
 A map $f : A \to B$ between ultrametric spaces is said to be
 \emph{strictly contractive} when it shrinks the distance between 
 any two points by a nonzero factor:
 \begin{displaymath}
-  \exists q \in [0,1).\; d_B(f\;x, f\;x') \leq q \cdot d_A(x, x')
+  \exists q \in [0,1),\;\forall x\, x',\; d_B(f\;x, f\;x') \leq q \cdot d_A(x, x')
 \end{displaymath}
 
 Complete 1-bounded ultrametric spaces and nonexpansive maps form a 
-Cartesian closed category. The product metric on spaces $A$ and $B$
-is given by the cartesian product of the underlying sets and the sup-metric
-on pairs:
+Cartesian closed category. The product is given by
+is given by the Cartesian product of the underlying sets, equipped with the pointwise sup-metric:
 \begin{displaymath}
   d_{A \times B}((a,b), (a',b')) = \max \setof{d_A(a,a'), d_B(b,b')}
 \end{displaymath}
-
-Similarly, the exponential metric is given by the sup-metric over all
-inputs:
+Exponentials give the set of nonexpansive maps a sup-metric over all inputs:
 \begin{displaymath}
-  d_{A \to B}((a,b), (a',b')) = \sup \comprehend{d_B(f\;a,f\;a')}{a \in A}
+  d_{A \to B}(f, f') = \sup \comprehend{d_B(f\;a,f'\;a)}{a \in A}
 \end{displaymath}
+%We take $0$ as the formal maximum of the empty set.
 
-As a notational convenience, here we take $0$ as the formal
-maximum of the empty set.
+Any set $X$ can be made into an ultrametric space $D(X)$ by
+equipping it with the discrete metric that defines $d(x,x')$ to be $0$ if $x=x'$ and $1$ otherwise.
 
-Any set $X$ can be trivially made into an ultrametric space $D(X)$ by
-equipping it with the discrete distance function
-\begin{displaymath}
-d(x,x') = \left\{\begin{array}{ll}
-                  0 & \mbox{if } x = x' \\
-                  1 & \mbox{if } x \not= x' \\
-                \end{array}
-          \right.
-\end{displaymath}
+%% \begin{displaymath}
+%% d(x,x') = \left\{\begin{array}{ll}
+%%                   0 & \mbox{if } x = x' \\
+%%                   1 & \mbox{if } x \not= x' \\
+%%                 \end{array}
+%%           \right.
+%% \end{displaymath}
 
-Given any ultrametric space $A$, we can define the metric space of
-streams on $A$ by equipping the set $A^\omega$ with an ultrametric $d$
-(which we will call the \emph{causal metric of streams}) as follows:
+For an ultrametric space $A$, the ultrametric space of
+streams on $A$ is defined by equipping the set $A^\omega$ with 
+the \emph{causal metric of streams}:
 \begin{displaymath}
   d_{A^\omega}(as, as') = \sup \comprehend{2^{-n}\cdot d_A(as_n, as'_n)}{n \in \N}
 \end{displaymath}
 
-\noindent Furthemore, this is a functorial action; given any map $f : A \to B$, 
-we can define a corresponding function $f^\omega : A^\omega \to B^\omega$ which
-takes identities to identities and commutes with composition, by mapping
-$f$ over the elements of the input stream.
+\noindent Furthemore, this is functorial: for any map $f : A \to B$, 
+we define $f^\omega : A^\omega \to B^\omega$ by mapping $f$ over the input stream, which is easily seen to preserve identity and composition.
 
 The interpretation of the stream metric is easiest to understand in
 the case of streams of discrete elements. In this case, the metric
@@ -454,8 +533,6 @@ first disagree. So two streams which have differing values at time $0$
 are at a distance of $1$, whereas two streams which never disagree
 will have a distance of $0$ (and hence will be equal streams).
 
-Finally, the one classical theorem about metric spaces which we will
-make serious use of is Banach's contraction map theorem.
 \begin{prop}{(Banach's Fixed Point Theorem)}
 For any nonempty, complete metric space $A$ and strictly contractive
 endofunction $f : A \to A$, there exists a unique fixed point of $f$.
@@ -463,9 +540,9 @@ endofunction $f : A \to A$, there exists a unique fixed point of $f$.
 
 \subsection{From Ultrametrics to Functional Reactive Programs}
 
-Now we can show that for streams of base type, the properties of maps
+For streams of base type, the properties of maps
 in the category of ultrametric spaces correspond exactly to the
-properties of first-order reactive programs we discussed in the
+properties of first-order reactive programs discussed in the
 previous section.
 
 \begin{theorem}{(Causality is Nonexpansiveness)}
@@ -496,133 +573,147 @@ interpreting our programs in the category of ultrametric spaces:
   all types.
 \end{enumerate}
 
+\noindent In an abstract sense, this semantics fulfill the original
+promise of functional reactive programming in a ``no-compromise'' way:
+one can freely and naturally write higher-order programs with stream
+values, and the properties of ultrametric spaces ensure that all
+functions are causal and all recursions well-founded.
+
 \subsection{The Co-Kleisli Category of Streams}
+Synchronous dataflow languages like Lucid Synchrone~\cite{synchrone},
+have a programming model that differs somewhat from that which the
+previous section suggests.  In these languages time is
+\emph{implicit}, and streams are only rarely manipulated directly. A
+definition like $\term{sum = \fun{(x,y)}{x + y}}$ is implicitly
+\emph{lifted} to operate pointwise over streams.  One reason for this
+choice is brevity, but a more important one is operational. Arbitrary
+stream functions, even causal ones, can be hard or impossible to
+implement without \emph{space leaks}. We aim to implement reactive
+programs using some state such that the current inputs and state
+determine the current outputs and next state. For hardware compilation
+or hard real-time programming, one needs that state to be bounded, and
+even for less constrained applications, it is unacceptable for the
+state to grow unboundedly. By keeping time implicit, restricting
+oneself to stream functions that are the the result of the compiler's
+automatic lifting, one can make it harder (or impossible) to write
+programs that leak memory by retaining arbitrary amounts of history.
 
-However, when we look at synchronous dataflow languages like Lucid
-Synchrone~\cite{synchrone}, we see that they do not offer this
-API. Instead, in these languages time is implicit, and streams are
-only very rarely directly manipulated. So instead of writing a program
-like:
-\begin{displaymath}
-  \term{f = \fun{(xs,ys)}{map\;(+)\;(zip\;(xs,ys))}}
-\end{displaymath}
-We would instead write the program
-\begin{displaymath}
-  \term{f = \fun{(x,y)}{x + y}}
-\end{displaymath}
-with the expectation that it will be \emph{lifted} to operate over
-streams. The reason for this choice is an essentially operational
-one. Consider a program like the following: 
-%
-\begin{displaymath}
-  \term{skew = \fun{xs}{(xs, 0 :: xs, 2 :: 3 :: xs)}}
-\end{displaymath}
-% 
-This program accepts a stream \term{xs} as an input, and then
-returns three streams --- the original stream \term{xs}; a stream
-which first produces 0 and then the values of \term{xs}; and finally a
-stream which yields 2, 3, and then the values of \term{xs}.
+%% that is updated on each time step on the basis of the previous state and the current inputs Consider a causal stream function like this:
+%% %
+%% \begin{displaymath}
+%%   \term{skew = \fun{xs}{(xs, 0 :: xs, 2 :: 3 :: xs)}}
+%% \end{displaymath}
+%% % 
+%% This program accepts a stream \term{xs} as an input, and then
+%% returns three streams --- the original stream \term{xs}; a stream
+%% which first produces 0 and then the values of \term{xs}; and finally a
+%% stream which yields 2, 3, and then the values of \term{xs}.
 
-This means that if we implement this stream program as an imperative
-program which modifies some state at each time step to dynamically
-emit the values of the streams it computes, then at time $n+2$, this
-program will also need to know the value of \term{xs} at times $n+1$
-and $n$, in order to correctly emit the values of the second and third
-components of its result. If programs which do unbounded buffering can
-be written, then the danger of \emph{space leaks} arises, since the
-runtime system may need to retain potentially arbitrary amounts of
-history to compute values. By making time implicit and having the
-compiler lift values to streams, it becomes difficult to write
-programs which leak memory under this implementation strategy.
+%% This means that if we implement this stream program as an imperative
+%% program which modifies some state at each time step to dynamically
+%% emit the values of the streams it computes, then at time $n+2$, this
+%% program will also need to know the value of \term{xs} at times $n+1$
+%% and $n$, in order to correctly emit the values of the second and third
+%% components of its result. If programs which do unbounded buffering can
+%% be written, then the danger of \emph{space leaks} arises, since the
+%% runtime system may need to retain potentially arbitrary amounts of
+%% history to compute values. By making time implicit and having the
+%% compiler lift values to streams, it becomes difficult to write
+%% programs which leak memory under this implementation strategy.
 
-Happily, there is a clean mathematical semantics which captures the
-essence of this class of restriction: namely, the co-Kleisli category
-of streams over ultrametric spaces. 
+Fortunately, we can capture the essence of this class of restriction
+in our mathematical semantics by working in the co-Kleisli category of
+the stream comonad on the category of ultrametric spaces.
 
-To recall the details, a \emph{comonad} on a category $\ultrametric$
+Recall that a \emph{comonad} on a category $\ultrametric$
 is a functor $S : \ultrametric \to \ultrametric$, equipped with two
 natural transformations $\counit_A : S(A) \to A$ (the counit) and
 $\tails_A : S(A) \to S(S(A))$ (the comultiplication) satisfying the
 equations $\tails_A; S(\tails_A) = \tails_A; \tails_{S(A)}$ and
-$\tails_A; S(\counit_A) = id = \tails_A; \counit_{T(A)}$.  (Here we
-use the semicolon to indicate composition in diagrammatic order.)  In
+$\tails_A; S(\counit_A) = id = \tails_A; \counit_{T(A)}$. 
+%(Here we
+%use the semicolon to indicate composition in diagrammatic order.)  
+In
 the case of streams, the counit $\counit$ is the head function on
 streams, and the comultiplication takes a stream and returns the a
-stream containing the successive tails of the input stream. The action
-of the stream functor is just the map functional for streams.
-\footnote{The ``Kleisli triple'' formulation for monads is perhaps
+stream containing the successive tails of the input stream.\footnote{The ``Kleisli triple'' formulation for monads is perhaps
   more familiar to functional programmers, which is given in terms of
   an extension operator sending maps $f : A \to T(B)$ to $\term{bind}(f)  : T(A) \to
   T(B)$.  Dually, the \emph{coextension} for comonads sends maps $f :
-  S(A) \to B$ to $f^\dagger S(A) \to S(B)$, and can be defined as
+  S(A) \to B$ to $f^\dagger : S(A) \to S(B)$, and can be defined as
   $f^\dagger = \delta; S(f)$.}
+$S(\cdot)$ is a \emph{strong} functor: $S(A \times B) \simeq S(A) \times
+S(B)$.
+%, meaning that a stream of pairs is isomorphic to a pair of
+%streams. 
+We write \term{unzip} and \term{zip} for the components
+of this isomorphism.
+%, corresponding to the similarly-named functions in
+%functional programs.
 
-We will also make use of the fact that streams distribute over
-products and vice-versa--- that is, $S(A \times B) \simeq S(A) \times
-S(B)$, meaning that a stream of pairs is isomorphic to a pair of
-streams. We will write \term{unzip} and \term{zip} for the components
-of this isomorphism, corresponding to the similarly-named functions in
-functional programs.
-
-The co-Kleisli category $\ultrametric^S$ of a comonad $S : \ultrametric
-\to \ultrametric$ is the category of free $S$-coalgebras. Its objects
-are the objects of $\ultrametric$, but each map $f : A \to B$ in
-$\ultrametric^S$ is a morphism $f : S(A) \to B$ in
-$\ultrametric$. Amazingly, this category is also cartesian closed; the
+\newcommand{\us}{$\ultrametric^S$} 
+The co-Kleisli category
+$\ultrametric^S$ of a comonad $S : \ultrametric \to \ultrametric$ is
+the category of free $S$-coalgebras, which may be presented as having
+the same objects $\ultrametric$, but taking maps from $A$ to $B$ to be
+in $\ultrametric^S$ to be maps $f : S(A) \to B$ in
+$\ultrametric$. Amazingly, \us\ is also cartesian closed; the
 identity, composition, projection, pairing, currying and evaluation
 maps are defined in Figure~\ref{cokleisli-defs}.
 
-The motivation for working in this category is that a map $e : A \to
-B$ in this category can be thought of as the interpretation of a
-synchronous dataflow program with a free variable of type $A$, as is
-usual for categorical semantics. The fact we \emph{implicitly} lift
-variables to streams means we need to treat the free variable as a
-stream value. So we want a morphism $e : A \to B$ to be represented
-by a function $e : S(A) \to B$ in the underlying category $\ultrametric$. 
-Intuitively, the meaning of the term can be read as saying ``at each
-instant, $e$ will have a value of type $B$ depending on the values
-that its free variable will take on''.
-
-Then, the way that we can interpret the dynamic behavior of a term is
+We think of a map $e : A \to B$ in \us\ as the interpretation of a
+synchronous dataflow program with a free variable of type $A$ in the
+style of Lucid Synchrone - i.e. something that is really implicitly
+lifted to work on streams.
+%
+%% , as is
+%% usual for categorical semantics. The fact we \emph{implicitly} lift
+%% variables to streams means we need to treat the free variable as a
+%% stream value. So we want a morphism $e : A \to B$ to be represented
+%% by a function $e : S(A) \to B$ in the underlying category $\ultrametric$. 
+%% Intuitively, the meaning of the term can be read as saying ``at each
+%% instant, $e$ will have a value of type $B$ depending on the values
+%% that its free variables will take on''.
+%
+The dynamic behavior of synchronous terms is understood
 via the coextension; $e^\dagger$ is a map $e : S(A) \to S(B)$ in
-$\ultrametric$, and is defined to be the function we get by feeding
+$\ultrametric$, and is the function we get by feeding
 $e$ the successive tails of the original input stream. So this says
 that if the input $A$ takes on the values $as = [a_0, a_1, a_2,
   \ldots]$, then the output results will be $[e(as), e(\tail{as}),
   e(\tail{\tail{as}}), \ldots]$.
 
-However, while this category is Cartesian closed, and so can interpret
-pairs and function spaces, it does not have coproducts, and so cannot
-interpret sums. An even bigger difficulty is that the instantaneous
-interpretation of terms makes it very difficult to interpret
+Although \us\ is Cartesian closed, it does not have coproducts.
+Furthermore the instantaneous
+interpretation of terms makes it hard to support 
 operations acting on streams of streams. The key difficulty is that
 there is no map in this category which takes a stream of streams, and
 whose coextension yields the head of the stream of streams.
-
-More concretely, $\ultrametric^S$ does not have a map which
-corresponds to taking an input like $[[0,1,2,\ldots], [0,3,6,\ldots],
-  [0,5,10,\ldots], \ldots]$ and returns 0 on the first time step, 1 on
-the second, 2 on the third, and so on. The reason is that this
-sequence is generated by the coextension of a map of type $S(\N) \to
-\N$ (in $\ultrametric^S$), and so at time 0 it receives the argument
-$[[0,1,2,\ldots], [0,3,6,\ldots], [0,5,10,\ldots], \ldots]$, and at
-time 1 it receives the argument $[0,3,6,\ldots], [0,5,10,\ldots],
-\ldots]$ and so on. So at time 1, we no longer remember what the
-argument at the time 0 was, and so cannot return the right answer.
-
+%
+%% More concretely, $\ultrametric^S$ does not have a map which
+%% corresponds to taking an input like $[[0,1,2,\ldots], [0,3,6,\ldots],
+%%   [0,5,10,\ldots], \ldots]$ and returns 0 on the first time step, 1 on
+%% the second, 2 on the third, and so on. The reason is that this
+%% sequence must be generated by the coextension of a map of type $S(\N) \to
+%% \N$ (in $\ultrametric^S$), and so at time 0 it receives the argument
+%% $[[0,1,2,\ldots], [0,3,6,\ldots], [0,5,10,\ldots], \ldots]$, and at
+%% time 1 it receives the argument $[0,3,6,\ldots], [0,5,10,\ldots],
+%% \ldots]$ and so on. So at time 1, we no longer remember what the
+%% argument at the time 0 was, and so cannot return the right answer.
+%
 This, in turn, makes defining fixed point operators very difficult: a
-variable of type $A \lolli A$\footnote{we use $A \lolli A$ to denote
-the exponential in $\ultrametric^S$, for reasons that will shortly
-become clear} denotes a stream of functions. If all of these
+variable of type 
+\footnote{We use $A \lolli A$ to denote
+  the exponential in $\ultrametric^S$.} $A \lolli A$
+denotes a stream of functions. If all of these
 functions are contractive, and we take fixed point of coextensions
 pointwise, then we get a stream of streams --- at which point we
 discover that we can never look at the \emph{second} element of any of
-the results.
-
-This temporal amnesia is the very reason that space leaks become
-harder to program, so this is not an accidental difficulty. 
+the results. This amnesia is the very reason that space leaks become
+harder to program: this is not an accidental difficulty!
 
 \begin{figure}
+{\small
 \begin{mathpar}
   \begin{array}{lcl}
     \mathsf{id}   & = & \counit \\
@@ -636,6 +727,7 @@ harder to program, so this is not an accidental difficulty.
     \mathsf{eval}     & = & \mathsf{unzip}; (\counit \times \mathit{id}); \mathit{eval} \\
  \end{array}
 \end{mathpar}
+}
 \caption{Definition of operations in the co-Kleisli category}
 \label{cokleisli-defs}
 \end{figure}
@@ -650,39 +742,39 @@ the other hand, we can take a ``synchronous dataflow'' view to support
 more efficient implementation techniques, at the price of making it
 difficult to give good semantics to feedback. So it is natural to ask
 if there is some way of combining the strengths of the two approaches.
-We meet this goal by adapting Benton and Wadler's~\cite{benton-wadler}
-adjoint model of the semantics of linear logic. Originally developed
-to give a model of linear logic, it turns out to be abstract enough
-that it applies naturally to the setting of dataflow programming as
+We meet this goal by adapting 
+adjoint-style models of intuitionistic linear logic \cite{benton:lnl,benton-wadler}. Originally developed
+to give a model of linear logic, these turn out to be abstract enough
+to apply naturally to the setting of dataflow programming as
 well. 
 \begin{definition}{} 
 An \emph{adjoint model} is specified by:
 \begin{enumerate}
 \item A cartesian closed category $(\ultrametric, 1, \times, \To)$. 
 \item A symmetric monoidal closed category $(\ultrametric^S, I, \otimes, \lolli)$.
-\item A symmetric monoidal adjunction $((-)^\omega, V, \eta, ?, m, n)$ from $\ultrametric$ to $\ultrametric^S$. 
+\item A symmetric monoidal adjunction $((-)^\omega, V, \eta, \varepsilon, m, n)$ from $\ultrametric$ to $\ultrametric^S$. Here, $\eta$ and $\varepsilon$ witness the adjunction, and $m$ and $n$ are the natural transformations
+showing that the monoidal structure is preserved.
 \end{enumerate}
 \end{definition}
 In our setting, we take the CCC to be the category of ultrametric
 spaces, and take the monoidal closed structure in the definition to be
-the cartesian closed structure of the co-Kleisli category (since any
-Cartesian product is automatically a monoidal product as well). Then,
-to get the adjunction, we we can exploit the fact that any comonad is
-the composition of a pair of adjoint functors, and decompose the
-stream functor into a pair of functors that go between the category of
+the cartesian closed structure of the co-Kleisli category (since 
+Cartesian products are a special case of monoidal products). We
+decompose the stream comonad into the usual free and forgetful functors that go between the category of 
 ultrametric spaces and the co-Kleisli category of streams over
-it. Then, the functors $(-)^\omega : \ultrametric^S \to \ultrametric$
+it. Specifically, the functors $(-)^\omega : \ultrametric^S \to \ultrametric$
 and $V(-) : \ultrametric \to \ultrametric^S$ are defined as:
+{\small
 \begin{mathpar}
   \begin{array}{lcl} 
     V(X)           & = & X \\
-    V(f : X \to Y) & = & \epsilon_X; f \\[1em]
+    V(f : X \to Y) & = & \epsilon_X; f \\[0.5em]
 
     A^\omega             & = & S(X) \\
     (f : A \to B)^\omega & = & \delta_{A}; S(f) = f^\dagger\\
   \end{array}
 \end{mathpar}
-
+}
 Intuitively $V(f)$ takes a function $f$ from the general FRP world and
 embeds it into the synchronous dataflow world by having it act at each
 instant on the head of the stream. The action of the other half of the
@@ -690,69 +782,677 @@ adjoint $(g)^\omega$ takes a synchronous dataflow function, and turns
 it into a general function on streams, via the coextension operation. 
 Verifying that $V(f)^\omega = S(f)$ is immediate from the definitions. 
 
-Furthemore, we have the isomorphisms that $V(X \times Y) \simeq V(X)
-\otimes V(Y)$ and $X \To B^\omega \simeq (V(X) \lolli B)^\omega$. This
-latter isomorphism is actually the key property which lets us switch
-our view of a program between the synchronous and the functional
-reactive views.
+Furthemore, we know that $V(X \times Y) \simeq V(X) \otimes V(Y)$, and
+also $X \To B^\omega \simeq (V(X) \lolli B)^\omega$. This latter
+isomorphism is actually the key property which lets us switch our view
+of a program between the synchronous and the functional reactive
+views.
 
-For example, under the adjoint view, it becomes very straightforward 
-to solve the puzzle at the end of the last subsection. The natural type of
-a fixed point operator in $\ultrametric^S$ is $(A \lollishrink A) \lolli S(A)$,
-which at each instant yields a stream corresponding to the fixed point 
+For example, under the adjoint view, it becomes easy to resolve the
+puzzle at the end of the last subsection. We give the feedback
+operator the type $(A \lollishrink A)^\omega \To A^\omega$, with
+the semantics that it returns a stream corresponding to the fixed
+point of the \emph{first} function in the input stream. Then, a
+synchronous program can start looking at the elements of the
+result whenever it wants to.
 
-\section{DSL}
+\section{A Domain Specific Language}
 
-\fixme{This needs to be reworked in light of the new adjoint logic presentation}
+We now give a small domain-specific language
+corresponding to the semantics of the previous section. As in adjoint
+logic, we have two sorts of types, writing $X,Y,Z$ for the types of
+the lambda calculus interpreted in the base category of ultrametric
+spaces, and $A,B,C$ for the types interpreted in the co-Kleisli
+category. In addition to the standard function, product and adjoint
+types, we also introduce types corresponding to \emph{contractive
+  functions}, $X \shrink Y$ and $A \lollishrink B$.
 
+\begin{figure}
+{\small
 \begin{mathpar}
-\inferrule*[right=CConst]
-          {\judge{e}{A}}
-          {\judgec{\Delta}{\const{e}}{A}}
+\inferrule*[]
+          {x:X \in \Gamma}
+          {\judgeu{\Gamma}{x}{X}}
 \and
-\inferrule*[right=CApp]
-          {\judgec{\Delta}{c}{A \shrink B} \\
-           \judge[\Gamma, \Delta]{e}{A}}
-          {\judgec{\Delta}{c\;e}{B}}
+\inferrule*[]
+          {\judgeu{\Gamma}{e}{X \To Y} \\ \judgeu{\Gamma}{e'}{X}}
+          {\judgeu{\Gamma}{e\;e'}{Y}}
 \and
-\inferrule*[right=CPair]
-          {\judgec{\Delta}{c}{A} \\ 
-           \judgec{\Delta}{c'}{B}}
-          {\judgec{\Delta}{\pair{c}{c'}}{A \times B}}
+\inferrule*[]
+          {\judgeu{\Gamma,x:X}{e}{Y}}
+          {\judgeu{\Gamma}{\fun{x}{e}}{X \To Y}}
 \and
-\inferrule*[right=CFst]
-          {\judgec{\Delta}{c}{A \times B}}
-          {\judgec{\Delta}{\fst{c}}{A}}
-\and
-\inferrule*[right=CSnd]
-          {\judgec{\Delta}{c}{A \times B}}
-          {\judgec{\Delta}{\snd{c}}{A}}
-\and
-\inferrule*[right=CUnit]
+\inferrule*[]
           { }
-          {\judgec{\Delta}{\unit}{1}}
+          {\judgeu{\Gamma}{\unitval}{1}}
 \and
-\inferrule*[right=CLet]
-          {\judgec{\Delta}{c}{A} \\ 
-           \judgec[\Gamma, x:A]{\Delta}{c'}{B}}
-          {\judgec{\Delta}{\letc{x}{c}{c'}}{B}}
+\inferrule*[] 
+          {\judgeu{\Gamma}{e}{X} \\ \judgeu{\Gamma}{e'}{Y}}
+          {\judgeu{\Gamma}{\pair{e}{e'}}{X \times Y}}
 \and
-\inferrule*[right=CLam]
-          {\judgec[\Gamma, x:A]{\Delta}{c}{b}}
-          {\judgec{\Delta}{\fun{x:A}{c}}{A \To B}}
+\inferrule*[]
+          {\judgeu{\Gamma}{e}{X_1 \times X_2}}
+          {\judgeu{\Gamma}{\pi_i\;e}{X_i}}
 \and
-\inferrule*[right=CSLam]
-          {\judgec{\Delta, x:A}{c}{B}}
-          {\judgec{\Delta}{\sfun{x:A}{c}}{A \shrink B}}
+\inferrule*[]
+          {x:A \in \Gamma}
+          {\judgek{\Delta}{x}{A}}
+\and
+\inferrule*[]
+          {\judgek{\Delta}{t}{A \lolli B} \\ \judgek{\Delta}{t'}{A}}
+          {\judgek{\Delta}{t\;t'}{B}}
+\and
+\inferrule*[]
+          {\judgek{\Delta,x:A}{t}{B}}
+          {\judgek{\Delta}{\fun{x}{t}}{A \lolli B}}
+\and
+\inferrule*[]
+          { }
+          {\judgek{\Delta}{\unitval}{I}}
+\and
+\inferrule*[] 
+          {\judgek{\Delta}{t}{A} \\ \judgek{\Delta}{t'}{B}}
+          {\judgek{\Delta}{\pair{t}{t'}}{A \otimes B}}
+\and
+\inferrule*[]
+          {\judgek{\Delta}{t}{A_1 \otimes A_2}}
+          {\judgek{\Delta}{\pi_i\;t}{A_i}}
+\\
+\inferrule*[]
+          {\judgek{\cdot}{t}{A}}
+          {\judgeu{\Gamma}{t^\omega}{A^\omega}}
+\and
+\inferrule*[]
+          {\judgeu{\Gamma}{e}{A^\omega}}
+          {\judgek{\Delta}{\Start{e}}{A}}
+\and
+\inferrule*[]
+          {\judgeu{\Gamma}{e}{X}}
+          {\judgek{\Delta}{\valtype{e}}{\valtype{X}}}
+\and
+\inferrule*[]
+         {\judgek{\Delta}{t}{\valtype{X}} \\ \judgek[\Gamma,x:X]{\Delta}{t'}{A}}
+         {\judgek{\Delta}{\letval{x}{t}{t'}}{A}}
 \end{mathpar}
+}
+\caption{Syntax for Adjoint Logic}
+\label{adjoint-syntax}
+\end{figure}
 
-\section{The Programming Language and Library}
+
+\begin{figure}
+{\small
+\begin{mathpar}
+\inferrule*
+          {\judgeu{\Gamma}{e}{X}}
+          {\judgec{\hat{\Gamma}}{\const{e}}{X}}
+\and
+\inferrule*
+          {\judgec{\hat{\Delta}}{c}{X \shrink Y} \\
+           \judgeu{\Gamma, \hat{\Gamma}}{e}{X}}
+          {\judgec{\hat{\Gamma}}{c\;e}{Y}}
+\and
+\inferrule*
+          {\judgec{\hat{\Gamma}}{c}{X} \\ 
+           \judgec{\hat{\Gamma}}{c'}{Y}}
+          {\judgec{\hat{\Gamma}}{\pair{c}{c'}}{X \times Y}}
+\and
+\inferrule*
+          {\judgec{\hat{\Gamma}}{c}{X_1 \times X_2}}
+          {\judgec{\hat{\Gamma}}{\pi_i\;c}{X_i}}
+\and
+\inferrule*
+          { }
+          {\judgec{\hat{\Gamma}}{\unit}{1}}
+\and
+\inferrule*
+          {\judgec{\hat{\Gamma}}{c}{X} \\ 
+           \judgec[\Gamma, x:X]{\hat{\Gamma}}{c'}{Y}}
+          {\judgec{\hat{\Gamma}}{\letc{x}{c}{c'}}{Y}}
+\and
+\inferrule*
+          {\judgec[\Gamma, x:X]{\hat{\Gamma}}{c}{b}}
+          {\judgec{\hat{\Gamma}}{\fun{x:X}{c}}{X \To Y}}
+\and
+\inferrule*
+          {\judgec{\hat{\Gamma}}{c}{X \To Y} \\ 
+           \judgec{\hat{\Gamma}}{c'}{X}} 
+          {\judgec{\hat{\Gamma}}{c\;c'}{Y}}
+\and
+\inferrule*
+          {\judgec{\hat{\Gamma}, x:X}{c}{Y}}
+          {\judgec{\hat{\Gamma}}{\sfun{x:X}{c}}{X \shrink Y}}
+
+\\
+
+\inferrule*
+          {\judgek{\Delta}{t}{A}}
+          {\judgekc{\hat{\Delta}}{\const{t}}{A}}
+\and
+\inferrule*
+          {\judgekc{\hat{\Delta}}{d}{A \lollishrink B} \\
+           \judgek{\Delta, \hat{\Delta}}{t}{A}}
+          {\judgekc{\hat{\Delta}}{d\;t}{B}}
+\and
+\inferrule*
+          {\judgekc{\hat{\Delta}}{d}{A} \\ 
+           \judgekc{\hat{\Delta}}{d'}{B}}
+          {\judgekc{\hat{\Delta}}{\pair{d}{d'}}{A \otimes B}}
+\and
+\inferrule*
+          {\judgekc{\hat{\Delta}}{d}{A_1 \otimes A_2}}
+          {\judgekc{\hat{\Delta}}{\pi_i\;d}{A_i}}
+\and
+\inferrule*
+          { }
+          {\judgekc{\hat{\Delta}}{\unit}{I}}
+\and
+\inferrule*
+          {\judgekc{\hat{\Delta}}{d}{A} \\ 
+           \judgekc[\Delta, x:A]{\hat{\Delta}}{d'}{B}}
+          {\judgekc{\hat{\Delta}}{\letc{x}{d}{d'}}{B}}
+\and
+\inferrule*
+          {\judgekc[\Delta, x:A]{\hat{\Delta}}{d}{b}}
+          {\judgekc{\hat{\Delta}}{\fun{x:A}{d}}{A \lolli B}}
+\and
+\inferrule*
+          {\judgekc{\hat{\Delta}, x:A}{d}{B}}
+          {\judgekc{\hat{\Delta}}{\sfun{x:A}{d}}{A \lollishrink B}}
+
+\end{mathpar}
+}
+\caption{Syntax for Contractive Terms}
+\label{contractive-syntax}      
+\end{figure}
+
+There are two judgement forms, $\judgeu{\Gamma}{e}{Y}$ and
+$\judgek{\Delta}{t}{B}$, where $\Gamma = x_1:X_1,\label,x_n:X_N$ and
+$\Delta = y_1:A_a, \ldots, y_m:A_n$.  We then interpret the first
+judgement as a map in $\ultrametric$, of type $X_1 \times \ldots
+\times X_n \to Y$, and the second judgement as a map in
+$\ultrametric^S$, of type $V(X_1 \times \ldots \times X_n \to Y)
+\otimes A_1 \otimes \ldots \otimes A_m \to B$. Here, $e$ ranges over
+``FRP programs'' interpreted in the base category of ultrametric
+spaces, and $t$ ranges over ``synchronous dataflow programs''
+interpreted in the co-Kleisli category. Note the asymmetry in 
+the judgments -- the ``FRP'' context appears in the ``dataflow''
+judgement, but not vice-versa. Intuitively, this is because the FRP
+world is pure, and can be used at any time, whereas the synchronous
+world is implicitly clocked as a kind of ambient effect. 
+
+We give typing rules for these programs in
+Figure~\ref{adjoint-syntax}.  Most of the rules are routine, with all
+of the interest lying in the rules that permit passing between the two
+worlds, listed as the last four rules of
+Figure~\ref{adjoint-syntax}. The $\omega$-introduction rule takes a
+dataflow program with no free variables, and treats it as a stream in
+$\ultrametric$. The corresponding elimination rule says that in a
+dataflow program, we can take a term $e : A^\omega$, and start
+enumerating its values with $\Start{e}$. Conversely, the final rule
+says how synchronous programs can decompose embedded FRP values
+and bind them for use in subsequent synchronous computations.
+
+In addition to these two judgements, we also need a pair of judgements
+permitting programmers to define contractive functions, which we
+describe in Figure~\ref{contractive-syntax}. The first is
+$\judgec{\hat{\Gamma}}{c}{X}$, which asserts that $c$ is a term which
+is strictly contractive in the variables in $\hat{\Gamma}$.  (It can
+be merely nonexpansive in the variables in $\Gamma$.) Likewise, we
+have a judgement $\judgekc{\hat{\Delta}}{d}{A}$, with $d$ 
+strictly contractive in the variables in $\hat{\Delta}$ and
+nonexpansive in the others. The interpretation of
+$\judgec{\hat{\Gamma}}{c}{X}$ is a morphism with type $\Gamma \to
+(\hat{\Gamma} \shrink X)$, and the interpretation of
+$\judgekc{\hat{\Delta}}{d}{X}$ is a morphism of type $V(\Gamma)
+\otimes \Delta \to (\hat{\Delta} \lollishrink A)$.  
+
+At first glance, these judgements look similar to the usual rules for
+introducing and eliminating functions, pairs, and so on. Upon second
+glance, they look extremely peculiar! We introduce a second (or third)
+context of variables, into which we move the binders for contractive
+functions. However, we do so \emph{without} giving a corresponding
+variable rule that permits directly using these hypothesis. Instead,
+there are some rules (such as the application rule for contractive
+functions) that permit moving the variables from the new context into
+the old. From a semantic point of view, this is only to be expected ---
+the interpretation of the variable rule in categorical proof theory is
+an identity morphism, and identities \emph{are not contractive}. So we
+cannot expect to have a normal variable rule for the hypotheses
+corresponding to arguments of contractive functions. Operationally,
+this embodies our need to ensure that the variables are only used as
+arguments to contractive functions (such as \term{cons}), which will
+ensure that the terms they appear in are always guarded.
+
+To define the semantics, we need some maps in the category of
+ultrametrics which witness the fact that contractivenss is preserved
+by almost everything. The implementations of these functions are the
+evident ones given the types, since contractive functions are just a
+subset of the nonexpansive ones. (Also, we elide the essentially
+identical semantics of contractive terms in the co-Kleisli category.)
+
+\begin{figure*}
+{\small
+\begin{mathpar}
+  \begin{array}{ll}
+  \begin{array}{lcl}
+    \interp{\judgeu{\Gamma}{x_i}{X_i}} & = & \pi_i \\
+    \interp{\judgeu{\Gamma}{e\;e'}{Y}} & = & 
+       (\interp{\judgeu{\Gamma}{e}{X \To Y}}, \interp{\judgeu{\Gamma}{e'}{X}}); \mathit{eval} \\
+    \interp{\judgeu{\Gamma}{\fun{x}{e}}{X \To Y}} & = & 
+      \lambda(\interp{\judgeu{\Gamma,x:X}{e}{Y}}) \\
+    \interp{\judgeu{\Gamma}{\unit}{1}} & = & 1_{\Gamma} \\
+    \interp{\judgeu{\Gamma}{\pair{e}{e'}}{A \times B}} & = & 
+      (\interp{\judgeu{\Gamma}{e}{A}}, \interp{\judgeu{\Gamma}{e'}{B}}) \\
+    \interp{\judgeu{\Gamma}{\pi_i(e)}{A_i}} & = & 
+      \interp{\judgeu{\Gamma}{e}{A_1 \times A_2}}; \pi_i \\
+    \interp{\judgeu{\Gamma}{t^\omega}{A^\omega}} & = &  \eta_{\Gamma}; \interp{\judgek{\cdot}{t}{A}}^\omega 
+  \end{array}
+    & 
+  \begin{array}{lcl}
+    \interp{\judgek{\Delta}{x_i}{A_i}} & = & \pi_2; \pi_i \\
+    \interp{\judgek{\Delta}{t\;t'}{B}} & = & 
+       (\interp{\judgek{\Delta}{e}{A \lolli B}}, \\
+       & & \;\interp{\judgek{\Delta}{e'}{A}}); \mathit{eval} \\
+    \interp{\judgek{\Delta}{\fun{x}{t}}{A \lolli B}} & = & 
+      \lambda(\interp{\judgek{\Delta,x:A}{t}{B}}) \\
+    \interp{\judgek{\Delta}{\unit}{I}} & = & 1_{\Delta} \\
+    \interp{\judgek{\Delta}{\pair{t}{t'}}{A \otimes B}} & = & 
+      (\interp{\judgek{\Delta}{t}{A}}, \interp{\judgek{\Delta}{t'}{B}}) \\
+    \interp{\judgek{\Delta}{\pi_i(t)}{A_i}} & = & 
+      \interp{\judgek{\Delta}{t}{A_1 \otimes A_2}}; \pi_i  \\
+    \interp{\judgek{\Delta}{\valtype{t}}{\valtype{X}}} & = & 
+      \pi_1; V(\interp{\judgeu{\Gamma}{t}{X}}) \\
+    \interp{\judgek{\Delta}{\Start{t}}{A}} & = & 
+      \pi_1; V(\interp{\judgeu{\Gamma}{t}{A^\omega}}); \varepsilon_A \\
+    \interp{\judgek{\Delta}{\letval{x}{t}{t'}}{A}} & = & 
+       ((\pi_1, \interp{\judgek{\Delta}{t}{\valtype{X}}}); n, \pi_2); \\ 
+                                        & & \interp{\judgek[\Gamma,x:X]{\Delta}{t'}{A}}
+  \end{array}
+\end{array}
+\end{mathpar}
+}
+\caption{Semantics of Adjoint Language}
+\label{adjoint-semantics}
+\end{figure*}
+%%
+
+%%
+\begin{figure*}
+{\small
+\begin{mathpar}
+\begin{array}{ll}
+  \begin{array}{l}
+    \sweak  : X \to (Y \shrink Z) \\
+    \spair  : (X \shrink Y) \times (X \shrink Z) \to (X \shrink Y \times Z) \\
+    \scurry : (X \times Y \shrink Z) \to (X \shrink Y \shrink Z) \\
+    \seval  : (X \shrink Y \shrink Z) \times (X \To Y) \to (X \shrink Z) \\
+    \swap   : (X \To Y \shrink Z) \simeq (Y \shrink X \To Z) \\
+    \scomposer(f : Y \to Z)  :  (X \shrink Y) \to (X \shrink Z) 
+  \end{array}
+&
+ \begin{array}{lcl}
+  \interp{\judgec{\hat{\Gamma}}{\const{e}}{X}} & = & \interp{\judgeu{\Gamma}{e}{X}}; \sweak \\
+  \interp{\judgec{\hat{\Gamma}}{c\;e}{Y}} & = & 
+     (\interp{\judgec{\hat{\Gamma}}{c}{X \shrink Y}}, \lambda(\interp{\judgeu{\Gamma,\hat{\Gamma}}{e}{X}})); \seval \\ 
+  \interp{\judgec{\hat{\Gamma}}{\pi_i(c)}{X_i}} & = & 
+    \interp{\judgec{\hat{\Gamma}}{c}{X_1 \times X_2}}; \scomposer(\pi_i)
+\\
+  \interp{\judgec{\hat{\Gamma}}{\unit}{1}} & = & 
+     1_\Gamma; \sweak_{\hat{\Gamma}}
+\\
+  \interp{\judgec{\hat{\Gamma}}{\letc{x}{c}{c'}}{Y}} & = & 
+    (\swap(\lambda(\interp{\judgec[\Gamma,x:X]{\hat{\Gamma}}{c'}{Y}})), \interp{\judgec{\hat{\Gamma}}{c}{X}}); \\
+    & & \spair; \scomposer(\eval)
+\\
+  \interp{\judgec{\hat{\Gamma}}{\fun{x:X}{c}}{X \To Y}} & = & 
+    \swap(\lambda(\interp{\judgec[\Gamma,x:X]{\hat{\Gamma}}{c}{Y}})) 
+\\
+  \interp{\judgec{\hat{\Gamma}}{\fun{x:X}{c}}{X \shrink Y}} & = & 
+    \interp{\judgec{\hat{\Gamma}, x:X}{c}{Y}}; \scurry 
+\\
+  \interp{\judgec{\hat{\Gamma}}{\pair{c}{c'}}{X \times Y}} & = & 
+      (\interp{\judgec{\hat{\Gamma}}{c}{X}},
+       \interp{\judgec{\hat{\Gamma}}{c'}{Y}}); \spair
+ \end{array}
+\end{array}
+\end{mathpar}
+}
+\caption{Semantics of Contractive Terms}
+\end{figure*}
+
+\section{Implementation Language and Dataflow Library}
+
+\noindent\textbf{Implementation Language}. The programming language
+in which we implement our domain-specific language is a 
+polymorphic lambda calculus with monadically typed 
+side-effects.  The types are
+the unit type $1$, the function space $\tau \to \sigma$, sums $\tau +
+\sigma$, products $\tau \star \sigma$, inductive types like the
+natural number type $\N$, the general reference type $\reftype{\tau}$,
+as well as (higher-kinded but still predicative) universal and
+existential types $\forall \alpha:\kappa.\;\tau$ and $\exists
+\alpha:\kappa.\;\tau$. In addition, we have the monadic type
+$\monad{\tau}$ for side-effecting
+computations producing values of type $\tau$. The side effects we
+consider are heap effects (such as reading, writing, or allocating
+references) and nontermination.
+%% We maintain such a strong distinction between pure and impure code for
+%% two reasons. First, it gives us the full suite of equational reasoning
+%% principles for pure code, which simplifies reasoning even about
+%% imperative code, since it allows us to freely restructure our program
+%% to match our invariants. Second, it lets us use a rich set of program
+%% terms (including things like function calls and arithmetic) in
+%% assertions about the program.
+The syntax, typing, and semantics of the implementation
+language are all standard, and we omit them for reasons of space. The construction of fixed points in the implementation language is restricted to \emph{pointed} types, which are the monadic types, products of pointed types and function types whose codomain is pointed. The other monadic primitives are 
+$\newref{e}$, $!e$, and $e := e'$,
+which allocate, read and write references (inhabiting type
+$\reftype{\tau}$), respectively. 
+
+%% The
+%% exception is our syntax for monadic computations: suspended
+%% computations $\suspend{c}$ inhabit the monadic type $\monad{A}$.
+%% These computations are not immediately evaluated, which allows us to
+%% embed them into the pure part of the programming
+%% language. Furthermore, we can take fixed points $\fix{x:D}{e}$ of
+%% terms, to give us a general recursion. Because we wish to permit
+%% nonterminating programs only at monadic types, we must restrict
+%% $\term{fix}$ to a limited family of types so that we do not
+%% contaminate our language with infinite loops at every type, including
+%% monadic types, functions returning a monadic type, and products of
+%% same. (The allowed types are those whose interpretations are pointed
+%% CPOs in domain theory.)  We will write recursive functions as
+%% syntactic sugar for $\term{fix}$.
+
+%% The computations themselves include all expressions $e$, as
+%% computations that coincidentally have no side-effects. Furthermore, we
+%% have sequential composition $\letv{x}{e}{c}$. Intuitively, the
+%% behavior of this command is as follows. We evaluate $e$ until we get
+%% some $\suspend{c'}$, and then evaluate $c'$, modifying the heap and
+%% binding the return value to $x$. Then, in this augmented environment,
+%% we run $c$. The fact that monadic commands have return values explains
+%% why our sequential composition is also a binding construct. Finally,
+%% we have primitive computations $\newref{e}$, $!e$, and $e := e'$,
+%% which let us allocate, read and write references (inhabiting type
+%% $\reftype{A}$), respectively. 
+
+\noindent \textbf{Program Logic.} We reason about programs in the implementation language in the program
+logic whose syntax is shown in Figure~\ref{assert-syntax}. The Hoare triple
+$\spec{p}{c}{a:\tau}{q}$ is used to specify computations, and is satisfied when
+running the computation $c$ in any heap satisfying the predicate $p$ either diverges or yields a heap satisfying $q$; note that the value returned by terminating executions of $c$ is bound (by $a:\tau$) in the postcondition.
+These atomic specifications can then be combined with
+the usual logical connectives of intuitionistic logic including
+conjunction, disjunction and implications, as well as quantifiers
+ranging over the sorts in $\omega$. This permits us to give abstract
+specifications to modules using existential quantifiers to hide
+program implementations and predicates.
+
+The assertions in the pre- and post-conditions are drawn
+from higher-order separation logic~\cite{hosl}. In addition to the
+usual connectives of Hoare logic, we add \emph{spatial}
+connectives to talk about shared state. The separating conjunction $p *
+q$ is satisfied by states can be split into two \emph{disjoint} parts,
+one of which satisfies $p$, and the other of which satisfies
+$q$. The disjointness property makes the
+noninterference of $p$ and $q$ implicit, simplifying specifications
+greatly. 
+$\emp$, which is true only of the empty heap, is the unit of $*$. The points-to relation $e
+\pointsto e'$, holds of the one-element heap in which the value
+of the reference $e$ has contents equal to the value of $e'$.
+
+The universal and existential quantifiers $\forall x:\omega.\;p$ and
+$\exists x:\omega.\;p$ are higher-order quantifiers ranging over all
+sorts $\omega$. The sorts include the language types $A$, kinds
+$\kappa$, the sort of propositions $\assert$, and function spaces over
+sorts $\omega \To \omega'$.  For the function space, we
+include lambda-abstraction and application. Because our assertion
+language contains within it the classical higher-order logic of sets,
+we will freely make use of features like subsets, indexed sums, and
+indexed products, exploiting their definability.
+
+
+\begin{figure}
+{\small
+\begin{displaymath}
+\begin{array}{llcl}
+\mbox{Assertion Sorts} & 
+\omega & ::= & \tau \bnfalt \kappa \bnfalt \omega \To \omega \bnfalt \assert 
+\\[0.5em]
+\mbox{Assertion} & 
+p & ::= & e \bnfalt \tau \bnfalt x \bnfalt \fun{x:\omega}{p} \bnfalt p\;q \\
+\mbox{Constructors}
+& &  |  & \top \bnfalt p \land q \bnfalt p \implies q 
+          \bnfalt \bot \bnfalt p \vee q \\
+& &  |  &  \emp \bnfalt p * q  \bnfalt e \pointsto e' \\
+& &  |  & \forall x:\omega.\; p \bnfalt \exists x:\omega.\; p \bnfalt S
+          
+\\[0.5em]
+\mbox{Specifications} &
+S & ::= & \spec{p}{c}{a:A}{q}  \bnfalt \setof{p} \\
+& &  |  & S \specand S' \bnfalt S \specimp S' \bnfalt S \specor S' \\
+& &  |  & \forall x:\omega.\; S \bnfalt \exists x:\omega.\;S 
+\\
+\end{array}
+\end{displaymath}
+}
+\caption{Specification Language}
+\label{assert-syntax}
+\end{figure}
+
+\textbf{Dataflow Library.} We implement our DSL on top of an
+imperative dataflow network, which is rather like
+a generalized spreadsheet. There is a collection
+of cells, each of which contains some code whose evaluation may read
+other cells. When a cell is read, the expression within the cell is
+evaluated, recursively triggering the evaluation of other cells as
+they are read by the program expression. Furthermore, each cell
+memoizes its expression, so that repeated reads of the same cell will
+not trigger re-evaluation.  
+%Whenever a cell is modified, it tells
+%every cell that has read it that its value may have changed, and that
+%any memoization that they have done is no longer valid.
+
+We will compile a synchronous dataflow program into a dataflow graph,
+which is run inside an event loop. The event loop updates a clock cell
+to notify the cells in the graph that they may need to recompute
+themselves, and then it reads the cells it is interested in, doing
+(hopefully) the minimal amount of computation needed at each time
+step.
+
+We give the interface to a dataflow library in
+Figure~\ref{notification-implementation}. We have given a correctness
+proof of this library in prior work~\cite{krishnaswamietal:ramified},
+but will describe the specification here in detail, since we use it as
+a component of the present work.
+
+The interface features two abstract data types, $\mathsf{cell}$
+and $\mathsf{code}$. We actually expose the implementations in the
+figure, to better discuss them. $\mathsf{cell}\;\alpha$ is the type of
+cells that compute a value of type $\alpha$. It is implemented as a
+record with four fields.  The $\mathit{code}$ field contains an
+expression that will compute both a value of type $\alpha$ and
+a set of cells that were read in the process.  The ($\mathit{value}$)
+field is used for memoizing the computed value.  ($\mathit{reads}$)
+tracks which cells this one has read, whilst ($\mathit{obs}$) records
+which cells are observing this one.  When the cell is read it returns its memoized value if it has one; otherwise it runs its stored code
+to compute a value, updates its memo field, transitively
+invalidates its observers and registers itself as an observer of those cells it
+read during evaluation.
+
+The $\mathsf{code}\;\alpha$ type
+is a user-defined monadic type, as is commonly defined in Haskell. It
+has the responsibility of both computing a value of type $\alpha$, as
+well as returning a set of all the cells that it read in the process
+of computing its return value. 
+ The \term{bind} and \term{return}
+operations are the unit and extension operations of the user-level
+monad, and the operations it supports are given in lines 12-16. There
+is an operation to \term{read} a cell, an operation \term{cell} to
+create a cell, and \term{getref}, \term{setref}, and \term{newref}
+operations to create local state in the dataflow network. On line 17,
+there is also an operation to update a cell, but it does not live
+within the $\mathsf{code}$ monad.
+
+As each cell tracks both who it reads and who
+observes it, it may seem that there is a global invariant on the whole
+dataflow graph, which would make local reasoning difficult. This is
+true, but it is possible to work around this difficulty. The key idea
+is to introduce an \emph{domain-specific separation logic} tuned to
+the needs of proving dataflow programs correct. That is, we introduce
+a predicate $H(\theta)$ describing the global invariant of the whole
+dataflow graph, but index it by spatial formulas which describe the
+dataflow graph in a \emph{local} way. Then, we can use these formulas
+to specify the operations of the library. 
+
+We give the syntax of formulas in Figure~\ref{library-specification},
+above the specifications of the library operations. $I$ and $\phi
+\otimes \psi$ correspond to the $\emp$ and separating conjunction of
+separation logic, denoting empty graphs and two disjoint collections
+of cells. However, in addition to the $\localref{r}{v}$ predicate
+(which corresponds to points-to in separation logic), we include a
+pair of predicates describing cells. The predicate
+$\cellminus{\term{c}}{e}$ means that \term{c} is a cell in the
+dataflow graph containing code $e$, and that it is not ready --- i.e.,
+it needs to be evaluated before producing a value.  The predicate
+$\cellplus{\term{c}}{e}{\term{v}}{rs}$ almost means the opposite: it
+means that \term{c} is ready (i.e., has a memoized value),
+\emph{conditional} on all its dependencies in $rs$ being ready
+themselves.  Since establishing this can require us to follow paths in
+the heap, we introduce two inductively-defined relations
+$\unready{\theta}{\term{c}}$, and
+$\ready{\theta}{\term{c}}{\term{v}}$. These are defined in the obvious
+way on the syntax of formulas $\theta$, and establish respectively
+that the cell \term{c} is unready --- either it or one of its
+ancestors are a negative cell --- or that \term{c} and all of its
+ancestors are positive cells.
+
+Now, we can explain the specifications of the code expressions in
+Figure~\ref{library-specification}. First, all of these specifications
+are parameterized by an extra quantifier $\forall \psi.\ldots$, which
+lets us manually build in a kind of frame rule into this specification
+--- any formula we can derive will also be quantified, and hence work
+in larger dataflow graphs. However, one oddity of these rules is that
+the framed formula $\psi$ is asymmetric; in the postcondition, we
+frame on a formula like $\Re(u, \psi)$. This is a ``ramification
+operator'', whose purpose is to look at the dependencies of cells in
+$\psi$ and ensure that they are not falsely marked as ready due to 
+other updates. 
+
+On line 1, \term{return} leaves its frame untouched, and returns its
+value \term{v} without reading any cells. On lines 2-5, we have a
+specification for \term{bind}. It looks complicated, but is actually
+very straightforward --- the specification of \term{bind\;e\;f} is
+that it takes its state from $\theta$ to $\theta''$, assuming that $e$
+takes $\theta$ to $\theta'$, and \term{f} (with the return value of
+\term{e}) takes $\theta'$ to $\theta''$. The operations \term{newref},
+\term{getref}, \term{setref} have the obvious actions on local
+references, and \term{cell} simply allocates a new cell, leaving it
+in an unready state. On lines 10-11, we have a specification for 
+\term{read}, in the case that its argument is ready. Finally, on
+lines 12-16, we have the rule that explains what happens when the
+cell is unready --- we need to know what the code in the cell does,
+and we also need to know that this code does not modify the current
+cell itself. If so, then the heap is updated to reflect \emph{both}
+the action of the code, and the effect of setting the cell to a 
+positive state. 
+
+\begin{figure}
+{\small
+\begin{tabbingspec}
+\label{notify:codetype}
+\!$\mathsf{code} :\; \star \to \star$ \Newline
+$\mathsf{code}\;\alpha = \monad{(\alpha \times \mathsf{set(ecell)})}$ 
+\Newline[0.5em]\label{notify:celltype}
+\!$\celltype{} :\; \star \to \star$ \Newline
+$\celltype{\alpha} = \{$\=$code: \reftype{\comp{\alpha}};$ \Newline
+                   \>$value: \reftype{\opttype{\alpha}};$ \Newline
+                   \>$reads: \reftype{\mathsf{set(ecell)})};$ \Newline
+                   \>$obs:   \reftype{\mathsf{set(ecell)})};$ \Newline
+                   \>$unique:    \N\}$ 
+
+\Newline[0.5em]\label{notify:ecell}
+\!$\mathsf{ecell} = \exists \alpha:\star.\; \celltype{\alpha}$ 
+
+\Newline[0.5em]\label{notify:return}
+$\term{return} : \forall \alpha:\star.\; \alpha \to \comp{\alpha}$ 
+
+\Newline\label{notify:bind}
+$\term{bind} : \forall \alpha,\beta:\star.\; \comp{\alpha} \to (\alpha \to \comp{\beta}) \to \comp{\beta}$ 
+
+\Newline\label{notify:read}
+$\term{read} : \forall \alpha:\star.\; \celltype{\alpha} \to \comp{\alpha}$ 
+
+\Newline\label{notify:newcell}
+$\term{cell} : \forall \alpha:\star.\; \comp{\alpha} \to \comp{\celltype{\alpha}}$
+
+\Newline\label{notify:newref}
+$\term{newref} : \forall \alpha : \alpha \to \comp{\reftype{\alpha}}$ 
+
+
+\Newline\label{notify:getref}
+$\term{getref} : \forall \alpha : \reftype{\alpha} \to \comp{\alpha}$ 
+
+\Newline\label{notify:setref}
+$\term{setref} : \forall \alpha : \reftype{\alpha} \to \alpha \to \comp{\unittype}$ 
+
+\Newline[0.5em]\label{notify:update}
+$\term{update} : \forall \alpha:\star.\; \comp{\alpha} \to \celltype{\alpha} \to \monad{\unittype}$
+\end{tabbingspec}
+}
+\caption{Implementation of Notification Networks}
+\label{notification-implementation}
+\end{figure}
+
+
+\begin{figure}
+{\small
+
+\begin{displaymath}
+  \begin{array}{lcl}
+    \phi,\psi,\theta \!\!\!& ::= & \!\!\!\!I \bnfalt \phi \otimes \psi \bnfalt \cellplus{\term{c}}{e}{v}{rs} \bnfalt \cellminus{\term{c}}{e} \bnfalt  \localref{r}{v} 
+  \end{array}
+\end{displaymath}
+
+\begin{tabbingspec}
+$\forall \psi.\;\spec{H(\psi)}{\term{return(v)}}{(\term{a},\emptyset)}{H(\psi) \land \term{a = v}}$ 
+\Newline[0.5em]
+
+$\forall \psi.\;\spec{H(\theta \otimes \psi)}{\term{e}}{(\term{a}, r)}{H(\theta' \otimes \Re(u, \psi)) \land \term{a = v} \land r = r_1} \specand$ \Newline
+$\forall \psi.\;\spec{H(\theta' \otimes \psi)}{\term{f\;v}}{(\term{a}, r)}{H(\theta'' \otimes \Re(u', \psi)) \land \term{a = v'} \land r = r_2}$ \Newline
+$\specimp \forall \psi.\;\setof{H(\theta \otimes \psi)}{\term{bind\;e\;f}}\{(\term{a}, r).\;$\=$H(\theta'' \otimes \Re(u \cup u', \psi))$ \Newline
+\> $\land\; \term{a = v'} \land r = r_1 \cup r_2\}$
+\Newline[0.5em]
+
+$\forall \psi.\spec{H(\psi)}{\term{newref(v)}}{(\term{a}, \emptyset)}{H(\psi\otimes \mathsf{ref}\term{(\term{a},v)})}$ \Newline[0.5em]
+
+$\forall \psi.\spec{H(\mathsf{ref}\term{(r,v)} \otimes \psi)}{\term{getref(r)}}{(\term{a}, \emptyset)}{H(\mathsf{ref}\term{(r,v)} \otimes \psi) \land \term{a = v}}$ \Newline[0.5em]
+
+$\forall \psi.\spec{H(\mathsf{ref}\term{(r,-)} \otimes \psi)}{\term{setref(r,v)}}{(\term{a}, \emptyset)}{H(\mathsf{ref}\term{(r,v)} \otimes \psi)}$ \Newline[0.5em]
+
+$\forall \psi.\spec{H(\psi)}{\term{cell(code)}}{(\term{a},\emptyset)}{H(\cellminus{\term{a}}{\term{code}} \otimes \psi)}$ \Newline[0.5em]
+
+$\ready{\theta}{\term{c}}{\term{v}} \specimp \forall \psi.\setof{H(\theta \otimes \psi)}{\term{read(c)}}\{$\=$(\term{a},r).\;H(\theta \otimes \psi)$ \Newline
+      \>$\land\;r = \setof{\term{c}} \land \term{a = v}\}$ 
+\Newline[0.5em]
+$\unready{\theta}{\term{c}} \specand \unready{\theta'}{\term{c}} \specand
+ \mathsf{code}(\theta,\term{c},\term{code}) \specand $ \Newline
+$\forall \psi.\spec{H(\theta \otimes \psi)}{\term{code}}{(\term{a},r)}{H(\theta' \otimes \Re(u, \psi)) \land \term{a = v} \land r = rs}$ \Newline
+$\specimp$ $\forall \psi.$\=$\setof{H(\theta \otimes \psi)}$ \Newline
+\> \term{read(c)} \Newline
+\> $\{(\term{a},\setof{\term{c}}).\;$\=$H([\Re(\setof{c}, \theta')|\cellplus{\term{c}}{\term{code}}{\term{v}}{rs}]) \land \term{a = v}\}$
+\end{tabbingspec}
+}  
+\caption{Library Specification}
+\label{library-specification}  
+\end{figure}
 
 \section{The Implementation}
 
-We have two cartesian closed categories in play, which are
-represented a bit differently. 
-
+We have two cartesian closed categories in play, each of which is
+represented a bit differently. Below, we give the interpretation 
+of the types into our functional language. 
+{\small
 \begin{mathpar}
   \begin{array}{lcl}
     \interpu{1}           & = & \unittype \\
@@ -765,186 +1465,367 @@ represented a bit differently.
     \interps{A \otimes B} & = & \interps{A} \star \interps{B} \\
     \interps{A \lolli B}  & = & \streamtype{\interps{A}} \to \comp{\streamtype{\interps{B}}} \\
     \interps{A \lollishrink\, B}  & = & \streamtype{\interps{A}} \to \comp{\streamtype{\interps{B}}} \\
-    \interps{S(A)}        & = & \streamtype{\interps{A}}  \\
     \interps{\valtype{X}} & = & \interpu{X} 
     \\[1em]
-    \streamtype{\tau}     & = & \celltype{\opttype{\tau}} \\
+    \streamtype{\tau}     & = & \celltype{\opttype{\tau}}
   \end{array}
 \end{mathpar}
-
+} 
 Most of the types of ultrametric world can be represented using ML
-types. One interesting addition is that we have a type of strictly
-contractive functions $A \shrink B$. This is represented in exactly
-the same way as the ordinary ML function space, but must be kept
-isolated in order to support their extra operation of fixed points.
+types. One addition is that we have a type of strictly contractive
+functions $A \shrink B$. This is represented in exactly the same way
+as the ordinary ML function space, but must be kept isolated in order
+to support the extra operation of fixed points.
 
-The interesting case is the $A^\omega$ case which represents the type
-of streams of values of type $A$, which are drawn from the objects of
-the co-Kleisli category of streams over ultrametric spaces.  This
-clause is interpreted as $\comp{\interps{A}}$, which can be understood
-as follows. In the category of ultrametric spaces, we want to
-\emph{understand} streams as having no temporal status at all -- they
-are pure values. However, we want to \emph{represent} streams by
+The interesting case is at $A^\omega$, where we give the
+representation of streams of values of type $A$.  This clause is
+interpreted as $\comp{\interps{A}}$, which can be understood as
+follows. In the category of ultrametric spaces, we want to understand
+streams as pure values. However, we want to represent streams via
 imperative data structures which change over time. This conflict is
-resolved by representing an infinite stream as a computation which
-constructs and initalizes a stream data structure. So each time we
-evaluate a value of type $A^\omega$, we construct a fresh stream,
-ready to begin counting regardless of when it was created.
+resolved by representing a stream as a thunk, which constructs and
+initalizes a stream data structure each time it is evaluated. So each
+time we evaluate a value of type $A^\omega$, we construct a fresh
+stream, ready to begin counting regardless of when it was created.
 
 In contrast, the interpretation of the co-Kleisli category is one in
-which time plays a very significant part. The intuition is that a
-dataflow graph realizes a collections of streams in the following way
---- the state of the dataflow graph is the seed of an unfold.  So time
-is essentially a hidden argument to everything.
-
-The argument to a function $A \lolli B$ comes as a stream, and the
+which time plays a very significant part. We implement it via a
+dataflow graph which we update to get to the next time step. So the
+implementation of functions is more complex. In our implementation,
+the argument to a function $f : A \lolli B$ comes as a stream, and the
 return value is term of type $\comp{\streamtype{B}}$. The code
 constructor permits the implementation to read and extend the dataflow
 graph, doing some initialization to return a stream cell. Surpisingly,
 this result is a stream, and not a point value, the way that the
 intepretation of morphisms in the co-Kleisli category might initially
-suggest. The corresponding clause of our logical relation in fact
-takes the coextension of the function argument, and requires that the
-result $d$-approximate the result of applying a stream to the lifting. 
+suggest. In fact, our implementations actually realize the coextensions
+of the morphisms of the co-Kleisli category, and the logical relation
+needs to be adjusted in this clause to make it fit. 
 
-\section{The Program Invariant}
+One further observation is that we do not realize streams of type $\tau$
+with a $\celltype{\tau}$. Instead, we use a $\celltype{\opttype{\tau}}$. 
+The reason for this decision is that we want to implement recursion via
+feedback, and so we need to be able to have cells which are unitialized
+on their first time step. 
 
-\subsection{Discussion}
+Selected parts of this implementation can be seen in
+Figure~\ref{ultrametric-implementation}. It should be clear that for
+products and exponentials, we are simply directly implementing it in
+terms of the corresponding products and exponentials of our
+programming language. Even the ultrametric fixed point \term{fix} :
+$(X \shrink X) \to X$ simply calls out to the underlying fixed point
+operator of the programming language. 
 
-Q: What is the underlying intuition?
+However, the implementations of \term{cons} and \term{fix'} are two of
+the most complex functions in the whole library. The \term{cons}
+function takes a value \term{x}, and then returns a function (in the
+co-Kleisli category) which will append \term{x} to the front of any
+input stream it receives. The complexity arises from the fact that
+streams may or may not have a value on the first time step. If they
+are unitialized, then \term{cons} should simply replace the first
+$\None$ element with \term{x}, and if it is initialized, it should
+buffer its input for the next time step. The trick is to use a local
+reference cell as a one-place buffer. 
 
-\noindent A: A stream is a node in a dataflow graph, which represents
-a stream value.
+The $\term{fix'}$ operator implements recursion via feedback. It takes
+a stream of contractive dataflow functions, and returns a stream
+realizing the fixed point of the first element of this stream. To do
+this, we allocate a reference \term{r} (initially set to $\None$), which
+the cell \term{input} reads to produce its values. Then, we call \term{f}
+with the input, and then construct a cell \term{output} which takes the
+return values and writes them to \term{r} in order to prepare \term{input}
+for the next time step. 
 
-The values are coinductively generated, and the \emph{state} of the
-dataflow graph gives the \emph{seed} of the unfold operation which
-generates the stream. That is, we want a recursive specification 
-which looks something like this: 
+The implementation of (part of) the co-Kleisli category, given in
+Figure~\ref{cokleisli-implementation} is very straightforward. Each
+operation simply takes in a stream cell, and builds a cell to return
+its return value. This is because all the difficulties have been
+encapsulated into a single function: the \term{zip} operation (defined
+in Figure~\ref{cokleisli-util}). Given two stream cells, it returns a
+cell which pairs the successive elements of its two inputs. This is a
+tricky function to verify, since the function must work with lagged
+inputs, and we may receive a pair of inputs in which one component is
+lagged and the other not. However, our mathematical specification does
+not mention delays in it at all. So even if one input yields $(a_0,
+a_1, a_2, \ldots)$ and the other yields $(\None, b_0, b_1, b_2,
+\ldots)$, the programmer is still entitled to assume that $a_0$ is
+paired with $b_0$, and that $a_1$ is paired with $b_1$, and so on.
 
+To implement this, \term{zip} tests the two inputs, and introduces an
+artificial delay, if one cell is delayed and the other is not.
+Otherwise, it simply returns a cell which performs the pairing. Since
+implementing a delay uses auxilliary state, we need to register the
+cell --- but we only \term{register} the cell in the case it needs the
+state. This reduces the number of cells that will get forced at the
+end of each trip through the event loop, and so lets the dataflow
+graph remain lazier.
+
+Finally, in Figure~\ref{adjoint-implementation}, we give the
+implementation of the functorial actions of the two adjoint functors,
+which are straightforward. 
+
+For space reasons, we have suppressed most of the definitions of the
+combinators of the contractive operations. However, these are all 
+the same as the implementation of the ordinary functions --- we simply
+use them in restricted contexts.
+
+\begin{figure}
+{\small
 \begin{tabbing}
-$\mathit{Stream}(xs, \term{x}, \theta) \triangleq$  \\
-\;\;\=$\setof{H(\theta)}$  \\
-    \>\term{read(x)} \\
-    \>$\setof{\term{a}.\;\exists \theta'. H(\theta') \land a = \head{xs} \land 
-                           \mathit{Stream}(\tail{xs},\term{x}, \theta')}$ \\
+\term{id = \fun{x}{x}} 
+\\
+\term{compose\;f\;g = \fun{x}{g(f(x))}}
+\\
+\term{one = \fun{x}{\unitval}}
+\\
+\term{fst = \fun{(x,y)}{x}}
+\\
+\term{snd = \fun{(x,y)}{y}}
+\\
+\term{pair\;f\;g = \fun{x}{(f(x),g(x))}}
+\\
+\term{eval = \fun{(f,x)}{f(x)}}
+\\
+\term{curry\;f = \fun{x}{\fun{y}{f(x,y)}}}
+\\[0.5em]
+\term{fix} : $(X \shrink X) \to X$ \\
+\term{fix\; f = \fix{x:\interpu{X}}{f}}
+\\[0.5em]
+
+\term{cons} : $X \to (\valtype{X} \lollishrink \;\valtype{X})^\omega$ \\
+\term{cons = \lambda x.\; cell(return(\Some{f}))} \\
+with \term{f = \lambda ys.\;do} \= \term{r \leftarrow newref(\Some{x});} \\
+\>     \term{zs \leftarrow cell(}\= 
+      \term{do} \=\term{old \leftarrow getref(r);} \\
+\> \> \> \term{new \leftarrow read(ys);} \\
+\> \> \> \term{case\;old\;of} \\
+\> \> \> \;\;\= \term{\None \to return(new)} \\
+\> \> \> \>     \term{\Some{\_} \to do} \=\term{setref(r, new);} \\
+\> \> \> \>  \>                           \term{return(old));} \\                 
+\> \term{register(zs);} \\
+\> \term{return(zs)}\\[0.5em]
+
+% \term{head\;thunk =} \\
+% \;\;\term{do\;}
+%   \=\term{xss \leftarrow thunk;} \\
+%   \>\term{xs' \leftarrow read(xss);} \\
+%   \>\term{case\;xs'\;of} \\
+%   \>\;\;\=\term{\Some{xs} \to return(xs)}\\
+%   \>    \>\term{\None \to ERROR} (invariant ensures this case cannot happen) \\[0.5em]
+
+\term{fix'} : $(A \lollishrink A)^\omega \to A^\omega$ \\
+\term{fix' = \lambda thunk.\;do}
+  \=\term{fs \leftarrow read(thunk);} \\
+  \>\term{f' \leftarrow read(fs);} \\
+  \>\term{case\;f'\;of}\\
+  \>\;\;\=\term{\None \to ERROR} (provably never occurs)\\
+  \>    \>\term{Some(f) \to} \\
+  \>    \>\;\;\term{do} \=\term{r \leftarrow newref(\None);}\\
+  \>    \>  \>\term{input \leftarrow cell(do\;}\=\term{\_ \leftarrow read(clock);}\\
+  \>    \>  \>                                 \>\term{v \leftarrow getref(r);}\\
+  \>    \>  \>                                 \>\term{return(v));}\\
+  \>    \>  \>\term{pre \leftarrow f(input);}\\
+  \>    \>  \>\term{out \leftarrow cell(do\;}\=\term{\_ \leftarrow read(clock);} \\
+  \>    \>  \>                               \>\term{\_ \leftarrow read(input);} \\
+  \>    \>  \>                               \>\term{v \leftarrow read(pre);}\\
+  \>    \>  \>                               \>\term{setref(r, v);}\\
+  \>    \>  \>                               \>\term{return(v));}\\
+  \>    \>  \>\term{register(out);}\\
+  \>    \>  \>\term{return(out)}
 \end{tabbing}
+}
+\caption{The Implementation of the Ultrametric Category}
+\label{ultrametric-implementation}
+\end{figure}
 
-When we try to put this into practice, several complications to this
-simple picture arise.
 
-\begin{enumerate}
+\begin{figure}
+{\small
+\begin{tabbing}
+\term{id = \lambda xs.\;cell(read\;xs)} 
+\\[0.5em]
 
-\item First, we have values other than streams -- we need to support
-  units, tuples, streams, and most significantly \emph{functions}.
-  To handle the wide variety of types of object we can construct, we
-  will need to use a logical relation which relates a mathematical
-  value to a program value \emph{plus} the state of the dataflow 
-  graph. 
+\term{compose\;f\;g =\lambda as.\; do\;}
+ \=\term{bs \leftarrow f(as);} \\
+ \>\term{cs \leftarrow g(bs);} \\
+ \>\term{return(cs)} 
+\\[0.5em]
 
-  In fact, since we have two categories of expressions, we will need
-  two mutually-recursive logical relations, one for values which
-  belong to the category of ultrametrics, and the other for values
-  which belong to the co-Kleisli category of streams.
+\term{one\;xs = cell(return(\Some{\unitval}))}
+\\[0.5em]
 
-\item Next, multiple streams may share the dataflow graph.
+\term{pair\;f\;g = \lambda as.\;do\;}
+  \=\term{bs \leftarrow f(as);} \\
+  \>\term{cs \leftarrow g(as);} \\
+  \>\term{zip(bs,cs)}
+\\[0.5em]
 
-  If we have two cells $a$ and $b$, both of whose code reads a cell
-  $c$, then on a timestep in which we read both $a$ and $b$, one of
-  them will $c$ in a state when it has already been updated by the
-  other one. Therefore we need to specify what makes this interference
-  safe --- we need to say what it means for a subgraph to ``already
-  have been updated''. To do this, we must specify the values a term's
-  dependencies will take on as they are evaluated, so that our
-  specification can say that we are happy with a dataflow cell as long
-  as it produces the appropriate value. We call this the \emph{rely},
-  in analogy to rely-guarantee. Then, we can say that a state is
-  ``more defined'' than another one when more of its cells are ready,
-  and give a Kripke relation which asserts that an expression good in
-  one state is also good in all ``more defined'' states.
+\term{fst = \lambda abs.\;cell(do}
+  \= \term{ab' \leftarrow read(abs);} \\
+  \>\term{case \; ab'\; of} \\
+  \>\term{\;\None \to return(\None)} \\
+  \>\term{\;\Some{a,b} \to return(\Some{a}))} 
+\\[0.5em]
 
-  Since we relate mathematical values to program values, and this
-  relation includes the memory, we are lead to the further
-  complication that stream cells in the dataflow graph may have types
-  which are larger than the type of the current clause of the logical
-  relation. Therefore, we cannot define our logical relation by
-  induction on the type structure --- we need to borrow some ideas
-  from step-indexed models, and define the rely mutually-recursively
-  with the logical relation.
 
-\item We also build our dataflow graph incrementally and dynamically,
-  adding new cells even as current cells are evaluted. So we need to
-  know that operations which extend the graph will not break existing
-  code. So the Kripke relation on memories also needs to support a
-  notion of the dataflow graph getting bigger, in addition to getting
-  more defined.
+\term{snd = \lambda abs.\;cell(do}
+  \= \term{ab' \leftarrow read(abs);} \\
+  \>\term{case \; ab'\; of} \\
+  \>\term{\;\None \to return(\None)} \\
+  \>\term{\;\Some{a,b} \to return(\Some{b}))} 
+\\[0.5em]
 
-\item Since we are implementing streams with stateful dataflow cells,
-  we need to ensure that there are no cyclic dependencies in the flow
-  graph. Therefore we need to ensure that a cell will not write to
-  anything which depends upon it, to prevent event storms.
+\term{eval = \lambda fas.\;do}\;
+              \=\term{fs \leftarrow \;fst(fas);}\\
+              \>\term{as \leftarrow \;snd(fas);}\\
+              \>\term{cell(do\;}\=\term{f' \leftarrow read(fs)}\\
+              \>                  \>\term{case\;f'\;of}\\
+              \>                  \>\term{\;\None \to return\;\None} \\
+              \>                  \>\term{\;\Some{f} \to do\;}\=\term{bs \leftarrow f(as);} \\
+              \>                  \>                            \>$\term{read(bs)})$ 
+\\[0.5em]
 
-\item Our dataflow graph is stateful: operations like accumulators and
-  fixed points are implemented with imperative references, which give
-  a form of state whose access does not create new dependencies.
+\term{curry\;f =\lambda as.\;cell(\mathsf{Some}(\lambda bs.\;do\;}
+  \=\term{abs \leftarrow zip(as,bs); f(abs)))}
+\end{tabbing}
+}
+\caption{The Implementation of the co-Kleisli Category}
+\label{cokleisli-implementation}
+\end{figure}
 
-  Furthermore, these references may need to updated by a collaboration
-  between dataflow cells. For example, in the code for \term{fix}, we
-  want to feed outputs at time $n$ as inputs at time $n+1$. We do this
-  with a reference cell which is read by the input, and written to by
-  the output cell. So the getter and the setter of the cell are
-  different, and the output should not write to the reference before
-  it knows the input has read it.
+\begin{figure}
+{\small
+\begin{tabbing}
+\term{zip(as, bs) =} \\
+\;\;\= \term{do\;}\=\term{a' \leftarrow read(as);} \\
+\>              \>\term{b' \leftarrow read(bs);} \\
+\>              \>\term{case \;(a',b')\;of}\\ 
+\>           \>\;\;\=\term{(\None, \None)} \\
+\>           \>    \>\term{(\Some{\_}, \Some{\_}) \to} \\
+\>           \>    \> \qquad \term{cell(do\;}\=\term{a' \leftarrow read(as);} \\
+\>           \>    \>                      \>\term{b' \leftarrow read(bs);} \\
+\>           \>    \>                      \>\term{case \;(a',b')\; of} \\
+\>           \>    \>                      \>\;\;\=\term{(\Some{a}, \Some{b}) \to return(\Some{(a,b)})} \\
+\>           \>    \>                      \>\;\;\=\term{(\_, \_) \to return(\None))} \\
+\>           \>    \>\term{(\None, \Some{\_}) \to}\\
+\>           \>    \> \qquad\term{do\;}\=
+                                      \term{r \leftarrow newref(\None);} \\
+\>           \>    \>               \>\term{abs \leftarrow cell(do\;}\=\term{a \leftarrow read(as);} \\
+\>           \>    \>               \>                               \>\term{new \leftarrow read(bs);} \\
+\>           \>    \>               \>                               \>\term{old \leftarrow getref(r);}\\
+\>           \>    \>               \>                               \>\term{setref(r, new);}\\
+\>           \>    \>               \>                               \>\term{return(\Some{a,old}));}\\
+\>           \>    \>               \>\term{register(abs);} \\
+\>           \>    \>               \>\term{return(abs)} \\
+\>           \>    \>\term{(\Some{\_}, \None) \to}\\
+\>           \>    \> \qquad\term{do\;}\=
+                                      \term{r \leftarrow newref(\None);} \\
+\>           \>    \>               \>\term{abs \leftarrow cell(do\;}\=\term{b \leftarrow read(bs);} \\
+\>           \>    \>               \>                               \>\term{new \leftarrow read(as);} \\
+\>           \>    \>               \>                               \>\term{old \leftarrow getref(r);}\\
+\>           \>    \>               \>                               \>\term{setref(r, new);}\\
+\>           \>    \>               \>                               \>\term{return(\Some{old,b}));}\\
+\>           \>    \>               \>\term{register(abs);} \\
+\>           \>    \>               \>\term{return(abs)} 
+\\[0.5em]
 
-\item The next problem connected with state in the dataflow graphs is
-  that in order to correctly realize a stream, a cell with auxilliary
-  state must have been evaluated on every tick. For example, consider
-  a cell $c$ which realizes the stream 1, 2, 3, \ldots by maintaining
-  a counter which it updates. If the cell is not evaluated at a
-  particular time step, then the values it produces will fall behind
-  the global clock.
+\term{register(xs) = do\;}\=\term{dummy \leftarrow read(xs);}\\
+                          \>\term{lst \leftarrow getref(i);} \\
+                          \>\term{setref(i, pack(xs) :: lst)} 
+\end{tabbing}
+}
+\caption{Utility Functions}
+\label{cokleisli-util}
+\end{figure}
 
-  However, not all cells need to be evaluated every time step. For
-  example, suppose we have a cell $c'$ which produces $2, 4, 6,
-  \ldots$ by reading $c$ and returning twice its value. In this case,
-  the computation at $c'$ is stateless, and so it does not need to be
-  evaluated except on the ticks when its value is actually needed.
 
-  So our program should maintain a list of the state-modifying cells in
-  the dataflow graph, so that the event loop can evaluate the ones
-  that have yet to be read before it advances time by a step. Furthermore, 
-  every stateful cell also needs to register itself with the global clock
-  cell, so that when the clock is ticked, they will invalidate themselves
-  properly. 
 
-\item Finally, when computing the fixed point of a stream function
-  $f$, we proceed by giving $f$ a dummy input on the first time step,
-  and giving the output at time $n$ as the input at time $n+1$. This
-  means that each stream object in our rely may also contain a delay
-  -- that is, it may lack a value (ie, be $\None$) at this time step,
-  and only contain values beginning at the next time step.
-\end{enumerate}
 
-\subsection{The Formal Specification}
+\begin{figure}
+{\small
+\begin{tabbing}
+$(-)^\omega : U^S(A,B) \to U(A^\omega, B^\omega)$ \\
+\term{omega\;f = \lambda athunk.\;do} \=\term{as \leftarrow athunk; f(as)} 
+\\[0.5em]
+
+$\mathit{Value} : U(X,Y) \to U^S(\valtype{X}, \valtype{Y})$ \\[0.2em]
+\term{value\;f = \lambda xs.\;cell(do} \=\term{x' \leftarrow read(xs);}\\
+                                       \>\term{case\;x'\;of}\\
+                                       \>\;\;\=\term{\None \to return(\None)} \\
+                                       \>\>    \term{\Some{x} \to return(\Some{f(x)}))}
+
+  
+\end{tabbing}
+}
+\caption{Implementing the Adjunction}
+\label{adjoint-implementation}  
+\end{figure}
+
+\section{The Specification}
 
 In Figures \ref{logical-relation} and \ref{satisfaction-relation}, we
-give three mutually-dependent definitions of values and memory
-states. To explain this relation, we will proceed in multiple passes,
-first giving a quick intuitive reading of each of the three
-definitions, and then proceeding to describe them in detail.
+give three mutually-dependent relations, one for ultrametric values,
+one for co-Kleisli values, and one for the memory state of the
+dataflow graph. 
 
-The relation $U^d_A(v, \term{v})$ relates elements $v$ of a metric
-space $A$ to a concrete program term \term{v}. Intuitively, it can be
-read as saying ``the semantic value $v$ is approximated by the
-computational value \term{v} to at least distance $d$''. 
+The relation for ultrametric values, $U^d_A(v, \term{v})$, is given in
+lines 1-6 of Figure~\ref{logical-relation}. It relates elements $v$ of
+a metric space $A$ to a concrete program term \term{v}. Intuitively,
+it can be read as saying ``the semantic value $v$ is approximated by
+the computational value \term{v} to at least distance $d$''. The
+clauses for unit and products are straightforward, and the cases for
+the two function spaces are only slightly more complicated --- we
+quantify over all greater distances (the future worlds in the Kripke
+ordering) before asserting that applying related values to related
+functions returns related results. However, even though the clauses
+for the two function spaces look identical, they have different
+semantics due to the fact that the mathematical inhabitants of $X
+\shrink Y$ are contractive, which means that we know the fixed points
+of $X \shrink X$ necessarily exist.
 
-Next, the relation $V^d_A(v, \term{v}, \mu, \sigma)$ relates values in
-the co-Kleisli category of streams to the program terms \term{v}. The
+On lines 5-6, we give the relation for streams $A^\omega$. The
+relation $\Build^{d'}_A(vs, code, \mu, \emptyset, \U)$ says that in
+all well-formed memories, running \term{code} will build a fresh piece
+of dataflow graph to represent the stream value $vs$, with no static
+dependencies on any existing piece of the graph (the $\emptyset$) and
+without any delays in the output (the $\U$). So no matter when we run
+this code, we build streams which will all enumerate the same sequence
+of mathematical values. Looking inside the definition of $\Build$,
+we see that it takes a memory, and returns a memory in the extension
+ordering, subject to several additional constraints --- the $\Update$
+and $\Stable$ predicates. These ensure that the number of dangling
+references and stateful cells unregistered with the update list 
+do not increase, and that the return value is a genuine stream. 
+
+Next, the relation $V^d_A(v, \term{v}, \mu, \sigma)$, defined on lines
+7-17 of Figure~\ref{logical-relation}, relates values in the
+co-Kleisli category of streams to the program terms \term{v}. The
 relation $V^d_A(v, \term{v}, \mu, \sigma)$ has the intuitive reading
 ``the semantic value $v$ is approximated by computational value
 \term{v} and memory state $\mu$ to at least distance $d$. Furthermore,
-the use of \term{v} may involve evaluating the cells in
-$\sigma$''. These two relations are defined in
-Figure~\ref{logical-relation}.
+the use of \term{v} may involve evaluating the cells in $\sigma$''.
+
+On line 7, the other side of the adjunction, $\valtype{X}$, is
+interpreted by deferring to the $U$-relation.  Units and pairs (lines
+8-9) continue to be interpreted simply, as before.  As a convenience
+prior defining functions, on line 10 we add a clause in this relation
+for streams, which are simply cells in the dataflow graph which will
+produce the correct stream of values, and whose static dependencies
+are less than what the relation asks for.
+
+Then, on lines 11-13, we give the interpretation of the function
+space.  This interpretation first clears its breath by quantifying
+over extensions to the distance, the memory, and the dependencies, and
+then says that if we have a dataflow cell \term{v} realizing some
+stream $vs$, we will $\Build$ an output stream cell realizing
+$f^\dagger\;vs$. Furthermore, the static dependencies of the result
+are no worse than the inputs'. Finally, it says that the result will
+be no more delayed than the input is (i.e., if the input is not
+lagged, then the output won't be, but if the input is lagged, then the
+output might or might not be). The definition of the contractive
+function space $A \lollishrink B$ on lines 15-17 is similar, except that it
+promises that its output will not be lagged, full stop. (This is what
+justifies the implementation of the fixed point using a lagged input.)
 
 A memory state is a pair $(\theta, R)$, where $\theta$ is a formula
 describing a dataflow network, and $R$ is a \emph{rely} describing the
@@ -956,53 +1837,97 @@ satisfaction relation is the most complicated part of the definition,
 since we have to account for all of the issues discussed in the
 previous section. Our satisfaction relation is given in
 Figure~\ref{satisfaction-relation}.
-
-\subsubsection{The Logical Relation}
-
-In Figure~\ref{logical-relation}, we give the two logical relations,
-one for programs representing values in the category of ultrametric
-spaces, and one for values in the co-Kleisli category. The relation
-for ultrametric values is given in lines 1-6. 
-
-The clauses for the two function types on lines 3 and 4 look like
-identical --- they have the standard Kripke semantics ``in future
-worlds, take related arguments to related results''. However,
-segregating the two types ensures that we know that inhabitants of $X
-\shrink Y$ are contractive, which means that we know the
-\emph{mathematical} fixed points of $X \shrink X$ exist. 
-
-On lines 5-6, we give the relation for streams $A^\omega$. The
-relation $\Build^{d'}_A(vs, code, \mu, \emptyset, \U)$ says that in
-all well-formed memories, running \term{code} will build a fresh piece
-of dataflow graph to represent the stream value $vs$, with no static
-dependencies on any existing piece of the graph (the $\emptyset$) and
-without any delays in the output (the $\U$). This allows multiple uses
-of the stream at different times to all see the same sequence of
-mathematical values. 
-
-Explaining what the $\Build^{d}_A(vs, code, (\theta,R), \sigma, L)$
-relation (defined on lines 18-24) does involves some unavoidable
-forward references, since it depends on the memory, whose details are
-explained in the following subsection. It says that if we begin in a
-state which satisfies the formula $\theta$ (line 19), executing
-\term{code} will put us in a greater state line and return a fresh
-dataflow cell (line 21).  This cell will realize the stream $vs$, and
-its static dependencies will be bounded by $\sigma$ (lines
-22,25-26). Furthermore, all the cells $u$ updated during the execution
-of \term{code} are either in the static dependencies $\sigma$, or 
-are fresh cells (lines 23,27-29). Finally, 
-
-Then, on lines 13-24
-
-\subsubsection{The Memory}
-
 We specify a rely $R$ as 9-tuple:
+
+
+
+% \subsection{Waffle}
+% 
+% \begin{enumerate}
+% 
+% \item Next, multiple streams may share the dataflow graph.
+% 
+%   If we have two cells $a$ and $b$, both of whose code reads a cell
+%   $c$, then on a timestep in which we read both $a$ and $b$, one of
+%   them will $c$ in a state when it has already been updated by the
+%   other one. Therefore we need to specify what makes this interference
+%   safe --- we need to say what it means for a subgraph to ``already
+%   have been updated''. To do this, we must specify the values a term's
+%   dependencies will take on as they are evaluated, so that our
+%   specification can say that we are happy with a dataflow cell as long
+%   as it produces the appropriate value. We call this the \emph{rely},
+%   in analogy to rely-guarantee. Then, we can say that a state is
+%   ``more defined'' than another one when more of its cells are ready,
+%   and give a Kripke relation which asserts that an expression good in
+%   one state is also good in all ``more defined'' states.
+% 
+%   Since we relate mathematical values to program values, and this
+%   relation includes the memory, we are lead to the further
+%   complication that stream cells in the dataflow graph may have types
+%   which are larger than the type of the current clause of the logical
+%   relation. Therefore, we cannot define our logical relation by
+%   induction on the type structure --- we need to borrow some ideas
+%   from step-indexed models, and define the rely mutually-recursively
+%   with the logical relation.
+% 
+% \item We also build our dataflow graph incrementally and dynamically,
+%   adding new cells even as current cells are evaluted. So we need to
+%   know that operations which extend the graph will not break existing
+%   code. So the Kripke relation on memories also needs to support a
+%   notion of the dataflow graph getting bigger, in addition to getting
+%   more defined.
+% 
+% \item Since we are implementing streams with stateful dataflow cells,
+%   we need to ensure that there are no cyclic dependencies in the flow
+%   graph. Therefore we need to ensure that a cell will not write to
+%   anything which depends upon it, to prevent event storms.
+% 
+% \item Our dataflow graph is stateful: operations like accumulators and
+%   fixed points are implemented with imperative references, which give
+%   a form of state whose access does not create new dependencies.
+% 
+%   Furthermore, these references may need to updated by a collaboration
+%   between dataflow cells. For example, in the code for \term{fix}, we
+%   want to feed outputs at time $n$ as inputs at time $n+1$. We do this
+%   with a reference cell which is read by the input, and written to by
+%   the output cell. So the getter and the setter of the cell are
+%   different, and the output should not write to the reference before
+%   it knows the input has read it.
+% 
+% \item The next problem connected with state in the dataflow graphs is
+%   that in order to correctly realize a stream, a cell with auxilliary
+%   state must have been evaluated on every tick. For example, consider
+%   a cell $c$ which realizes the stream 1, 2, 3, \ldots by maintaining
+%   a counter which it updates. If the cell is not evaluated at a
+%   particular time step, then the values it produces will fall behind
+%   the global clock.
+% 
+%   However, not all cells need to be evaluated every time step. For
+%   example, suppose we have a cell $c'$ which produces $2, 4, 6,
+%   \ldots$ by reading $c$ and returning twice its value. In this case,
+%   the computation at $c'$ is stateless, and so it does not need to be
+%   evaluated except on the ticks when its value is actually needed.
+% 
+%   So our program should maintain a list of the state-modifying cells in
+%   the dataflow graph, so that the event loop can evaluate the ones
+%   that have yet to be read before it advances time by a step. Furthermore, 
+%   every stateful cell also needs to register itself with the global clock
+%   cell, so that when the clock is ticked, they will invalidate themselves
+%   properly. 
+% 
+% \item Finally, when computing the fixed point of a stream function
+%   $f$, we proceed by giving $f$ a dummy input on the first time step,
+%   and giving the output at time $n$ as the input at time $n+1$. This
+%   means that each stream object in our rely may also contain a delay
+%   -- that is, it may lack a value (ie, be $\None$) at this time step,
+%   and only contain values beginning at the next time step.
+% \end{enumerate}
 
 \begin{enumerate}
 \item A finite set of stream cells and metric types $C$. 
 \item An assignment of streams values $V_S : C \to \mathit{Value}^\omega$ 
   of the appropriate type to each cell.\footnote{We should write this 
-  as a dependent product, with a stream cell being an element of type 
+  as a dependent product, with an element of $C$ having type 
   $\Sigma A:\mathrm{type}.\;\celltype{\opttype{\interps{A}}}$, and $V_S$ having
   the type $V_S : \Pi (A, \_) \in C.\; A^\omega$. However, we will suppress these 
   dependencies to reduce notational clutter.}
@@ -1013,14 +1938,15 @@ We specify a rely $R$ as 9-tuple:
   \mathit{Value})^\omega}$ for each local reference. Note in
   particular that our local state is given as a stream of
   \emph{options}: this is because we might want to use some state for
-  ``only a little while''. (This arises in the correctness proof of the 
-  \term{cons} function, for example.)
+  ``only a little while''. (The \term{cons} function does this when it
+  is applied to a lagged cell. It will use the value in its reference cell
+  on the first time step, and then never store a value in it again.)
 \item A ``getter'' for each reference cell $G : L \rightharpoonup
-  C$. This is the cell which will read that reference cell. Note that
-  this is a \emph{partial} function, which means that there can be
-  reference cells which are not yet going to be read by anyone. This
-  will let us build up the dataflow graph incrementally, while still
-  remaining within the rely. 
+  C$. This is the cell which will read that reference cell. This is a
+  \emph{partial} function, so  there can be reference
+  cells which are not yet going to be read by anyone. This lets us
+  build up the dataflow graph incrementally, while still remaining
+  within the rely.
 \item A ``setter'' for each reference cell $S : L \rightharpoonup
   C$. This is the cell which has responsibility for writing the next
   value of the reference cell. Like the getter $G$, the getter $S$ is
@@ -1028,16 +1954,17 @@ We specify a rely $R$ as 9-tuple:
   that is, we will always define getters before setters. 
 
 \item A function $\Delta : C \to \powerset{C}$, giving the ``static
-  dependencies'' of each cell. The intuition for this relation is that
-  for each cell \term{c}, then $\term{c'} \in \Delta(\term{c})$ tells
-  us that \term{c'} is a cell in the \emph{current} heap which the
-  evaluation of \term{c} may update. (That is, the effect of reading
-  \term{c} may create new cells it depends on, but since they are not
-  in the current heap they do not appear in $\Delta(\term{c})$.)
-
-  The conditions on this function are as follows. First, viewed as a
-  relation, $\Delta$ must be a partial order, to ensure that there
-  will be no cycles in the dependency graph. 
+  dependencies'' of each cell. The idea is that for each cell
+  \term{c}, then $\term{c'} \in \Delta(\term{c})$ tells us that
+  \term{c'} is a cell in the \emph{current} heap which the evaluation
+  of \term{c} may update. (So reading \term{c} may create new cells it
+  depends on, but since they are not in the current heap they do not
+  appear in $\Delta(\term{c})$.)  Viewed as a relation, the reflexive
+  transitive closure of $\Delta$ must be a partial order, to ensure
+  that there will be no nontrivial cycles in the dependency graph. We
+  will write $\Delta^{*}(\term{c})$ to denote the cells reachable via
+  the reflexive transitive closure of $\Delta$, and $\Delta^{+}(\term{c})$
+  for the transitive closure.  
 
 \item A function $\Delta^L : L \to \powerset{C}$, which describes the 
   static dependencies of the contents of each reference cell. The reason
@@ -1046,17 +1973,17 @@ We specify a rely $R$ as 9-tuple:
   know what the dependencies for each value may be. 
 \end{enumerate}
 
-Often, we will be dealing with multiple relies, and as a matter of
-notation we will name the appropriate component using the name
-superscripted with the rely. So if $R$ is a rely, then we will write
-$C_R$ for its cells, $V_R$ for the values of the cells, and so on.
+When we need to deal with multiple relies, we will name the
+appropriate component using the name subscripted with the rely. So if
+$R$ is a rely, then we will write $C_R$ for its cells, $V_R$ for the
+values of the cells, and so on.
 
 We equip relies with a partial order as follows. We say that $R
 \sqsubseteq R'$, when $C_R \subseteq C_{R'}$ and $L_R \subseteq L_{R'}$, and
 furthermore each function is extended pointwise. That is, if $c \in
 \dom{R}$, then $V_{R'}(c) = V_{R}(c)$, and similarly for $D_S$, $L$,
 $V_L$, $G$, $S$, and $\Delta$. (Note in particular that the static
-dependencies for a given cell do not grow -- the extension order for
+dependencies for a given cell do not grow --- the extension order for
 $\Delta$ is more stringent than simply extension of the partial order.)
 
 Furthermore, for any rely, we can also define its tail
@@ -1076,22 +2003,17 @@ Figure~\ref{satisfaction-relation}. We say when a graph $\phi$
 \emph{satisfies} a rely $R$ to distance $d$, (written
 ``$\satisfy{(\phi, R)}{d}$'') when:
 \begin{itemize}
-  \item The cells of the graph are equal to $C_R$, and the references
-    of the graph are equal to $L_R$. This is lines 2-3. 
-  \item Every cell in the graph is derivably either ready or unready. (Line 4)
-  \item Every ready cell which touches state has the \term{clock} in its
-    footprint. (Lines 5-6)
-  \item The reference \term{i} contains a subset of the cells which 
-    read or write state. (Line 7)
-  \item Every reference has contents realizing the head of its
-    stream if its setter is unready, and the head of the tail of its
-    stream if its setter is ready. We say nothing about a reference
-    if it does not yet have a setter. (Line 9)
+  \item The cells of the graph are $C_R$ plus the clock, and the references
+    of the graph are equal to $L_R$ plus the imperative list \term{i}. This is lines 2-3. 
+  \item Each cell in the graph is either ready or unready. (Line 4)
+  \item Each stateful ready cell depends upon the \term{clock}. (Lines 5-6)
+  \item The update list \term{i} has some of the state-handling cells. (Line 7)
+  \item References realizes the head of their
+    stream if their setter is unready, and the head of their tail
+    stream otherwise. (Line 9)
   \item Each cell \term{c} in the graph realizes a stream of values corresponding
     to $V_R(\term{c})$, out to distance $d$. (Line 8)
 \end{itemize}
-
-These conditions are formalized in Figure~\ref{satisfaction-relation}. 
 
 Notice that the satisfaction relation \emph{does not require} the
 contents of references without setters to realize the expected values
@@ -1105,18 +2027,18 @@ run in incomplete dataflow networks. This enables us to write programs
 which evaluate some cells while building another part of a dataflow
 network.
 
-As we will see, the way that we reconcile this with our desire to say
-that closed programs always build complete, closed networks, is to
-require that every cell and function in the relation must always
-``make things better''. That is, we never admit values into our
-relation which increase the number of references without setters, or
-which increase the number of stateful references which do not appear
-in the update list \term{i}. Then, since we start a program in a
-complete dataflow graph, we can only procede to complete graphs.
+The way that we reconcile this with our desire to say that closed
+programs always build complete, closed networks, is to require that
+every cell and function in the relation must always ``make things
+better''. That is, we never admit \emph{values} into our relation which
+increase the number of references without setters, or which increase
+the number of stateful references which do not appear in the update
+list \term{i}. Then, since we start a program in a complete dataflow
+graph, we can only procede to complete graphs. 
 
-Having described the extension ordering for relies, and the
-satisfaction relation, we can now describe the extension ordering for
-memories (i.e., pairs of a state formula and a rely). This is given in
+Having described the satisfaction relation and the extension ordering
+for relies, we can now describe the extension ordering for memories
+(i.e., pairs of a state formula and a rely). This is given in
 Figure~\ref{memory-orderings}. On line 1, we introduce the set
 $\Mem{d}$, which are just pairs of formulas and relies in the
 satisfaction relation. Then, on lines 2-7, we describe what the
@@ -1142,7 +2064,7 @@ then $\mu'$ and $\mu$ merely need to be in the Kripke order (line 9).
 However, if $n = m + 1$, then there needs to be a state $\mu_0$ which
 (a) larger is in the Kripke order with respect to $\mu$, and whose
 tail is $n$ steps away in time from $\mu'$. Here, $\tail{\theta, R}$
-is $(U(\term{clock}, \theta), \tail{R})$, in accordance with the idea
+is $(\Re(\term{clock}, \theta), \tail{R})$, in accordance with the idea
 that the event loop updates the clock to propagate this notification
 out to the rest of the flow graph. Finally, one additional condition
 we impose on this order is that we only tick on \emph{complete}
@@ -1170,16 +2092,18 @@ Figure~\ref{logical-relation}).
 
 
 
-\subsection{Theorems}
+\subsection{Correctness Proof}
+
+First, we establish some basic properties of our logical relation. 
 
 \begin{prop}{(Kripke Monotonicity)}
-We have that for all $d' \geq d$
+If $d' \geq d$, we have that
 \begin{enumerate}
 \item If $U^d_X(v, \term{v})$ then $U^{d'}_X(v, \term{v})$. 
 \item If $V^d_A(v, \term{v}, \mu, \sigma)$ then $V^{d'}_A(v, \term{v}, \mu, \sigma)$. 
 \item If $\satisfy{\mu}{d}$ then $\satisfy{\mu}{d'}$. 
 \item If $V^d_A(v, \term{v}, \mu, \sigma)$ and $\betterstate{d}{\mu'}{\mu}$, then $V^d_A(v, \term{v}, \mu',\sigma)$.
-\item If $V^d_A(v, \term{v}, \mu, \sigma)$ and $\sigma' \sqsupseteq \sigma$, then $V^d_A(v, \term{v}, \mu,\sigma')$.
+\item If $V^d_A(v, \term{v}, \mu, \sigma)$ and $\sigma' \supseteq \sigma$, then $V^d_A(v, \term{v}, \mu,\sigma')$.
 \end{enumerate}
 \end{prop}
 
@@ -1199,17 +2123,21 @@ We have that for all $d' \geq d$
 \end{enumerate}
 \end{lemma}
 
-In the following lemmas, we use the notation $[f|x:v]$ to denote the function which extends $f$'s domain 
-by $x$ and gives it the value $v$ at that point. 
+However, these properties are a little clunky to use directly. The
+reason is that we often need to extend the memory in our proofs, and
+that requires us to re-establish the satisfaction relation for each
+cell in the heap with the extended memory. We can encapsulate this
+pattern of reasoning with the following two lemmas. (We use the
+notation $[f|x:v]$ to denote the function which extends $f$'s domain
+by $x$ and gives it the value $v$ at that point.)
 
 \begin{lemma}{(Reference Allocation)}
-Suppose that $\satisfy{(\theta, R)}{d}$. Then suppose that $\theta' =
-\theta \otimes \mathsf{ref}(\term{r,v})$.  Then for $R' \sqsupseteq R$
-such that $R'$ is the same as $R$, except that $L_{R'} = L_R$ and 
-$V_{R'} = [V_R|\term{r}:vs]$ for some $vs$, we have that 
-$\satisfyext{(\theta', R')}{d}$.
+Suppose that $\satisfy{(\theta, R)}{d}$, and that $\theta' =
+\theta \otimes \mathsf{ref}(\term{r,v})$. Let $R'$ be the same
+as $R$, except that $L_{R'} = L_R \cup \setof{\term{r}}$, $V_{R'} = [V_R|\term{r}:vs]$ for some $vs$,
+and $\Delta^L_{R'} = [\Delta^L_R|\term{r}:\kappa]$ for some $\kappa \subseteq C_R$.
+Then we have that $\satisfy{(\theta', R')}{d}$. 
 \end{lemma}
-
 
 \begin{lemma}{(Cell Allocation)} \\
 Suppose that $\satisfy{(\theta, R)}{d}$ and
@@ -1225,70 +2153,124 @@ $\satisfy{(\theta',R')}{d'}$ implies $\Stream^{d'/2}_A(\term{c},
 (\theta', R'))$, we can conclude that $\satisfy{(\theta',R')}{d}$. 
 \end{lemma}
 
+These two lemmas are enough to prove the correctness of every
+operation in our library except for allocating the inpute cell in the
+definition of the fixed point operation. The reason for this is that
+when we write back values into the reference cell, the static
+dependencies of the values may include the input.  However, this is a
+harmless dependency, since the input cell just dereferences a pointer
+--- it doesn't read any other cells or do any other computation. So we
+can prove a custom lemma just for this case.
 
+\begin{lemma}{(Feedback Input Cell)}
+Suppose that $\satisfy{(\theta, R)}{d}$. Then suppose that $\theta' =
+\theta \otimes \mathsf{ref}(\term{r,\None}) \otimes \cellminus{\term{c}}{\term{code}}$, where
+\term{code} is $\term{do \_ \leftarrow read(clock); !r}$. Furthermore, suppose we
+have $R'$ such that 
+ $C_{R'} = C_R \cup \setof{\term{c}}$,
+ $V_{R'} = [V_R|\term{c}:vs]$,
+ $D_{R'} = [D_R|\term{c}:\D]$,
+ $\Delta_{R'} = [\Delta|\term{c}:C_{R'}]$ ,
+ $L_{R'} = L_R \cup \setof{\term{r}}$,
+ $V_{R'} = [V_R|\term{r}:(\None :: (\mathsf{map\;Some}\;vs)]$ ,
+ $\Delta^L_{R'} = [\Delta^L_R|\term{r}:C_{R'}]$ ,
+ $G_{R'} = [G_R|\term{r}:\term{c}]$, and
+ $S_{R'} = S_R$.
 
+Then we have that $\satisfy{(\theta', R')}{d}$. 
+\end{lemma}
+\noindent Now we have enough machinery to prove the correctness of the library.
+Let $\mu_0$ be the least memory, with an empty sets of cells and local
+references (except for the clock and the mutable cell list \term{i}). Then,
+we can show that
+\begin{theorem}
+Define $\realize{\ultrametric}{X}{Y}{f}{\term{f}}$ to be $U^0_{X \To
+  Y}(f, \term{f})$, and define
+$\realize{\ultrametric^S}{A}{B}{g}{\term{g}}$ to be $V^0_{A \lolli
+  B}(g, \term{g}, \mu_0, \emptyset)$. 
+Then it follows that:
+\begin{itemize}
+\item If $\judgeu{\Gamma}{e}{X}$, then $\realize{\ultrametric}{\Gamma}{X}{\interp{\judgeu{\Gamma}{e}{X}}}{\interpu{\judgeu{\Gamma}{e}{X}}}$
+\item If $\judgek{\Delta}{t}{A}$, then \\
+$\realize{\ultrametric^S}{V(\Gamma) \otimes \Delta}{A}{\interp{\judgek{\Delta}{t}{A}}}{\interpu{\judgek{\Delta}{t}{A}}}$
+\end{itemize}
+\end{theorem}
+
+We use the banana brackets on typing derivations to mean replacing the
+categorical combinators of Figure~\ref{adjoint-semantics} with our
+implementation combinators.
 \begin{figure}
+{\small
 \begin{tabbingspec}
 $U^d_1(\unitval, \unitval) = $ true 
-\Newline[1em]
+\Newline[0.5em]
 
 $U^d_{X \times Y}((x,y), (\term{x}, \term{y})) = U^d_X(x, \term{x}) \land U^d_Y(y, \term{y})$ 
-\Newline[1em]
+\Newline[0.5em]
 
 $U^d_{X \To Y}(f, \term{f}) = \forall d' > 2\cdot d, v, \term{v}.\; 
     U^{d'}_X(v, \term{v}) \implies U^{d'}_Y(f\;v, \term{f\;v})$ 
-\Newline[1em]
+\Newline[0.5em]
 
 $U^d_{X \shrink Y}(f, \term{f}) = \forall d' > 2\cdot d, v, \term{v}.\; 
     U^{d'}_X(v, \term{v}) \implies U^{d'}_Y(f\;v, \term{f\;v})$ 
-\Newline[1em]
+\Newline[0.5em]
 
 $U^d_{A^\omega}(vs, \term{code}) = $ \Newline
 \;\;\= $\forall d' > 2\cdot d, \mu \in \Mem{d'}.\;\Build^{d'}_A(vs, \term{code}, \mu, \emptyset, \U)$ 
 \Newline[1em]
 
+$V^d_{\valtype{X}}(v, \term{v}, \mu, \sigma) = U^d_{X}(v, \term{v})$ 
+\Newline[0.5em]
+
 $V^d_I(\unitval, \unitval, \mu, \sigma) = $ true
-\Newline[1em]
+\Newline[0.5em]
 
 $V^d_{A \otimes B}((a,b), \term{(a,b)}, \mu, \sigma) = V^d_A(a, \term{a}, \mu, \sigma) \land V^d_B(b, \term{b}, \mu, \sigma)$
-\Newline[1em]
+\Newline[0.5em]
+
+$V^d_{S(A)}(vs, \term{v}, (\theta,R), \sigma) = V_R(\term{v}) = vs \land \Delta_R(\term{v}) \subseteq \sigma$ 
+\Newline[0.5em]
+
 
 $V^d_{A \lolli B}(f, \term{f}, \mu, \sigma) = $ \Newline
 \> $\forall d' > 2\cdot d, \betterstate{d'}{\mu'}{\mu}, \sigma' \supseteq \sigma, v, \term{v}$ \Newline
 \> \;\;\=$V^{d'}_{S(A)}(vs, \term{v}, \mu', \sigma') \implies $ \Newline
-\>     \> \;\;$\exists L \sqsupseteq D_R(\term{v}).\; \Build^{d'}_{B}(f\;vs, \term{f\;v}, \theta', \sigma', L)$
-\Newline[1em]
+\>     \> \;\;$\exists L \sqsupseteq D_R(\term{v}).\; \Build^{d'}_{B}(f^\dagger\;vs, \term{f\;v}, \theta', \sigma' \cup \setof{\term{v}}, L)$
+\Newline[0.5em]
 
 $V^d_{A \lollishrink B}(f, \term{f}, \mu, \sigma) = $ \Newline
 \> $\forall d' > 2\cdot d, \betterstate{d'}{\mu'}{\mu}, \sigma' \supseteq \sigma, v, \term{v}.$ \Newline
 \> \> $V^{d'}_{S(A)}(vs, \term{v}, \mu', \sigma') \implies 
-      \Build^{d'}_{B}(f\;vs, \term{f\;v}, \mu', \sigma', \U)$
-\Newline[1em]
+      \Build^{d'}_{B}(f^\dagger\;vs, \term{f\;v}, \mu', \sigma'  \cup \setof{\term{v}}, \U)$
+\end{tabbingspec}
+}
+\caption{The Logical Relation}
+\label{logical-relation}  
+\end{figure}
 
-$V^d_{\valtype{X}}(v, \term{v}, \mu, \sigma) = U^d_{X}(v, \term{v})$ 
-\Newline[1em]
 
-$V^d_{S(A)}(vs, \term{v}, (\theta,R), \sigma) = V_R(\term{v}) = vs \land \Delta_R(\term{v}) \subseteq \sigma$ 
-\Newline[1em]
-
+\begin{figure}
+{\small
+\begin{tabbingspec}
 $\Build^d_A(vs, \term{code}, (\theta,R) \;\mathrm{as}\;\mu, \sigma, L) = $ \Newline
-\> $\{H(\theta) \land \satisfyext{(\theta,R)}{d} \}$ \Newline
+\;\;\= $\{H(\theta) \land \satisfyext{(\theta,R)}{d} \}$ \Newline
 \> $\term{code}$ \Newline
 \> $\{(\term{a},\_).\;\exists$\=$\betterstate{d}{(\theta,R')\;\mathrm{as}\;\mu'}{\mu}, u.\; H(\theta') \land \term{a} \in C_{R'} - C_R \;\land$ \Newline
-\> \> $\NewStream^d_A(vs, \term{a}, \mu', \sigma, L) \;\land$ \Newline
+\> \;\;\= $\NewStream^d_A(vs, \term{a}, \mu, \mu', \sigma, L) \;\land$ \Newline
 \> \> $\Update(u, \mu, \mu', \term{a}) \;\land$ \Newline
 \> \> $\Stable(\mu, \mu')\}$
-\Newline[1em]
+\Newline[0.5em]
 
-$\NewStream^d_A(vs, \term{a}, (\theta, R), \sigma, L) = $\Newline
-\> $D_{R}(\term{a}) = L \land \Delta_{R}(\term{a}) \subseteq \sigma \land 
-    V^d_{S(A)}(vs, \term{a}, (\theta,R), \Delta_{R}(\term{a}))$
-\Newline[1em]
+$\NewStream^d_A(vs, \term{a}, (\theta,R), (\theta', R'), \sigma, L) = $\Newline
+\> $D_{R'}(\term{a}) = L \land \Delta^{*}_{R'}(\term{a}) \cap C_R \subseteq \sigma \land 
+    V^d_{S(A)}(vs, \term{a}, (\theta',R'), \Delta_{R'}(\term{a}))$
+\Newline[0.5em]
 
 $\Update(u, (\theta, R), (\theta', R'), \term{a}) = $ \Newline
 \> $\forall \term{c}.\;\ready{\theta'}{c}{-} \land \unready{\theta}{c} \iff c \in u \;\land$ \Newline
-\> $\forall \term{c} \in u.\; \term{c} \in \Delta_R(\term{a}) \vee \term{c} \in (C_{R'} - C_R)$ 
-\Newline[1em]
+\> $\forall \term{c} \in u.\; \term{c} \in \Delta^{*}_R(\term{a}) \vee \term{c} \in (C_{R'} - C_R)$ 
+\Newline[0.5em]
 
 $\Stable(\mu, \mu') = \StableRef(\mu, \mu') \land \StableImp(\mu, \mu')$ \Newline[1em]
 
@@ -1296,33 +2278,34 @@ $\StableRef((\theta,R), (\theta'R')) = $ \Newline
 \> $\forall \term{r} \in L_{R'}.\; S_{R'}(\term{r}) \mbox{ undef} \iff \term{r} \in L_R \land  S_{R}(\term{r}) \mbox{ undef}$ and \Newline
 \> $\forall \term{r} \in L_{R'}.\; G_{R'}(\term{r}) \mbox{ undef} \iff \term{r} \in L_R \land  G_{R}(\term{r}) \mbox{ undef}$ and \Newline
 \> $\forall \term{r} \in L_{R} - \dom{G_R}.\;\exists \term{v}.\;\hasref{\theta}{\term{r}}{\term{v}} \land \hasref{\theta'}{\term{r}}{\term{v}}$
-\Newline[1em]
+\Newline[0.5em]
 
 $\StableImp((\theta, R), (\theta',R'))\} = $ \Newline
 \> $\forall I,I'.\;\hasref{\theta}{\term{i}}{I} \land \hasref{\theta}{\term{i}}{I'} \implies $ \Newline
 \>\;\;\= $[I' - S^{-1}_{R'}(L_{R'}) - G^{-1}_{R}(L_{R})] = [I - S^{-1}_{R}(L_{R}) - G^{-1}_{R}(L_{R})]$ \Newline
 \> \> and $\forall \term{c} \in I'.\; \unready{\theta'}{\term{c}} \implies \term{c} \in I \land \unready{\theta}{c}$
-
 \end{tabbingspec}
-\caption{The Logical Relation}
-\label{logical-relation}  
+}
+\caption{Auxilliary Relations}
+\label{auxilliary-relations}  
 \end{figure}
 
 \begin{figure}
+{\small
 \begin{tabbingspec}
 $\satisfy{(\theta,R)}{d} \triangleq$ \Newline
-\;\;\=$\cells{\theta} = C_R$ and \Newline
-    \>$\refs{\theta} = L_R$ and \Newline
+\;\;\=$\cells{\theta} = C_R \uplus \setof{\term{clock}}$ and \Newline
+    \>$\refs{\theta} = L_R \uplus \setof{\term{i}}$ and \Newline
     \>$\forall \term{c}:A \in C_R.\;$\=$\unready{\theta}{\term{c}} \vee \exists \term{v}.\; $\=$\ready{\theta}{\term{c}}{\term{v}}$ and \Newline
     \>$\forall \term{c} \in G_R(L_R) \cup S_R(L_R).$ \Newline
     \> \> $\ready{\theta}{\term{c}}{-} \implies \term{clock} \in \mathsf{deps}(\theta, \term{c})$ and \Newline
     \>$\exists I.\;\hasref{\theta}{\term{i}}{I} \land I \subseteq (G_R(L_R) \cup S_R(L_R))$ and \Newline
-    \>$\forall \term{c}:A \in \cells{\theta}.\;\Stream^d_A(\term{c}, (\theta, R))$ and \Newline
+    \>$\forall \term{c}:A \in C_R.\;\Stream^d_A(\term{c}, (\theta, R))$ and \Newline
     \>$\forall \term{r}:A \in L_R.\; \Local^d_A(\term{r}, (\theta, R))$ 
-\Newline[1em]
+\Newline[0.5em]
 
 $\Stream^d_A(\term{v}, \mu) = $ \Newline
-\> $\forall d' > 2\cdot d, n \leq \log(1/d'), \futurestate{d'}{n}{\mu'}{\mu}.\; \Head^{d'\cdot 2^n}_A(\term{v}, \mu')$ \Newline[1em]
+\> $\forall d' > 2\cdot d, n \leq \log(1/d'), \futurestate{d'}{n}{\mu'}{\mu}.\; \Head^{d'\cdot 2^n}_A(\term{v}, \mu')$ \Newline[0.5em]
 
 $\Head^d_A(\term{v}, (\theta,R)\;\mathrm{as}\;\mu) = $\Newline
 \> $\{H(\theta) \land \satisfyext{\mu}{d}\} $\Newline
@@ -1331,44 +2314,46 @@ $\Head^d_A(\term{v}, (\theta,R)\;\mathrm{as}\;\mu) = $\Newline
 \> \> $\Ready^d_A(\term{v}, \term{a}, \mu') \;\land$ \Newline
 \> \> $\Update(u, \mu, \mu', \term{v}) \;\land$ \Newline 
 \> \> $\Stable(\mu, \mu') \}$ 
-\Newline[1em]
+\Newline[0.5em]
 
 $\Local^d_A(\term{r}, (\theta, R)) = $ \Newline
 \> $\forall d' > 2\cdot d.\; S_R(\term{r})$ defined $\implies$ \Newline
 \> \;\;\= $\unready{\theta}{S_R(\term{r})} \implies$ \Newline
-\> \>\;\;\= $\Ref^{d'}_A(\head{V^R_L(r)}, \term{r}, \mu, \Delta_R(S_R(\term{r})))$ and \Newline
+\> \>\;\;\= $\Ref^{d'}_A(\head{V^R_L(r)}, \term{r}, \mu, \Delta^+_R(S_R(\term{r})))$ and \Newline
 \> \> $\ready{\theta}{S_R(\term{r})}{-} \implies $\Newline
-\> \> \> $\Ref^{d'}_A(\head{\tail{V^R_L(r)}}, \term{r}, \mu, \Delta_R(S_R(\term{r})))$ \Newline
+\> \> \> $\Ref^{d'}_A(\head{\tail{V^R_L(r)}}, \term{r}, \mu, \Delta^+_R(S_R(\term{r})))$ \Newline
 \> \> \> $\;\land\; \exists \term{v}.\;\ready{\theta}{G_R(\term{r})}{\term{v}})$
-\Newline[1em]
+\Newline[0.5em]
 
 
 $\Ref^d_A(v, \term{r}, (\theta,R), \sigma) = $ \Newline
 \> $\exists \term{v}.\;\hasref{\theta}{\term{r}}{\term{v}} \land \Opt^{d'}_A(v, \term{v}, (\theta,R), \sigma)$ 
-\Newline[1em]
+\Newline[0.5em]
 
 $\Ready^d_A(\term{c}, \term{v}, (\theta,R)) = $ \Newline
 \> $\Opt^{d}_A(\mbox{if } D_R(\term{v}) \mbox{ then } \None \mbox{ else } \Some{V_R(\term{v})}, 
-              \term{a}, (\theta,R), \Delta_R(\term{c}))$ 
-\Newline[1em]
+              \term{a}, (\theta,R), \Delta^+_R(\term{c}))$ 
+\Newline[0.5em]
 
 
 $\Opt^d_A(v, \term{v}, \mu, \sigma) = $ \Newline
 \> $(v = \None \land \term{v} = \None) \;\vee$ \Newline
 \> $(\exists v', \term{v'}.\; v = \Some{v'} \land \term{v} = \Some{\term{v'}} \land V^d_A(v', \term{v'}, \mu, \sigma))$ 
-\Newline[1em]
+\Newline[0.5em]
 
 $\satisfyext{(\theta,R)}{d} = $ \Newline
 \> $\forall \term{r}:A \in L_R.\; S_R(\term{r}) \mbox{ undef} \implies \Ref^d_A(\head{V^L_R(\term{r})}, \term{r}, (\theta,R))$
 \end{tabbingspec}
+}
 \caption{The Satisfaction Relation}
 \label{satisfaction-relation}
 \end{figure}
 
 \begin{figure}
+{\small
 \begin{tabbingspec}
 $\Mem{d} = \comprehend{(\theta,R)}{\satisfy{(\theta,R)}{d}}$ 
-\Newline[1em]
+\Newline[0.5em]
 
 $(\sqsupseteq^d) \subseteq \Mem{d} \times \Mem{d}$ \Newline[0.2em]
 
@@ -1378,42 +2363,42 @@ $\betterstate{d}{(\theta',R')}{(\theta,R)}$ iff \Newline
 \> $\forall \term{c}:A \in C_R, \term{code}.\; \mathsf{code}(\theta, \term{c}, \term{code}) \implies \mathsf{code}(\theta', \term{c}, \term{code})$ and \Newline
 \> $\forall \term{r}\in E_R, \term{v}.\; \mathsf{ref}(\theta, \term{r}, \term{v}) \iff 
                                          \mathsf{ref}(\theta', \term{r}, \term{v}) $
-\Newline[1em]
+\Newline[0.5em]
 
 $\futurestate{d}{0}{\mu'}{\mu} \;\;\;\,= \betterstate{d}{\mu'}{\mu}$ \Newline
 $\futurestate{d}{n+1}{\mu'}{\mu} = $ \Newline
 \> $\exists \mu_0 \in \Mem{d}.\; \betterstate{d}{\mu_0}{\mu} \land \complete{\mu_0} \land \futurestate{2\cdot d}{n}{\mu'}{\tail{\mu_0}}$ 
-\Newline[1em]
+\Newline[0.5em]
 
 $\complete{\theta,R} = $ \Newline
 \> $\forall \term{r} \in L_R. \exists \term{c} \in C_R.\; S_R(\term{r}) = \term{c} \land \exists \term{v}.\;\ready{\theta}{\term{c}}{\term{v}}$ 
-
-
 \end{tabbingspec}
+}
 \caption{Orderings on Memories}
 \label{memory-orderings}
 \end{figure}
 
-\section{Related Work}
+\section{Discussion}
+We have used ultrametric spaces to reinterpret the stream transformers
+familiar from the semantics of synchronous dataflow. In the special
+case of functions from streams to streams, causality and
+nonexpansiveness precisely coincide, but complete ultrametric spaces
+are Cartesian closed, supporting function spaces at all orders, and a
+general notion of contractiveness for defining well-founded fixed
+points.  Furthermore, to support efficient implementation, we also
+need to make use of the co-Kleisli category over the stream comonad,
+which we connect to the base category via an adjunction.
 
-In our work, we use ultrametric spaces to give semantics to streamt
-ransformers. In the special case of functions from streams to
-streams, causality and nonexpansiveness precisely coincide, but due to
-cartesian closure function types at all orders are well-defined.
-Furthermore, to support efficient implementation, we also need to make
-use of the co-Kleisli category over the stream comonad, which we 
-connect to the base category via an adjunction. 
+%% There are four main strands of related work: synchronous dataflow
+%% languages, purely functional reactive programming systems, imperative
+%% FRP systems, and metric methods in denotational semantics.
 
-There are four main strands of related work: synchronous dataflow
-languages, purely functional reactive programming systems, imperative
-FRP systems, and metric methods in denotational semantics.
-
-The family of synchronous dataflow languages (such as
-Esterel~\cite{esterel}, Lustre~\cite{lustre}, and Lucid
-Synchrone~\cite{synchrone}) are languages based on a model of
-synchronous time. The discrete ultrametric semantics we use is related
-to these systems, most especially to Lucid Synchrone (which supports
-higher-order functions).
+%% The family of synchronous dataflow languages (such as
+%% Esterel~\cite{esterel}, Lustre~\cite{lustre}, and Lucid
+%% Synchrone~\cite{synchrone}) are languages based on a model of
+%% synchronous time. The discrete ultrametric semantics we use is related
+%% to these systems, most especially to Lucid Synchrone (which supports
+%% higher-order functions).
 
 Pouzet and Caspi~\cite{coiterative} extended synchronous dataflow
 programming to higher order with their co-iterative semantics. They
@@ -1424,44 +2409,25 @@ observed that size-preserving functions could be understood more
 abstractly as the co-Kleisli category of streams. However, in both of
 these works, feedback was handled in a somewhat \emph{ad hoc} fashion.
 
-The proper treatment of this issue is delicate, and disentangling the
+The proper treatment of feedback is delicate, and disentangling the
 two main pieces of it kept us busy for a long time. First, we use
 ultrametrics to give a semantic criterion for causality, which permits
 us to avoid explicitly looking at the syntax of a program to identify
-dependencies. This is essential for the smooth treatment of
-higher-order functions, since the dependencies may not be statically
-apparent in this case.
+dependencies. Second, we needed to make explicit use of the adjunction
+between the base category of ultrametric spaces and the co-Kleisli
+category of streams, in order to explain the semantics of feedback.
+By using two categories, we do not need to compromise on our reasoning
+principles in any way, which is quite remarkable given the low-level,
+imperative nature of our implementation.
 
-Second, we needed to make explicit use of the adjunction between the
-base category of ultrametric spaces and the co-Kleisli category of
-streams. The reason is that taking the fixed point of (the coextension
-of) a contractive function $A \lollishrink A$ in the co-Kleisli
-category yields a \emph{stream} of values. Essentially, feedback lets
-us take a function and turn it into a stream, but since we are
-receiving a stream of functions as an input, the natural fixed point
-operator will yield a new stream at each timestep.  However, there are
-no maps in the co-Kleisli category which take a stream of streams and
-fix the outputs as the successive elements of the stream at a
-particular time --- and this is precisely what we need to do enumerate
-the elements of a fixed point over time.
-
-This is why we have two categories -- the operations we need for
-reative programming live naturally in both. This permits us to
-preserve the equational theory of the programming language:
-programmers can reasoning using full rules for $\beta\eta$-equality,
-as well as the equations for fixed points. We do not need to
-compromise on our reasoning principles in any way, which is quite
-remarkable given the low-level, imperative nature of our
-implementation.
-
-Functional reactive programming was introduced by Eliot and
+Functional reactive programming was introduced by Elliott and
 Hudak~\cite{fran}, and was given a semantics in terms of event streams
 and unrestricted functions over them. In this and subsequent
 work~\cite{courtney-thesis}, the semantics of fixed points were given
 denotationally. This gives semantics to all FRP expressions, including
 non-well-founded programs (which will go into infinite loops). 
 
-One notable feature of this line work is a treatment of continuous
+A notable feature of FRP is a treatment of continuous
 time. We believe that our proof framework should extend to proving an
 sampling theorem as in Wan and Hudak~\cite{frp-first-principles}.  On
 the semantic side, continuous streams can be modelled as functions
@@ -1478,264 +2444,46 @@ higher-order and dynamic behavior. Our semantics gives a way of
 eliminating these restrictions and admitting higher-order and dynamic
 behavior in a very uniform way.
 
+% reinstate Nivat sometime
+
 Metric methods were introduced into semantics in the late
-1970s~\cite{nivat} and early 1980s, in order to simplify the
+1970s and early 1980s, to simplify the
 denotational semantics of
 concurrency~\cite{concurrency-semantics}. The applications to stream
 programming were recognized early, but not followed up on: in a
 surprisingly little-cited 1985 paper~\cite{metric-dataflow}, de Bakker
 and Kok proposed an ultrametric semantics for a language of
-first-order stream programs over integers. In their paper, they wrote
+first-order stream programs over integers and wrote
 ``We think there are no problems when we allow functions of higher
 order[\ldots]''.  This is a conjecture which we have attended to, a
 full quarter-century later: we can confirm that it turns out to be
 true, but only if we make it true twice over!
 
 More recently, Birkedal and his coworkers~\cite{birkedal-ultrametrics}
-have used ultrametric models to give semantics to sequential programs
-involving advanced features such as higher-order state and
-polymorphism, and has suggested connections between these ideas and
-the more operationally-flavored technique of step-indexed
-models~\cite{appel-mcallester}. Our logical relation can be seen as
-similar to these models, only ``one level down'' -- we define
-\emph{values} as fixed points of metric spaces, whereas Birkedal
-\emph{et al.} define \emph{types} as fixed points of metric spaces.
+have used ultrametric models to give logics and semantics for
+sequential programs involving advanced features such as higher-order
+state and polymorphism, and have shown connections between these
+ideas and the more operationally-flavoured technique of step-indexed
+models~\cite{appel-mcallester}. Our `custom' logical relation is very much in the spirit of the recursively-defined predicates and relations used in these metric models, and we additionally exploit metric structure to define recursive \emph{values}.
 
-There is also a fascinating and suggestive paper by
-Escardo~\cite{escardo-metric}, who observed that metric models seem to
-correspond to PCF extended with timeout operators. Since cancels and
-interrupt operations pervade interactive programs, this suggests we
-should investigate whether they can be supported without harming the
-reasoning principles of the language.
+A fascinating and suggestive paper by Escardo~\cite{escardo-metric},
+gives a metric model to PCF extended with timeout operators. Since
+cancels and interrupt operations pervade interactive programs, this
+suggests we should investigate whether they can be supported without
+harming the reasoning principles of the language.
 
-\appendix
+Finally, we have actually implemented the API of this paper as a
+library in Objective Caml. After implementing the combinatory
+interface as a module interface, we implemented syntax extensions
+using CamlP4, which compile terms of the adjoint calculus into calls
+to our Ocaml library. In addition, we have implemented bindings to the
+GTK GUI toolkit, and are currently investigating proof principles
+for reasoning about ``retained mode'' architectures (of
+which GUI toolkits and the HTML DOM are two examples). 
 
-\section{Implementation}
+% \acks
 
-We give the implementation of the code for the dynamic lambda calculus
-in Figure~\ref{cokleisli-implementation}, and the implementation of the
-program for the static lambda calculus in Figure~\ref{ultrametric-implementation}. 
-
-The implementation is relatively straightforward, with two exceptions:
-the implementation of the \term{zip} operation. Given two stream
-cells, it returns a cell which pairs the successive elements of its
-two inputs. This is a tricky function to verify, since the function
-must work with lagged inputs, and we may receive a pair of inputs in
-which one component is lagged and the other not. However, our
-mathematical specification does not mention delays in it at all. So
-even if one input yields $(a_0, a_1, a_2, \ldots)$ and the other
-yields $(\None, b_0, b_1, b_2, \ldots)$, the programmer is still
-entitled to assume that $a_0$ is paired with $b_0$, and that $a_1$ is
-paired with $b_1$, and so on.
-
-To implement this, \term{zip} tests the two inputs, and introduces an
-artificial delay, if one cell is delayed and the other is not.
-Otherwise, it simply returns a cell which performs the pairing. Since
-implementing a delay uses auxilliary state, we need to register the
-cell --- but we only \term{register} the cell in the case it needs the
-state. This reduces the number of cells that will get forced at the
-end of each trip through the event loop, and so lets the dataflow
-graph remain as lazy as we can manage. 
-
-Secondly, the implementation of \term{fix} is quite subtle. It works
-takes a stream of functions, and returns a stream of streams.
-
-Our actual implementation does some further optimizations not visible
-in this source. In particular, we exploit the isomorphism $S(A \times
-B) \simeq S(A) \times S(B)$ to maintain the context in product form.
-This permits us to avoid excessive conservatism in managing dependencies.
-
-\begin{figure}
-\begin{tabbing}
-\term{id = \lambda xs.\;cell(read\;xs)} 
-\\[1em]
-
-\term{compose\;f\;g =\lambda as.\; do\;}
- \=\term{bs \leftarrow f(as);} \\
- \>\term{cs \leftarrow g(bs);} \\
- \>\term{return(cs)} 
-\\[1em]
-
-\term{one\;xs = cell(return(\Some{\unitval}))}
-\\[1em]
-
-\term{pair\;f\;g = \lambda as.\;do\;}
-  \=\term{bs \leftarrow f(as);} \\
-  \>\term{cs \leftarrow g(as);} \\
-  \>\term{zip(bs,cs)}
-\\[1em]
-
-\term{fst = \lambda abs.\;cell(do}
-  \= \term{ab' \leftarrow read(abs);} \\
-  \>\term{case \; ab'\; of} \\
-  \>\term{\;\None \to return(\None)} \\
-  \>\term{\;\Some{a,b} \to return(\Some{a}))} 
-\\[1em]
-
-
-\term{snd = \lambda abs.\;cell(do}
-  \= \term{ab' \leftarrow read(abs);} \\
-  \>\term{case \; ab'\; of} \\
-  \>\term{\;\None \to return(\None)} \\
-  \>\term{\;\Some{a,b} \to return(\Some{b}))} 
-\\[1em]
-
-\term{eval = \lambda fas.\;do}\;
-              \=\term{fs \leftarrow \;fst(fas);}\\
-              \>\term{as \leftarrow \;snd(fas);}\\
-              \>\term{cell(do\;}\=\term{f' \leftarrow read(fs)}\\
-              \>                  \>\term{case\;f'\;of}\\
-              \>                  \>\term{\;\None \to return\;\None} \\
-              \>                  \>\term{\;\Some{f} \to do\;}\=\term{bs \leftarrow f(as);} \\
-              \>                  \>                            \>$\term{read(bs)})$ 
-\\[1em]
-
-\term{curry\;f =\lambda as.\;cell(\mathsf{Some}(\lambda bs.\;do\;}
-  \=\term{abs \leftarrow zip(as,bs);}\\
-  \>\term{f(abs)))}
-\end{tabbing}
-\caption{The Implementation of the co-Kleisli Category}
-\label{cokleisli-implementation}
-\end{figure}
-
-\begin{figure}
-\begin{tabbing}
-\term{zip(as, bs) =} \\
-\;\;\= \term{do\;}\=\term{a' \leftarrow read(as);} \\
-\>              \>\term{b' \leftarrow read(bs);} \\
-\>              \>\term{case \;(a',b')\;of}\\ 
-\>           \>\;\;\=\term{(\None, \None)} \\
-\>           \>    \>\term{(\Some{\_}, \Some{\_}) \to} \\
-\>           \>    \> \qquad \term{cell(do\;}\=\term{a' \leftarrow read(as);} \\
-\>           \>    \>                      \>\term{b' \leftarrow read(bs);} \\
-\>           \>    \>                      \>\term{case \;(a',b')\; of} \\
-\>           \>    \>                      \>\;\;\=\term{(\Some{a}, \Some{b}) \to return(\Some{(a,b)})} \\
-\>           \>    \>                      \>\;\;\=\term{(\_, \_) \to return(\None))} \\
-\>           \>    \>\term{(\None, \Some{\_}) \to}\\
-\>           \>    \> \qquad\term{do\;}\=
-                                      \term{r \leftarrow ref(\None);} \\
-\>           \>    \>               \>\term{abs \leftarrow cell(do\;}\=\term{a \leftarrow read(as);} \\
-\>           \>    \>               \>                               \>\term{new \leftarrow read(bs);} \\
-\>           \>    \>               \>                               \>\term{old \leftarrow !r;}\\
-\>           \>    \>               \>                               \>\term{r := new;}\\
-\>           \>    \>               \>                               \>\term{return(a,old));}\\
-\>           \>    \>               \>\term{register(abs);} \\
-\>           \>    \>               \>\term{return(abs)} \\
-\>           \>    \>\term{(\Some{\_}, \None) \to}\\
-\>           \>    \> \qquad\term{do\;}\=
-                                      \term{r \leftarrow ref(\None);} \\
-\>           \>    \>               \>\term{abs \leftarrow cell(do\;}\=\term{b \leftarrow read(bs);} \\
-\>           \>    \>               \>                               \>\term{new \leftarrow read(as);} \\
-\>           \>    \>               \>                               \>\term{old \leftarrow !r;}\\
-\>           \>    \>               \>                               \>\term{r := new;}\\
-\>           \>    \>               \>                               \>\term{return(old,b));}\\
-\>           \>    \>               \>\term{register(abs);} \\
-\>           \>    \>               \>\term{return(abs)} 
-\\[1em]
-
-\term{register(xs) = do\;}\=\term{dummy \leftarrow read(xs);}\\
-                          \>\term{lst \leftarrow !i;} \\
-                          \>\term{i := pack(xs) :: lst} 
-\end{tabbing}
-\caption{Utility Functions for the co-Kleisli Code}
-\label{cokleisli-util}
-\end{figure}
-
-\begin{figure}
-\begin{tabbing}
-$\term{fix} : (A \lollishrink A) \lolli S(A)$ \\
-\term{fix = \lambda fs.\;cell(do}
-  \=\term{f' \leftarrow read(fs);} \\
-  \>\term{case\;f'\;of}\\
-  \>\;\;\=\term{\None \to return(\None)}\\
-  \>    \>\term{Some(f) \to} \\
-  \>    \>\;\;\term{do} \=\term{r \leftarrow ref(\None);}\\
-  \>    \>  \>\term{input \leftarrow cell(do\;}\=\term{() \leftarrow clock;}\\
-  \>    \>  \>                                 \>\term{v \leftarrow !r;}\\
-  \>    \>  \>                                 \>\term{return(v));}\\
-  \>    \>  \>\term{pre \leftarrow f(input);}\\
-  \>    \>  \>\term{out \leftarrow cell(do\;}\=\term{\_ \leftarrow read(input);} \\
-  \>    \>  \>                               \>\term{v \leftarrow read(pre);}\\
-  \>    \>  \>                               \>\term{r := v;}\\
-  \>    \>  \>                               \>\term{return(v));}\\
-  \>    \>  \>\term{register(out);}\\
-  \>    \>  \>\term{return(\Some{out})})
-\end{tabbing}
-\caption{Implementing Fixed Points in the co-Kleisli Category}  
-\label{cokleisli-implementation-2}
-\end{figure}
-
-
-\begin{figure}
-\begin{tabbing}
-
-\term{id = \fun{x}{x}} 
-\\[1em]
-\term{compose\;f\;g = \fun{x}{g(f(x))}}
-\\[1em]
-\term{one = \fun{x}{\unitval}}
-\\[1em]
-\term{fst = \fun{(x,y)}{x}}
-\\[1em]
-\term{snd = \fun{(x,y)}{y}}
-\\[1em]
-\term{pair\;f\;g = \fun{x}{(f(x),g(x))}}
-\\[1em]
-\term{eval = \fun{(f,x)}{f(x)}}
-\\[1em]
-\term{curry\;f = \fun{x}{\fun{y}{f(x,y)}}}
-\\[1em]
-\term{cons = \lambda x.\; cell(return(\Some{f}))} \\[0.1em]
-with 
-\term{f = \lambda ys.\;do} \= \term{r \leftarrow \Some{x};} \\
-\>     \term{zs \leftarrow cell(}\= 
-      \term{do} \=\term{old \leftarrow !r;} \\
-\> \> \> \term{new \leftarrow read(ys);} \\
-\> \> \> \term{case\;old\;of} \\
-\> \> \> \;\;\= \term{\None \to return(new)} \\
-\> \> \> \>     \term{\Some{\_} \to do} \=\term{r := new;} \\
-\> \> \> \>  \>                           \term{return(old));} \\                 
-\> \term{register(zs);} \\
-\> \term{return(zs)}\\
-
-
-\\
-\term{head\;thunk =} \\
-\;\;\term{do\;}
-  \=\term{xss \leftarrow thunk;} \\
-  \>\term{xs' \leftarrow read(xss);} \\
-  \>\term{case\;xs'\;of} \\
-  \>\;\;\=\term{\Some{xs} \to return(xs)}\\
-  \>    \>\term{\None \to ERROR} (invariant ensures this case cannot happen)
-\end{tabbing}
-\caption{The Implementation of the Ultrametric Category}
-\label{ultrametric-implementation}
-\end{figure}
-
-\begin{figure}
-\begin{tabbing}
-$(-)^\omega : U^S(A,B) \to U(A^\omega, B^\omega)$ \\
-\term{omega\;f = \lambda athunk.\;do} \=\term{as \leftarrow athunk;} \\
-                                      \>\term{bs \leftarrow f(as);} \\
-                                      \>\term{return(bs)} 
-\\[1em]
-
-$\mathit{Value} : U(X,Y) \to U^S(\valtype{X}, \valtype{Y})$ \\[0.2em]
-\term{value\;f = \lambda xs.\;cell(do} \=\term{x' \leftarrow read(xs);}\\
-                                       \>\term{case\;x'\;of}\\
-                                       \>\;\;\=\term{\None \to return(\None)} \\
-                                       \>\>    \term{\Some{x} \to return(\Some{f(x)}))}
-
-  
-\end{tabbing}
-\caption{Implementing the Adjunction}
-\label{adjoint-implementation}  
-\end{figure}
-
-
-\acks
-
-Acknowledgments, if needed.
+% Acknowledgments, if needed.
 
 % We recommend abbrvnat bibliography style.
 
