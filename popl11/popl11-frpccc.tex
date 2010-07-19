@@ -125,7 +125,7 @@
 \newcommand{\judgekc}[4][\Delta]{\Gamma;{#1};{#2} \vdash {#3} : {#4}}
 
 
-\newcommand{\letval}[3]{\mathsf{letval}\;{#1} = {#2}\;\mathsf{in}\;{#3}}
+\newcommand{\letomega}[3]{\mathsf{let}\;{#1}^\omega = {#2}\;\mathsf{in}\;{#3}}
 % Contractive commands
 \newcommand{\const}[1]{\left<{#1}\right>}
 \newcommand{\pair}[2]{({#1}, {#2})}
@@ -756,22 +756,23 @@ An \emph{adjoint model} is specified by:
 showing that the monoidal structure is preserved.
 \end{enumerate}
 \end{definition}
-In our setting, we take the CCC to be the category of ultrametric
-spaces, and take the monoidal closed structure in the definition to be
-the cartesian closed structure of the co-Kleisli category (since 
-Cartesian products are a special case of monoidal products). We
-decompose the stream comonad into the usual free and forgetful functors that go between the category of 
+In our setting, we take the CCC to be the co-Kleisli category of
+ultrametric spaces, and take the monoidal closed structure in the
+definition to be the cartesian closed structure of the category of
+ultrametric spaces (since Cartesian products are a special case of
+monoidal products). We decompose the stream comonad into the usual
+free and forgetful functors that go between the category of
 ultrametric spaces and the co-Kleisli category of streams over
-it. Specifically, the functors $(-)^\omega : \ultrametric^S \to \ultrametric$
-and $V(-) : \ultrametric \to \ultrametric^S$ are defined as:
-{\small
+it. Specifically, the functors $(-)^\omega : \ultrametric^S \to
+\ultrametric$ and $V(-) : \ultrametric \to \ultrametric^S$ are defined
+as: {\small
 \begin{mathpar}
   \begin{array}{lcl} 
-    V(X)           & = & X \\
-    V(f : X \to Y) & = & \epsilon_X; f \\[0.5em]
+    X^\omega             & = & S(X) \\
+    (f : X \to Y)^\omega & = & \delta_{X}; S(f) = f^\dagger\\[0.5em]
 
-    A^\omega             & = & S(X) \\
-    (f : A \to B)^\omega & = & \delta_{A}; S(f) = f^\dagger\\
+    V(A)           & = & X \\
+    V(f : A \to B) & = & \epsilon_X; f
   \end{array}
 \end{mathpar}
 }
@@ -782,15 +783,15 @@ adjoint $(g)^\omega$ takes a synchronous dataflow function, and turns
 it into a general function on streams, via the coextension operation. 
 Verifying that $V(f)^\omega = S(f)$ is immediate from the definitions. 
 
-Furthemore, we know that $V(X \times Y) \simeq V(X) \otimes V(Y)$, and
-also $X \To B^\omega \simeq (V(X) \lolli B)^\omega$. This latter
+Furthemore, we know that $(X \times Y)^\omega \simeq X^\omega \otimes Y^\omega$, and
+also $X \To V(B) \simeq V(X^\omega \lolli B)$. This latter
 isomorphism is actually the key property which lets us switch our view
 of a program between the synchronous and the functional reactive
 views.
 
 For example, under the adjoint view, it becomes easy to resolve the
 puzzle at the end of the last subsection. We give the feedback
-operator the type $(A \lollishrink A)^\omega \To A^\omega$, with
+operator the type $(X \shrink X)^\omega \lolli X^\omega$, with
 the semantics that it returns a stream corresponding to the fixed
 point of the \emph{first} function in the input stream. Then, a
 synchronous program can start looking at the elements of the
@@ -800,9 +801,9 @@ result whenever it wants to.
 
 We now give a small domain-specific language
 corresponding to the semantics of the previous section. As in adjoint
-logic, we have two sorts of types, writing $X,Y,Z$ for the types of
+logic, we have two sorts of types, writing $A,B,C$ for the types of
 the lambda calculus interpreted in the base category of ultrametric
-spaces, and $A,B,C$ for the types interpreted in the co-Kleisli
+spaces, and $X,Y,Z$ for the types interpreted in the co-Kleisli
 category. In addition to the standard function, product and adjoint
 types, we also introduce types corresponding to \emph{contractive
   functions}, $X \shrink Y$ and $A \lollishrink B$.
@@ -827,7 +828,7 @@ types, we also introduce types corresponding to \emph{contractive
           {\judgeu{\Gamma}{\unitval}{1}}
 \and
 \inferrule*[] 
-          {\judgeu{\Gamma}{e}{X} \\ \judgeu{\Gamma}{e'}{Y}}
+          {\judgeu{\Gamma}{e}{A} \\ \judgeu{\Gamma}{e'}{Y}}
           {\judgeu{\Gamma}{\pair{e}{e'}}{X \times Y}}
 \and
 \inferrule*[]
@@ -835,7 +836,7 @@ types, we also introduce types corresponding to \emph{contractive
           {\judgeu{\Gamma}{\pi_i\;e}{X_i}}
 \and
 \inferrule*[]
-          {x:A \in \Gamma}
+          {x:A \in \Delta}
           {\judgek{\Delta}{x}{A}}
 \and
 \inferrule*[]
@@ -860,19 +861,19 @@ types, we also introduce types corresponding to \emph{contractive
 \\
 \inferrule*[]
           {\judgek{\cdot}{t}{A}}
-          {\judgeu{\Gamma}{t^\omega}{A^\omega}}
+          {\judgeu{\Gamma}{\valtype{t}}{\valtype{A}}}
 \and
 \inferrule*[]
-          {\judgeu{\Gamma}{e}{A^\omega}}
+          {\judgeu{\Gamma}{e}{\valtype{A}}}
           {\judgek{\Delta}{\Start{e}}{A}}
 \and
 \inferrule*[]
           {\judgeu{\Gamma}{e}{X}}
-          {\judgek{\Delta}{\valtype{e}}{\valtype{X}}}
+          {\judgek{\Delta}{e^\omega}{X^\omega}}
 \and
 \inferrule*[]
-         {\judgek{\Delta}{t}{\valtype{X}} \\ \judgek[\Gamma,x:X]{\Delta}{t'}{A}}
-         {\judgek{\Delta}{\letval{x}{t}{t'}}{A}}
+         {\judgek{\Delta}{t}{X^\omega} \\ \judgek[\Gamma,x:X]{\Delta}{t'}{A}}
+         {\judgek{\Delta}{\letomega{x}{t}{t'}}{A}}
 \end{mathpar}
 }
 \caption{Syntax for Adjoint Logic}
@@ -969,29 +970,28 @@ types, we also introduce types corresponding to \emph{contractive
 There are two judgement forms, $\judgeu{\Gamma}{e}{Y}$ and
 $\judgek{\Delta}{t}{B}$, where $\Gamma = x_1:X_1,\label,x_n:X_N$ and
 $\Delta = y_1:A_a, \ldots, y_m:A_n$.  We then interpret the first
-judgement as a map in $\ultrametric$, of type $X_1 \times \ldots
+judgement as a map in $\ultrametric^S$, of type $X_1 \times \ldots
 \times X_n \to Y$, and the second judgement as a map in
-$\ultrametric^S$, of type $V(X_1 \times \ldots \times X_n \to Y)
-\otimes A_1 \otimes \ldots \otimes A_m \to B$. Here, $e$ ranges over
+$\ultrametric$, of type $(X_1 \times \ldots \times X_n)^\omega
+\otimes A_1 \otimes \ldots \otimes A_m \to B$. Here, $t$ ranges over
 ``FRP programs'' interpreted in the base category of ultrametric
-spaces, and $t$ ranges over ``synchronous dataflow programs''
+spaces, and $e$ ranges over ``synchronous dataflow programs''
 interpreted in the co-Kleisli category. Note the asymmetry in 
-the judgments -- the ``FRP'' context appears in the ``dataflow''
-judgement, but not vice-versa. Intuitively, this is because the FRP
-world is pure, and can be used at any time, whereas the synchronous
-world is implicitly clocked as a kind of ambient effect. 
+the judgments -- the ``dataflow'' context appears in the ``FRP''
+judgement, but not vice-versa. 
 
 We give typing rules for these programs in
 Figure~\ref{adjoint-syntax}.  Most of the rules are routine, with all
 of the interest lying in the rules that permit passing between the two
 worlds, listed as the last four rules of
-Figure~\ref{adjoint-syntax}. The $\omega$-introduction rule takes a
-dataflow program with no free variables, and treats it as a stream in
-$\ultrametric$. The corresponding elimination rule says that in a
-dataflow program, we can take a term $e : A^\omega$, and start
-enumerating its values with $\Start{e}$. Conversely, the final rule
-says how synchronous programs can decompose embedded FRP values
-and bind them for use in subsequent synchronous computations.
+Figure~\ref{adjoint-syntax}. The $\mathsf{val}$-introduction rule
+takes a dataflow program with no free non-dataflow variables, and
+treats it as a stream in $\ultrametric^S$. The corresponding elimination
+rule says that in a dataflow program, we can take a term $e :
+\valtype{A}$, and ask for its starting value with
+$\Start{e}$. Conversely, the two final rule says how FRP programs
+can decompose embedded stream values and bind them for use as 
+dataflow variables.
 
 In addition to these two judgements, we also need a pair of judgements
 permitting programmers to define contractive functions, which we
@@ -1046,7 +1046,7 @@ identical semantics of contractive terms in the co-Kleisli category.)
       (\interp{\judgeu{\Gamma}{e}{A}}, \interp{\judgeu{\Gamma}{e'}{B}}) \\
     \interp{\judgeu{\Gamma}{\pi_i(e)}{A_i}} & = & 
       \interp{\judgeu{\Gamma}{e}{A_1 \times A_2}}; \pi_i \\
-    \interp{\judgeu{\Gamma}{t^\omega}{A^\omega}} & = &  \eta_{\Gamma}; \interp{\judgek{\cdot}{t}{A}}^\omega 
+    \interp{\judgeu{\Gamma}{\valtype{t}}{\valtype{A}}} & = &  \eta_{\Gamma}; V(\interp{\judgek{\cdot}{t}{A}})
   \end{array}
     & 
   \begin{array}{lcl}
@@ -1061,13 +1061,13 @@ identical semantics of contractive terms in the co-Kleisli category.)
       (\interp{\judgek{\Delta}{t}{A}}, \interp{\judgek{\Delta}{t'}{B}}) \\
     \interp{\judgek{\Delta}{\pi_i(t)}{A_i}} & = & 
       \interp{\judgek{\Delta}{t}{A_1 \otimes A_2}}; \pi_i  \\
-    \interp{\judgek{\Delta}{\valtype{t}}{\valtype{X}}} & = & 
-      \pi_1; V(\interp{\judgeu{\Gamma}{t}{X}}) \\
+    \interp{\judgek{\Delta}{t^\omega}{X^\omega}} & = & 
+      \pi_1; (\interp{\judgeu{\Gamma}{t}{X}})^\omega \\
+    \interp{\judgek{\Delta}{\letomega{x}{t}{t'}}{A}} & = & 
+       ((\pi_1, \interp{\judgek{\Delta}{t}{X^\omega}}); n, \pi_2); \\ 
+                                        & & \interp{\judgek[\Gamma,x:X]{\Delta}{t'}{A}} \\
     \interp{\judgek{\Delta}{\Start{t}}{A}} & = & 
-      \pi_1; V(\interp{\judgeu{\Gamma}{t}{A^\omega}}); \varepsilon_A \\
-    \interp{\judgek{\Delta}{\letval{x}{t}{t'}}{A}} & = & 
-       ((\pi_1, \interp{\judgek{\Delta}{t}{\valtype{X}}}); n, \pi_2); \\ 
-                                        & & \interp{\judgek[\Gamma,x:X]{\Delta}{t'}{A}}
+      \pi_1; (\interp{\judgeu{\Gamma}{t}{\valtype{A}}})^\omega; \varepsilon_A \\
   \end{array}
 \end{array}
 \end{mathpar}
@@ -1455,17 +1455,17 @@ of the types into our functional language.
 {\small
 \begin{mathpar}
   \begin{array}{lcl}
-    \interpu{1}           & = & \unittype \\
-    \interpu{X \times Y}  & = & \interpu{X} \star \interpu{Y} \\
-    \interpu{X \to Y}     & = & \interpu{X} \to \interpu{Y} \\
-    \interpu{X \shrink Y} & = & \interpu{X} \to \interpu{Y} \\
-    \interpu{A^\omega}     & = & \comp{\streamtype{\interps{A}}}
+    \interpu{I}           & = & \unittype \\
+    \interpu{X \otimes Y}  & = & \interpu{X} \star \interpu{Y} \\
+    \interpu{X \lolli Y}     & = & \interpu{X} \to \comp{\interpu{Y}} \\
+    \interpu{X \lollishrink\, Y} & = & \interpu{X} \to \comp{\interpu{Y}} \\
+    \interpu{A^\omega}     & = & \streamtype{\interps{A}}
     \\[1em]
     \interps{I}           & = & \unittype \\
-    \interps{A \otimes B} & = & \interps{A} \star \interps{B} \\
-    \interps{A \lolli B}  & = & \streamtype{\interps{A}} \to \comp{\streamtype{\interps{B}}} \\
-    \interps{A \lollishrink\, B}  & = & \streamtype{\interps{A}} \to \comp{\streamtype{\interps{B}}} \\
-    \interps{\valtype{X}} & = & \interpu{X} 
+    \interps{A \times B} & = & \interps{A} \star \interps{B} \\
+    \interps{A \to B}  & = & \streamtype{\interps{A}} \to \comp{\streamtype{\interps{B}}} \\
+    \interps{A \shrink B}  & = & \streamtype{\interps{A}} \to \comp{\streamtype{\interps{B}}} \\
+    \interps{\valtype{X}} & = & \interpu{X}
     \\[1em]
     \streamtype{\tau}     & = & \celltype{\opttype{\tau}}
   \end{array}
@@ -2202,23 +2202,35 @@ implementation combinators.
 \begin{figure}
 {\small
 \begin{tabbingspec}
-$U^d_1(\unitval, \unitval) = $ true 
+$U^d_1(\unitval, \unitval, \mu, \sigma) = $ true 
 \Newline[0.5em]
 
-$U^d_{X \times Y}((x,y), (\term{x}, \term{y})) = U^d_X(x, \term{x}) \land U^d_Y(y, \term{y})$ 
+$U^d_{X \times Y}((x,y), (\term{x}, \term{y}), \mu, \sigma) = U^d_X(x, \term{x}, \mu, \sigma) \land U^d_Y(y, \term{y}, \mu, \sigma)$ 
 \Newline[0.5em]
 
-$U^d_{X \To Y}(f, \term{f}) = \forall d' > 2\cdot d, v, \term{v}.\; 
-    U^{d'}_X(v, \term{v}) \implies U^{d'}_Y(f\;v, \term{f\;v})$ 
+$U^d_{X \To Y}(f, \term{f}, \mu, \sigma) = $ \Newline
+\> \;\;\= $\forall d' > 2\cdot d, \betterstate{d'}{\mu'}{\mu}, \sigma' \supseteq \sigma, v, \term{v}.$ \Newline
+\> \> \;\;$U^{d'}_X(v, \term{v}, \mu', \sigma') \implies \Build^{d'}_Y(f\;v, \term{f\;v}, \mu', \sigma')$ 
 \Newline[0.5em]
 
-$U^d_{X \shrink Y}(f, \term{f}) = \forall d' > 2\cdot d, v, \term{v}.\; 
-    U^{d'}_X(v, \term{v}) \implies U^{d'}_Y(f\;v, \term{f\;v})$ 
+$U^d_{X \shrink Y}(f, \term{f}, \mu, \sigma) = $ \Newline
+\> \;\;\= $\forall d' > 2\cdot d, \betterstate{d'}{\mu'}{\mu}, \sigma' \supseteq \sigma, v, \term{v}.$ \Newline
+\> \>\;\; $U^{d'}_X(v, \term{v}) \implies \Build^{d'}_Y(f\;v, \term{f\;v}, \mu', \sigma')$ 
 \Newline[0.5em]
 
-$U^d_{A^\omega}(vs, \term{code}) = $ \Newline
-\;\;\= $\forall d' > 2\cdot d, \mu \in \Mem{d'}.\;\Build^{d'}_A(vs, \term{code}, \mu, \emptyset, \U)$ 
+$U^d_{A^\omega}(vs, \term{v}, (\theta, R)\;\mathrm{as}\;\mu, \sigma) = $ \Newline
+\> \;\; $V_R(\term{v}) = vs \land D_R(\term{v}) = \U \land \Delta_R(\term{v}) \subseteq \sigma$ 
 \Newline[1em]
+
+$\Build^d_X(v, \term{code}, (\theta, R)\;\mathrm{as}\;\mu, \sigma) = $ \Newline
+\> \;\;\= $\setof{H(\theta) \land \satisfyext{\mu}{d}}$ \Newline
+\> \> \term{code} \Newline
+\> \> $\{(\term{a}, \_).\;$\=$\exists \betterstate{d}{(\theta', R')\;\mathrm{as}\;\mu'}{\mu}, u.\;H(\theta') \;\land$\Newline
+\> \> \> $U^d_X(v, \term{a}, \mu', \sigma) \;\land$ \Newline
+\> \> \> $\Update(u, \mu, \mu', \sigma) \;\land$ \Newline
+\> \> \> $\Stable(\mu, \mu')\}$
+\Newline[0.5em]
+
 
 $V^d_{\valtype{X}}(v, \term{v}, \mu, \sigma) = U^d_{X}(v, \term{v})$ 
 \Newline[0.5em]
@@ -2231,7 +2243,6 @@ $V^d_{A \otimes B}((a,b), \term{(a,b)}, \mu, \sigma) = V^d_A(a, \term{a}, \mu, \
 
 $V^d_{S(A)}(vs, \term{v}, (\theta,R), \sigma) = V_R(\term{v}) = vs \land \Delta_R(\term{v}) \subseteq \sigma$ 
 \Newline[0.5em]
-
 
 $V^d_{A \lolli B}(f, \term{f}, \mu, \sigma) = $ \Newline
 \> $\forall d' > 2\cdot d, \betterstate{d'}{\mu'}{\mu}, \sigma' \supseteq \sigma, v, \term{v}$ \Newline
@@ -2263,7 +2274,7 @@ $\Build^d_A(vs, \term{code}, (\theta,R) \;\mathrm{as}\;\mu, \sigma, L) = $ \Newl
 \Newline[0.5em]
 
 $\NewStream^d_A(vs, \term{a}, (\theta,R), (\theta', R'), \sigma, L) = $\Newline
-\> $D_{R'}(\term{a}) = L \land \Delta^{*}_{R'}(\term{a}) \cap C_R \subseteq \sigma \land 
+\> $D_{R'}(\term{a}) = L \land \Delta^{*}_{R'}(\term{a}) \subseteq \sigma \land 
     V^d_{S(A)}(vs, \term{a}, (\theta',R'), \Delta_{R'}(\term{a}))$
 \Newline[0.5em]
 
