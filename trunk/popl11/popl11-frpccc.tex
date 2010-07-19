@@ -73,7 +73,8 @@
 \newcommand{\Head}{\mathit{Head}}
 \newcommand{\Tail}{\mathit{Tail}}
 \newcommand{\Code}{\mathit{Code}}
-\newcommand{\Build}{\mathit{Build}}
+\newcommand{\Build}{\mathit{VBuild}}
+\newcommand{\UBuild}{\mathit{UBuild}}
 \newcommand{\Local}{\mathit{Local}}
 \newcommand{\Ref}{\mathit{Ref}}
 \newcommand{\Ready}{\mathit{Ready}}
@@ -1004,7 +1005,7 @@ strictly contractive in the variables in $\hat{\Delta}$ and
 nonexpansive in the others. The interpretation of
 $\judgec{\hat{\Gamma}}{c}{X}$ is a morphism with type $\Gamma \to
 (\hat{\Gamma} \shrink X)$, and the interpretation of
-$\judgekc{\hat{\Delta}}{d}{X}$ is a morphism of type $V(\Gamma)
+$\judgekc{\hat{\Delta}}{d}{X}$ is a morphism of type $\Gamma^\omega
 \otimes \Delta \to (\hat{\Delta} \lollishrink A)$.  
 
 At first glance, these judgements look similar to the usual rules for
@@ -1025,7 +1026,7 @@ arguments to contractive functions (such as \term{cons}), which will
 ensure that the terms they appear in are always guarded.
 
 To define the semantics, we need some maps in the category of
-ultrametrics which witness the fact that contractivenss is preserved
+ultrametrics which witness the fact that contractiveness is preserved
 by almost everything. The implementations of these functions are the
 evident ones given the types, since contractive functions are just a
 subset of the nonexpansive ones. (Also, we elide the essentially
@@ -1046,7 +1047,7 @@ identical semantics of contractive terms in the co-Kleisli category.)
       (\interp{\judgeu{\Gamma}{e}{A}}, \interp{\judgeu{\Gamma}{e'}{B}}) \\
     \interp{\judgeu{\Gamma}{\pi_i(e)}{A_i}} & = & 
       \interp{\judgeu{\Gamma}{e}{A_1 \times A_2}}; \pi_i \\
-    \interp{\judgeu{\Gamma}{\valtype{t}}{\valtype{A}}} & = &  \eta_{\Gamma}; V(\interp{\judgek{\cdot}{t}{A}})
+    \interp{\judgeu{\Gamma}{\valtype{t}}{\valtype{A}}} & = & \eta_{\Gamma}; V(\interp{\judgek{\cdot}{t}{A}})
   \end{array}
     & 
   \begin{array}{lcl}
@@ -1455,11 +1456,11 @@ of the types into our functional language.
 {\small
 \begin{mathpar}
   \begin{array}{lcl}
-    \interpu{I}           & = & \unittype \\
-    \interpu{X \otimes Y}  & = & \interpu{X} \star \interpu{Y} \\
-    \interpu{X \lolli Y}     & = & \interpu{X} \to \comp{\interpu{Y}} \\
+    \interpu{I}                  & = & \unittype \\
+    \interpu{X \otimes Y}        & = & \interpu{X} \star \interpu{Y} \\
+    \interpu{X \lolli Y}         & = & \interpu{X} \to \comp{\interpu{Y}} \\
     \interpu{X \lollishrink\, Y} & = & \interpu{X} \to \comp{\interpu{Y}} \\
-    \interpu{A^\omega}     & = & \streamtype{\interps{A}}
+    \interpu{A^\omega}            & = & \comp{\streamtype{\interps{A}}}
     \\[1em]
     \interps{I}           & = & \unittype \\
     \interps{A \times B} & = & \interps{A} \star \interps{B} \\
@@ -1470,29 +1471,37 @@ of the types into our functional language.
     \streamtype{\tau}     & = & \celltype{\opttype{\tau}}
   \end{array}
 \end{mathpar}
-} 
-Most of the types of ultrametric world can be represented using ML
-types. One addition is that we have a type of strictly contractive
-functions $A \shrink B$. This is represented in exactly the same way
-as the ordinary ML function space, but must be kept isolated in order
-to support the extra operation of fixed points.
+}
 
-The interesting case is at $A^\omega$, where we give the
-representation of streams of values of type $A$.  This clause is
-interpreted as $\comp{\interps{A}}$, which can be understood as
-follows. In the category of ultrametric spaces, we want to understand
-streams as pure values. However, we want to represent streams via
-imperative data structures which change over time. This conflict is
-resolved by representing a stream as a thunk, which constructs and
-initalizes a stream data structure each time it is evaluated. So each
-time we evaluate a value of type $A^\omega$, we construct a fresh
-stream, ready to begin counting regardless of when it was created.
+Units and products of the ultrametric world can be represented
+directly using ML types. The first interesting case is at $A^\omega$,
+where we give the representation of streams of values of type $A$.
+This clause is interpreted as $\comp{\interps{A}}$, which can be
+understood as follows. In the category of ultrametric spaces, we want
+to understand streams as pure values. However, we want to represent
+streams via imperative data structures which change over time. This
+conflict is resolved by representing a stream as a thunk, which
+constructs and initalizes a stream data structure each time it is
+evaluated. So each time we evaluate a value of type $A^\omega$, we
+construct a fresh stream, ready to begin counting regardless of when
+it was created.
+
+For similar reasons, the function space $X \lolli Y$ is interpreted as
+a function from $X$-values to a \emph{computation} of $Y$-values.  For
+functions such as head, with type $(\valtype{X})^\omega \to X$, we need to look
+at the first element of a stream cell, and so we need to perform a
+computation to access it. However, this computation must (as with
+$\omega$-types themselves) be legitimate to run any time.
+In addition, we have a type of strictly contractive functions $A
+\shrink B$. This is represented in exactly the same way as the
+ordinary ML function space, but must be kept isolated in order to
+support the extra operation of fixed points.
 
 In contrast, the interpretation of the co-Kleisli category is one in
 which time plays a very significant part. We implement it via a
 dataflow graph which we update to get to the next time step. So the
 implementation of functions is more complex. In our implementation,
-the argument to a function $f : A \lolli B$ comes as a stream, and the
+the argument to a function $f : A \To B$ comes as a stream, and the
 return value is term of type $\comp{\streamtype{B}}$. The code
 constructor permits the implementation to read and extend the dataflow
 graph, doing some initialization to return a stream cell. Surpisingly,
@@ -1512,11 +1521,9 @@ Selected parts of this implementation can be seen in
 Figure~\ref{ultrametric-implementation}. It should be clear that for
 products and exponentials, we are simply directly implementing it in
 terms of the corresponding products and exponentials of our
-programming language. Even the ultrametric fixed point \term{fix} :
-$(X \shrink X) \to X$ simply calls out to the underlying fixed point
-operator of the programming language. 
+programming language. 
 
-However, the implementations of \term{cons} and \term{fix'} are two of
+However, the implementations of \term{cons} and \term{fix} are two of
 the most complex functions in the whole library. The \term{cons}
 function takes a value \term{x}, and then returns a function (in the
 co-Kleisli category) which will append \term{x} to the front of any
@@ -1527,7 +1534,7 @@ $\None$ element with \term{x}, and if it is initialized, it should
 buffer its input for the next time step. The trick is to use a local
 reference cell as a one-place buffer. 
 
-The $\term{fix'}$ operator implements recursion via feedback. It takes
+The $\term{fix}$ operator implements recursion via feedback. It takes
 a stream of contractive dataflow functions, and returns a stream
 realizing the fixed point of the first element of this stream. To do
 this, we allocate a reference \term{r} (initially set to $\None$), which
@@ -1572,21 +1579,21 @@ use them in restricted contexts.
 \begin{figure}
 {\small
 \begin{tabbing}
-\term{id = \fun{x}{x}} 
+\term{id = \fun{x}{return(x)}} 
 \\
-\term{compose\;f\;g = \fun{x}{g(f(x))}}
+\term{compose\;f\;g = \fun{x}{do\;v\leftarrow f(x);\;g(v)}}
 \\
-\term{one = \fun{x}{\unitval}}
+\term{one = \fun{x}{return(\unitval)}}
 \\
-\term{fst = \fun{(x,y)}{x}}
+\term{fst = \fun{(x,y)}{return(x)}}
 \\
-\term{snd = \fun{(x,y)}{y}}
+\term{snd = \fun{(x,y)}{return(y)}}
 \\
-\term{pair\;f\;g = \fun{x}{(f(x),g(x))}}
+\term{pair\;f\;g = \fun{x}{(do\;u\leftarrow f(x);\;v \leftarrow g(x);\; return(u,v))}}
 \\
 \term{eval = \fun{(f,x)}{f(x)}}
 \\
-\term{curry\;f = \fun{x}{\fun{y}{f(x,y)}}}
+\term{curry\;f = \fun{x}{return(\fun{y}{f(x,y)})}}
 \\[0.5em]
 \term{fix} : $(X \shrink X) \to X$ \\
 \term{fix\; f = \fix{x:\interpu{X}}{f}}
@@ -1613,8 +1620,8 @@ with \term{f = \lambda ys.\;do} \= \term{r \leftarrow newref(\Some{x});} \\
 %   \>\;\;\=\term{\Some{xs} \to return(xs)}\\
 %   \>    \>\term{\None \to ERROR} (invariant ensures this case cannot happen) \\[0.5em]
 
-\term{fix'} : $(A \lollishrink A)^\omega \to A^\omega$ \\
-\term{fix' = \lambda thunk.\;do}
+\term{fix} : $(A \lollishrink A)^\omega \to A^\omega$ \\
+\term{fix = \lambda thunk.\;do}
   \=\term{fs \leftarrow read(thunk);} \\
   \>\term{f' \leftarrow read(fs);} \\
   \>\term{case\;f'\;of}\\
@@ -1769,7 +1776,7 @@ one for co-Kleisli values, and one for the memory state of the
 dataflow graph. 
 
 The relation for ultrametric values, $U^d_A(v, \term{v})$, is given in
-lines 1-6 of Figure~\ref{logical-relation}. It relates elements $v$ of
+lines 1-5 of Figure~\ref{logical-relation}. It relates elements $v$ of
 a metric space $A$ to a concrete program term \term{v}. Intuitively,
 it can be read as saying ``the semantic value $v$ is approximated by
 the computational value \term{v} to at least distance $d$''. The
@@ -1777,43 +1784,49 @@ clauses for unit and products are straightforward, and the cases for
 the two function spaces are only slightly more complicated --- we
 quantify over all greater distances (the future worlds in the Kripke
 ordering) before asserting that applying related values to related
-functions returns related results. However, even though the clauses
-for the two function spaces look identical, they have different
-semantics due to the fact that the mathematical inhabitants of $X
-\shrink Y$ are contractive, which means that we know the fixed points
-of $X \shrink X$ necessarily exist.
+functions yield computations producing related results. They both use
+the $\Build$ relation (defined on lines 6-11), which quantifies over
+all heaps, which ensures that the results can be used any time. The
+details of this relation are quite similar to that of $\Build$, but
+simpler, and so we will skip over the details.
 
-On lines 5-6, we give the relation for streams $A^\omega$. The
-relation $\Build^{d'}_A(vs, code, \mu, \emptyset, \U)$ says that in
-all well-formed memories, running \term{code} will build a fresh piece
-of dataflow graph to represent the stream value $vs$, with no static
-dependencies on any existing piece of the graph (the $\emptyset$) and
-without any delays in the output (the $\U$). So no matter when we run
-this code, we build streams which will all enumerate the same sequence
-of mathematical values. Looking inside the definition of $\Build$,
-we see that it takes a memory, and returns a memory in the extension
-ordering, subject to several additional constraints --- the $\Update$
-and $\Stable$ predicates. These ensure that the number of dangling
-references and stateful cells unregistered with the update list 
-do not increase, and that the return value is a genuine stream. 
+However, even though the clauses for the two function spaces look
+identical, they have different semantics due to the fact that the
+mathematical inhabitants of $X \shrink Y$ are contractive, which means
+that we know the fixed points of $X \shrink X$ necessarily exist.
+
+On line 5, we give the relation for streams $A^\omega$. It is
+explained in terms of the relation $\Build^{d'}_A(vs, code, \mu,
+\emptyset, \U)$ says that in all well-formed memories, running
+\term{code} will build a fresh piece of dataflow graph to represent
+the stream value $vs$, with no static dependencies on any existing
+piece of the graph (the $\emptyset$) and without any delays in the
+output (the $\U$). So no matter when we run this code, we build
+streams which will all enumerate the same sequence of mathematical
+values. Looking inside the definition of $\Build$, we see that it
+takes a memory, and returns a memory in the extension ordering,
+subject to several additional constraints --- the $\Update$ and
+$\Stable$ predicates. These ensure that the number of dangling
+references and stateful cells unregistered with the update list do not
+increase, and that the return value is a genuine stream.
 
 Next, the relation $V^d_A(v, \term{v}, \mu, \sigma)$, defined on lines
-7-17 of Figure~\ref{logical-relation}, relates values in the
+12-22 of Figure~\ref{logical-relation}, relates values in the
 co-Kleisli category of streams to the program terms \term{v}. The
 relation $V^d_A(v, \term{v}, \mu, \sigma)$ has the intuitive reading
 ``the semantic value $v$ is approximated by computational value
 \term{v} and memory state $\mu$ to at least distance $d$. Furthermore,
 the use of \term{v} may involve evaluating the cells in $\sigma$''.
 
-On line 7, the other side of the adjunction, $\valtype{X}$, is
+On line 12, the other side of the adjunction, $\valtype{X}$, is
 interpreted by deferring to the $U$-relation.  Units and pairs (lines
-8-9) continue to be interpreted simply, as before.  As a convenience
-prior defining functions, on line 10 we add a clause in this relation
+13-14) continue to be interpreted simply, as before.  As a convenience
+prior defining functions, on line 15 we add a clause in this relation
 for streams, which are simply cells in the dataflow graph which will
 produce the correct stream of values, and whose static dependencies
 are less than what the relation asks for.
 
-Then, on lines 11-13, we give the interpretation of the function
+Then, on lines 16-18, we give the interpretation of the function
 space.  This interpretation first clears its breath by quantifying
 over extensions to the distance, the memory, and the dependencies, and
 then says that if we have a dataflow cell \term{v} realizing some
@@ -1823,7 +1836,7 @@ are no worse than the inputs'. Finally, it says that the result will
 be no more delayed than the input is (i.e., if the input is not
 lagged, then the output won't be, but if the input is lagged, then the
 output might or might not be). The definition of the contractive
-function space $A \lollishrink B$ on lines 15-17 is similar, except that it
+function space $A \lollishrink B$ on lines 20-22 is similar, except that it
 promises that its output will not be lagged, full stop. (This is what
 justifies the implementation of the fixed point using a lagged input.)
 
@@ -2202,34 +2215,35 @@ implementation combinators.
 \begin{figure}
 {\small
 \begin{tabbingspec}
-$U^d_1(\unitval, \unitval, \mu, \sigma) = $ true 
+
+$U^d_1(\unitval, \unitval) = $ true 
 \Newline[0.5em]
 
-$U^d_{X \times Y}((x,y), (\term{x}, \term{y}), \mu, \sigma) = U^d_X(x, \term{x}, \mu, \sigma) \land U^d_Y(y, \term{y}, \mu, \sigma)$ 
+\label{upair}
+$U^d_{X \times Y}((x,y), (\term{x}, \term{y})) = U^d_X(x, \term{x}) \land U^d_Y(y, \term{y})$ 
 \Newline[0.5em]
 
-$U^d_{X \To Y}(f, \term{f}, \mu, \sigma) = $ \Newline
-\> \;\;\= $\forall d' > 2\cdot d, \betterstate{d'}{\mu'}{\mu}, \sigma' \supseteq \sigma, v, \term{v}.$ \Newline
-\> \> \;\;$U^{d'}_X(v, \term{v}, \mu', \sigma') \implies \Build^{d'}_Y(f\;v, \term{f\;v}, \mu', \sigma')$ 
+\label{ufunc}
+$U^d_{X \To Y}(f, \term{f}) =  \forall d' > 2\cdot d, v, \term{v}.\; U^{d'}_X(v, \term{v}) \implies \UBuild^{d'}_Y(f\;v, \term{f\;v})$ 
 \Newline[0.5em]
 
-$U^d_{X \shrink Y}(f, \term{f}, \mu, \sigma) = $ \Newline
-\> \;\;\= $\forall d' > 2\cdot d, \betterstate{d'}{\mu'}{\mu}, \sigma' \supseteq \sigma, v, \term{v}.$ \Newline
-\> \>\;\; $U^{d'}_X(v, \term{v}) \implies \Build^{d'}_Y(f\;v, \term{f\;v}, \mu', \sigma')$ 
+\label{ushrink}
+$U^d_{X \shrink Y}(f, \term{f}) = \forall d' > 2\cdot d, v, \term{v}.\;U^{d'}_X(v, \term{v}) \implies \UBuild^{d'}_Y(f\;v, \term{f\;v})$ 
 \Newline[0.5em]
 
-$U^d_{A^\omega}(vs, \term{v}, (\theta, R)\;\mathrm{as}\;\mu, \sigma) = $ \Newline
-\> \;\; $V_R(\term{v}) = vs \land D_R(\term{v}) = \U \land \Delta_R(\term{v}) \subseteq \sigma$ 
-\Newline[1em]
+\label{ustream}
+$U^d_{A^\omega}(vs, \term{v}) = \forall \mu \in \Mem{d}.\;\Build^d_{S(A)}(vs, \term{v}, \mu, \emptyset, \U)$ 
+\Newline[0.5em]
 
-$\Build^d_X(v, \term{code}, (\theta, R)\;\mathrm{as}\;\mu, \sigma) = $ \Newline
+\label{ubuild-start}
+$\UBuild^d_X(v, \term{code}) = $ \Newline
+\;\;\= $\forall (\theta,R)\;\mathrm{as}\;\mu \in \Mem{d}.\;$ \Newline
 \> \;\;\= $\setof{H(\theta) \land \satisfyext{\mu}{d}}$ \Newline
 \> \> \term{code} \Newline
-\> \> $\{(\term{a}, \_).\;$\=$\exists \betterstate{d}{(\theta', R')\;\mathrm{as}\;\mu'}{\mu}, u.\;H(\theta') \;\land$\Newline
-\> \> \> $U^d_X(v, \term{a}, \mu', \sigma) \;\land$ \Newline
-\> \> \> $\Update(u, \mu, \mu', \sigma) \;\land$ \Newline
-\> \> \> $\Stable(\mu, \mu')\}$
-\Newline[0.5em]
+\> \> $\{(\term{a}, \_).\;$\=$\exists \betterstate{d}{(\theta', R')\;\mathrm{as}\;\mu'}{\mu}, u.\;H(\theta') \land U^d_X(v, \term{a}) \;\land$\Newline
+\> \> \> $\Update(u, \mu, \mu', \emptyset) \land \Stable(\mu, \mu')\}$
+\label{ubuild-end}
+\Newline[1em]
 
 
 $V^d_{\valtype{X}}(v, \term{v}, \mu, \sigma) = U^d_{X}(v, \term{v})$ 
@@ -2295,6 +2309,7 @@ $\StableImp((\theta, R), (\theta',R'))\} = $ \Newline
 \> $\forall I,I'.\;\hasref{\theta}{\term{i}}{I} \land \hasref{\theta}{\term{i}}{I'} \implies $ \Newline
 \>\;\;\= $[I' - S^{-1}_{R'}(L_{R'}) - G^{-1}_{R}(L_{R})] = [I - S^{-1}_{R}(L_{R}) - G^{-1}_{R}(L_{R})]$ \Newline
 \> \> and $\forall \term{c} \in I'.\; \unready{\theta'}{\term{c}} \implies \term{c} \in I \land \unready{\theta}{c}$
+\\[0.5em]
 \end{tabbingspec}
 }
 \caption{Auxilliary Relations}
