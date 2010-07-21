@@ -300,60 +300,80 @@ let rec mk_sfun vs body =
   | x :: xs -> SLam(x, mk_fun xs body);;
 
 
-let mtype = Gram.Entry.mk "mtype";;
-let mexpr = Gram.Entry.mk "mtype";;
-let mshrink = Gram.Entry.mk "mshrink";;
+let mtypeu = Gram.Entry.mk "mtypeu";;
+let mtypes = Gram.Entry.mk "mtypes";;
+let mexpr = Gram.Entry.mk "mexpr";;
 
-(*
 open Syntax
 	      
 EXTEND Gram
   GLOBAL: expr mtype mexpr;
 
-  mtype: [ [ LIDENT "unit"  -> One 
-           | "("; tp1 = mtype; ","; tp2 = mtype; ")" -> Prod(tp1, tp2)
-	   | "("; tp = mtype; ")" -> tp
-	   ]
-	 
-	 | "arrow" RIGHTA
-	   [ tp1 = mtype; "->"; tp2 = mtype -> Arrow(tp1, tp2) ]
-	 | "simple"
-           [ "["; tp = mtype; "]" -> Stream(tp) 
-           | LIDENT "gui"; "("; tp = mtype; ")" -> Gui(tp)
-	   | LIDENT "value"; "("; tp = ctyp; ")" -> Discrete ()
-	   ]
-	 ]
-	 ;
+  mtypes: [ [ LIDENT "one"  -> One 
+            | "("; tp1 = mtypes; ","; tp2 = mtypes; ")" -> Prod(tp1, tp2)
+	    | "("; tp = mtypes; ")" -> tp
+	    ]
+	  | "arrow" RIGHTA
+	   [ tp1 = mtypes; "->"; tp2 = mtypes -> Arrow(tp1, tp2) 
+           | tp1 = mtypes; "~>"; tp2 = mtypes -> Shrink(tp1, tp2)
+           ]
+	  | "simple"
+            | LIDENT "value"; "("; tp = mtypeu; ")" -> Val(tp)
+	    ]
+	  ]
+	  ;
+
+  mtypeu: [ [ UIDENT "I"  -> One 
+            | tp1 = mtypeu; "#"; tp2 = mtypeu -> Prod(tp1, tp2)
+	    | "("; tp = mtypeu; ")" -> tp
+	    ]
+	  | "arrow" RIGHTA
+	   [ tp1 = mtypeu; "-o"; tp2 = mtypeu -> Lolli(tp1, tp2) 
+           ]
+	  | "simple"
+            | LIDENT "omega"; "("; tp = mtypes; ")" -> Omega(tp)
+	    | LIDENT "discrete"; "("; tp = ctyp; ")" -> Discrete 
+	    ]
+	  ]
+	  ;
 
   mexpr: [ "binders"
            [ "fun"; vs = LIST1 [v = LIDENT -> v]; "->"; body = mexpr ->
-	       mk_fun vs body
+ 	       mk_fun vs body
 	   | "fun"; vs = LIST1 [v = LIDENT -> v]; "-o"; body = mshrink ->
-	       mk_sfun vs body
+ 	       mk_sfun vs body
 	   | "let"; v = LIDENT; "="; e = mexpr; "in"; e' = mexpr -> Let(v, e, e')
-	   | "let"; v = LIDENT; ":"; tp = mtype; "="; e = mexpr; "in"; e' = mexpr ->
-	       Let(v, Annot(tp, e), e')
-	   | "let"; "val"; v = LIDENT; "="; e = mexpr; "in"; e' = mexpr ->
+ 	   | "let"; v = LIDENT; ":"; tp = mtypes; "="; e = mexpr; "in"; e' = mexpr ->
+	       Let(v, AnnotS(tp, e), e')
+ 	   | "let"; v = LIDENT; ":"; tp = mtypeu; "="; e = mexpr; "in"; e' = mexpr ->
+	       Let(v, AnnotU(tp, e), e')
+	   | "let"; UIDENT "Omega"; "("; v = LIDENT; ")"; "="; e = mexpr; "in"; e' = mexpr -> 
+                LetOmega(v, e, e')
+
+ 	   | "let"; "val"; v = LIDENT; "="; e = mexpr; "in"; e' = mexpr ->
 	       Letv(v, e, e')
-	   | "let"; "val"; v = LIDENT; ":"; tp = mtype; "="; e = mexpr; "in"; e' = mexpr ->
-	       Letv(v, Annot(tp, e), e')
+ 	   | "let"; "val"; v = LIDENT; ":"; tp = mtype; "="; e = mexpr; "in"; e' = mexpr ->
+ 	       Letv(v, Annot(tp, e), e')
 	   ]
-	 | "infixes"
-	   [  e = mexpr; "::"; e' = mexpr -> Cons(e, e')
-	   |  LIDENT "call"; e = expr; e' = mexpr -> ValApp(e, e')
+ 	 | "infixes"
+ 	   [  e = mexpr; "::"; e' = mexpr -> Cons(e, e')
+	   |  LIDENT "fix"; e = expr -> Fix(e)
 	   ]
-	 | "application"
-	   [ LIDENT "return"; e = mexpr -> Return(e)
-	   | LIDENT "value"; e = expr -> Value(e)
-	   | LIDENT "fst"; e = mexpr -> Fst(e)
+ 	 | "application"
+ 	   [ LIDENT "value"; e = expr -> Value(e)
+ 	   | LIDENT "fst"; e = mexpr -> Fst(e)
 	   | LIDENT "snd"; e = mexpr -> Snd(e)
-	   |  m = mexpr; m' = mexpr -> App(m, m')  ]
-	 | "atomic"
+	   | LIDENT "start"; e = mexpr -> Start(e)
+	   | UIDENT "Omega"; e = mexpr -> Stream(e)
+ 	   |  m = mexpr; m' = mexpr -> App(m, m')  ]
+ 	 | "atomic"
 	   [ v = LIDENT -> Var v
-	   |  "("; ")" -> Unit
-	   |  "("; m = mexpr; ")" -> m 
-	   |  "("; m = mexpr; ":";  t = mtype; ")" -> Annot(t, m)
-	   |  "("; m = mexpr; ","; m' = mexpr -> Pair(m, m')
+ 	   |  "("; ")" -> Unit
+ 	   |  "("; e = mexpr; ")" -> e
+	   |  "("; e = mexpr; ":";  t = mtypeu; ")" -> AnnotU(t, e)
+	   |  "("; e = mexpr; ":";  t = mtypes; ")" -> AnnotS(t, e)
+	   |  "("; e = mexpr; ","; e' = mexpr -> Pair(e, e')
+           |  "["; e = mexpr; "]" -> Bracket(e)
 	   ]
 	 ]
          ;
@@ -368,8 +388,8 @@ EXTEND Gram
 	     [
 
   expr: LEVEL "top"
-    [ [ "do"; "("; m = mexpr; ")" -> elaborate m "Metric" _loc ] ]
+    [ [ "do"; "("; m = mexpr; ")" -> elaborate m "U" "C" "Metric" _loc ] ]
     ;
 END
 
-*)
+
