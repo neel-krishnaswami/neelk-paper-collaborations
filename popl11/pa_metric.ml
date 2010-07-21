@@ -1,131 +1,60 @@
 open Camlp4.PreCast
 
-type tp =
-  | Arrow of tp * tp
-  | Shrink of tp * tp
+
+type tps =
+  | Arrow of tps * tps
+  | Shrink of tps * tps
   | One
-  | Prod of tp * tp
-  | Stream of tp
-  | Gui of tp
-  | Discrete of unit;;
+  | Times of tps * tps
+  | Val of tpu
+and tpu =
+  | Discrete (* We don't check ML types -- let Ocaml do that! *)
+  | Lolli of tpu * tpu
+  | I
+  | Tensor of tpu * tpu
+  | Omega of tps 
+(*  | Lollishrink of tpu * tpu *)
+
+(* Expressions come in one undifferentiated mass -- we use typing to sort it all out *)
 
 type var = string;;
 
 type exp =
   | Var of var
-  | Fun of var * exp
-  | App of exp * exp
-  | Annot of tp * exp
   | Let of var * exp * exp
-  | Return of exp
-  | Letv of var * exp * exp
-  | Cons of exp * exp
+  | App of exp * exp
+  | Lam of var * exp
+  | SLam of var * exp
   | Unit
   | Pair of exp * exp
-  | Fst of exp 
+  | Fst of exp
   | Snd of exp
-  | Value of Ast.expr
-  | ValApp of Ast.expr * exp
-  | Fix of exp
-  | SFun of var * shrinkexp
+  | Value of exp
+  | AnnotS of exp * tps
+  | AnnotU of exp * tpu
+  | Const of Ast.expr
+  | Start of exp
+  | Stream of exp
+  | LetOmega of var * exp * exp
+  | Bracket of exp  (* For use in the contractive world *)
 
-and shrinkexp =
-  | SLift of exp
-  | SSFun of var * exp
-  | SFun of var * exp
-  | SApp of shrinkexp * exp
-  | SLet of shrinkexp * shrinkexp
-  | SPair of shrinkexp * shrinkexp
-  | SFst of shrinkexp
-  | SSnd of shrinkexp
-  | SUnit
-  | SCons of exp * exp 
-  | SAnnot of tp * shrinkexp
+(* Now, we'll implement a type-directed elaborator *)
 
-let rec ofold v none some =
-  match v with
-  | Some x -> some x
-  | None -> none;;
+(* First, we need constructors for the syntactic operations in the metric signature. The generic
+   constructors are parameterized by *three* modules. The first two are the "current category"
+   and the "other category". The third is the parent module within which the two current categories
+   reside. 
+*)
 
-let rec omap v f = ofold v None (fun x -> Some (f x));;
 
-(* Simple bidirectional typechecker for this language *)
+let id0 id m m' p _loc = <:expr< ($uid:p$ . $uid:m$ . $lid:id$) >>;;
+let id1 id f m m' p _loc = <:expr< $uid:p$ . $uid:m$ . $lid:id$ $(f m m' p _loc)$>>;;
+let id2 id f1 f2 m m' p _loc =  <:expr< ($uid:p$ . $uid:m$ . $lid:id$ $(f1 m m' p _loc)$ $(f2 m m' p _loc)$) >>;;
 
-let rec check env e tp = 
-  (match (e, tp) with
-  | Fun(v, e'), Arrow(tp1, tp2)  -> check ((v, tp1) :: env) e' tp2
-  | Pair(e1, e2), Prod(tp1, tp2) -> check env e1 tp1 && check env e2 tp2
-  | Unit, One                    -> true
-  | Let(x, t, e'), tp' -> ofold (synth env t) false (fun tp -> check ((x,tp) :: env) e' tp')
-  | Letv(x, t, e'), (Gui(_) as tp') ->
-      ofold (synth env t) false (function
-				   | Gui(tp) -> check ((x,tp) :: env) e' tp'
-				   | _ -> false)
-  | Cons(e, e'), Stream(tp) -> check env e tp && check env e' (Stream tp)
-  | Return e, Gui(tp) -> check env e tp
-  | Value e, Discrete () -> true (* We do not replicate the Ocaml typechecker! *)
-  | SFun(x, s), Shrink(tp1, tp2) -> check_shrink env [(x, tp1)] s tp2
-  | _ -> (Some tp) = synth env e)
+let id0' id m m' p _loc = <:expr< ($uid:p$ . $lid:id$) >>;;
+let id1' id f m m' p _loc = <:expr< $uid:p$ . $lid:id$ $(f m m' p _loc)$>>;;
+let id2' id f1 f2 m m' p _loc =  <:expr< ($uid:p$ . $lid:id$ $(f1 m m' p _loc)$ $(f2 m m' p _loc)$) >>;;
 
-and synth env = function
-  | Var x -> (try Some(List.assoc x env) with Not_found -> None)
-  | Annot(tp, e) -> if check env e tp then Some tp else None
-  | App(t, e) -> ofold (synth env t)
-                       None
-                       (function
-			  | Arrow(tp1, tp2) when check env e tp1 -> Some(tp2)
-			  | _ -> None)
-  | Fst t -> ofold (synth env t) None (function
-				 | Prod(tp1, tp2) -> Some tp1
-				 | _ -> None)
-  | Snd t -> ofold (synth env t) None (function
-				 | Prod(tp1, tp2) -> Some tp2
-				 | _ -> None)
-  | ValApp(c, e') -> ofold (synth env e')
-                        None
-			(function
-			   | Discrete () -> Some (Discrete ())
-			   | _ -> None)
-  | _ -> None
-
-and check_shrink env senv s tp =
-  (match (s, tp) with
-  | SLift e -> check_shrink env e tp
-  | SSFun(x, s'), Shrink(tp1, tp2) -> check_shrink env ((x, tp1) :: senv) s' tp2
-  | SUnit, One -> true
-  | SPair(s1, s2), Prod(tp1, tp2) ->
-      let c = check_shrink env senv in c s1 tp && c s2 tp2
-  | SLet(x, s, s') -> 
-      ofold (synth_shrink env senv s) false
-	(fun tp -> check_shrink ((x,tp) :: env) senv s')
-  | SCons(e', e), Stream(tp') -> 
-      let c = check (env @ senv) in c e' tp' && c e tp 
-  | _, tp -> ofold (synth_shrink env senv s) false (fun tp' -> tp = tp'))
-	
-and synth_shrink env senv s =
-  match s with
-  | SFst s' ->
-      ofold (synth_shrink env senv s') None
-	(function Prod(tp1, tp2) -> Some tp1
-	   | _ -> None)
-  | SSnd s' -> 
-      ofold (synth_shrink env senv s') None
-	(function Prod(tp1, tp2) -> Some tp2
-	   | _ -> None)
-  | SApp(s', e) ->
-      ofold (synth_shrink env senv s') None
-	(function Shrink(tp1, tp2) when check (env @ senv) e tp1 -> Some tp2
-	   | _ -> None)
-  | SLift e -> synth env e
-  | SAnnot(tp, s') when check_shrink env senv s' tp -> Some tp
-  | _ -> None
-          
-
-(* Syntactic constructors for the operations in the metric signature *)
-
-let id0 id m _loc = <:expr< ($uid:m$ . $lid:id$) >>;;
-let id1 id f m _loc = <:expr< $uid:m$ . $lid:id$ $(f m _loc)$>>;;
-let id2 id f1 f2 m _loc =  <:expr< ($uid:m$ . $lid:id$ $(f1 m _loc)$ $(f2 m _loc)$) >>;;
 
 let id = id0 "id"
 let compose = id2 "compose"
@@ -134,54 +63,227 @@ let pair = id2 "pair"
 let pi1 = id0 "fst"
 let pi2 = id0 "snd"
 let curry = id1 "curry"
-let apply = id0 "apply"
+let eval = id0 "eval"
 let cons = id0 "cons"
-let return = id0 "return"
-let bind = id1 "bind"
-let strength = id0 "strength"
 let embed f m _loc = <:expr< $uid:m$.embed $f$ >>
 let value f m _loc = <:expr< $uid:m$.value $f$ >>
 
-(* The elaborator. Basically it works by implementing the
-   interpretation of the monadic metalanguage into CCC's with a strong
-   monad.
+let flip f m m' = f m' m 
 
-   Right now this is essentially untyped; it should be integrated with
-   the typechecker so that the error messages we generate are at least
-   vaguely comprehensible. In particular, we should generate type
-   annotations such that the OCaml type checker will report errors
-   based on the mismatches in the user's types, rather than the
-   gigantic ones based on the combinator expressions we generate.
+let oned  = id0 "oned"
+let prod  = id0 "prod"
+let prod' = id0 "prod'"
 
-   After implementing it, I should note this in our POPL paper as an
-   implementation technique that other EDSL authors should use.
-*)
+let varepsilon = id0' "varepsilon"
+let eta = id0' "eta"
+
+let value e = id1' "value" (flip e)
+let omega e = id1' "omega" (flip e)
+let discrete e = id1' "discrete" (fun _ _ _ _ -> e)
+
+let sweak = id0 "sweak"
+let spair = id0 "spair"
+let scurry = id0 "scurry"
+let seval = id0 "seval"
+let swap = id0 "swap"
+let scomposel = id1 "scomposel"
+let scomposer = id1 "scomposer"
+
+(* The contractive gadgets are kept in curried form, so applications
+   of contractive functions need to curry the argument to the depth of 
+   the contraction environment. *)
+
+let rec curryenv env tm =
+  match env with
+  | [] -> tm
+  | _ :: env' -> curry (curryenv env' tm)
+
+(* Now, we write a small bidirectional elaborator for this language *)
+
+(* Introduce an error monad *)
+
+type 'a t = Error of string | Ok of 'a
+let return x = Ok x
+let (>>=) m f =
+  match m with
+  | Error msg -> (Error msg)
+  | Ok v -> f v
+let error msg = Error msg
+
+(* To look up variables we need to construct the n-th projection *)
 
 let rec lookup env x =
   match env with
-  | [] -> failwith (Printf.sprintf "Unbound variable '%s'" x)
-  | y :: env when x = y -> pi2
-  | y :: env -> compose pi1 (lookup env x)
+  | [] -> error (Printf.sprintf "Unbound variable '%s'" x)
+  | (y,tp) :: env when x = y -> return (pi2, tp)
+  | (y,_) :: env -> (lookup env x) >>= (fun (e, tp) ->
+		    return (compose pi1 e, tp))
 
-let elaborate =
-  let rec loop env = function
-    | Var x          -> lookup env x
-    | App(e1, e2)    -> compose (pair (loop env e1) (loop env e2)) apply
-    | Fun(x, e)      -> curry (loop (x::env) e)
-    | Unit           -> one
-    | Pair(e1, e2)   -> pair (loop env e1) (loop env e2)
-    | Fst e          -> compose pi1 (loop env e)
-    | Snd e          -> compose pi2 (loop env e)
-    | Cons(e, e')    -> compose (pair (loop env e) (loop env e')) cons
-    | Let(x, e, e')  -> compose (pair id (loop env e)) (loop (x::env) e')
-    | Return e       -> compose (loop env e) return
-    | Annot(_, e)    -> loop env e
-    | Letv(x, e, e') -> compose (compose (pair id (loop env e)) strength) (loop (x::env) e')
-    | ValApp(c, e')  -> compose (pair (value c) (loop env e')) apply
-    | Value c        -> embed c
-    | Fix(e)         -> 
-  in
-  loop []
+type result = string -> string -> string -> Ast.loc -> Ast.expr
+
+(* Basically, what follows implements a simple bidirectional 
+   typechecking algorithm, and along the way spits out a (well-typed)
+   ML syntax tree. The typechecking lets reuse the same syntax for 
+   both sides of the adjunction, which is quite handy -- 
+
+*)
+
+let rec scheck env s tp : result t =
+  match (s, tp) with
+  | Unit, One -> return one
+  | Pair(s1, s2), Times(tps1, tps2) ->
+      scheck env s1 tps1 >>= (fun e1 -> 
+      scheck env s2 tps2 >>= (fun e2 ->
+      return (pair e1 e2)))
+  | Lam(x, s2), Arrow(tps1, tps2) ->
+      scheck ((x,tps1) :: env) s2 tps2 >>= (fun e2 ->
+      return (curry e2))
+  | Let(x, s1, s2), _ -> 
+      ssynth env s1 >>= (fun (e1, tps1) ->
+      scheck ((x,tps1) :: env) s2 tp >>= (fun e2 ->
+      return (compose (pair id e1) e2)))
+  | SLam(x, s2), Shrink(tps1, tps2) ->
+      scheck_shrink env [x,tps1] s2 tps2
+  | Value u1, Val tpu1 ->
+      ucheck env [] u1 tpu1 >>= (fun e1 ->
+      return (compose eta (value e1)))
+  | _ -> ssynth env s >>= (fun (e, tp') -> 
+	 if tp = tp' then return e else error "type mismatch")
+
+and ssynth env : exp -> (result * tps) t = function
+  | Var x -> lookup env x 
+  | App(s1, s2) ->
+      ssynth env s1 >>= (fun (e1, tps) ->
+	match tps with
+	| Arrow(tps2, tps1) ->
+	    scheck env s2 tps2 >>= (fun e2 -> return (compose (pair e1 e2) eval, tps1))
+	| _ -> error "Expected function type")
+  | Fst s ->
+      ssynth env s >>= (fun (e, tps) ->
+	match tps with
+	| Times(tps1, tps2) -> return (compose e pi1, tps1)
+	| _ -> error "Expected product type")
+  | Snd s -> 
+      ssynth env s >>= (fun (e, tps) ->
+	match tps with
+	| Times(tps1, tps2) -> return (compose e pi2, tps2)
+	| _ -> error "Expected product type")
+  | AnnotS(s, tps) ->
+      scheck env s tps >>= (fun e -> return (e, tps))
+  | _ -> error "ssynths: Cannot synthesize type"
+
+
+and scheck_shrink env env' s tps =
+  match (s, tps) with
+  | Bracket(s1), _ ->
+      scheck env s1 tps >>= (fun e1 ->
+      return (compose e1 sweak))
+  | SLam(x, s2), Shrink(tps1, tps2) ->
+      scheck_shrink env ((x,tps1) :: env') s2 tps2 >>= (fun e -> 
+      return (compose e scurry))
+  | Pair(s1, s2), Times(tps1, tps2) -> 
+      scheck_shrink env env' s1 tps1 >>= (fun e1 -> 
+      scheck_shrink env env' s2 tps2 >>= (fun e2 ->
+      return (compose (pair e1 e2) spair)))
+  | Unit, One -> return (compose one sweak)
+  | Lam(x, s2), Arrow(tps1, tps2) ->
+      scheck_shrink ((x,tps1) :: env) env' s2 tps2 >>= (fun e2 ->
+      return (compose (curry e2) swap))
+  | _ -> ssynth_shrink env env' s >>= (fun (e, tps') -> 
+         if tps = tps' then return e else error "scheck_shrink: type mismatch")
+
+and ssynth_shrink env env' s =
+  match s with
+  | Var _ -> error "ssynth_shrink: Illegal variable use"
+  | App(s1, s2) ->
+      ssynth_shrink env env' s1 >>= (fun (e1, tps) -> 
+      match tps with
+      | Shrink(tps2, tps1) ->
+	  scheck (env @ env') s2 tps2 >>= (fun e2 ->
+            return ((compose (pair e1 (curryenv env' e2)) seval), tps1))
+      | Arrow(tps2, tps1) ->
+	  scheck_shrink env env' s2 tps2 >>= (fun e2 -> 
+  	  let e = compose (compose (pair e1 e2) spair) (scomposer eval) in
+	  return (e, tps1))
+      | _ -> error "ssynth_shrink: expecting arrow type")
+  | Fst s ->
+      ssynth_shrink env env' s >>= (fun (e, tps) ->
+	match tps with
+	| Times(tps1, tps2) -> return (compose e (scomposer pi1), tps1)
+	| _ -> error "Expected product type")
+  | Snd s -> 
+      ssynth_shrink env env' s >>= (fun (e, tps) ->
+	match tps with
+	| Times(tps1, tps2) -> return (compose e (scomposer pi2), tps2)
+	| _ -> error "Expected product type")
+  | AnnotS(s, tps) ->
+      scheck_shrink env env' s tps >>= (fun e -> return (e, tps))
+  | _ -> error "ssynth_shrink: Cannot synthesize type"	
+
+and ucheck senv uenv u tpu =
+  match u, tpu with
+  | Lam(x, u2), Lolli(tpu1, tpu2) ->
+      ucheck senv ((x, tpu1) :: uenv) u2 tpu2 >>= (fun e2 ->
+      return (curry e2))
+  | Pair(u1, u2), Tensor(tpu1, tpu2) ->
+      ucheck senv uenv u1 tpu1 >>= (fun e1 -> 
+      ucheck senv uenv u2 tpu2 >>= (fun e2 -> 
+      return (pair e1 e2)))
+  | Unit, I ->
+      return one
+  | Let(x, s1, s2), _ -> 
+      usynth senv uenv s1 >>= (fun (e1, tpu1) ->
+      ucheck senv ((x,tpu1) :: uenv) s2 tpu >>= (fun e2 ->
+      return (compose (pair id e1) e2)))
+  | Const e, Discrete ->
+      return (compose oned (discrete e))
+  | Stream s, Omega tps ->
+      scheck senv s tps >>= (fun e -> 
+      return (compose pi1 (omega e)))
+  | LetOmega(x, u1, u2), _ ->
+      usynth senv uenv u1 >>= (fun (e1, tpu1) -> 
+      match tpu1 with
+      | Omega tps ->
+	  ucheck ((x,tps) :: senv) uenv u2 tpu >>= (fun e2 ->
+          let swizzle = pair (pair (compose pi2 pi1) pi1) (compose pi2 pi2) in
+	  let times f g = pair (compose pi1 f) (compose pi2 g) in 
+	  let e = compose (pair e1 id) (compose swizzle (compose (times prod' id) e2)) in
+	  return e)
+      | _ -> error "ucheck: expected omega-type")
+  | _ -> usynth senv uenv u >>= (fun (e, tpu') ->
+	 if tpu = tpu' then return e else error "ucheck: type mismatch")
+
+and usynth senv uenv = function
+  | Var x -> (lookup uenv x) >>= (fun (e, tpu) ->
+	     return (compose pi2 e, tpu))
+  | App(u1, u2) ->
+      usynth senv uenv u1 >>= (fun (e1, tpu1) -> 
+      match tpu1 with
+      | Lolli(tpu2, tpu1) ->
+	  ucheck senv uenv u2 tpu2 >>= (fun e2 ->
+          return (compose (pair e1 e2) eval, tpu1))
+      | _ -> error "usynth: expected lolli type")
+  | Fst u ->
+      usynth senv uenv u >>= (fun (e, tpu) ->
+      match tpu with
+      | Tensor(tpu1, tpu2) -> return (compose e pi1, tpu1)
+      | _ -> error "usynth: expected tensor type")
+  | Snd u -> 
+      usynth senv uenv u >>= (fun (e, tpu) ->
+      match tpu with
+      | Tensor(tpu1, tpu2) -> return (compose e pi2, tpu2)
+      | _ -> error "usynth: expected tensor type")
+  | Start s ->
+      ssynth senv s >>= (fun (e, tps) ->
+      match tps with
+      | Val tpu -> 
+	  return (compose pi1 (compose (omega e) varepsilon), tpu)
+      | _ -> error "usynth: Expected Val type")
+  | AnnotU(u, tpu) ->
+      ucheck senv uenv u tpu >>= (fun e -> return (e, tpu))
+  | _ -> error "usynth: Can't synthesize type" 
+
+
 
 (* The parser. This does not presently call the typechecker, which should be
    fixed before POPL. *)
@@ -189,19 +291,20 @@ let elaborate =
 let rec mk_fun vs body =
   match vs with
   | [] -> assert false
-  | [x] -> Fun(x, body)
-  | x :: xs -> Fun(x, mk_fun xs body);;
+  | [x] -> Lam(x, body)
+  | x :: xs -> Lam(x, mk_fun xs body);;
 
 let rec mk_sfun vs body =
   match vs with
   | [] -> body 
-  | x :: xs -> SFun(x, mk_fun xs body);;
+  | x :: xs -> SLam(x, mk_fun xs body);;
 
 
 let mtype = Gram.Entry.mk "mtype";;
 let mexpr = Gram.Entry.mk "mtype";;
 let mshrink = Gram.Entry.mk "mshrink";;
 
+(*
 open Syntax
 	      
 EXTEND Gram
@@ -269,3 +372,4 @@ EXTEND Gram
     ;
 END
 
+*)

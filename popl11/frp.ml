@@ -66,7 +66,9 @@ sig
   val scurry    : ((('a,'b) prod, 'c) shrink, ('a,('b,'c) shrink) shrink) hom
   val scomposer : ('a,'b) hom -> (('c,'a) shrink, ('c,'b) shrink) hom
   val scomposel : ('a,'b) hom -> (('b,'c) shrink, ('a,'c) shrink) hom
-  val seval     : ((('a, ('b,'c) shrink) shrink, ('a,'b) exp) prod, ('a,'c) shrink) hom 
+  val seval     : ((('a, ('b,'c) shrink) shrink, ('a,'b) exp) prod, ('a,'c) shrink) hom
+  val swap      : (('a, ('b, 'c) shrink) exp, ('a, ('b, 'c) exp) shrink) hom 
+  val swap'     : (('a, ('b, 'c) exp) shrink, ('a, ('b, 'c) shrink) exp) hom 
 end;;
 
 module type ULTRAMETRIC =
