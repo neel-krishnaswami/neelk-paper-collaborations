@@ -67,8 +67,8 @@ sig
   val scomposer : ('a,'b) hom -> (('c,'a) shrink, ('c,'b) shrink) hom
   val scomposel : ('a,'b) hom -> (('b,'c) shrink, ('a,'c) shrink) hom
   val seval     : ((('a, ('b,'c) shrink) shrink, ('a,'b) exp) prod, ('a,'c) shrink) hom
-  val swap      : (('a, ('b, 'c) shrink) exp, ('a, ('b, 'c) exp) shrink) hom 
-  val swap'     : (('a, ('b, 'c) exp) shrink, ('a, ('b, 'c) shrink) exp) hom 
+  val swap      : (('a, ('b, 'c) shrink) exp, ('b, ('a, 'c) exp) shrink) hom 
+  val swap'     : (('a, ('b, 'c) exp) shrink, ('b, ('a, 'c) shrink) exp) hom 
 end;;
 
 module type ULTRAMETRIC =
@@ -101,8 +101,8 @@ sig
 
   (* Functorial actions *)
 
-  val omega : ('a,'b) U.hom -> ('a value, 'b value) C.hom
-  val value : ('a,'b) C.hom -> ('a omega, 'b omega) U.hom 
+  val value : ('a,'b) U.hom -> ('a value, 'b value) C.hom
+  val omega : ('a,'b) C.hom -> ('a omega, 'b omega) U.hom 
 
   (* Unit & counit *)
 
@@ -397,12 +397,11 @@ struct
                             return x))) in
 	let r = newcell ((read xout) >>= (fun _ -> return ())) in 
 	((xout, b'), r :: rs)
-  *)
 
   let return x attach = x
 
   let guirun f =
-    let clock = newcell (Dataflow.Expr.return ()) in
+    let clock = Dataflow.newcell (Dataflow.Expr.return ()) in
     let w = GWindow.window ~border_width:10 () in
     let _ = w#connect#destroy ~callback:GMain.Main.quit in
     let v = GPack.vbox ~packing:w#add () in 
@@ -411,7 +410,24 @@ struct
             (fun () -> List.iter (fun c -> Dataflow.eval (read c)) refreshes; true) in
     let _ = w#show () in 
     GMain.Main.main ()
-
+  | Let(x, s1, s2), _ -> 
+      usynth senv uenv s1 >>= (fun (e1, tpu1) ->
+      ucheck senv ((x,tpu1) :: uenv) s2 tpu >>= (fun e2 ->
+      return (compose (pair id e1) e2)))
+  | Stream s, Omega tps ->
+      scheck senv s tps >>= (fun e -> 
+      return (compose pi1 (omega e)))
+  | LetOmega(x, u1, u2), _ ->
+      usynth senv uenv u1 >>= (fun (e1, tpu1) -> 
+      match tpu1 with
+      | Omega tps ->
+	  ucheck ((x,tps) :: senv) uenv u2 tpu >>= (fun e2 ->
+          let swizzle = pair (pair (compose pi2 pi1) pi1) (compose pi2 pi2) in
+	  let times f g = pair (compose pi1 f) (compose pi2 g) in 
+	  let e = compose (pair e1 id) (compose swizzle (compose (times prod' id) e2)) in
+	  return e)
+      | _ -> error "ucheck: expected omega-type")
+*)
 
   end
 			  
@@ -481,6 +497,14 @@ struct
 					       (f xs) >>= (fun hs ->
 					       (zip hs ys) >>= (fun hys ->
 						 eval hys)))))))
+
+    let swap fs =
+      (curry (curry (compose
+		       (pair (compose (pair (compose fst fst) snd) eval)
+			     (compose fst snd))
+		       eval)))
+      fs
+    let swap' = swap
   end
 
   type 'a omega = 'a option Dataflow.cell
@@ -488,10 +512,10 @@ struct
 
   open Code
 
-  let omega uhom = fun xs -> cell((read xs) >>- (fun x -> 
+  let value uhom = fun xs -> cell((read xs) >>- (fun x -> 
                                   (uhom x) >>= (fun v -> 
 				  return(Some v))))
-  let value chom = fun xs -> chom xs
+  let omega chom = fun xs -> chom xs
 
   let eta xs = cell((read xs) >>- (fun _ -> return (Some xs)))
   let varepsilon xs = read xs >>= (function
@@ -549,6 +573,7 @@ struct
     step      
 end;;
 
+(*
 module DslTest =
 struct
   open Dsl
@@ -930,4 +955,4 @@ struct
   let w6 = (gfix' (checkbox $ (gstream bool2str))) $ gui one
 
 end
-
+*)
