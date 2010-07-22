@@ -32,9 +32,12 @@ type exp =
   | Value of exp
   | AnnotS of exp * tps
   | AnnotU of exp * tpu
-  | Const of Ast.expr
+  | EmbedF of Ast.expr 
+  | Embed of Ast.expr
   | Start of exp
   | Stream of exp
+  | Cons of exp
+  | Fix of exp 
   | LetOmega of var * exp * exp
   | Bracket of exp  (* For use in the contractive world *)
 
@@ -65,21 +68,22 @@ let pi2 = id0 "snd"
 let curry = id1 "curry"
 let eval = id0 "eval"
 let cons = id0 "cons"
-let embed f m _loc = <:expr< $uid:m$.embed $f$ >>
-let value f m _loc = <:expr< $uid:m$.value $f$ >>
 
 let flip f m m' = f m' m 
 
-let oned  = id0 "oned"
-let prod  = id0 "prod"
-let prod' = id0 "prod'"
+let oned  = id0' "oned"
+let prod  = id0' "prod"
+let prod' = id0' "prod'"
 
 let varepsilon = id0' "varepsilon"
 let eta = id0' "eta"
 
 let value e = id1' "value" (flip e)
 let omega e = id1' "omega" (flip e)
-let discrete e = id1' "discrete" (fun _ _ _ _ -> e)
+
+let discrete e = id1 "discrete" (fun _ _ _ _ -> e)
+let fix = id0' "fix"
+let cons = id0' "cons"
 
 let sweak = id0 "sweak"
 let spair = id0 "spair"
@@ -89,14 +93,25 @@ let swap = id0 "swap"
 let scomposel = id1 "scomposel"
 let scomposer = id1 "scomposer"
 
+
+let times f g = pair (compose pi1 f) (compose pi2 g) 
+let assocr = times (compose pi1 pi1) (times (compose pi1 pi2) pi2)
+let assocl = times (times pi1 (compose pi2 pi1)) (compose pi2 pi2)
+
+let uncurry = curry(compose (pair (compose (pair pi1 (compose pi2 pi1))
+				           eval)
+                                  (compose pi2 pi2))
+		            eval)
+
 (* The contractive gadgets are kept in curried form, so applications
    of contractive functions need to curry the argument to the depth of 
    the contraction environment. *)
 
 let rec curryenv env tm =
   match env with
-  | [] -> tm
-  | _ :: env' -> curry (curryenv env' tm)
+  | []  -> assert false
+  | [_] -> curry tm
+  | _ :: env' -> compose (curryenv env' (curry tm)) uncurry
 
 (* Now, we write a small bidirectional elaborator for this language *)
 
@@ -112,12 +127,18 @@ let error msg = Error msg
 
 (* To look up variables we need to construct the n-th projection *)
 
-let rec lookup env x =
+let rec lookup' f env x = 
   match env with
-  | [] -> error (Printf.sprintf "Unbound variable '%s'" x)
+  | [] -> error (f x)
   | (y,tp) :: env when x = y -> return (pi2, tp)
-  | (y,_) :: env -> (lookup env x) >>= (fun (e, tp) ->
+  | (y,_) :: env -> (lookup' f env x) >>= (fun (e, tp) ->
 		    return (compose pi1 e, tp))
+
+let lookup env x =
+  lookup' (fun x -> Printf.sprintf "Unbound variable: '%s'" x) env x
+
+let lookup_shrink env x = 
+  lookup' (fun x -> Printf.sprintf "Variable not bound in nonexpansive context: '%s'" x) env x
 
 type result = string -> string -> string -> Ast.loc -> Ast.expr
 
@@ -194,7 +215,8 @@ and scheck_shrink env env' s tps =
 
 and ssynth_shrink env env' s =
   match s with
-  | Var _ -> error "ssynth_shrink: Illegal variable use"
+  | Var x -> lookup_shrink env x >>= (fun (e, tps) -> 
+             return (compose e sweak, tps))
   | App(s1, s2) ->
       ssynth_shrink env env' s1 >>= (fun (e1, tps) -> 
       match tps with
@@ -222,9 +244,12 @@ and ssynth_shrink env env' s =
 
 and ucheck senv uenv u tpu =
   match u, tpu with
+  | Fix u', Omega(tps) ->
+      ucheck senv uenv u' (Omega(Shrink(tps, tps))) >>= (fun e ->
+      return (compose e fix))
   | Lam(x, u2), Lolli(tpu1, tpu2) ->
       ucheck senv ((x, tpu1) :: uenv) u2 tpu2 >>= (fun e2 ->
-      return (curry e2))
+      return (curry (compose assocr e2)))
   | Pair(u1, u2), Tensor(tpu1, tpu2) ->
       ucheck senv uenv u1 tpu1 >>= (fun e1 -> 
       ucheck senv uenv u2 tpu2 >>= (fun e2 -> 
@@ -234,9 +259,7 @@ and ucheck senv uenv u tpu =
   | Let(x, s1, s2), _ -> 
       usynth senv uenv s1 >>= (fun (e1, tpu1) ->
       ucheck senv ((x,tpu1) :: uenv) s2 tpu >>= (fun e2 ->
-      return (compose (pair id e1) e2)))
-  | Const e, Discrete ->
-      return (compose oned (discrete e))
+      return (compose (pair id e1) (compose assocr e2))))
   | Stream s, Omega tps ->
       scheck senv s tps >>= (fun e -> 
       return (compose pi1 (omega e)))
@@ -246,7 +269,6 @@ and ucheck senv uenv u tpu =
       | Omega tps ->
 	  ucheck ((x,tps) :: senv) uenv u2 tpu >>= (fun e2 ->
           let swizzle = pair (pair (compose pi2 pi1) pi1) (compose pi2 pi2) in
-	  let times f g = pair (compose pi1 f) (compose pi2 g) in 
 	  let e = compose (pair e1 id) (compose swizzle (compose (times prod' id) e2)) in
 	  return e)
       | _ -> error "ucheck: expected omega-type")
@@ -254,8 +276,21 @@ and ucheck senv uenv u tpu =
 	 if tpu = tpu' then return e else error "ucheck: type mismatch")
 
 and usynth senv uenv = function
+  | Fix u' ->
+      usynth senv uenv u' >>= (fun (e, tpu) ->
+      match tpu with
+      | Omega(Shrink(tps, tps')) when tps = tps' -> return (compose e fix, Omega(tps))
+      | _ -> error "usynth: fixedpoint expected contractive map")
+  | Cons u ->
+      usynth senv uenv u >>= (fun (e, tpu) ->
+	return (compose e cons, Omega(Shrink(Val tpu, Val tpu))))
   | Var x -> (lookup uenv x) >>= (fun (e, tpu) ->
 	     return (compose pi2 e, tpu))
+  | EmbedF e ->
+      return (curry (compose pi2 (discrete e)), Lolli(Discrete, Discrete))
+  | Embed e ->
+      let _loc = Ast.Loc.ghost in 
+      return (compose one (compose oned (discrete <:expr< fun () -> $e$>>)), Discrete)
   | App(u1, u2) ->
       usynth senv uenv u1 >>= (fun (e1, tpu1) -> 
       match tpu1 with
@@ -281,8 +316,34 @@ and usynth senv uenv = function
       | _ -> error "usynth: Expected Val type")
   | AnnotU(u, tpu) ->
       ucheck senv uenv u tpu >>= (fun e -> return (e, tpu))
+  | Let(x, s1, s2)-> 
+      usynth senv uenv s1 >>= (fun (e1, tpu1) ->
+      usynth senv ((x,tpu1) :: uenv) s2 >>= (fun (e2, tpu) ->
+      return (compose (pair id e1) (compose assocr e2), tpu)))
+  | Stream s ->
+      ssynth senv s >>= (fun (e, tps) -> 
+      return (compose pi1 (omega e), Omega tps))
+  | LetOmega(x, u1, u2) ->
+      usynth senv uenv u1 >>= (fun (e1, tpu1) -> 
+      match tpu1 with
+      | Omega tps ->
+	  usynth ((x,tps) :: senv) uenv u2 >>= (fun (e2, tpu) ->
+          let swizzle = pair (pair (compose pi2 pi1) pi1) (compose pi2 pi2) in
+	  let e = compose (pair e1 id) (compose swizzle (compose (times prod' id) e2)) in
+	  return (e, tpu))
+      | _ -> error "usynth: expected omega-type")
   | _ -> error "usynth: Can't synthesize type" 
 
+
+let elaborate u _loc =
+  match usynth [] [] u with
+  | Ok(e, tp) -> e "U" "C" "Dsl" _loc
+  | Error msg -> failwith msg
+
+let elaborates s _loc =
+  match ssynth [] s with
+  | Ok(e, tp) -> e "C" "U" "Dsl" _loc
+  | Error msg -> failwith msg
 
 
 (* The parser. This does not presently call the typechecker, which should be
@@ -296,21 +357,33 @@ let rec mk_fun vs body =
 
 let rec mk_sfun vs body =
   match vs with
-  | [] -> body 
+  | [] -> assert false 
+  | [x] -> SLam(x, body)
   | x :: xs -> SLam(x, mk_fun xs body);;
 
 
-let mtypeu = Gram.Entry.mk "mtypeu";;
-let mtypes = Gram.Entry.mk "mtypes";;
-let mexpr = Gram.Entry.mk "mexpr";;
+let mtypeu : tpu Gram.Entry.t = Gram.Entry.mk "mtypeu";;
+let mtypes : tps Gram.Entry.t = Gram.Entry.mk "mtypes";;
+let mexpr : exp Gram.Entry.t = Gram.Entry.mk "mexpr";;
+
+let parsetype m s = Gram.parse_string m Ast.Loc.ghost s
+
+let parsexpr s = Gram.parse_string mexpr Ast.Loc.ghost s
+let display s =
+  let _loc = Loc.ghost in 
+  Printers.OCaml.print_implem <:str_item<let _ = $elaborate (parsexpr s) _loc$>>
+
+let displays s =
+  let _loc = Loc.ghost in 
+  Printers.OCaml.print_implem <:str_item<let _ = $elaborates (parsexpr s) _loc$>>
 
 open Syntax
 	      
 EXTEND Gram
-  GLOBAL: expr mtype mexpr;
+  GLOBAL: expr mtypes mtypeu mexpr;
 
-  mtypes: [ [ LIDENT "one"  -> One 
-            | "("; tp1 = mtypes; ","; tp2 = mtypes; ")" -> Prod(tp1, tp2)
+  mtypes: [ [  LIDENT "one" -> One 
+            | "("; tp1 = mtypes; ","; tp2 = mtypes; ")" -> Times(tp1, tp2)
 	    | "("; tp = mtypes; ")" -> tp
 	    ]
 	  | "arrow" RIGHTA
@@ -318,77 +391,58 @@ EXTEND Gram
            | tp1 = mtypes; "~>"; tp2 = mtypes -> Shrink(tp1, tp2)
            ]
 	  | "simple"
-            | LIDENT "value"; "("; tp = mtypeu; ")" -> Val(tp)
+            [ UIDENT "V"; "("; tp = mtypeu; ")" -> Val(tp)
 	    ]
-	  ]
-	  ;
+	  ];
 
-  mtypeu: [ [ UIDENT "I"  -> One 
-            | tp1 = mtypeu; "#"; tp2 = mtypeu -> Prod(tp1, tp2)
+  mtypeu: [ [ UIDENT "I"  -> I 
+            | tp1 = mtypeu; "#"; tp2 = mtypeu -> Tensor(tp1, tp2)
 	    | "("; tp = mtypeu; ")" -> tp
 	    ]
 	  | "arrow" RIGHTA
 	   [ tp1 = mtypeu; "-o"; tp2 = mtypeu -> Lolli(tp1, tp2) 
            ]
 	  | "simple"
-            | LIDENT "omega"; "("; tp = mtypes; ")" -> Omega(tp)
-	    | LIDENT "discrete"; "("; tp = ctyp; ")" -> Discrete 
+            [ UIDENT "S"; "("; tp = mtypes; ")" -> Omega(tp)
+	    | UIDENT "D"; "("; tp = ctyp; ")" -> Discrete 
 	    ]
-	  ]
-	  ;
+	  ];
 
   mexpr: [ "binders"
-           [ "fun"; vs = LIST1 [v = LIDENT -> v]; "->"; body = mexpr ->
- 	       mk_fun vs body
-	   | "fun"; vs = LIST1 [v = LIDENT -> v]; "-o"; body = mshrink ->
- 	       mk_sfun vs body
+           [ "fun"; vs = LIST1 [v = LIDENT -> v]; fn = ["->" -> mk_fun | "~>" -> mk_sfun]; body = mexpr ->
+ 	       fn vs body
+	   | "let"; LIDENT "omega"; "("; v = LIDENT; ")"; "="; e = mexpr; "in"; e' = mexpr -> 
+                LetOmega(v, e, e')
 	   | "let"; v = LIDENT; "="; e = mexpr; "in"; e' = mexpr -> Let(v, e, e')
  	   | "let"; v = LIDENT; ":"; tp = mtypes; "="; e = mexpr; "in"; e' = mexpr ->
-	       Let(v, AnnotS(tp, e), e')
+	       Let(v, AnnotS(e, tp), e')
  	   | "let"; v = LIDENT; ":"; tp = mtypeu; "="; e = mexpr; "in"; e' = mexpr ->
-	       Let(v, AnnotU(tp, e), e')
-	   | "let"; UIDENT "Omega"; "("; v = LIDENT; ")"; "="; e = mexpr; "in"; e' = mexpr -> 
-                LetOmega(v, e, e')
-
- 	   | "let"; "val"; v = LIDENT; "="; e = mexpr; "in"; e' = mexpr ->
-	       Letv(v, e, e')
- 	   | "let"; "val"; v = LIDENT; ":"; tp = mtype; "="; e = mexpr; "in"; e' = mexpr ->
- 	       Letv(v, Annot(tp, e), e')
-	   ]
- 	 | "infixes"
- 	   [  e = mexpr; "::"; e' = mexpr -> Cons(e, e')
-	   |  LIDENT "fix"; e = expr -> Fix(e)
-	   ]
+	       Let(v, AnnotU(e, tp), e')
+	   ] 
  	 | "application"
- 	   [ LIDENT "value"; e = expr -> Value(e)
+ 	   [ LIDENT "value"; e = mexpr -> Value(e)
  	   | LIDENT "fst"; e = mexpr -> Fst(e)
 	   | LIDENT "snd"; e = mexpr -> Snd(e)
 	   | LIDENT "start"; e = mexpr -> Start(e)
-	   | UIDENT "Omega"; e = mexpr -> Stream(e)
+	   | LIDENT "omega"; e = mexpr -> Stream(e)
+	   | LIDENT "fix"; e = mexpr -> Fix(e)
+	   | LIDENT "cons"; e = mexpr -> Cons(e)
+	   | LIDENT "discrete"; e = expr -> EmbedF(e)
+           | LIDENT "const"; e = expr -> Embed(e)
  	   |  m = mexpr; m' = mexpr -> App(m, m')  ]
  	 | "atomic"
 	   [ v = LIDENT -> Var v
  	   |  "("; ")" -> Unit
  	   |  "("; e = mexpr; ")" -> e
-	   |  "("; e = mexpr; ":";  t = mtypeu; ")" -> AnnotU(t, e)
-	   |  "("; e = mexpr; ":";  t = mtypes; ")" -> AnnotS(t, e)
+	   |  "("; e = mexpr; ":";  t = mtypeu; ")" -> AnnotU(e, t)
+	   |  "("; e = mexpr; ":";  t = mtypes; ")" -> AnnotS(e, t)
 	   |  "("; e = mexpr; ","; e' = mexpr -> Pair(e, e')
            |  "["; e = mexpr; "]" -> Bracket(e)
 	   ]
-	 ]
-         ;
-
-  mshrink: [ "binders"
-             [ "fun"; vs = LIST1 [v = LIDENT -> v]; "-o"; body = mexpr ->
-		 mk_sfun vs body 
-	     | "let"; v = LIDENT; "="; e = mshrink; "in"; e' = mexpr -> SLet(v, e, e')
-	     | "let"; v = LIDENT; ":"; tp = mtype; "="; e = mshrink; "in"; e' = mexpr ->
-		 SLet(v, SAnnot(tp, e), e')]
-	   | "infixes"
-	     [
+	 ];
 
   expr: LEVEL "top"
-    [ [ "do"; "("; m = mexpr; ")" -> elaborate m "U" "C" "Metric" _loc ] ]
+    [ [ "do"; "("; m = mexpr; ")" -> elaborate m _loc ] ]
     ;
 END
 

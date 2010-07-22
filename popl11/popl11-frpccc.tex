@@ -410,7 +410,7 @@ the output at time $n$ should depend only on the first $n$ inputs. We
 formalize this as follows, writing $\floor{xs}_n$ for the 
 $n$-element prefix of the stream $xs$:
 \begin{definition}{(Causality)}
-A stream function $f : X^\omega \to Y^\omega$ is said to be \emph{causal} when,
+A stream function $f : S(X) \to S(Y)$ is said to be \emph{causal} when,
 for all for all $n$ and streams $xs$ and $xs'$, if $\floor{xs}_n = \floor{xs'}_n$
 then $\floor{f(xs)}_n = \floor{f(xs')}_n$.   
 \end{definition}
@@ -440,14 +440,14 @@ imagine implementing the fixed point by feeding the output at time $n$ back in a
 time 0 the input value does not matter. This leads us to define:
 
 \begin{definition}{(Guardedness)}
-A function $f : X^\omega \to X^\omega$ is said to be \emph{guarded}
+A function $f : S(X) \to S(X)$ is said to be \emph{guarded}
 when there exists a $k > 0$ such that for all for all $n$ and streams
 $xs$ and $xs'$, if $\floor{xs}_n = \floor{xs'}_n$ then
 $\floor{f(xs)}_{n+k} = \floor{f(xs')}_{n+k}$.
 \end{definition}
 
 \begin{prop}{(Fixed Points of Guarded Functions)}
-Every guarded endofunction $f : X^\omega \to X^\omega$ (where $X$ is a
+Every guarded endofunction $f : S(X) \to S(X)$ (where $X$ is a
 nonempty set) has a unique fixed point.
 \end{prop}
 
@@ -518,14 +518,14 @@ equipping it with the discrete metric that defines $d(x,x')$ to be $0$ if $x=x'$
 %% \end{displaymath}
 
 For an ultrametric space $A$, the ultrametric space of
-streams on $A$ is defined by equipping the set $A^\omega$ with 
+streams on $A$ is defined by equipping the set $S(A)$ with 
 the \emph{causal metric of streams}:
 \begin{displaymath}
-  d_{A^\omega}(as, as') = \sup \comprehend{2^{-n}\cdot d_A(as_n, as'_n)}{n \in \N}
+  d_{S(A)}(as, as') = \sup \comprehend{2^{-n}\cdot d_A(as_n, as'_n)}{n \in \N}
 \end{displaymath}
 
 \noindent Furthemore, this is functorial: for any map $f : A \to B$, 
-we define $f^\omega : A^\omega \to B^\omega$ by mapping $f$ over the input stream, which is easily seen to preserve identity and composition.
+we define $f^\omega : S(A) \to S(B)$ by mapping $f$ over the input stream, which is easily seen to preserve identity and composition.
 
 The interpretation of the stream metric is easiest to understand in
 the case of streams of discrete elements. In this case, the metric
@@ -547,15 +547,15 @@ properties of first-order reactive programs discussed in the
 previous section.
 
 \begin{theorem}{(Causality is Nonexpansiveness)}
-Suppose $X$ and $Y$ are sets. Then a function $f : X^\omega \to
-Y^\omega$ is causal if and only if it is a nonexpansive function under
+Suppose $X$ and $Y$ are sets. Then a function $f : S(X) \to
+S(Y)$ is causal if and only if it is a nonexpansive function under
 the causal metric of streams of elements of the discrete spaces $D(X)$
 and $D(Y)$.
 \end{theorem}
 
 \begin{theorem}{(Guardedness is Contractiveness)}
-Suppose $X$ and $Y$ are sets. Then a function $f : X^\omega \to
-Y^\omega$ is guarded if and only if it is a strictly contractive
+Suppose $X$ and $Y$ are sets. Then a function $f : S(X) \to
+S(Y)$ is guarded if and only if it is a strictly contractive
 function under the causal metric of streams of elements of the
 discrete spaces $D(X)$ and $D(Y)$.
 \end{theorem}
@@ -569,9 +569,9 @@ interpreting our programs in the category of ultrametric spaces:
 \item Since streams are functorial, we can interpret streams of
   streams.
 \item Furthermore, contractiveness gives an analogue of guardedness
-  that makes sense at all types, and likewise Banach's fixed point
+  that makes sense at higher types, and likewise Banach's fixed point
   theorem gives an interpretation of fixed points that makes sense at
-  all types.
+  higher types.
 \end{enumerate}
 
 \noindent In an abstract sense, this semantics fulfill the original
@@ -703,10 +703,7 @@ whose coextension yields the head of the stream of streams.
 %% argument at the time 0 was, and so cannot return the right answer.
 %
 This, in turn, makes defining fixed point operators very difficult: a
-variable of type 
-\footnote{We use $A \lolli A$ to denote
-  the exponential in $\ultrametric^S$.} $A \lolli A$
-denotes a stream of functions. If all of these
+variable of type $A \To A$ denotes a stream of functions. If all of these
 functions are contractive, and we take fixed point of coextensions
 pointwise, then we get a stream of streams --- at which point we
 discover that we can never look at the \emph{second} element of any of
@@ -825,6 +822,10 @@ types, we also introduce types corresponding to \emph{contractive
           {\judgeu{\Gamma}{\fun{x}{e}}{X \To Y}}
 \and
 \inferrule*[]
+          {\judgec{x:X}{e}{Y}}
+          {\judgeu{\Gamma}{\fun{x}{e}}{X \shrink Y}}
+\and
+\inferrule*[]
           { }
           {\judgeu{\Gamma}{\unitval}{1}}
 \and
@@ -847,6 +848,10 @@ types, we also introduce types corresponding to \emph{contractive
 \inferrule*[]
           {\judgek{\Delta,x:A}{t}{B}}
           {\judgek{\Delta}{\fun{x}{t}}{A \lolli B}}
+\and
+\inferrule*[]
+          {\judgekc{x:A}{t}{B}}
+          {\judgek{\Delta}{\fun{x}{t}}{A \lollishrink B}}
 \and
 \inferrule*[]
           { }
@@ -890,7 +895,7 @@ types, we also introduce types corresponding to \emph{contractive
           {\judgec{\hat{\Gamma}}{\const{e}}{X}}
 \and
 \inferrule*
-          {\judgec{\hat{\Delta}}{c}{X \shrink Y} \\
+          {\judgec{\hat{\Gamma}}{c}{X \shrink Y} \\
            \judgeu{\Gamma, \hat{\Gamma}}{e}{X}}
           {\judgec{\hat{\Gamma}}{c\;e}{Y}}
 \and
@@ -982,17 +987,20 @@ the judgments -- the ``dataflow'' context appears in the ``FRP''
 judgement, but not vice-versa. 
 
 We give typing rules for these programs in
-Figure~\ref{adjoint-syntax}.  Most of the rules are routine, with all
+Figure~\ref{adjoint-syntax}.  Most of the rules are routine, with most
 of the interest lying in the rules that permit passing between the two
 worlds, listed as the last four rules of
 Figure~\ref{adjoint-syntax}. The $\mathsf{val}$-introduction rule
-takes a dataflow program with no free non-dataflow variables, and
-treats it as a stream in $\ultrametric^S$. The corresponding elimination
-rule says that in a dataflow program, we can take a term $e :
-\valtype{A}$, and ask for its starting value with
-$\Start{e}$. Conversely, the two final rule says how FRP programs
-can decompose embedded stream values and bind them for use as 
-dataflow variables.
+takes an FRP expression with no free non-synchronous variables, and
+lifts it to a synchronous program in $\ultrametric^S$. The
+corresponding elimination rule says that within an FRP program, we can
+take a synchronous term $e : \valtype{A}$, and ask for its current
+value with $\Start{e}$. That is, viewing the $\valtype{A}$ term as
+something lifted to a stream, this operation takes the head --- which
+is precisely the operation difficult to interpret in a purely
+synchronous way.  Conversely, the two final rule says how FRP programs
+can define embedded stream values and then bind them for use as
+synchronous dataflow variables.
 
 In addition to these two judgements, we also need a pair of judgements
 permitting programmers to define contractive functions, which we
@@ -1016,14 +1024,15 @@ functions. However, we do so \emph{without} giving a corresponding
 variable rule that permits directly using these hypothesis. Instead,
 there are some rules (such as the application rule for contractive
 functions) that permit moving the variables from the new context into
-the old. From a semantic point of view, this is only to be expected ---
-the interpretation of the variable rule in categorical proof theory is
-an identity morphism, and identities \emph{are not contractive}. So we
-cannot expect to have a normal variable rule for the hypotheses
-corresponding to arguments of contractive functions. Operationally,
-this embodies our need to ensure that the variables are only used as
-arguments to contractive functions (such as \term{cons}), which will
-ensure that the terms they appear in are always guarded.
+the old. From a semantic point of view, this is only to be expected
+--- the interpretation of the variable rule in categorical proof
+theory is an identity morphism, and identities \emph{are not
+  contractive}. So we cannot expect to have a normal variable rule for
+the hypotheses corresponding to arguments of contractive
+functions. Operationally, this embodies our need to ensure that the
+variables are only used as arguments to our primitive contractive
+functions (such as \term{cons}), which will ensure that the terms they
+appear in are always guarded.
 
 To define the semantics, we need some maps in the category of
 ultrametrics which witness the fact that contractiveness is preserved
@@ -1095,7 +1104,7 @@ identical semantics of contractive terms in the co-Kleisli category.)
  \begin{array}{lcl}
   \interp{\judgec{\hat{\Gamma}}{\const{e}}{X}} & = & \interp{\judgeu{\Gamma}{e}{X}}; \sweak \\
   \interp{\judgec{\hat{\Gamma}}{c\;e}{Y}} & = & 
-     (\interp{\judgec{\hat{\Gamma}}{c}{X \shrink Y}}, \lambda(\interp{\judgeu{\Gamma,\hat{\Gamma}}{e}{X}})); \seval \\ 
+     (\interp{\judgec{\hat{\Gamma}}{c}{X \shrink Y}}, \lambda^{\hat{\Gamma}}(\interp{\judgeu{\Gamma,\hat{\Gamma}}{e}{X}})); \seval \\ 
   \interp{\judgec{\hat{\Gamma}}{\pi_i(c)}{X_i}} & = & 
     \interp{\judgec{\hat{\Gamma}}{c}{X_1 \times X_2}}; \scomposer(\pi_i)
 \\
@@ -1103,11 +1112,11 @@ identical semantics of contractive terms in the co-Kleisli category.)
      1_\Gamma; \sweak_{\hat{\Gamma}}
 \\
   \interp{\judgec{\hat{\Gamma}}{\letc{x}{c}{c'}}{Y}} & = & 
-    (\swap(\lambda(\interp{\judgec[\Gamma,x:X]{\hat{\Gamma}}{c'}{Y}})), \interp{\judgec{\hat{\Gamma}}{c}{X}}); \\
+    (\lambda(\interp{\judgec[\Gamma,x:X]{\hat{\Gamma}}{c'}{Y}});\swap, \interp{\judgec{\hat{\Gamma}}{c}{X}}); \\
     & & \spair; \scomposer(\eval)
 \\
   \interp{\judgec{\hat{\Gamma}}{\fun{x:X}{c}}{X \To Y}} & = & 
-    \swap(\lambda(\interp{\judgec[\Gamma,x:X]{\hat{\Gamma}}{c}{Y}})) 
+    \lambda(\interp{\judgec[\Gamma,x:X]{\hat{\Gamma}}{c}{Y}}); \swap 
 \\
   \interp{\judgec{\hat{\Gamma}}{\fun{x:X}{c}}{X \shrink Y}} & = & 
     \interp{\judgec{\hat{\Gamma}, x:X}{c}{Y}}; \scurry 
@@ -1460,15 +1469,15 @@ of the types into our functional language.
     \interpu{X \otimes Y}        & = & \interpu{X} \star \interpu{Y} \\
     \interpu{X \lolli Y}         & = & \interpu{X} \to \comp{\interpu{Y}} \\
     \interpu{X \lollishrink\, Y} & = & \interpu{X} \to \comp{\interpu{Y}} \\
-    \interpu{A^\omega}            & = & \comp{\streamtype{\interps{A}}}
+    \interpu{A^\omega}            & = & \streamtype{\interps{A}}
     \\[1em]
-    \interps{I}           & = & \unittype \\
-    \interps{A \times B} & = & \interps{A} \star \interps{B} \\
-    \interps{A \to B}  & = & \streamtype{\interps{A}} \to \comp{\streamtype{\interps{B}}} \\
-    \interps{A \shrink B}  & = & \streamtype{\interps{A}} \to \comp{\streamtype{\interps{B}}} \\
-    \interps{\valtype{X}} & = & \interpu{X}
+    \interps{1}                  & = & \unittype \\
+    \interps{A \times B}         & = & \interps{A} \star \interps{B} \\
+    \interps{A \to B}            & = & \streamtype{\interps{A}} \to \comp{\streamtype{\interps{B}}} \\
+    \interps{A \shrink B}        & = & \streamtype{\interps{A}} \to \comp{\streamtype{\interps{B}}} \\
+    \interps{\valtype{X}}        & = & \interpu{X}
     \\[1em]
-    \streamtype{\tau}     & = & \celltype{\opttype{\tau}}
+    \streamtype{\tau}            & = & \celltype{\opttype{\tau}}
   \end{array}
 \end{mathpar}
 }
@@ -1476,52 +1485,47 @@ of the types into our functional language.
 Units and products of the ultrametric world can be represented
 directly using ML types. The first interesting case is at $A^\omega$,
 where we give the representation of streams of values of type $A$.
-This clause is interpreted as $\comp{\interps{A}}$, which can be
-understood as follows. In the category of ultrametric spaces, we want
-to understand streams as pure values. However, we want to represent
-streams via imperative data structures which change over time. This
-conflict is resolved by representing a stream as a thunk, which
-constructs and initalizes a stream data structure each time it is
-evaluated. So each time we evaluate a value of type $A^\omega$, we
-construct a fresh stream, ready to begin counting regardless of when
-it was created.
+This clause is interpreted as $\interps{A}$, which can be understood
+as follows. A stream is a cell, which yields values by accessing and
+modifying the dataflow graph each time it is read. This means we must
+be very careful about the operations we permit on this type, because
+otherwise we will break the illusion that this is a pure,
+time-independent value. For similar reasons, the function space $X
+\lolli Y$ is interpreted as a function from $X$-values to a
+\emph{computation} of $Y$-values.  For functions such as head, with
+type $(\valtype{X})^\omega \to X$, we need to look at the first
+element of a stream cell, and so we need to perform a computation to
+access it. However, this computation must (as with $\omega$-types
+themselves) be legitimate to run any time.
 
-For similar reasons, the function space $X \lolli Y$ is interpreted as
-a function from $X$-values to a \emph{computation} of $Y$-values.  For
-functions such as head, with type $(\valtype{X})^\omega \to X$, we need to look
-at the first element of a stream cell, and so we need to perform a
-computation to access it. However, this computation must (as with
-$\omega$-types themselves) be legitimate to run any time.
-In addition, we have a type of strictly contractive functions $A
-\shrink B$. This is represented in exactly the same way as the
-ordinary ML function space, but must be kept isolated in order to
-support the extra operation of fixed points.
+The interpretation of the co-Kleisli category is one in which time
+plays a subtly different role. The maps here are instantaneous
+functions of streams, which we implement it via a dataflow graph which
+we update to get to the next time step. So the implementation of
+functions is more complex. In our implementation, the argument to a
+function $f : A \To B$ comes as a stream, and the return value is term
+of type $\comp{\streamtype{B}}$. The code constructor permits the
+implementation to read and extend the dataflow graph, doing some
+initialization to return a stream cell. Surpisingly, this result is a
+stream, and not a point value, the way that the intepretation of
+morphisms in the co-Kleisli category might initially suggest. In fact,
+our implementations actually realize the coextensions of the morphisms
+of the co-Kleisli category, and the logical relation needs to be
+adjusted in this clause to make it fit.
 
-In contrast, the interpretation of the co-Kleisli category is one in
-which time plays a very significant part. We implement it via a
-dataflow graph which we update to get to the next time step. So the
-implementation of functions is more complex. In our implementation,
-the argument to a function $f : A \To B$ comes as a stream, and the
-return value is term of type $\comp{\streamtype{B}}$. The code
-constructor permits the implementation to read and extend the dataflow
-graph, doing some initialization to return a stream cell. Surpisingly,
-this result is a stream, and not a point value, the way that the
-intepretation of morphisms in the co-Kleisli category might initially
-suggest. In fact, our implementations actually realize the coextensions
-of the morphisms of the co-Kleisli category, and the logical relation
-needs to be adjusted in this clause to make it fit. 
-
-One further observation is that we do not realize streams of type $\tau$
+One final observation is that we do not realize streams of type $\tau$
 with a $\celltype{\tau}$. Instead, we use a $\celltype{\opttype{\tau}}$. 
 The reason for this decision is that we want to implement recursion via
 feedback, and so we need to be able to have cells which are unitialized
 on their first time step. 
 
-Selected parts of this implementation can be seen in
-Figure~\ref{ultrametric-implementation}. It should be clear that for
-products and exponentials, we are simply directly implementing it in
-terms of the corresponding products and exponentials of our
-programming language. 
+Selected parts of this implementation can be seen in Figures
+\ref{ultrametric-implementation} through \ref{adjoint-implementation}.cf
+It should be clear that for products and exponentials, we are simply
+directly implementing it in terms of the corresponding products and
+exponentials of our programming language, modulo monadic
+sequencing. (For readability, we use Haskell-style do-notation to
+write the terms our \textsf{code} type.)
 
 However, the implementations of \term{cons} and \term{fix} are two of
 the most complex functions in the whole library. The \term{cons}
@@ -1595,11 +1599,11 @@ use them in restricted contexts.
 \\
 \term{curry\;f = \fun{x}{return(\fun{y}{f(x,y)})}}
 \\[0.5em]
-\term{fix} : $(X \shrink X) \to X$ \\
-\term{fix\; f = \fix{x:\interpu{X}}{f}}
-\\[0.5em]
+% \term{fix} : $(X \shrink X) \to X$ \\
+% \term{fix\; f = \fix{x:\interpu{X}}{f}}
+% \\[0.5em]
 
-\term{cons} : $X \to (\valtype{X} \lollishrink \;\valtype{X})^\omega$ \\
+\term{cons} : $X \to (\valtype{X} \shrink \;\valtype{X})^\omega$ \\
 \term{cons = \lambda x.\; cell(return(\Some{f}))} \\
 with \term{f = \lambda ys.\;do} \= \term{r \leftarrow newref(\Some{x});} \\
 \>     \term{zs \leftarrow cell(}\= 
@@ -1620,10 +1624,9 @@ with \term{f = \lambda ys.\;do} \= \term{r \leftarrow newref(\Some{x});} \\
 %   \>\;\;\=\term{\Some{xs} \to return(xs)}\\
 %   \>    \>\term{\None \to ERROR} (invariant ensures this case cannot happen) \\[0.5em]
 
-\term{fix} : $(A \lollishrink A)^\omega \to A^\omega$ \\
-\term{fix = \lambda thunk.\;do}
-  \=\term{fs \leftarrow read(thunk);} \\
-  \>\term{f' \leftarrow read(fs);} \\
+\term{fix} : $(A \shrink A)^\omega \lolli A^\omega$ \\
+\term{fix = \lambda fs.\;do}
+  \=\term{f' \leftarrow read(fs);} \\
   \>\term{case\;f'\;of}\\
   \>\;\;\=\term{\None \to ERROR} (provably never occurs)\\
   \>    \>\term{Some(f) \to} \\
@@ -1652,19 +1655,19 @@ with \term{f = \lambda ys.\;do} \= \term{r \leftarrow newref(\Some{x});} \\
 \term{id = \lambda xs.\;cell(read\;xs)} 
 \\[0.5em]
 
-\term{compose\;f\;g =\lambda as.\; do\;}
- \=\term{bs \leftarrow f(as);} \\
- \>\term{cs \leftarrow g(bs);} \\
- \>\term{return(cs)} 
+\term{compose\;f\;g =\lambda as.\; do\;
+bs \leftarrow f(as);
+cs \leftarrow g(bs);
+return(cs)} 
 \\[0.5em]
 
 \term{one\;xs = cell(return(\Some{\unitval}))}
 \\[0.5em]
 
-\term{pair\;f\;g = \lambda as.\;do\;}
-  \=\term{bs \leftarrow f(as);} \\
-  \>\term{cs \leftarrow g(as);} \\
-  \>\term{zip(bs,cs)}
+\term{pair\;f\;g = \lambda as.\;do\;
+bs \leftarrow f(as); 
+\;cs \leftarrow g(as);
+\;zip(bs,cs)}
 \\[0.5em]
 
 \term{fst = \lambda abs.\;cell(do}
@@ -1736,9 +1739,8 @@ with \term{f = \lambda ys.\;do} \= \term{r \leftarrow newref(\Some{x});} \\
 \>           \>    \>               \>\term{return(abs)} 
 \\[0.5em]
 
-\term{register(xs) = do\;}\=\term{dummy \leftarrow read(xs);}\\
-                          \>\term{lst \leftarrow getref(i);} \\
-                          \>\term{setref(i, pack(xs) :: lst)} 
+\term{register(xs) = } \\
+\;\;\term{do\;dummy \leftarrow read(xs);\; lst \leftarrow getref(i); setref(i, pack(xs) :: lst)} 
 \end{tabbing}
 }
 \caption{Utility Functions}
@@ -1752,7 +1754,10 @@ with \term{f = \lambda ys.\;do} \= \term{r \leftarrow newref(\Some{x});} \\
 {\small
 \begin{tabbing}
 $(-)^\omega : U^S(A,B) \to U(A^\omega, B^\omega)$ \\
-\term{omega\;f = \lambda athunk.\;do} \=\term{as \leftarrow athunk; f(as)} 
+\term{omega\;f = \lambda as.\;cell(do} \=\term{a' \leftarrow as}  \\
+                                       \>\term{case\;a'\;of} \\
+                                   \>\;\;\=\term{\None \to return(\None)} \\
+                                   \>    \>\term{\Some{a}\to return(\Some{f(a)}))}
 \\[0.5em]
 
 $\mathit{Value} : U(X,Y) \to U^S(\valtype{X}, \valtype{Y})$ \\[0.2em]
@@ -1775,58 +1780,50 @@ give three mutually-dependent relations, one for ultrametric values,
 one for co-Kleisli values, and one for the memory state of the
 dataflow graph. 
 
-The relation for ultrametric values, $U^d_A(v, \term{v})$, is given in
-lines 1-5 of Figure~\ref{logical-relation}. It relates elements $v$ of
-a metric space $A$ to a concrete program term \term{v}. Intuitively,
-it can be read as saying ``the semantic value $v$ is approximated by
-the computational value \term{v} to at least distance $d$''. The
-clauses for unit and products are straightforward, and the cases for
-the two function spaces are only slightly more complicated --- we
-quantify over all greater distances (the future worlds in the Kripke
-ordering) before asserting that applying related values to related
-functions yield computations producing related results. They both use
-the $\Build$ relation (defined on lines 6-11), which quantifies over
-all heaps, which ensures that the results can be used any time. The
-details of this relation are quite similar to that of $\Build$, but
-simpler, and so we will skip over the details.
+The relation for ultrametric values, $U^d_A(v, \term{v}, \mu,
+\sigma)$, is given in lines 1-12 of Figure~\ref{logical-relation}. It
+relates elements $v$ of a metric space $A$ to a concrete program term
+\term{v}. Intuitively, it can be read as saying ``the semantic value
+$v$ is approximated by the computational value \term{v} to at least
+distance $d$, when in memory $\mu$ and depending on cells
+$\sigma$''. The clauses for unit and products are straightforward, and
+the cases for the two function spaces are only slightly more
+complicated --- we quantify over all future heaps (both extensions of
+the current in the Kripke ordering, and over the changes induced by
+the temporal order --- see the end of this section for details, as
+this is an unavoidable forward reference) before asserting that
+applying related values to related functions yield computations
+producing related results. They both use the $\UBuild$ relation
+(defined on lines 13-17), which encapsulates safely reading and
+extending the heap. The guts of this relation (and of the $\Build$
+relation used for the other category) resemble the $\Stream$
+predicate, and so we will defer details until then. Also, even though
+the clauses for the two function spaces look identical, they have
+different semantics due to the fact that the mathematical inhabitants
+of $X \shrink Y$ are contractive, which means that we know the fixed
+points of $X \shrink X$ necessarily exist.
 
-However, even though the clauses for the two function spaces look
-identical, they have different semantics due to the fact that the
-mathematical inhabitants of $X \shrink Y$ are contractive, which means
-that we know the fixed points of $X \shrink X$ necessarily exist.
-
-On line 5, we give the relation for streams $A^\omega$. It is
-explained in terms of the relation $\Build^{d'}_A(vs, code, \mu,
-\emptyset, \U)$ says that in all well-formed memories, running
-\term{code} will build a fresh piece of dataflow graph to represent
-the stream value $vs$, with no static dependencies on any existing
-piece of the graph (the $\emptyset$) and without any delays in the
-output (the $\U$). So no matter when we run this code, we build
-streams which will all enumerate the same sequence of mathematical
-values. Looking inside the definition of $\Build$, we see that it
-takes a memory, and returns a memory in the extension ordering,
-subject to several additional constraints --- the $\Update$ and
-$\Stable$ predicates. These ensure that the number of dangling
-references and stateful cells unregistered with the update list do not
-increase, and that the return value is a genuine stream.
+On line 12, we give the relation for streams $A^\omega$. It just says
+that a stream value is a cell in the dataflow graph which will produce
+the appropriate values without delay, touching no more than $\sigma$ cells. 
 
 Next, the relation $V^d_A(v, \term{v}, \mu, \sigma)$, defined on lines
-12-22 of Figure~\ref{logical-relation}, relates values in the
+18-28 of Figure~\ref{logical-relation}, relates values in the
 co-Kleisli category of streams to the program terms \term{v}. The
 relation $V^d_A(v, \term{v}, \mu, \sigma)$ has the intuitive reading
 ``the semantic value $v$ is approximated by computational value
 \term{v} and memory state $\mu$ to at least distance $d$. Furthermore,
 the use of \term{v} may involve evaluating the cells in $\sigma$''.
 
-On line 12, the other side of the adjunction, $\valtype{X}$, is
+On line 18, the other side of the adjunction, $\valtype{X}$, is
 interpreted by deferring to the $U$-relation.  Units and pairs (lines
-13-14) continue to be interpreted simply, as before.  As a convenience
-prior defining functions, on line 15 we add a clause in this relation
+19-20) continue to be interpreted simply, as before.  As a convenience
+prior to defining functions, on line 21 we add a clause in this relation
 for streams, which are simply cells in the dataflow graph which will
 produce the correct stream of values, and whose static dependencies
 are less than what the relation asks for.
 
-Then, on lines 16-18, we give the interpretation of the function
+Then, on lines 22-25, we give the interpretation of the function
 space.  This interpretation first clears its breath by quantifying
 over extensions to the distance, the memory, and the dependencies, and
 then says that if we have a dataflow cell \term{v} realizing some
@@ -1836,9 +1833,13 @@ are no worse than the inputs'. Finally, it says that the result will
 be no more delayed than the input is (i.e., if the input is not
 lagged, then the output won't be, but if the input is lagged, then the
 output might or might not be). The definition of the contractive
-function space $A \lollishrink B$ on lines 20-22 is similar, except that it
+function space $A \lollishrink B$ on lines 26-28 is similar, except that it
 promises that its output will not be lagged, full stop. (This is what
 justifies the implementation of the fixed point using a lagged input.)
+One noteworthy point is that the dataflow functions here do \emph{not}
+need to explicitly quantify over all temporally future heaps, the way 
+which the other function spaces do --- this is a consequence of our
+understanding of lifted functions as instananeous. 
 
 A memory state is a pair $(\theta, R)$, where $\theta$ is a formula
 describing a dataflow network, and $R$ is a \emph{rely} describing the
@@ -2112,9 +2113,11 @@ First, we establish some basic properties of our logical relation.
 \begin{prop}{(Kripke Monotonicity)}
 If $d' \geq d$, we have that
 \begin{enumerate}
-\item If $U^d_X(v, \term{v})$ then $U^{d'}_X(v, \term{v})$. 
+\item If $U^d_X(v, \term{v}, \mu, \sigma)$ then $U^{d'}_X(v, \term{v}, \mu, \sigma)$. 
 \item If $V^d_A(v, \term{v}, \mu, \sigma)$ then $V^{d'}_A(v, \term{v}, \mu, \sigma)$. 
 \item If $\satisfy{\mu}{d}$ then $\satisfy{\mu}{d'}$. 
+\item If $U^d_A(v, \term{v}, \mu, \sigma)$ and $\betterstate{d}{\mu'}{\mu}$, then $U^d_A(v, \term{v}, \mu',\sigma)$.
+\item If $U^d_A(v, \term{v}, \mu, \sigma)$ and $\sigma' \supseteq \sigma$, then $U^d_A(v, \term{v}, \mu,\sigma')$.
 \item If $V^d_A(v, \term{v}, \mu, \sigma)$ and $\betterstate{d}{\mu'}{\mu}$, then $V^d_A(v, \term{v}, \mu',\sigma)$.
 \item If $V^d_A(v, \term{v}, \mu, \sigma)$ and $\sigma' \supseteq \sigma$, then $V^d_A(v, \term{v}, \mu,\sigma')$.
 \end{enumerate}
@@ -2122,7 +2125,7 @@ If $d' \geq d$, we have that
 
 \begin{lemma}{(Approximation Lemma)}
 \begin{enumerate}
-  \item If $\forall d' > d.\; U^{d'}_A(v, \term{v})$ then $U^d_A(v, \term{v})$. 
+  \item If $\forall d' > d.\; U^{d'}_A(v, \term{v}, \mu, \sigma)$ then $U^d_A(v, \term{v}, \mu, \sigma)$. 
   \item If $\forall d' > d.\; V^{d'}_A(v, \term{v}, \mu, \sigma)$ then $V^d_A(v, \term{v}, \mu, \sigma)$. 
   \item If $\forall d' > d.\; \satisfy{\mu}{d'}$ then $\satisfy{\mu}{d}$. 
 \end{enumerate}
@@ -2130,19 +2133,17 @@ If $d' \geq d$, we have that
 
 \begin{lemma}{(Induction Lemma)}
 \begin{enumerate}
-  \item If $\forall d' > 2\cdot d.\; U^{d'}_A(v, \term{v}) \implies U^{d'/2}_A(v, \term{v})$ then $U^d_A(v, \term{v})$. 
-  \item If $\forall d' > 2\cdot d.\; V^{d'}_A(v, \term{v}, \mu) \implies V^{d'}_A(v, \term{v}, \mu)$ then $V^d_A(v, \term{v}, \mu)$. 
+  \item If $\forall d' > 2\cdot d.\; U^{d'}_A(v, \term{v}, \mu, \sigma) \implies U^{d'/2}_A(v, \term{v}, \mu, \sigma)$ then $U^d_A(v, \term{v}, \mu, \sigma)$. 
+  \item If $\forall d' > 2\cdot d.\; V^{d'}_A(v, \term{v}, \mu, \sigma) \implies V^{d'}_A(v, \term{v}, \mu)$ then $V^d_A(v, \term{v}, \mu, \sigma)$. 
   \item If $\forall d' > 2\cdot d.\; \satisfy{\mu}{d'} \implies \satisfy{\mu}{d'/2}$ then $\satisfy{\mu}{d}$. 
 \end{enumerate}
 \end{lemma}
 
-However, these properties are a little clunky to use directly. The
-reason is that we often need to extend the memory in our proofs, and
-that requires us to re-establish the satisfaction relation for each
-cell in the heap with the extended memory. We can encapsulate this
-pattern of reasoning with the following two lemmas. (We use the
-notation $[f|x:v]$ to denote the function which extends $f$'s domain
-by $x$ and gives it the value $v$ at that point.)
+We often need to extend the memory in our proofs, which requires us to
+re-establish the satisfaction relation for each cell in the heap with
+the extended memory. We encapsulate this pattern of reasoning with the
+following two lemmas. (The notation $[f|x:v]$ denotes 
+extending $f$'s domain by $x$ and letting it be $v$ there.)
 
 \begin{lemma}{(Reference Allocation)}
 Suppose that $\satisfy{(\theta, R)}{d}$, and that $\theta' =
@@ -2183,10 +2184,10 @@ have $R'$ such that
  $C_{R'} = C_R \cup \setof{\term{c}}$,
  $V_{R'} = [V_R|\term{c}:vs]$,
  $D_{R'} = [D_R|\term{c}:\D]$,
- $\Delta_{R'} = [\Delta|\term{c}:C_{R'}]$ ,
+ $\Delta_{R'} = [\Delta|\term{c}:Y]$ where $Y \subseteq C_{R'}$,
  $L_{R'} = L_R \cup \setof{\term{r}}$,
  $V_{R'} = [V_R|\term{r}:(\None :: (\mathsf{map\;Some}\;vs)]$ ,
- $\Delta^L_{R'} = [\Delta^L_R|\term{r}:C_{R'}]$ ,
+ $\Delta^L_{R'} = [\Delta^L_R|\term{r}:X]$ where $X \subseteq C_{R'}$,
  $G_{R'} = [G_R|\term{r}:\term{c}]$, and
  $S_{R'} = S_R$.
 
@@ -2198,14 +2199,14 @@ references (except for the clock and the mutable cell list \term{i}). Then,
 we can show that
 \begin{theorem}
 Define $\realize{\ultrametric}{X}{Y}{f}{\term{f}}$ to be $U^0_{X \To
-  Y}(f, \term{f})$, and define
+  Y}(f, \term{f}, \mu_0, \emptyset)$, and define
 $\realize{\ultrametric^S}{A}{B}{g}{\term{g}}$ to be $V^0_{A \lolli
   B}(g, \term{g}, \mu_0, \emptyset)$. 
 Then it follows that:
 \begin{itemize}
-\item If $\judgeu{\Gamma}{e}{X}$, then $\realize{\ultrametric}{\Gamma}{X}{\interp{\judgeu{\Gamma}{e}{X}}}{\interpu{\judgeu{\Gamma}{e}{X}}}$
+\item If $\judgeu{\Gamma}{e}{X}$, then $\realize{\ultrametric^S}{\Gamma}{X}{\interp{\judgeu{\Gamma}{e}{X}}}{\interpu{\judgeu{\Gamma}{e}{X}}}$
 \item If $\judgek{\Delta}{t}{A}$, then \\
-$\realize{\ultrametric^S}{V(\Gamma) \otimes \Delta}{A}{\interp{\judgek{\Delta}{t}{A}}}{\interpu{\judgek{\Delta}{t}{A}}}$
+$\realize{\ultrametric}{V(\Gamma) \otimes \Delta}{A}{\interp{\judgek{\Delta}{t}{A}}}{\interpu{\judgek{\Delta}{t}{A}}}$
 \end{itemize}
 \end{theorem}
 
@@ -2216,37 +2217,40 @@ implementation combinators.
 {\small
 \begin{tabbingspec}
 
-$U^d_1(\unitval, \unitval) = $ true 
+$U^d_1(\unitval, \unitval, \mu, \sigma) = $ true 
 \Newline[0.5em]
 
-\label{upair}
-$U^d_{X \times Y}((x,y), (\term{x}, \term{y})) = U^d_X(x, \term{x}) \land U^d_Y(y, \term{y})$ 
+$U^d_{X \times Y}((x,y), (\term{x}, \term{y}), \mu, \sigma) = U^d_X(x, \term{x}, \mu, \sigma) \land U^d_Y(y, \term{y}, \mu, \sigma)$ 
 \Newline[0.5em]
 
-\label{ufunc}
-$U^d_{X \To Y}(f, \term{f}) =  \forall d' > 2\cdot d, v, \term{v}.\; U^{d'}_X(v, \term{v}) \implies \UBuild^{d'}_Y(f\;v, \term{f\;v})$ 
+$U^d_{X \To Y}(f, \term{f}, \mu, \sigma) =  $ \Newline
+\;\;\=$\forall d' > 2\cdot d, n \leq \log(1/d'), \futurestate{d'}{n}{\mu'}{\mu}, \sigma' \supseteq \sigma, v, \term{v}.$ \Newline
+\>\;\;\= $U^{d'\cdot2^n}_X(v, \term{v}, \mu', \sigma') \implies \UBuild^{d'\cdot2^n}_Y(f\;v, \term{f\;v}, \mu', \sigma')$ 
 \Newline[0.5em]
 
-\label{ushrink}
-$U^d_{X \shrink Y}(f, \term{f}) = \forall d' > 2\cdot d, v, \term{v}.\;U^{d'}_X(v, \term{v}) \implies \UBuild^{d'}_Y(f\;v, \term{f\;v})$ 
+$U^d_{X \To Y}(f, \term{f}, \mu, \sigma) =  $ \Newline
+\;\;\=$\forall d' > 2\cdot d, n \leq \log(1/d'), \futurestate{d'}{n}{\mu'}{\mu}, \sigma' \supseteq \sigma, v, \term{v}.$ \Newline
+\>\;\;\= $U^{d'\cdot2^n}_X(v, \term{v}, \mu', \sigma') \implies \UBuild^{d'\cdot2^n}_Y(f\;v, \term{f\;v}, \mu', \sigma')$\Newline[0.5em]
+
+$U^d_{X \shrink Y}(f, \term{f}, \mu, \sigma) =  $ \Newline
+\;\;\=$\forall d' > 2\cdot d, n \leq \log(1/d'), \futurestate{d'}{n}{\mu'}{\mu}, \sigma' \supseteq \sigma, v, \term{v}.$ \Newline
+\>\;\;\= $U^{d'\cdot2^n}_X(v, \term{v}, \mu', \sigma') \implies \UBuild^{d'\cdot2^n}_Y(f\;v, \term{f\;v}, \mu', \sigma')$\Newline[0.5em]
+
+% $U^d_{X \shrink Y}(f, \term{f}) = \forall d' > 2\cdot d, v, \term{v}.\;U^{d'}_X(v, \term{v}) \implies \UBuild^{d'}_Y(f\;v, \term{f\;v})$ 
+% \Newline[0.5em]
+
+$U^d_{A^\omega}(vs, \term{v}, (\theta,R), \sigma) = V_R(\term{v}) = vs \land \Delta_R(\term{v}) \subseteq \sigma \land D_R(\term{v}) = \U$ 
 \Newline[0.5em]
 
-\label{ustream}
-$U^d_{A^\omega}(vs, \term{v}) = \forall \mu \in \Mem{d}.\;\Build^d_{S(A)}(vs, \term{v}, \mu, \emptyset, \U)$ 
-\Newline[0.5em]
-
-\label{ubuild-start}
-$\UBuild^d_X(v, \term{code}) = $ \Newline
-\;\;\= $\forall (\theta,R)\;\mathrm{as}\;\mu \in \Mem{d}.\;$ \Newline
-\> \;\;\= $\setof{H(\theta) \land \satisfyext{\mu}{d}}$ \Newline
-\> \> \term{code} \Newline
-\> \> $\{(\term{a}, \_).\;$\=$\exists \betterstate{d}{(\theta', R')\;\mathrm{as}\;\mu'}{\mu}, u.\;H(\theta') \land U^d_X(v, \term{a}) \;\land$\Newline
-\> \> \> $\Update(u, \mu, \mu', \emptyset) \land \Stable(\mu, \mu')\}$
-\label{ubuild-end}
+$\UBuild^d_X(v, \term{code}, (\theta,R)\;\mathrm{as}\;\mu, \sigma) = $ \Newline
+\> $\setof{H(\theta) \land \satisfyext{\mu}{d}}$ \Newline
+\> \term{code} \Newline
+\> $\{(\term{a}, \_).\;$\=$\exists \betterstate{d}{(\theta', R')\;\mathrm{as}\;\mu'}{\mu}, u.\;H(\theta') \land U^d_X(v, \term{a}, \mu', \sigma) \;\land$\Newline
+\> \> $\Update(u, \mu, \mu', \sigma) \land \Stable(\mu, \mu')\}$
 \Newline[1em]
 
 
-$V^d_{\valtype{X}}(v, \term{v}, \mu, \sigma) = U^d_{X}(v, \term{v})$ 
+$V^d_{\valtype{X}}(v, \term{v}, \mu, \sigma) = U^d_{X}(v, \term{v}, \mu, \sigma)$ 
 \Newline[0.5em]
 
 $V^d_I(\unitval, \unitval, \mu, \sigma) = $ true
@@ -2283,8 +2287,7 @@ $\Build^d_A(vs, \term{code}, (\theta,R) \;\mathrm{as}\;\mu, \sigma, L) = $ \Newl
 \> $\term{code}$ \Newline
 \> $\{(\term{a},\_).\;\exists$\=$\betterstate{d}{(\theta,R')\;\mathrm{as}\;\mu'}{\mu}, u.\; H(\theta') \land \term{a} \in C_{R'} - C_R \;\land$ \Newline
 \> \;\;\= $\NewStream^d_A(vs, \term{a}, \mu, \mu', \sigma, L) \;\land$ \Newline
-\> \> $\Update(u, \mu, \mu', \term{a}) \;\land$ \Newline
-\> \> $\Stable(\mu, \mu')\}$
+\> \> $\Update(u, \mu, \mu', \term{a}) \land \Stable(\mu, \mu')\}$
 \Newline[0.5em]
 
 $\NewStream^d_A(vs, \term{a}, (\theta,R), (\theta', R'), \sigma, L) = $\Newline
@@ -2337,9 +2340,7 @@ $\Head^d_A(\term{v}, (\theta,R)\;\mathrm{as}\;\mu) = $\Newline
 \> $\{H(\theta) \land \satisfyext{\mu}{d}\} $\Newline
 \> \term{read\;v} \Newline
 \> $\{(\term{a},\_).\;\exists$\=$\betterstate{d}{(\theta', R')\;\mathrm{as}\;\mu'}{\mu}, u.\; H(\theta') \;\land$ \Newline
-\> \> $\Ready^d_A(\term{v}, \term{a}, \mu') \;\land$ \Newline
-\> \> $\Update(u, \mu, \mu', \term{v}) \;\land$ \Newline 
-\> \> $\Stable(\mu, \mu') \}$ 
+\> \> $\Ready^d_A(\term{v}, \term{a}, \mu') \land \Update(u, \mu, \mu', \term{v}) \land \Stable(\mu, \mu') \}$ 
 \Newline[0.5em]
 
 $\Local^d_A(\term{r}, (\theta, R)) = $ \Newline
@@ -2472,18 +2473,16 @@ behavior in a very uniform way.
 
 % reinstate Nivat sometime
 
-Metric methods were introduced into semantics in the late
-1970s and early 1980s, to simplify the
-denotational semantics of
+Metric methods were entered semantics in the early 1980s, to simplify
+the denotational semantics of
 concurrency~\cite{concurrency-semantics}. The applications to stream
 programming were recognized early, but not followed up on: in a
 surprisingly little-cited 1985 paper~\cite{metric-dataflow}, de Bakker
 and Kok proposed an ultrametric semantics for a language of
-first-order stream programs over integers and wrote
-``We think there are no problems when we allow functions of higher
-order[\ldots]''.  This is a conjecture which we have attended to, a
-full quarter-century later: we can confirm that it turns out to be
-true, but only if we make it true twice over!
+first-order stream programs over integers and wrote ``We think there
+are no problems when we allow functions of higher order[\ldots]''.
+This is a conjecture which we confirm, a full quarter-century later:
+it is true, but only if we make it true twice over!
 
 More recently, Birkedal and his coworkers~\cite{birkedal-ultrametrics}
 have used ultrametric models to give logics and semantics for
