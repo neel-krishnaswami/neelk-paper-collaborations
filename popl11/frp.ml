@@ -68,7 +68,8 @@ sig
   val scomposel : ('a,'b) hom -> (('b,'c) shrink, ('a,'c) shrink) hom
   val seval     : ((('a, ('b,'c) shrink) shrink, ('a,'b) exp) prod, ('a,'c) shrink) hom
   val swap      : (('a, ('b, 'c) shrink) exp, ('b, ('a, 'c) exp) shrink) hom 
-  val swap'     : (('a, ('b, 'c) exp) shrink, ('b, ('a, 'c) shrink) exp) hom 
+  val swap'     : (('a, ('b, 'c) exp) shrink, ('b, ('a, 'c) shrink) exp) hom
+  val eval'     : ((('a,'b) shrink, 'a) prod, 'b) hom
 end;;
 
 module type ULTRAMETRIC =
@@ -78,17 +79,6 @@ sig
   type 'a discrete
   val discrete : ('a -> 'b) -> ('a discrete, 'b discrete) hom
 
-(* TODO
-  type 'a gui 
-  val return   : ('a, 'a gui) hom
-  val bind     : ('a, 'b gui) hom -> ('a gui, 'b gui) hom
-  val strength : (('a, 'b gui) prod, ('a,'b) prod gui) hom
-  val button   : (string discrete omega, bool discrete omega gui) hom
-  val checkbox : (string discrete omega, bool discrete omega gui) hom
-  val label    : (string discrete stream, one gui) hom
-  val vstack   : ('a gui, 'a gui) hom 
-  val hstack   : ('a gui, 'a gui) hom 
-*)
 end;;
 
 module type DSL =
@@ -123,11 +113,12 @@ sig
 
   (* Operations *)
 
-  val cons : ('a, ('a value, 'a value) C.shrink omega) U.hom
+  val cons : ('a, (('a value, 'b) C.exp, ('a value, 'b) C.shrink) C.exp omega) U.hom
   val fix : (('a,'a) C.shrink omega, 'a omega) U.hom
 
   (* Run things *)
-  val run : (U.one, 'a U.discrete value omega) U.hom -> (unit -> 'a)
+  val run : ((C.one omega, U.one) U.prod, 'a U.discrete value omega) U.hom -> (unit -> 'a option)
+  val run' : ((C.one omega, U.one) U.prod, 'a U.discrete) U.hom -> 'a
 end;;
 
 module Dataflow : DATAFLOW =
@@ -312,6 +303,9 @@ struct
 
     let (>>-) m f = m >>= (function None -> return None
 			   | Some v -> f v)
+
+    let (>>!) m f = m >>= (function None -> assert false
+			   | Some v -> f v)
   end
 
   module U =
@@ -338,7 +332,220 @@ struct
 
     let discrete f x = return (f x)
 
+  end
+			  
+  module C =
+  struct
+    open Code
+    type 'a stream = 'a option Dataflow.cell
+
+    type one = unit
+    type ('a,'b) prod = 'a * 'b
+    type ('a,'b) exp = 'a stream -> 'b stream code
+    type ('a,'b) shrink = 'a stream -> 'b stream code
+    type ('a,'b) hom = 'a stream -> 'b stream code
+
+    (* This should be type-indexed, to get finer dependency tracking. In Haskell,
+       we could use the type function mechanism to implement this!  
+     *)
+
+    let zip xs ys = (read xs) >>= (fun x' -> 
+                    (read ys) >>= (fun y' ->
+		      match x', y' with
+		      | None, None
+		      | Some _, Some _ -> cell ((read xs) >>= fun x' -> 
+                                                (read ys) >>= fun y' ->
+						return (ozip (x', y')))
+		      | None, Some _ ->
+			  (newref None) >>= (fun r ->
+			  (cell ((read xs) >>= (fun x ->
+				 (read ys) >>= (fun newval ->
+				 (get r) >>= (fun oldval ->
+				 (set r newval) >>= (fun () ->
+				 return (ozip(x, oldval)))))))) >>= (fun xys ->
+			  (register xys) >>= (fun () ->
+			  return xys)))
+		      | Some _, None -> 
+			  (newref None) >>= (fun r ->
+			  (cell ((read ys) >>= (fun y ->
+				 (read xs) >>= (fun newval ->
+				 (get r) >>= (fun oldval ->
+				 (set r newval) >>= (fun () ->
+				 return (ozip(oldval, y)))))))) >>= (fun xys ->
+			  (register xys) >>= (fun () ->
+			  return xys)))))
+
+    let id xs = cell (read xs)
+    let compose f g xs = (f xs) >>= (fun ys -> g ys)
+
+    let one xs = cell(return(Some ()))
+    let pair f g xs = (f xs) >>= (fun ys ->
+		      (g xs) >>= (fun zs ->
+			zip ys zs))
+    let fst abs = cell ((read abs) >>- (fun (a,b) -> return (Some a)))
+    let snd abs = cell ((read abs) >>- (fun (a,b) -> return (Some b)))
+    let eval fxs = (fst fxs) >>= (fun fs ->
+		   (snd fxs) >>= (fun xs ->
+		   cell ((read fs) >>- (fun f -> (f xs) >>= read))))
+    let curry f = fun xs -> cell(read xs >>- (fun _ -> 
+                                 return (Some(fun ys -> (zip xs ys) >>= f))))
+
+    let sweak xs = cell(return(Some(fun ys -> return xs)))
+    let spair fgs = cell((read fgs) >>- (fun (f,g) -> return(Some(pair f g))))
+    let scurry fs = cell(return(Some(fun xs -> 
+                    cell(return(Some(fun ys ->
+		    cell(read fs >>- (fun f -> 
+                         zip xs ys >>= (fun xys -> 
+                         f xys >>= read)))))))))
+
+		      
+    let scomposer f gs = cell(read gs >>- (fun g -> return(Some(compose g f))))
+    let scomposel f gs = cell(read gs >>- (fun g -> return(Some(compose f g))))
+
+    let seval fgs = cell(read fgs >>- (fun (f,g) ->
+			 return(Some(fun gammas ->
+				       (g gammas) >>= (fun bs ->
+				       (f gammas) >>= (fun hs ->
+					 cell((read hs) >>- (fun h ->
+                                              (h bs) >>= (fun cs ->
+					      read cs)))))))))
+
+(*			   
+    let seval fgs = cell(read fgs >>- (fun (f, g) -> 
+                         return(Some(fun xs -> (g xs) >>= (fun ys ->
+					       (f xs) >>= (fun hs ->
+					       (zip hs ys) >>= (fun hys ->
+						 eval hys)))))))
+*)
+
+    let swap fs =
+      (curry (curry (compose
+		       (pair (compose (pair (compose fst fst) snd) eval)
+			     (compose fst snd))
+		       eval)))
+      fs
+    let swap' = swap
+
+    let eval' = eval
+  end
+
+  type 'a omega = 'a option Dataflow.cell
+  type 'a value = 'a
+
+  open Code
+
+  let value uhom = fun xs -> cell((read xs) >>- (fun x -> 
+                                  (uhom x) >>= (fun v -> 
+				  return(Some v))))
+  let omega chom = fun xs -> chom xs
+
+  let eta xs = cell((read xs) >>- (fun _ -> return (Some xs)))
+  let varepsilon xs = read xs >>= (function
+				     | None -> assert false
+				     | Some x -> return x)
+
+  let one' () = cell(return(Some()))
+  let prod xys = 
+    cell(read xys >>= (function
+      | None -> assert false
+      | Some(x,y) -> return(Some x))) >>= (fun xs -> 
+    cell(read xys >>= (function
+      | None -> assert false
+      | Some(x,y) -> return(Some y))) >>= (fun ys ->
+    return (xs, ys)))
+
+  let prod' (xs,ys) = cell(read xs >>= (fun x' -> 
+			   read ys >>= (fun y' ->
+			   match x', y' with
+			   | Some x, Some y -> return (Some(x,y))
+			   | _ -> assert false)))
+					
+
+  let oned () = return ()
+  let paird (a, b) = return (a, b)
+  let paird' (a, b) = return (a, b)
+
+  let cons x =
+    cell(return(Some(fun fs ->
+    cell((read fs) >>! (fun _ -> 
+	 return(Some(fun ys -> 
+                        (newref (Some x)) >>= (fun r ->
+                        (cell((get r) >>= (fun old ->
+                              (read ys) >>= (fun newval ->
+                              match old with
+                              | None -> return newval
+                              | Some _ -> 
+                                 (set r newval) >>= (fun () -> 
+                                  return old)))))
+                        >>= (fun zs ->
+                        (register zs) >>= (fun () ->
+			(read fs) >>! (fun f -> 
+			f zs)))))))))))
+
+  let fix fs = (read fs) >>= (function None -> assert false
+		| Some f ->
+	       (newref None) >>= (fun r -> 
+               (cell(clock >>= (fun () -> get r))) >>= (fun input ->
+               (register input) >>= (fun () -> 
+	       (f input) >>= (fun pre -> 
+               (cell(clock >>= (fun () ->
+                     (read input) >>= (fun _ ->
+		     (read pre) >>= (fun v ->
+		     (set r v) >>= (fun () ->
+		     return v)))))) >>= (fun output ->
+	       (register output) >>= (fun () -> 
+	       return output)))))))
+
+  let run umor =
+    let clock = Dataflow.newcell (Dataflow.Expr.return ()) in
+    let updates = ref [] in
+    let unit = Dataflow.newcell (Dataflow.Expr.return (Some ())) in 
+    let output = Dataflow.eval (umor (unit, ()) (clock, updates))  in
+    let step () =
+      begin
+	Dataflow.update clock (Dataflow.Expr.return ());
+	let v = Dataflow.eval (Dataflow.Expr.read output) in
+	(List.iter Dataflow.eval !updates; v)
+(*
+	match Dataflow.eval (Dataflow.Expr.read output) with
+	| None -> assert false
+	| Some v -> (List.iter Dataflow.eval !updates; v)
+*)
+      end
+    in
+    step      
+
+  let run' umor = 
+    let clock = Dataflow.newcell (Dataflow.Expr.return ()) in
+    let updates = ref [] in
+    let unit = Dataflow.newcell (Dataflow.Expr.return (Some ())) in 
+    Dataflow.eval (umor (unit, ()) (clock, updates))
+
+
+end;;
+
+(*
+
+
+
+
+
+
+
+
+
   (* TODO...
+(* TODO
+  type 'a gui 
+  val return   : ('a, 'a gui) hom
+  val bind     : ('a, 'b gui) hom -> ('a gui, 'b gui) hom
+  val strength : (('a, 'b gui) prod, ('a,'b) prod gui) hom
+  val button   : (string discrete omega, bool discrete omega gui) hom
+  val checkbox : (string discrete omega, bool discrete omega gui) hom
+  val label    : (string discrete stream, one gui) hom
+  val vstack   : ('a gui, 'a gui) hom 
+  val hstack   : ('a gui, 'a gui) hom 
+*)
 
     type 'a gui = (GObj.widget -> unit) -> 'a
 
@@ -429,151 +636,8 @@ struct
       | _ -> error "ucheck: expected omega-type")
 *)
 
-  end
-			  
-  module C =
-  struct
-    open Code
-    type 'a stream = 'a option Dataflow.cell
 
-    type one = unit
-    type ('a,'b) prod = 'a * 'b
-    type ('a,'b) exp = 'a stream -> 'b stream code
-    type ('a,'b) shrink = 'a stream -> 'b stream code
-    type ('a,'b) hom = 'a stream -> 'b stream code
 
-    (* This should be type-indexed, to get finer dependency tracking. In Haskell,
-       we could use the type function mechanism to implement this!  
-     *)
-
-    let zip xs ys = (read xs) >>= (fun x' -> 
-                    (read ys) >>= (fun y' ->
-		      match x', y' with
-		      | None, None
-		      | Some _, Some _ -> cell ((read xs) >>= fun x' -> 
-                                                (read ys) >>= fun y' ->
-						return (ozip (x', y')))
-		      | None, Some _ ->
-			  (newref None) >>= (fun r ->
-			  (cell ((read xs) >>= (fun x ->
-				 (read ys) >>= (fun newval ->
-				 (get r) >>= (fun oldval ->
-				 (set r newval) >>= (fun () ->
-				 return (ozip(x, oldval)))))))) >>= (fun xys ->
-			  (register xys) >>= (fun () ->
-			  return xys)))
-		      | Some _, None -> 
-			  (newref None) >>= (fun r ->
-			  (cell ((read ys) >>= (fun y ->
-				 (read xs) >>= (fun newval ->
-				 (get r) >>= (fun oldval ->
-				 (set r newval) >>= (fun () ->
-				 return (ozip(oldval, y)))))))) >>= (fun xys ->
-			  (register xys) >>= (fun () ->
-			  return xys)))))
-
-    let id xs = cell (read xs)
-    let compose f g xs = (f xs) >>= (fun ys -> g ys)
-
-    let one xs = cell(return(Some ()))
-    let pair f g xs = (f xs) >>= (fun ys ->
-		      (g xs) >>= (fun zs ->
-			zip ys zs))
-    let fst abs = cell ((read abs) >>- (fun (a,b) -> return (Some a)))
-    let snd abs = cell ((read abs) >>- (fun (a,b) -> return (Some b)))
-    let eval fxs = (fst fxs) >>= (fun fs ->
-		   (snd fxs) >>= (fun xs ->
-		   cell ((read fs) >>- (fun f -> (f xs) >>= read))))
-    let curry f = fun xs -> cell(return (Some(fun ys -> (zip xs ys) >>= f)))
-
-    let sweak xs = cell(return(Some(fun ys -> return xs)))
-    let spair fgs = cell((read fgs) >>- (fun (f,g) -> return(Some(pair f g))))
-    let scurry fs = cell((read fs) >>- (fun f -> return(Some(curry f))))
-    let scomposer f gs = cell(read gs >>- (fun g -> return(Some(compose g f))))
-    let scomposel f gs = cell(read gs >>- (fun g -> return(Some(compose f g))))
-
-    let seval fgs = cell(read fgs >>- (fun (f, g) -> 
-                         return(Some(fun xs -> (g xs) >>= (fun ys ->
-					       (f xs) >>= (fun hs ->
-					       (zip hs ys) >>= (fun hys ->
-						 eval hys)))))))
-
-    let swap fs =
-      (curry (curry (compose
-		       (pair (compose (pair (compose fst fst) snd) eval)
-			     (compose fst snd))
-		       eval)))
-      fs
-    let swap' = swap
-  end
-
-  type 'a omega = 'a option Dataflow.cell
-  type 'a value = 'a
-
-  open Code
-
-  let value uhom = fun xs -> cell((read xs) >>- (fun x -> 
-                                  (uhom x) >>= (fun v -> 
-				  return(Some v))))
-  let omega chom = fun xs -> chom xs
-
-  let eta xs = cell((read xs) >>- (fun _ -> return (Some xs)))
-  let varepsilon xs = read xs >>= (function
-				     | None -> assert false
-				     | Some x -> return x)
-
-  let one' () = cell(return(Some()))
-  let prod xys = (C.fst xys) >>= (fun xs ->
-		 (C.snd xys) >>= (fun ys ->
-		 return (xs, ys)))
-  let prod' (xs,ys) = C.zip xs ys
-
-  let oned () = return ()
-  let paird (a, b) = return (a, b)
-  let paird' (a, b) = return (a, b)
-
-  let cons x = cell(return(Some(fun ys ->
-				  (newref (Some x)) >>= (fun r ->
-				  (cell((get r) >>= (fun old ->
-				        (read ys) >>= (fun newval ->
-				        match old with
-				        | None -> return newval
-				        | Some _ -> (set r newval) >>=
-					           (fun () -> return old)))))
-				  >>= (fun zs ->
-				  (register zs) >>= (fun () ->
-				  return zs))))))
-
-  let fix fs = (read fs) >>= (function None -> assert false
-		| Some f ->
-	       (newref None) >>= (fun r -> 
-               (cell(clock >>= (fun () -> get r))) >>= (fun input ->
-	       (f input) >>= (fun pre -> 
-               (cell(clock >>= (fun () ->
-                     (read input) >>= (fun _ ->
-		     (read pre) >>= (fun v ->
-		     (set r v) >>= (fun () ->
-		     return v)))))) >>= (fun output ->
-               (register input) >>= (fun () -> 
-	       (register output) >>= (fun () -> 
-	       return output)))))))
-
-  let run umor =
-    let clock = Dataflow.newcell (Dataflow.Expr.return ()) in
-    let updates = ref [] in
-    let output = Dataflow.eval (umor () (clock, updates))  in
-    let step () =
-      begin
-	Dataflow.update clock (Dataflow.Expr.return ());
-	match Dataflow.eval (Dataflow.Expr.read output) with
-	| None -> assert false
-	| Some v -> (List.iter Dataflow.eval !updates; v)
-      end
-    in
-    step      
-end;;
-
-(*
 module DslTest =
 struct
   open Dsl
@@ -956,3 +1020,4 @@ struct
 
 end
 *)
+
