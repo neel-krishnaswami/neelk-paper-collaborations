@@ -1,0 +1,320 @@
+\documentclass{beamer}
+\usepackage{mathpartir}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{xcolor}
+\input{frp-talk-defs}
+
+
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}{\strut\insertsection\hfill\insertframenumber/\inserttotalframenumber\strut\quad}
+
+\title{Ultrametric Semantics of Higher-Order Reactive Programming}
+\author{Neelakantan R. Krishnaswami \texttt{<neelk@microsoft.com>} \and
+        Nick Benton \texttt{<nick@microsoft.com}}
+
+\newcommand{\floor}[1]{\left\lfloor{#1}\right\rfloor}
+\newcommand{\shrink}{\rightsquigarrow}
+\newcommand{\streamtype}[1]{\celltype{\opttype{#1}}}
+
+\begin{document}
+\begin{frame}
+\maketitle
+\end{frame}
+
+\begin{frame}
+\frametitle{Functional Reactive Programming in a Nutshell}
+\begin{itemize}
+\item<+-> Goal: Write interactive programs
+\item<+-> Idea: Mutable state of type $X$ become \emph{streams} of values $X^\omega$ [Eliot and Hudak 97]
+\item<+-> Interactive program has type $\mathsf{Input}^\omega \to \mathsf{Output}^\omega$
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Trouble in Paradise}
+\begin{tabbing}
+\texttt{profit ::} $\mathtt{stockprice}^\omega \to \mathtt{order}^\omega$ \\
+\texttt{profit prices = } \\
+\;\;\= \texttt{  if today $<$ tomorrow} \\
+    \> \texttt{  then Buy  : (profit (tail prices))} \\
+    \> \texttt{  else Sell : \!\!\!(profit (tail prices))} \\
+\texttt{where} \\
+    \> \texttt{  today = head prices} \\
+    \> \texttt{  tomorrow = \alert<2>{head (tail prices)}} \\
+\end{tabbing}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Causal Stream Functions}
+
+  A function $f : A^\omega \to B^\omega$ is \emph{causal}, when for all $n, as, as'$:
+
+  \begin{center}
+    $\floor{as}_n = \floor{as'}_n$ implies $\floor{f\;as}_n = \floor{f\;as'}_n$
+  \end{center}
+
+\ \\
+\begin{itemize}
+\pause \item First $n$ outputs of $f$ only depend on first $n$ inputs
+\pause \item \texttt{tail} not causal: element $n$ of $\mathtt{tail}\;xs$
+=  element $n+1$ of $xs$
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Arrowized FRP}
+
+  \begin{itemize}
+    \item Causal functions basis of \emph{arrowized FRP} [Nilsson \emph{et al}]\pause  
+    \item Type $\mathtt{ST}\;A\;B$ are causal functions from $A^\omega \to B^\omega$ \pause
+    \item Combinators for parallel/sequential composition, feedback \pause
+    \item However, arrows are ``first-ordery''\ldots \pause
+  \end{itemize}
+
+  \ldots can we do even better?
+\end{frame}
+
+\begin{frame}
+  \frametitle{The Category of Ultrametric Spaces}
+
+  A pair $(X, d : X \to X \to \mathbb{R})$ is a 1-bounded ultrametric space when:
+
+  \begin{itemize}
+    \item $d(x, x') = 0$ if and only if $x = x'$
+    \item $d(x, x') \in [0,1]$ 
+    \item $d(x, x') = d(x', x)$
+    \item $d(x, z) \leq \max(d(x,y), d(y, z))$
+  \end{itemize}
+  \pause
+  \ \\
+  \ \\
+  A function $f : A \to B$ is \emph{nonexpansive}, when for all $a$ and $a'$:
+    \begin{displaymath}
+      d_B(f\;a, f\;a') \leq d_A(a, a')
+    \end{displaymath}
+  That is, $f$ is \emph{non-distance-increasing}. 
+\end{frame}
+
+\begin{frame}
+  \frametitle{Streams as Ultrametric Spaces}
+
+  Streams $X^\omega$ form an ultrametric space with the following metric
+
+  \begin{displaymath}
+    d(xs, xs') = 2^{-\min \{n \in \mathbb{N} \;|\; xs_n \;\not=\; xs'_n \}}
+  \end{displaymath}
+
+  \ \\
+  Distance increases, sooner $xs$ and $xs'$ differ
+  \begin{itemize}
+    \item Differ at time 0 --- distance 1
+    \item Differ at time 1 --- distance $\frac{1}{2}$
+    \item Differ at time 2 --- distance $\frac{1}{4}$
+    \item Never differ --- distance 0
+ \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Nonexpansive Functions and Causality}
+
+  \begin{block}{Theorem}
+    The nonexpansive functions between streams (viewed as metric spaces) 
+    are exactly the causal functions.
+  \end{block}
+
+  \pause 
+  \begin{itemize}
+    \item The category of (complete) 1-bounded ultrametric spaces is \emph{Cartesian closed!}
+    \item The lambda calculus can be interpreted in any CCC\ldots
+    \item \ldots DSL for reactive programming: functional programming!
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{But wait, there's more\ldots}
+
+  \begin{block}{Banach's Contraction Map Theorem}
+    Every \emph{strictly} contractive function $f : A \to A$ on a metric space $A$ has a unique
+    fixed point. 
+  \end{block}
+  \pause
+  \ \\
+  \begin{itemize}
+    \item ``Strictly contractive'' == ``well-founded feedback''
+    \item So $\mu(\lambda xs.\; 0 :: \mathit{map}\;\mathit{succ}\;xs) = 0, 1, 2, 3, \ldots$ \pause
+    \item This lets us interpret feedback equations, too\ldots
+    \item \ldots while ensuring they are well-defined and deterministic
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{How Can We Implement This?}
+
+  \begin{itemize}
+    \item Imperative implementation based on dataflow propagation (TLDI 2010)
+    \item Underlying library similar to self-adjusting computation [Acar \emph{et al}]
+    \item Correctness proof for library uses logical relation between specs of imperative
+      code and ultrametric semantics \pause
+    \item Give the demo\ldots
+  \end{itemize}
+\end{frame}
+
+
+%%
+\begin{frame}[fragile]
+  \frametitle{Imperative Notification Interface}
+  $\mathtt{code}\;A$ monadic type built from language's pre-existing state monad:
+
+  \begin{semiverbatim}
+    code A = \(\bigcirc\)(A \(\times\) Set(\(\exists\beta.\) cell \(\beta\)))
+ 
+    return : \(\alpha\) \(\to\) code \(\alpha\)
+    bind   : code \(\alpha\) \(\to\) (\(\alpha\) \(\to\) code \(\beta\)) \(\to\) code \(\beta\)
+    read   : cell \(\alpha\)  \(\to\) code \(\alpha\) 
+
+    update : cell \(\alpha\) \(\to\) code \(\alpha\) \(\to\) \(\bigcirc(1)\)
+  \end{semiverbatim}
+
+  \begin{itemize}
+    \item Computations of type $\mathtt{code}\;A$:
+      \indent\begin{itemize} 
+        \item compute a value of type $A$, and
+        \item returns all of the cells that it directly read
+      \end{itemize}
+    \item Implementation manages dependencies
+  \end{itemize}
+\end{frame}
+
+
+%%
+\begin{frame}
+  \frametitle{Imperative Notification Networks}
+
+  \includegraphics<1>[height=3in]{dependency-graph.pdf}
+  \includegraphics<2>[height=3in]{dependency-graph-1.pdf}
+  \includegraphics<3>[height=3in]{dependency-graph-2.pdf}
+  \includegraphics<4>[height=3in]{dependency-graph-3.pdf}
+  \includegraphics<5>[height=3in]{dependency-graph-4.pdf}
+  \includegraphics<6>[height=3in]{dependency-graph-5.pdf}
+  \includegraphics<7>[height=3in]{dependency-graph-6.pdf}
+\end{frame}
+
+%%
+\begin{frame}[fragile]
+  \frametitle{Implementing Cells}
+  \begin{semiverbatim}
+    cell(\(\alpha\)) = \{
+      value:     ref option(\(\alpha\));     
+      expr:      ref T(\(\alpha\));          
+      sources:   ref Set(\(\exists\beta.\) cell \(\beta\));  
+      observers: ref Set(\(\exists\beta.\) cell \(\beta\))   
+    \}
+  \end{semiverbatim}
+  \begin{itemize}
+  \item \texttt{read} checks \texttt{value} field, may reevaluate \texttt{expr} and set \texttt{sources}
+  \item \texttt{update} modifes \texttt{expr}, \texttt{value}, and transitively invalidates \texttt{observers}
+  \end{itemize}
+\end{frame}
+
+%%
+\begin{frame}
+  \frametitle{A Custom Separation Logic for Dataflow Cells}
+  \begin{displaymath}
+    \begin{array}{lcll}
+      \phi & ::= & I                     & \mbox{Empty Network} \\
+           &  |  & \phi \otimes \psi     & \mbox{Disjoint Combination} \\ 
+           &  |  & \cellbad{a}{e}        & \mbox{Un-ready Cell} \\
+           &  |  & \cellok{a}{e}{v}{src} & \mbox{Possibly-Ready Cell} \\
+    \end{array}
+  \end{displaymath}
+
+  \begin{itemize}
+    \item \pause Goal: hide implementation complexity behind ADT
+    \item \pause Abstract heap formulas describe dataflow network
+    \item \pause Hoare triples for \texttt{read}, \texttt{update}, \texttt{return}, \texttt{bind} in 
+      terms of these formulas
+    \item (Explain on whiteboard)
+  \end{itemize}
+\end{frame}
+
+%%
+\begin{frame}
+  \frametitle{Implementation}
+
+  \begin{itemize}
+  \item For each ultrametric type, ML implementation type:
+  \begin{mathpar}
+   \begin{array}{lcl}
+    \interp{A^\omega}     & = & \streamtype{\interp{A}} \\
+    \interp{1}           & = & \unittype \\
+    \interp{A \times B}  & = & \interp{A} \star \interp{B} \\
+    \interp{A \To B}     & = & \interp{A} \to \codetype{\opttype{\interp{B}}} \\
+    \interp{A \shrink B} & = & \codetype{\opttype{\interp{A}}} \to \codetype{\interp{B}} 
+   \end{array}
+  \end{mathpar}
+  \item Options come from need to implement feedback
+  \item Ordinary and contractive functions represented differently 
+  \item One combinator in API for each operation in the interface
+  \end{itemize}
+\end{frame}
+
+%%
+\begin{frame}[fragile]
+\frametitle{API}
+{\small
+\begin{semiverbatim}
+module type CCC = sig
+  type (\(\alpha\),\(\beta\)) hom
+  type one
+  type (\(\alpha\),\(\beta\)) prod
+  type (\(\alpha\),\(\beta\)) exp
+
+  val id : (\(\alpha\),\(\alpha\)) hom
+  val compose : (\(\alpha\),\(\beta\)) hom \(\to\) (\(\beta\),\(\gamma\)) hom \(\to\) (\(\alpha\),\(\gamma\)) hom
+
+  val one : (\(\alpha\),one) hom
+
+  val fst : ((\(\alpha\),\(\beta\)) prod, \(\alpha\)) hom 
+  val snd : ((\(\alpha\),\(\beta\)) prod, \(\beta\)) hom 
+  val pair : (\(\alpha\),\(\beta\)) hom \(\to\) (\(\alpha\),\(\gamma\)) hom \(\to\) (\(\alpha\), (\(\beta\),\(\gamma\)) prod) hom
+
+  val curry : ((\(\alpha\),\(\beta\)) prod, \(\gamma\)) hom \(\to\) (\(\alpha\), (\(\beta\),\(\gamma\)) exp) hom
+  val eval : (((\(\alpha\),\(\beta\)) exp, \(\alpha\)) prod, \(\beta\)) hom
+end
+\end{semiverbatim}
+}
+\end{frame}
+
+%%
+\begin{frame}
+\frametitle{Implementation Details}
+
+\begin{itemize}
+\item Combinator library completely pure 
+\item Intended API has strong equational principles 
+
+(eg \texttt{pair fst snd = id})
+\item \pause But they have different imperative effects..!
+
+ \textbf{How do we know this sound?}
+\item \pause Furthermore, API is higher-order
+
+ \textbf{How can we even specify these programs?}
+\end{itemize}
+\end{frame}
+
+
+%%
+\begin{frame}
+\frametitle{Logical Relations to the Rescue!}
+
+\begin{itemize}
+\item We specify the API using the technique of \emph{logical relations}
+\item Define a relation $V^d_A(v, \mathtt{v}, \mu, \sigma)$
+\item meaning ``$\mathtt{v}$ implements value $v$ at type $A$''. 
+\item {\scriptsize(to distance $d$, in heap $\mu$, with dependencies $\sigma$)}
+\end{itemize}
+
+\end{frame}
+\end{document}
