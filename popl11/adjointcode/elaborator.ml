@@ -19,7 +19,6 @@ struct
 end
 open Monad
 
-
 (* To look up variables we need to construct the n-th projection *)
 
 let rec lookup' f env x = 
@@ -39,29 +38,37 @@ let lookup env x =
 let lookup_shrink env x = 
   lookup' (fun x -> Printf.sprintf "Variable not bound in nonexpansive context: '%s'" x) env x
 
+(* To look up variables in the linear context we need to turn Delta, x, Delta to x * Delta,Delta *)
+
+let rec linear_lookup_base f env x =
+  match env with
+  | [] -> error (f x)
+  | (y, tp) :: env when x = y -> return (sym, tp)
+  | (y, tp) :: env ->
+      linear_lookup_base f env x >>= (fun (e, tp) ->
+      return (compose (tensor e id) assocl, tp))
+
+(* However, we're also carrying around a nonlinear context. So we really want
+     F(Gamma) * Delta --lookup x--> A * (F(Gamma) * Delta') *)
+
+let rec linear_lookup' f env x =
+  linear_lookup_base f env x >>= (fun (e, tp) -> 
+  let e1 = tensor id e in (* FGamma * Delta -> FGamma * (A * Delta') *)
+  let e2 = compose e1 assocr in          (* -> (FGamma * A) * Delta' *)
+  let e3 = compose e2 (tensor sym id) in (* -> (A * FGamma) * Delta' *)
+  let e4 = compose e3 assocl in          (* -> A * (FGamma * Delta') *)
+  return (e4, tp))
+
+let linear_lookup env x =
+  linear_lookup'
+    (fun x ->
+       Printf.sprintf "Unbound variable: '%s' in context [%s]" x (varnames env))
+    env
+    x
+
 (* Checking well-formedness of types *)
 
 (* The functions to check well-formedness. *)
-
-let rec synch_ok (InT(_loc, body)) =
-  match body with 
-  | One             -> return ()
-  | Times(tp, tp')
-  | Arrow(tp, tp') 
-  | Shrink(tp, tp') -> synch_ok tp >>= (fun () -> synch_ok tp')
-  | Val tp -> ultra_ok tp
-  | _ -> error_loc _loc "synch_ok: ill-formed type" 
-and ultra_ok (InT(_loc, body)) =
-  match body with
-  | I -> return ()
-  | Tensor(tp, tp')
-  | Lolli(tp, tp') -> ultra_ok tp >>= (fun () -> ultra_ok tp')
-  | Lollishrink(tp, tp') -> ultra_ok tp >>= (fun () -> ultra_ok tp')
-  | Omega tp -> synch_ok tp
-  | Discrete -> return ()
-  | Gui tp -> ultra_ok tp 
-  | _ -> error_loc _loc "ultra_ok: ill-formed type" 
-
 
 let rec string_of_type (InT(_, t)) =
   match t with 
@@ -78,11 +85,38 @@ let rec string_of_type (InT(_, t)) =
   | Val t -> Printf.sprintf "V(%s)" (string_of_type t)
   | Omega t -> Printf.sprintf "S(%s)" (string_of_type t)
 
+let rec linear_ok (InT(_loc, body) as tp) =
+  match body with
+  | I
+  | Window
+    -> return ()
+  | Tensor(tp, tp')
+  | Lolli(tp, tp')
+    -> linear_ok tp >>= (fun () -> linear_ok tp')
+  | F tp -> ultra_ok tp
+  | _ -> error_loc _loc (Printf.sprintf "linear_ok: '%s' ill-formed type" (string_of_type tp))
+
+and ultra_ok (InT(_loc, body) as tp) =
+  match body with
+  | One -> return ()
+  | Times(tp, tp')
+  | Arrow(tp, tp') -> ultra_ok tp >>= (fun () -> ultra_ok tp')
+  | Shrink(tp, tp') -> ultra_ok tp >>= (fun () -> ultra_ok tp')
+  | Omega tp -> synch_ok tp
+  | Discrete -> return ()
+  | G tp -> linear_ok tp 
+  | _ -> error_loc _loc (Printf.sprintf "ultra_ok: '%s' ill-formed type" (string_of_type tp))
+
 let mismatch loc string (t1 : Term.tp) (t2 : Term.tp)  =
   error_loc loc (Printf.sprintf "%s: expected %s but got %s" string (string_of_type t1) (string_of_type t2))
       
 let mismatch1 loc string (t1 : Term.tp) = 
   error_loc loc (Printf.sprintf "%s, but got %s" string (string_of_type t1))
+
+let rec linear_check uenv lenv (In(_loc, e) as tm) (InT(tploc, tp) as tp') =
+  match (e, tp) with
+  | Unit, I -> return 
+
 
 (* Basically, what follows implements a simple bidirectional 
    typechecking algorithm, and along the way spits out a (well-typed)

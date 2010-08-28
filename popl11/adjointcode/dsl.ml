@@ -283,7 +283,9 @@ struct
                              return' (a,b)))
 
   let rho (x, ()) = return' x
+  let rho' x = return' (x, ())
   let lambda ((), x) = return' x
+  let lambda' x = return' ((), x)
   let assocl ((a,b), c) = return' (a, (b,c))
   let assocr (a, (b,c)) = return' ((a,b), c)
   let sym (a,b) = return' (b, a)
