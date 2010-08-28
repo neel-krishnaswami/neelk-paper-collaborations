@@ -28,12 +28,14 @@ sig
   val id : ('a,'a) hom
   val compose : ('a,'b) hom -> ('b,'c) hom -> ('a,'c) hom
 
-  val tensor : ('a,'b) hom -> ('a,'c) hom -> ('a, ('b,'c) tensor) hom
-  val rho    : (('a, one) tensor, 'a) hom
-  val lambda : ((one, 'a) tensor, 'a) hom
-  val assocl : ((('a, 'b) tensor, 'c) tensor, ('a, ('b, 'c) tensor) tensor) hom
-  val assocr : (('a, ('b, 'c) tensor) tensor, (('a, 'b) tensor, 'c) tensor) hom
-  val sym    : (('a,'b) tensor, ('b, 'a) tensor) hom 
+  val tensor  : ('a,'b) hom -> ('a,'c) hom -> ('a, ('b,'c) tensor) hom
+  val rho     : (('a, one) tensor, 'a) hom
+  val rho'    : ('a, ('a, one) tensor) hom 
+  val lambda  : ((one, 'a) tensor, 'a) hom
+  val lambda' : ('a, (one, 'a) tensor) hom
+  val assocl  : ((('a, 'b) tensor, 'c) tensor, ('a, ('b, 'c) tensor) tensor) hom
+  val assocr  : (('a, ('b, 'c) tensor) tensor, (('a, 'b) tensor, 'c) tensor) hom
+  val sym     : (('a,'b) tensor, ('b, 'a) tensor) hom 
 
   val curry : (('a,'b) tensor, 'c) hom -> ('a, ('b,'c) lolli) hom
   val eval : ((('a,'b) lolli, 'a) tensor, 'b) hom
