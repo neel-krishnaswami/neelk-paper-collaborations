@@ -1,0 +1,178 @@
+INSTRUCTIONS
+============
+
+To build this program, you need Ocaml 3.11 or higher, Lablgtk2, and a
+Unix-alike environment. (I used Cygwin, so Linux and Mac OSX should
+also work fine.)
+
+WIN32 Notes: To install Lablgtk2 on Windows, you need to download 
+binary Lablgtk2 for Windows from 
+
+   http://wwwfun.kurims.kyoto-u.ac.jp/soft/lsl/lablgtk.html
+
+and use the *MingW* native Ocaml installation. (The MSVC version
+doesn't work, because the Lablgtk2 binary was compiled with mingw
+gcc. Cygwin comes with an Ocaml/Lablgtk pair, but it didn't work for
+me.)
+
+The command:
+
+  $ make clean; make
+
+will build all the libraries and then construct a new Ocaml toplevel
+called 'frpcaml'. This toplevel automatically loads the dataflow
+library, and the syntax extension that makes using it tolerable.
+
+So, now you can engage in sessions like 
+
+  # let succ n = n + 1;;
+  - : int -> int
+
+  # let t = Dsl.run 
+     (do U(let f : S(V(D(int))) -* S(V(D(int))) =
+             fun xs -> cons (const 0) 
+                            (let omega(x) = xs in
+                             omega(value((discrete succ) (start x))))
+                          in
+                          fix f))
+  
+  val t : unit -> int option 
+  
+  # t();;
+  - : int option = Some 0
+  # t();;
+  - : int option = Some 1
+  # t();;
+  - : int option = Some 2
+
+Note that the correctness proof *guarantees* that this will never
+yield a None result. We left it in, so that you can enjoy the illicit
+pleasure of incomplete pattern matching. ;)
+
+If you just want to use the library directly, then 'make frp.cma' will
+build a library called frp.cma, which contains the combinatory
+interface. The dsl.mli file contains the type declarations for this
+library. (Likewise, the underlying dataflow library's interface is
+dataflow.mli.)
+
+Examples can be found in "example.ml". 
+
+If you are curious what these little programs desugar to, then you can
+use the command:
+
+ $ camlp4of pa_metric.cma <filename>
+
+will print out a desugared version. Warning: even tiny expressions
+desugar to huge combinator terms.
+
+
+SYNTAX
+======
+
+The programming language is basically the adjoint lambda calculus
+using a subset of ML syntax.
+
+The syntax of types is given by the following grammar: 
+
+type ::= 
+    [ [ type -> type            
+      | type ~> type            
+      | type -o type 
+      | type -* type ]
+    | [ type & type             
+      | type * type ]
+    | [ I                 
+      | one               
+      | V ( type )   
+      | S ( type )   
+      | D ( ML-type ) 
+      | Gui ( type )
+      | ( type ) ]
+    ]
+
+Here, we use nesting to indicate precedence levels. The V() type
+constructor is the val-constructor of the paper, and the S()
+constructor is the omega-constructor of the paper. D() are the
+discrete types, and all Ocaml types can be embedded within.
+
+The Gui(A) type is the monadic type of gui-constructing expressions. 
+
+We use I, type * type, and type -o type to indicate the FRP/monoidal
+side of the adjunction, and one, type & type, and type -> type to
+indicate the synchronous/CCC side of the adjunction.
+
+The ~> type constructor are contractive functions on the synchronous
+side, and the -* type constructor are contractive functions on the FRP
+side. So there are four(!) arrow type constructors.
+
+The syntax of terms is given by:
+
+  expr: [ binding-forms
+           [ fun lowercase-id+ -> expr 
+           | let omega (lowercase-id) =  expr in expr 
+           | let omega (lowercase-id :  type) =  expr in expr 
+	   | let gui(lowercase-id) = expr in expr
+           | let lowercase-id =  expr in  expr 
+           | let lowercase-id : type =  expr in expr 
+           ] 
+         | type-annotations
+           [  expr : type ]
+         | application-forms
+           [ value expr 
+           | fst expr   
+           | snd expr   
+           | start expr 
+           | omega expr 
+           | fix expr 
+           | cons expr
+           | const ML-expr    
+           | expr expr           ]
+	   | return expr
+	   | inject ML-expr
+           ]
+         | atomic-forms
+           [  lowercase-id 
+           |  ( ) 
+           |  ( expr ) 
+           |  ( expr , expr )
+           |  [ expr ] 
+           ]
+         ]
+
+We make no syntactic distinctions between the different kinds of
+lambda or pairs; we rely on typing to sort all that out. (The syntax
+is already fairly cluttered.)
+
+The const(e) form lets you embed an ML type as a discrete value within
+the DSL. Really, there's a whole second adjunction between (idealized)
+ML and the ultrametric category, which I hide under a set of coercions
+from ML into ultrametric functions and products. 
+
+There's also an inject special form, which takes morphisms in the 
+Dsl module's API and turns them into function values in our little
+language. You need to give it a type annotation to tell the typechecker
+what type this ML value has -- see the examples.ml file for usage. 
+
+GUI expressions are monadic (within the ultrametric language itself,
+so it's a monad in our DSL, not in ML). The return e form is the 
+unit of the monad, and the let gui(x) = e in e' form is the monadic
+binding operation. There are various operations in the Dsl module's
+API to construct buttons and labels and so on -- again, see the examples.ml
+file for, well, examples. 
+
+The typing judgement is a simple bidirectional typechecker. It is
+simultaneously surprisingly clever about not needing useless
+annotations, and surprisingly hapless. In general, stick type
+annotations around any subexpression for which the typechecker
+complains it cannot synthesize a type, and you should be fine.
+
+Also, the typechecking is simply-typed. This is a consequence of the
+weakness of ML's typing -- we can only embed simple types in ML using
+the phantom type trick. So we can't write (for example) the
+polymorphic map function within the DSL. (We can quantify over
+embedded ML types, of course.)
+
+One deviation from the paper is that we replaced the letc- contractive
+binding form with applications at non-contractive function
+types. Amusingly, the denotational semantics are essentially the same!
+
