@@ -123,9 +123,8 @@ logic'' for describing nodes.
 \nextline $\tau = \reftype{\sigma}$ 
 
 \nextlinelabel{union-find:invariant} 
-   $H(\phi) \triangleq \exists$\=
-     $n \subseteq \tau, p \in n \to n, w \in \mu(n) \to n.$
-\nextline \> $p^{*} \mbox{ partial order} \;\land$ 
+   $H(\phi) \triangleq \exists n \subseteq \tau, p \in n \to n, w \in \mu(n) \to n.\;G(n,p,w,\phi)$
+\nextline[1em] $G(n, p, w, \phi) =\;$\=$p^{*} \mbox{ partial order} \;\land$ 
 \nextline \> $(n, p, w) \models \phi \;\land$
 \nextline \> $\heap(n, p, w)$ 
 
@@ -133,15 +132,14 @@ logic'' for describing nodes.
 \nextline      $n, p, w \models \phi \otimes \psi$\>$\mbox{ iff}$\>$
                      \exists n', n''.\; n = n' \uplus n'' \mbox{ and } n', p, w \models \phi \mbox{ and } 
                      n'', p, w \models \psi$
-\nextline      $n, p, w \models \elt{x}{y}$ \> $\mbox{ iff }$\>$
-                 w(\mathit{root}(x)) = y$
+\nextline      $n, p, w \models \elt{x}{y}$ \> $\mbox{ iff }$\>$w(\mathit{root}(x)) = y$
 
-\nextline[1em] $\heap(n, p, w) =  \forall^{*} l \in n. \IfThenElse{p(l) = l}{\exists n.\; l \pointsto \Root(w(l), n)}{l \pointsto \Child(p(l))}$
+\nextline[1em] $\heap(n, p, w) =  \forall^{*} l \in n. \IfTE{p(l) = l}{\exists n.\; l \pointsto \Root(\Some(w(l)), n)}{l \pointsto \Child(p(l))}$
 
 \nextline[1em] $\mathit{root} : n \to \mu(p) = \mu(\semfun{f}{f \circ p})$
 \end{specification}
 \caption{Implementation of Union Find Algorithm}
-\label{union-find:impl}
+\label{union-find:invariant}
 \end{figure}
  
 On line~\ref{union-find:invariant} of Figure~\ref{union-find:impl} we
@@ -178,7 +176,9 @@ $p$ to get the root, and then passing that to $w$.
 \begin{figure}
 \mbox{}
 \begin{specification}
-\nextline $\newset = \comp{\newref{\sigma}{\Root(\None, 0)}}$
+\nextline $\newset = [$\=$\letv{r}{[\newref{\sigma}{\Root(\None, 0)}]}{}$
+\nextline              \>$\letv{\unit}{[r := \Root(\Some(r), 0)]}{}$
+\nextline              \>$r]$
 
 \nextline[1em] $\ctext{findroot}(x) = [$\=$
                   \letv{v}{\comp{!x}}{}$ 
@@ -189,13 +189,20 @@ $p$ to get the root, and then passing that to $w$.
 \nextline[1em] $\find(x) = [$\=
              $\letv{(\_, w, \_)}{\ctext{findroot}(x)}{}$ 
 \nextline \> $\ctext{case}($\=$w,$ 
-\nextline \> \> $\None \to x,$  
+\nextline \> \> $\None \to \bot,$  
 \nextline \> \> $\Some(w) \to w)]$
 
 \nextline[1em] $\union(x, y) = [$\= 
                  $\letv{(r, u, m)}{\find\;x}{}$ 
 \nextline \>     $\letv{(s, v, n)}{\find\;y}{}$ 
-\nextline \>     
+\nextline \>     $\run{}$\=$\ctext{if}\;m < n\;\ctext{then}$ 
+\nextline \> \>   \;\;$[$\=$\letv{\unit}{[s := \Root(u, n)]}{}$ 
+\nextline \> \>         \>$r := \Child(s)]$ 
+\nextline \> \> $\ctext{else}\;\ctext{if}\;n < m\;\ctext{then}$ 
+\nextline \> \>   \;\;$[s := \Child(r)]$
+\nextline \> \> $\ctext{else}$ 
+\nextline \> \>   \;\;$[\letv{\unit}{[r := \Root(r, u, n+1)]}{}$
+\nextline \> \>      \>$s := \Child(r)]]$
 \end{specification}
 \caption{Implementation of Union-Find Algorithm}
 \label{union-find:impl}  
@@ -210,11 +217,11 @@ $k$ such that $f^{k} = \mathit{root}_f(x)$.
 \end{lemma}
 
 \begin{proof}
-Observe that the transitive closure gives an order such that for
-each $i \leq j$ and $x$ in $A$, $f^i(x) \sqsubseteq f^j(x)$. Since
-$A$ is finite, it follows that the size of the longest chain of
-distinct elements is at most $|A|$ -- so any sequence longer 
-than that must repeat elements of $A$. 
+Observe that the transitive closure gives an order $\sqsubseteq$ such
+that for each $i \leq j$ and $x$ in $A$, $f^i(x) \sqsubseteq
+f^j(x)$. Since $A$ is finite, it follows that the size of the longest
+chain of distinct elements is at most $|A|$ -- so any sequence longer
+than that must repeat elements of $A$.
 
 Suppose there is a repeated element, occuring at the $i$-th and
 $j$-th iterations of applying $f$ to $x$, where $i < j$. Since the
@@ -225,33 +232,75 @@ strictly less than $j$, this means that $f(f^i(x)) = f^i(x)$, and
 is hence a fixed point of $f$. 
 \end{proof}
 
+This property justifies the recursion in the implementation of
+$\find$: it says that the root of a node's parent is still the root of
+the node. It is worth contrasting the style of specification here with
+the usual inductive specification of child-pointing trees in
+separation logic. When proceeding from parent to child, we use that
+fact that list or tree predicates are inductively defined, and try to
+work directly with the inductive structure of the predicate.  Here, we
+specify the invariant on the whole heap as a relation property of the
+heap, and then have to prove that the measures we use are suitably
+well-founded.
+
+
+However, $\find$ also updates parents as it goes, and so at each
+iteration it works on a \emph{different} global order structure.
+We need to ensure that the answers we return are preserved under
+this update, which is what the following lemma will ensure. 
+
+
 \begin{lemma}{(Fixed Point Update)}
 Suppose $A$ is a finite set, and $f : A \to A$ is a function whose
 transitive closure is a partial order, and let $\mu(f)$ be the set of
 fixed points of $f$. For a given $z$ in $A$, if we define $f' =
-[f|z:\mathit{root}_f(z)]$, then $\mathit{root}_f = \mathit{root}_{f'}$. 
+[f|z:\mathit{root}_f(z)]$, then the transitive closure of $f'$ is also
+a partial order and $\mathit{root}_f = \mathit{root}_{f'}$.
 \end{lemma}
 
 \begin{proof}
-Suppose that we have an arbitrary $x \in A$. Now, consider the totally
-ordered set of elements $U = \comprehend{y}{y \sqsupseteq_f x}$, and 
-$U' = \comprehend{y}{y \sqsupseteq_{f'} x}$. Now, $U$ either contains 
-$z$ or not.
+Suppose that we have an arbitrary $x \in A$. Now, consider the sets of
+elements $U = \comprehend{y}{y \sqsupseteq_f x}$, and $U' =
+\comprehend{y}{y \sqsupseteq_{f'} x}$. (Note that $\sqsupseteq_{f'}$
+is a well-defined relation, but that we do not yet know that it is a
+partial order --- we only know that it defines a preorder.)
+
+First, observe that $U$ is totally ordered with respect to
+$\sqsubseteq_f$. We know that every $u \in U$ is equal to $u
+= f^k(x)$ for some $k$, and so each pair of $u$ and $v$ is $f^j(x)$
+and $f^k(x)$ for some $j$ and $k$. Since the natural numbers are
+totally ordered, and since $j \leq k$ implies that $f^j(x)
+\sqsubseteq_f f^k(x)$, it follows that $U$ is totally ordered with
+respect to $\sqsubseteq_f$.
+
+Now, $U$ either contains $z$ or not.
 
 Suppose it does not contain $z$. Then $U = \comprehend{y}{y
-  \sqsupseteq_{f'} x} = U'$, and so $\mathit{root}_{f'}(x) =
-\mathit{root}_f(x)$.
+  \sqsupseteq_{f'} x} = U'$, since $f = f'$ for all arguments not
+equal to $z$. Therefore, $\mathit{root}_{f'}(x) = \mathit{root}_f(x)$.
 
-Suppose $U$ does contain $z$. Then we know that $U$ contains
-$\mathit{root}_f(z)$, and that this is an upper bound of every element
-of $U$. Furthermore, since $U$ is totally ordered, we know that $U'$
-must be smaller than $U$ -- it will contain none of the elements of
-$U$ that were in between $z$ and $\mathit{root}_f(z)$.  That is, $U' =
-\comprehend{y}{y \sqsupseteq_{f'} x} = \comprehend{y}{ z \sqsupseteq y
-  \sqsupseteq x }$. But $U'$ still has a maximum equal to
-$\mathit{root}_f(z)$. So $\mathit{root}_{f'}(x) =
-\mathit{root}_{f}(x)$.
+On the other hand, suppose $U$ does contain $z$. Then we know that $U$
+contains $\mathit{root}_f(z)$, and that this is an upper bound of
+every element of $U$. 
+
+Each distinct element of $U$ is $f^i(x)$ for some $0 \leq i <
+|U|$. Therefore, we know that $z = f^k(x)$ for some $k$. Furthermore,
+for each $j < k$, we know that $z \not= f^j(x)$. Therefore, these
+elements are the $j$ smallest elements for both $U$ and $U'$. However,
+we know that $f'(z) = \mathit{root}_f(z)$, and so at this point the
+ordered enumeration of the elements of $U'$ ends.
+
+Therefore, $U'$ is a subset of $U$ , whose maximum element (relative
+to $f'$) is the same as the maximum element of $U$ --- in both cases,
+it is $\mathit{root}_f(x)$. Since $U'$ is a subset of $U$, it further
+follows that the transitive closure of $f'$ remains a partial
+order: there can be no cycles since we have only removed paths from
+the graph, and there were no cycles to begin with.
 \end{proof}
+
+Besides $\find$, our API also includes the $\union$ and $\newset$ operations. 
+To create new disjoint sets, we need to that the order structure of two distinct
+set forests can be merged sensibly. 
 
 \begin{lemma}{(Order Extension)}
 Suppose $A$ and $B$ are disjoint finite sets, and $f : A \to A$ and $g
@@ -299,6 +348,40 @@ antisymmetry of $g^{*}$, we know that $x = y$.
 \end{enumerate}
 \end{proof}
 
+Finally, we need a lemma to let us prove that when we take the union
+of two sets, we will again have a graph which has the desired properties.
+
+\begin{lemma}{(Abstract Union)}
+Suppose $A$ is a finite set, and $f : A \to A$ is a function whose
+transitive closure is a partial order, and let $\mu(f)$ be the set of
+fixed points of $f$. For any $y, z$ in $\mu(A)$, if we define $f' =
+[f|y:z]$, then the transitive closure of $f'$ is a partial order, and 
+$\mathit{root}_{f'} = \semfun{a}{(\IfTE{\mathit{root}_f(a)=y}{z}{\mathit{root}_f(a)})}$.
+\end{lemma}
+
+\begin{proof}
+Suppose that $x \in A$. Now, consider the sets of elements $U =
+\comprehend{y}{y \sqsupseteq_f x}$, and $U' = \comprehend{y}{y
+  \sqsupseteq_{f'} x}$. We know that $U$ can be ordered into elements
+$x, \ldots, f^k(x)$, with $k = |U|$ and with $f^k(x) = \mu(x)$. 
+
+Now, consider whether $y \in A$ or not. If it is not, then we know
+that $f'^{i}(x) = f^{i}(x)$ for all $i \leq k$. Therefore $U'$ is
+equal to this set, and is also totally ordered and has the maximal
+element $\mathit{root}_f(x)$. 
+
+On the other hand, if $y$ is in $A$, then we know that $f'^i(x) =
+f^i(x)$ until index $k$, at which point $f'^k(x) = z$. However, we can
+easily see that $f'^{k+1}(x) = f'(f'^k(x)) = z$, which means that $U'$
+has a unique totally order with respect to $\sqsubseteq_{f'}$, and has
+maximum $z$. 
+
+Furthermore, since each set of upper bounds of $x$ is uniquely totally
+ordered by $\sqsubseteq_{f'}$, we know that the transitive closure of
+$f'$ is a partial order, and not just a preorder. 
+\end{proof}
+
+
 \begin{lemma}{(Monotonicity of $\ufcontains{\phi}{x}{y}$)}
 Suppose $\ufcontains{\phi}{x}{y}$. Then $\ufcontains{\phi \otimes \psi}{x}{y}$. 
 \end{lemma}
@@ -330,7 +413,7 @@ By the tensor-left rule, we have $\ufcontains{R(\rho, \psi) \otimes R(\rho, \the
 \end{itemize}
 \end{proof}
 
-\begin{lemma}
+\begin{lemma}{(Model Extension)}
   Suppose $(n, p, w) \models \phi$, and $n'$ is disjoint from $n$, and $p' \in n' \to n'$ such that $p'^*$ is a partial order, and $w' \in n' \to \mu(n')$. Then $(n, p \cup p', w \cup w') \models \phi$. 
 \end{lemma}
 
@@ -344,14 +427,46 @@ By the tensor-left rule, we have $\ufcontains{R(\rho, \psi) \otimes R(\rho, \the
 
    \item Case $\phi = \elt{x}{y}$. 
 
-     In this case, we know that $p'$ is completely disjoint from $p$. As a result, the transitive closure of $p \cup p'$ is just the unions of the transitive closures of $p$ and $p'$, and any upper fixed point of an element of $n \cup n'$ is just the upper fixed point of $p$ or of $p'$. Therefore $\mathit{root}(x)$ remains unchanged, and since $w'$ is an extension of $w$, $w'(\mathit{root}(x)) = y$. 
+     In this case, we know that $p'$ is completely disjoint from
+     $p$. As a result, the transitive closure of $p \cup p'$ is just
+     the unions of the transitive closures of $p$ and $p'$, and any
+     upper fixed point of an element of $n \cup n'$ is just the upper
+     fixed point of $p$ or of $p'$. Therefore $\mathit{root}(x)$
+     remains unchanged, and since $w'$ is an extension of $w$,
+     $w'(\mathit{root}(x)) = y$.
      
      \item $\phi = \psi \otimes \theta$
 
-       This follows by induction -- suppose $(n_1, p, w) \models \psi$ and 
-       $(n_2, p, w) models \theta$. Then by induction $(n_1 \cup n', p', w') \models \theta$, and $(n_2, p', w') \models \theta$. (FIX THE INDUCTION HYP TO MAKE THIS WORK.)
-       
+       This follows by induction. Suppose that $(n_1, p, w) \models
+       \psi$ and $(n_2, p, w) \models \theta$. Then, by induction
+       hypothesis, we know that $(n_1, p \cup p', w \cup w') \models
+       \psi$ and $(n_2, p \cup p', w \cup w') \models \theta$. Then,
+       by the definition of satisfaction, we know that $(n, p \cup p',
+       w \cup w') \models \psi \otimes \theta$.
  \end{itemize}
+\end{proof}
+
+\begin{lemma}{(Shrinking)}
+For suitably-typed $n, p, w$, suppose $(n, p, w) \models \phi \otimes \psi$. Then 
+we know that $(n, p, w) \models \phi$ and $(n, p, w) \models \psi$. 
+\end{lemma}
+\begin{proof}
+  From the definition of the model, we know that there are smaller $n_1$ and $n_2$ 
+such that $(n_1, p, w) \models \phi$ and $(n_2, p, w) \models \psi$. Then, by 
+the model extension lemma, we know that $(n, p, w) \models \phi$ and $(n, p, w) \models \psi$. 
+\end{proof}
+
+\begin{lemma}{(Soundness of Witness Values)}
+For suitably-typed $n, p, w$, suppose $(n, p, w) \models \phi$, and that $\ufcontains{\phi}{x}{y}$. Then $w(\mathit{root}(x)) = y$.  
+\end{lemma}
+\begin{proof}
+This follows by induction on the derivation of
+$\ufcontains{\phi}{x}{y}$, with the two inductive cases following
+trivially using shrinking. The only interesting case is the base case,
+when $\ufcontains{\elt{x}{y}}{x}{y}$.  In this case, we know that $(n,
+p, w) \models \elt{x}{y}$, so we know $w(\mathit{root}(x)) = y$. 
+
+
 \end{proof}
 
 \section{Correctness Proofs}
@@ -359,64 +474,133 @@ By the tensor-left rule, we have $\ufcontains{R(\rho, \psi) \otimes R(\rho, \the
 \subsection{Proof of $\newset$}
 
 \begin{specification}
-\nextline
-  $\setof{H(\phi)}$ 
-\nextline 
-  $\{$\=$\exists n \subseteq \tau, p \in n \to n, w \in \mu(n) \to n.\;
-      p^{*} \mbox{ partial order} \land 
-             (n, p, w) \models \phi \;\land \heap(n, p, w) \}$
-\nextline 
-  $\{n \subseteq \tau \land p \in n \to n \land w \in \mu(n) \to n \land
-      p^{*} \mbox{ partial order} \land 
-             (n, p, w) \models \phi \;\land \heap(n, p, w) \}$
-\nextline
-  $\newref{\sigma}{\Root(\None, 0)}$ 
-\nextline
-  $\{$\=$n \subseteq \tau \land p \in n \to n \land w \in \mu(n) \to n \land
-      p^{*} \mbox{ partial order} \land 
-             (n, p, w) \models \phi \;\land$
-\nextline \>
-        $\heap(n, p, w) * a \pointsto \Root(\None, 0) \}$ 
-\nextline
-  $\{$\=$n \subseteq \tau \land p \in n \to n \land w \in \mu(n) \to n \land
-      p^{*} \mbox{ partial order} \land 
-             (n, p, w) \models \phi \;\land$
-\nextline \>
-        $\heap(n, p, w) * a \pointsto \Root(\None, 0) \}$ 
-\nextlinelabel{newset:witness} Take $n' = n \cup {a}$, take $p' = [p|a:a]$, and $w = [w|a:a]$. 
-\nextline
-  $\{$\=$n' \subseteq \tau \land p' \in n' \to n' \land w' \in \mu(n') \to n' \land
-      p'^{*} \mbox{ partial order} \land 
-             (n', p', w') \models \phi \otimes \elt{a}{a} \;\land$
-\nextline \>
-        $\heap(n', p', w')\}$ 
-\nextline 
-  $\{$\=$\exists n' \subseteq \tau, p' \in n' \to n', w' \in \mu(n') \to n'.\;$ 
-\nextline \>$p^{*} \mbox{ partial order} \land 
-             (n', p', w') \models \phi \otimes \elt{a}{a} \;\land \heap(n', p', w') \}$
-\nextline
-  $\setof{H(\phi \otimes \elt{a}{a})}$ 
+\nextline $\{H(\phi)\}$
+\nextline $\{G(n, p, w, \phi)\}$
+\nextline $\letv{r}{[\newref{\sigma}{\Root(\None, 0)}]}{}$
+\nextline $\{G(n, p, w, \phi) * r \pointsto \Root(\None, 0)\}$
+\nextline $\letv{\unit}{[r := \Root(\Some(r), 0)]}{}$
+\nextline $\{G(n, p, w, \phi) * r \pointsto \Root(\Some(r), 0)\}$
+\nextline $r]$
+\nextline $\{G(n, p, w, \phi) * a \pointsto \Root(\Some(a), 0)\}$
+\nextline $\{p^{*} \mbox{ partial order} \land (n, p, w) \models \phi \land
+             \heap(n, p, w) * a \pointsto \Root(\Some(a), 0)\}$
+\nextline $\{p^{*} \mbox{ partial order} \land (n, p, w) \models \phi \land
+             \heap(n, p, w) * a \pointsto \Root(\Some(a), 0) \land a \not\in n\}$
+\nextline Let $n' = n \cup \setof{a}$, and let $p' = [p|a:a]$, and let $w' = [w|a:a]$. 
+\nextline By the order extension lemma,
+\nextline $\{p'^{*} \mbox{ partial order} \land (n, p', w') \models \phi \land
+             \heap(n', p', w')\}$
+\nextline By definition of modelling, $(\setof{a}, p', w') \models \elt{a}{a}$
+\nextline So $(n', p', w') \models \phi \otimes \elt{a}{a}$. Therefore
+\nextline $\{p'^{*} \mbox{ partial order} \land (n', p', w') \models \phi \otimes \elt{a}{a} \land \heap(n', p', w')\}$
+\nextline $\{G(n', p', w', \phi \otimes \elt{a}{a})\}$
+\nextline $\{H(\phi \otimes \elt{a}{a})\}$
+\end{specification}
+
+\subsection{Proof of $\find$}
+
+In order to prove this function correct, we will need to appeal to the
+correctness of the $\findroot$, function, which we will specifiy as
+follows:
+
+\begin{prop}{(Specification of $\findroot$)}
+  The specification of the $\findroot$ function is 
+
+  \begin{specification}
+    \nextline $\{G(n, p, w, \phi) \land \ufcontains{\phi}{x}{y}\}$
+    \nextline $\findroot(x)$ 
+    \nextline $\{(u, y', n).\; \exists p'.\;G(n, p', w, \phi) \;\land
+                       u = \mathit{root}(x) \land y' = \Some(w(u))\}$
+  \end{specification}
+\end{prop}
+
+\begin{specification}
+\nextline $\{\ufcontains{\phi}{x}{y} \land G(n, p, w, \phi)\}$
+\nextline $\{p^{*} \mbox{ partial order} \land (n, p, w) \models \phi \land
+             \heap(n, p, w) \land \ufcontains{\phi}{x}{y}\}$
+\nextline From the soundness of the models relationship, we know 
+\nextline $\{p^{*} \mbox{ partial order} \land (n, p, w) \models \phi \land
+             \heap(n, p, w) \land x \in n \land w(\mathit{root}(x)) = y\}$
+\nextline $\{p^{*} \mbox{ partial order} \land (n, p, w) \models \phi \land
+             x \in n \land w(\mathit{root}(x)) = y $ 
+\nextline $\;\;\land\; \heap(n - \setof{x}, p, w) * \IfTE{x = p(x)}{\exists k.\; x \pointsto \Root(\Some(w(x)), k)}{x \pointsto \Child(p(x))}\}$
+
+\nextline $\{p^{*} \mbox{ partial order} \land (n, p, w) \models \phi \land
+             x \in n \land w(\mathit{root}(x)) = y $ 
+\nextline $\;\;\land\; \heap(n - \setof{x}, p, w) *  x \pointsto (\IfTE{x = p(x)}{\Root(\Some(w(x)), k)}{\Child(p(x))})\}$
+
+\nextline $[$\=$\letv{v}{[!x]}{}$ 
+\nextline $\{p^{*} \mbox{ partial order} \land (n, p, w) \models \phi \land
+             x \in n \land w(\mathit{root}(x)) = y $ 
+\nextline $\;\;\land\; \heap(n, p, w) \land v = (\IfTE{x = p(x)}{\Root(\Some(w(x)), k)}{\Child(p(x))})\}$
+\nextline\> $\run{}\ctext{case}(v,$\=
+\nextline\> \> $\Root(z, k) \to$
+
+\nextline\> \> $\{p^{*} \mbox{ partial order} \land (n, p, w) \models \phi \land
+             x \in n \land w(\mathit{root}(x)) = y $ 
+\nextline\> \> $\;\;\land\; \heap(n, p, w) \land v = \Root(z, k) \land x = p(x) \land z = \Some(w(x))\}$
+
+\nextline\> \> $\{p^{*} \mbox{ partial order} \land (n, p, w) \models \phi \land
+             x \in n \land w(\mathit{root}(x)) = y $ 
+\nextline\> \> $\;\;\land\; \heap(n, p, w) x = p(x) \land \mathit{root}(x) = x \land z = \Some(w(x))\}$
+
+\nextline\> \> $\{p^{*} \mbox{ partial order} \land (n, p, w) \models \phi \land
+             x \in n \land w(x) = y $ 
+\nextline\> \> $\;\;\land\; \heap(n, p, w) \land x = p(x) \land \mathit{root}(x) = x \land z = \Some(w(x))\}$
+
+\nextline\> \> $\{p^{*} \mbox{ partial order} \land (n, p, w) \models \phi \land
+             x \in n $
+\nextline\> \> $\;\;\land\; \heap(n, p, w) \land x = p(x) \land \mathit{root}(x) = x \land z = \Some(y)\}$
+\nextline \> \> $[(w, x, k)]$
+
+\nextline\> \> $\{a.\;p^{*} \mbox{ partial order} \land (n, p, w) \models \phi \land
+             x \in n $
+\nextline\> \> $\;\;\land\; \heap(n, p, w) \land x = p(x) \land \mathit{root}(x) = x \land z = \Some(y) land a = (x, \Some(y), k)\}$
+
+\nextline\> \> $\{a.\;G(n, p, w) \land land a = (x, \Some(y), k)\}$
+\nextline\> \> $\{a.\;\exists n, p, w.\; G(n, p, w) \land land a = (x, \Some(y), k)\}$
+
+\nextline\> \> $\Child(m) \to$
+\nextline\> \> $\{p^{*} \mbox{ partial order} \land (n, p, w) \models \phi \land
+             x \in n \land w(\mathit{root}(x)) = y $ 
+\nextline\> \> $\;\;\land\; \heap(n, p, w) \land v = \Child(p(x)) \land m = p(x) \}$
+
+\nextline\> \> $\{p^{*} \mbox{ partial order} \land (n, p, w) \models \phi\bullet\elt{p(x)}{y} \land
+             x \in n \land w(\mathit{root}(x)) = y $ 
+\nextline\> \> $\;\;\land\; \heap(n, p, w) \land v = \Child(p(x)) \land m = p(x) \}$
+
+
+\nextline\> \> $[$\=$\letv{(u, y, k)}{\ctext{findroot}(m)}{}$
+
+\nextline\> \> $\{p'^{*} \mbox{ partial order} \land (n, p', w) \models \phi\bullet\elt{p(x)}{y} \land
+             x \in n \land w(\mathit{root}(x)) = y $ 
+\nextline\> \> $\;\;\land\; \heap(n, p, w) \land v = \Child(p(x)) \land u = \mathit{root}(p(x)) \}$
+
+
 
 \end{specification}
 
-The key step in the correctness proof of $\newset$ is on line~\ref{newset:witness}, where we define new witnesses and show that it satisfies the invariant. 
 
-\begin{enumerate}
-\item Since we allocate a new pointer, and each of the elements in $n$ is also a pointer in the current heap (due to the $\heap(n,p,w)$ assertion), it follows that the new value $a$ is disjoint from all of the values in $n$. 
 
-\item Due to the disjointness, $\mu(n') = \mu(n) \cup \mu([a:a]) = \mu(n) \cup \setof{a}$.
 
-\item Also due to the disjointness, the transitive closure of $p' = [p|a:a]$ is equal to the union of the transitive closure of $p$, (i.e., $p^{*}$) and the transitive closure of $[a:a]$ (i.e., $\setof{(a,a)}$). Since each of these is a partial order, and are disjoint from one another, their union is itself a partial order. So $p'^{*}$ is a partial order. 
+This specification asserts that calling $\findroot$ will give us a new
+heap which (a) models the same formula as before, and (b) will return
+the upper fixed point of $x$, as well as its witness. If the witness
+is the root itself, we return $\None$, and otherwise return the
+witness wrapped in a $\Some$. (We also return the height, whose value
+we are not tracking in our invariant.)
 
-\item We know that $(\setof{a}, p', w') \models \elt{a}{a}$, and that 
-$(n, p', w') \models \phi$ (since $(n, p, w) \models \phi$), so it follows
-that $(n', p', w') \models \phi \otimes \elt{a}{a}$. 
+The key difficulty in this proof is that $\findroot$ implements
+\emph{path compression} --- each recursive call modifies the heap in
+nonlocal ways. This nonlocality is evident in the fact that the parent
+and witness functions $p$ changes from the pre- to the post-condition.
 
-\item Since $p'(a) = a$, and $w'(a) = a$, it follows that $\heap(n, p, w) * 
-* a \pointsto \Root(\None, 0)$ is the same as $\heap(n', p', w')$. 
-\end{enumerate}
+The correctness of this program relies on the path compression lemma
+we proved earlier. 
 
-\subsection{Proof of $\find$}
+
+
+
 
 \begin{lemma}{(External Membership and Modelling)}
 Suppose $n \subseteq \tau, p \in n \to n, w \in \mu(n) \to n$. Furthermore,
@@ -458,10 +642,10 @@ Suppose $n = n_1 \uplus n_2$. Then $\heap(n, p, w) \iff \heap(n_1, p, w) * \heap
 
 \begin{proof}
   \begin{specification}
-    \nextline By definition, $\heap(n, p, w) =  \forall^{*} l \in n. \IfThenElse{p(l) = l}{\exists n.\; l \pointsto \Root(w(l), n)}{l \pointsto \Child(p(l))}$.
-    \nextline So $\heap(n, p, w) =  \forall^{*} l \in n_1 \uplus n_2. \IfThenElse{p(l) = l}{\exists n.\; l \pointsto \Root(w(l), n)}{l \pointsto \Child(p(l))}$.
-    \nextline So $\heap(n, p, w) =  $\=$[\forall^{*} l \in n_1. \IfThenElse{p(l) = l}{\exists n.\; l \pointsto \Root(w(l), n)}{l \pointsto \Child(p(l))}] \;*$ 
-    \nextline \> $[\forall^{*} l \in n_2. \IfThenElse{p(l) = l}{\exists n.\; l \pointsto \Root(w(l), n)}{l \pointsto \Child(p(l))}]$.
+    \nextline By definition, $\heap(n, p, w) =  \forall^{*} l \in n. F(l)$, where
+    \nextline  $F(l) = \IfTE{p(l) = l}{\exists n.\; l \pointsto \Root(\IfTE{w(x) = x}{\None}{\Some(w(x))}, n)}{l \pointsto \Child(p(l))}$.
+    \nextline So $\heap(n, p, w) =  \forall^{*} l \in n_1 \uplus n_2. F(l)$. 
+    \nextline So $\heap(n, p, w) =  \forall^{*} l \in n_1 F(l) * \forall^{*} l \in n_2 F(l)$. 
     \nextline So $\heap(n, p, w) = \heap(n_1, p, w) * \heap(n_2, p, w)$. 
   \end{specification}
 \end{proof}
@@ -476,11 +660,51 @@ Suppose $n = n_1 \uplus n_2$. Then $\heap(n, p, w) \iff \heap(n_1, p, w) * \heap
              (n, p, w) \models \phi \;\land \heap(n, p, w) \}$
 \nextline 
   $\{$\=$n \subseteq \tau, p \in n \to n, w \in \mu(n) \to n \land
-      p^{*} \mbox{ partial order} \land 
+   p^{*} \mbox{ partial order} \land 
              (n, p, w) \models \phi \;\land \heap(n, p, w) \}$
 \nextline 
-  $\{$\=$n \subseteq \tau, p \in n \to n, w \in \mu(n) \to n \land
+  Since $\ufcontains{\phi}{x}{y}$ implies $(n, p, w) \models \elt{x}{y}$, it 
+  follows that:
+\nextline 
+    $\{$\=$n \subseteq \tau, p \in n \to n, w \in \mu(n) \to n \land
       p^{*} \mbox{ partial order} \land 
-             (n, p, w) \models \phi \;\land \heap(n, p, w) \}$
+             (n, p, w) \models \phi \;\land \heap(n - {x}, p, w) \;*$ 
+\nextline 
+    \> $\IfTE{p(x) = x}{\exists n.\; x \pointsto \Root(\IfTE{w(x) = x}{\None}{\Some(w(x))}, n)}{l \pointsto \Child(p(x))}
+\}$
+\nextline $\letv{v}{[!x]}{}$
+\nextline
+    $\{$\=$n \subseteq \tau, p \in n \to n, w \in \mu(n) \to n \land
+      p^{*} \mbox{ partial order} \land 
+             (n, p, w) \models \phi \;\land \heap(n - {x}, p, w)\;*$ 
+\nextline
+    \> $x \pointsto v\;\land$ 
+\nextline
+    \> $v = \IfTE{p(x) = x}{\exists n.\; \Root(\IfTE{w(x) = x}{\None}{\Some(w(x))}, n)}{\Child(p(x))} \}$
+\nextline $\run{}\ctext{case}(v,$
+\nextline \;\;$\Root(u,k) \to\;$
+\nextline \;\;
+    $\{$\=$n \subseteq \tau, p \in n \to n, w \in \mu(n) \to n \land
+      p^{*} \mbox{ partial order} \land 
+             (n, p, w) \models \phi \;\land \heap(n - {x}, p, w)\;*$ 
+\nextline
+    \> $x \pointsto v \;\land$
+\nextline
+    \> $v = \IfTE{p(x) = x}{\exists n.\; \Root(\IfTE{w(x) = x}{\None}{\Some(w(x))}, n)}{\Child(p(x))} \;\land$ 
+\nextline \> $v = \Root(u, k)\}$
+\nextline \;\;
+    $\{$\=$n \subseteq \tau, p \in n \to n, w \in \mu(n) \to n \land
+      p^{*} \mbox{ partial order} \land 
+             (n, p, w) \models \phi \;\land \heap(n - {x}, p, w)\;*$ 
+\nextline
+    \> $x \pointsto v \;\land$
+\nextline
+    \> $u = \IfTE{w(x) = x}{\None}{\Some(w(x))} \;\land$ 
+\nextline
+    \> $p(x) = x \;\land$
+\nextline \;\;\=$\ctext{case}(u,$ 
+\nextline \>\;\;\=$\None \to [(x, x, k)]$ 
+
+  
 
 \end{specification}
