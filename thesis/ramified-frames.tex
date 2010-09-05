@@ -109,67 +109,76 @@ everything that depends on it invalidates the memoized value.
 \subsection{Implementing Notification Networks}
 
 \begin{figure}
-\begin{tabbing}
-$\codetype{A} = \monad{(A \times \cellset)}$ \\[1em]
-$\celltype{A} = \{$\=$code: \reftype{\codetype{A}};$ \\
-                   \>$value: \reftype{\opttype{A}};$ \\
-                   \>$reads: \reftype{\cellset};$ \\
-                   \>$obs:   \reftype{\cellset}\;$ \\
-                   \>$id:    \N\}$ \\[1em]
+\mbox{}
+\begin{specification}
+\nextline $\codetype{A} = \monad{(A \times \cellset)}$ \nextline[1em]
+$\celltype{A} = \{$\=$code: \reftype{\codetype{A}};$ \nextline
+                   \>$value: \reftype{\opttype{A}};$ \nextline
+                   \>$reads: \reftype{\cellset};$ \nextline
+                   \>$obs:   \reftype{\cellset}\;$ \nextline
+                   \>$id:    \N\}$ \nextline[1em]
 
-$ecell = \exists \alpha:\star.\; \celltype{\alpha}$ \\[1em]
+$ecell = \exists \alpha:\star.\; \celltype{\alpha}$ \nextline[1em]
 
-$\ctext{unit} : \forall \alpha:\star.\; \alpha \to \codetype{\alpha}$ \\
-$\ctext{unit}\;x = \comp{\pair{x}{\ctext{emptyset}}}$ \\[1em]
+$\ctext{unit} : \forall \alpha:\star.\; \alpha \to \codetype{\alpha}$ \nextline
+$\ctext{unit}\;x = \comp{\pair{x}{\ctext{emptyset}}}$ \nextline[1em]
 
-$\ctext{bind} : \forall \alpha,\beta:\star.\; \codetype{\alpha} \to (\alpha \to \codetype{\beta}) \to \codetype{\beta}$ \\
-$\ctext{bind}\;e\;f = [$\=$\letv{(v,r_1)}{e}{}$ \\
-                        \>$\letv{(v',r_2)}{f\;v}{}$ \\
-                        \>$\;\pair{v'}{\ctext{union}\;r_1\;r_2}]$\\[1em]
+$\ctext{bind} : \forall \alpha,\beta:\star.\; \codetype{\alpha} \to (\alpha \to \codetype{\beta}) \to \codetype{\beta}$ \nextline
+$\ctext{bind}\;e\;f = [$\=$\letv{(v,r_1)}{e}{}$ \nextline
+                        \>$\letv{(v',r_2)}{f\;v}{}$ \nextline
+                        \>$\;\pair{v'}{\ctext{union}\;r_1\;r_2}]$\nextline[1em]
 
-$\ctext{read} : \forall \alpha:\star.\; \celltype{\alpha} \to \codetype{\alpha}$ \\
-$\ctext{read}\;a = [$\=$\letv{o}{\comp{!a.value}}{}$ \\
-                     \>$\ctext{run}\;\ctext{case}(o,$ \\
-                     \>\qquad\= $\ctext{Some}\;v \to \comp{\pair{v}{\ctext{singleton}\;a}},$ \\
-                     \>      \> $\ctext{None} \to [$\=$\letv{exp}{\comp{!a.code}}{}$ \\
-                     \>      \>                     \>$\letv{(v,r)}{exp}{}$ \\
-                     \>      \>                     \>$\letv{\_}{\comp{a.value := v}}{}$\\
-                     \>      \>                     \>$\letv{\_}{\comp{a.reads := r}}{}$ \\
-                     \>      \>                     \>$\letv{\_}{\ctext{setiter}\;(\ctext{add\_observer}\;a)\;r}{}$ \\
-                     \>      \>                     \>$\;\pair{v}{\ctext{singleton}\;a}])$ \\[1em]
+$\ctext{read} : \forall \alpha:\star.\; \celltype{\alpha} \to \codetype{\alpha}$ \nextline
+$\ctext{read}\;a = [$\=$\letv{o}{\comp{!a.value}}{}$ \nextline
+                     \>$\ctext{run}\;\ctext{case}(o,$ \nextline
+                     \>\qquad\= $\ctext{Some}\;v \to \comp{\pair{v}{\ctext{singleton}\;a}},$ \nextline
+                     \>      \> $\ctext{None} \to [$\=$\letv{exp}{\comp{!a.code}}{}$ \nextline
+                     \>      \>                     \>$\letv{(v,r)}{exp}{}$ \nextline
+                     \>      \>                     \>$\letv{\_}{\comp{a.value := v}}{}$\nextline
+                     \>      \>                     \>$\letv{\_}{\comp{a.reads := r}}{}$ \nextline
+                     \>      \>                     \>$\letv{\_}{\ctext{setiter}\;(\ctext{add\_observer}\;a)\;r}{}$ \nextline
+                     \>      \>                     \>$\;\pair{v}{\ctext{singleton}\;a}])$ \nextline[1em]
 
-$\getref : \forall \alpha : \reftype{\alpha} \to \codetype{\alpha}$ \\
-$\getref r = \comp{\letv{v}{\comp{!r}}{\pair{v}{\ctext{emptyset}}}}$ \\[1em]
+$\getref : \forall \alpha : \reftype{\alpha} \to \codetype{\alpha}$ \nextline
+$\getref r = \comp{\letv{v}{\comp{!r}}{\pair{v}{\ctext{emptyset}}}}$ \nextline[1em]
 
-$\setref : \forall \alpha : \reftype{\alpha} \to \alpha \to \codetype{\unittype}$ \\
-$\setref r\;v = \comp{\letv{dummy}{\comp{r := v}}{\pair{\unit}{\ctext{emptyset}}}}$ \\[1em]
+$\setref : \forall \alpha : \reftype{\alpha} \to \alpha \to \codetype{\unittype}$ \nextline
+$\setref r\;v = \comp{\letv{dummy}{\comp{r := v}}{\pair{\unit}{\ctext{emptyset}}}}$ \nextline[1em]
 
-$\newcell : \forall \alpha:\star.\; \codetype{\alpha} \to \monad{\celltype{\alpha}}$ \\
-$\newcell\;\alpha\;code = [$\=$\letv{id}{!counter}{}$ \\
-                                   \>$\letv{\_}{\comp{counter := n + 1}}{}$ \\
-                                   \>$\letv{code}{\newref{\codetype{\alpha}}{code}}{}$ \\
-                                   \>$\letv{value}{\newref{\opttype{\alpha}}{\ctext{None}}}{}$ \\
-                                   \>$\letv{reads}{\newref{\cellset}{\ctext{emptyset}}}{}$ \\
-                                   \>$\letv{obs}{\newref{\cellset}{\ctext{emptyset}}}{}$ \\
-                                   \>$\; (code, value, reads, obs, id)]$ \\[1em]
-
-$\updatecell : \forall \alpha:\star.\; \codetype{\alpha} \to \celltype{\alpha} \to \monad{\unittype}$\\
-$\updatecell\;\alpha\;exp\;a = 
-     [$\=$\letv{\_}{\ctext{mark\_unready}\;\pack{\alpha}{a}}{}$ \\
-       \>$a.code := exp]$ \\[1em]
-
-$\ctext{mark\_unready} : ecell \to \monad{\unittype}$ \\
-$\ctext{mark\_unready}\;cell =\; $\=$\ctext{unpack}(\alpha, a) = cell\; \ctext{in}$\\
-\>  $[$\=$\letv{os}{\comp{!a.obs}}{}$ \\
-\>     \>$\letv{rs}{\comp{!a.reads}}{}$ \\
-\>     \>$\letv{\_}{\ctext{iterset}\;\ctext{mark\_unready}\;os}{}$ \\
-\>     \>$\letv{\_}{\ctext{iterset}\;(\ctext{remove\_obs}\;cell)\;rs}{}$ \\
-\>     \>$\letv{\_}{\comp{a.value := \ctext{None}}}{}$ \\
-\>     \>$\letv{\_}{\comp{a.reads := \ctext{emptyset}}}{}$ \\
-\>     \>$a.obs   := \ctext{emptyset}]$ 
-\end{tabbing}
+$\newcell : \forall \alpha:\star.\; \codetype{\alpha} \to \monad{\celltype{\alpha}}$ \nextline
+$\newcell\;\alpha\;code = [$\=$\letv{id}{!counter}{}$ \nextline
+                                   \>$\letv{\_}{\comp{counter := n + 1}}{}$ \nextline
+                                   \>$\letv{code}{\newref{\codetype{\alpha}}{code}}{}$ \nextline
+                                   \>$\letv{value}{\newref{\opttype{\alpha}}{\ctext{None}}}{}$ \nextline
+                                   \>$\letv{reads}{\newref{\cellset}{\ctext{emptyset}}}{}$ \nextline
+                                   \>$\letv{obs}{\newref{\cellset}{\ctext{emptyset}}}{}$ \nextline
+                                   \>$\; (code, value, reads, obs, id)]$ 
+\end{specification}
 \caption{Implementation of Notification Networks}
 \label{notification-implementation}
+\end{figure}
+
+\begin{figure}
+\mbox{}
+\begin{specification}
+\nextline
+$\updatecell : \forall \alpha:\star.\; \codetype{\alpha} \to \celltype{\alpha} \to \monad{\unittype}$\nextline
+$\updatecell\;\alpha\;exp\;a = 
+     [$\=$\letv{\_}{\ctext{mark\_unready}\;\pack{\alpha}{a}}{}$ \nextline
+       \>$a.code := exp]$ \nextline[1em]
+
+$\ctext{mark\_unready} : ecell \to \monad{\unittype}$ \nextline
+$\ctext{mark\_unready}\;cell =\; $\=$\ctext{unpack}(\alpha, a) = cell\; \ctext{in}$\nextline
+\>  $[$\=$\letv{os}{\comp{!a.obs}}{}$ \nextline
+\>     \>$\letv{rs}{\comp{!a.reads}}{}$ \nextline
+\>     \>$\letv{\_}{\ctext{iterset}\;\ctext{mark\_unready}\;os}{}$ \nextline
+\>     \>$\letv{\_}{\ctext{iterset}\;(\ctext{remove\_obs}\;cell)\;rs}{}$ \nextline
+\>     \>$\letv{\_}{\comp{a.value := \ctext{None}}}{}$ \nextline
+\>     \>$\letv{\_}{\comp{a.reads := \ctext{emptyset}}}{}$ \nextline
+\>     \>$a.obs   := \ctext{emptyset}]$ 
+\end{specification}
+\caption{Implementation of Notification Networks}
+\label{notification-implementation-update}
 \end{figure}
 
 Our API for creating notification networks is given in
@@ -535,10 +544,10 @@ $\forall \psi:\formula.\; $\=$\setof{G(\celleither{o}{e} \otimes \psi)}$ \\
 \end{prop}
 
 \begin{proof}
-The key to this proof is the conditional interpretation of the
-$\cellpos{c}{e}{v}{r}$ formula. When we evaluate the $\updatecell$
-command, we recursively find every cell which depends on $o$, and
-modify it to be unready.
+\\\textbf{Proof Strategy.} The key to this proof is the conditional
+interpretation of the $\cellpos{c}{e}{v}{r}$ formula. When we evaluate
+the $\updatecell$ command, we recursively find every cell which
+depends on $o$, and modify it to be unready.
 
 Now consider any positive cell formula in $\psi$ which reads $o$,
 directly or indirectly. The satisfaction relation for $\phi$ tells us
@@ -548,7 +557,139 @@ formula to the unready state, we no longer require that positive
 formula to represent a ready cell. As a result, we can leave the
 entire frame $\psi$ untouched, even though the physical heap it
 represents may have been (quite drastically) modified. 
+
+\textbf{Proof Details.} We will not give this proof as an annotated
+specification, since the invariant is so large that repeatedly copying
+it from precondition to postcondition would make the annotation
+unreadable.
+
+First, let's consider the specification of $\ctext{mark\_unready(c)}$,
+which does the bulk of the work of the update function. The purpose of
+this function is to set every cell transitively reachable from $c$ to
+the unready state. So, what we want is for the procedure to satisfyh
+the specification
+
+\begin{displaymath}
+\spec{\mathit{Inv}(H, \phi \otimes \celleither{c}{e})}{\ctext{mark\_unready}(c)}{a:1}{\mathit{Inv}(H', \phi \otimes \cellneg{c}{e})}
+\end{displaymath}
+
+In the above, supposing that $H = (D,h)$, we take $H'$ to be the pair
+$(D, h')$, where we let $U = \comprehend{c' \in D}{(c, c') \in R^{*}_H}$, 
+and define $h'$ with the following components. 
+\begin{itemize}
+\item $\mathit{code}(h') = \mathit{code}(h)$
+\item $\mathit{value}(h') = \semfun{c'}{\IfThenElse{c'\in U}{\None}{\mathit{value}(h(c'))}}$
+\item $\mathit{reads}(h') = \semfun{c'}{\IfThenElse{c'\in U}{\emptyset}{\mathit{reads}(h(c'))}}$
+\item $\mathit{obs}(h') = \semfun{c'}{\IfThenElse{c'\in U}{\emptyset}{\mathit{obs}(h(c'))}}$
+\item $\mathit{identity}(h') = \mathit{identity}(h)$
+\end{itemize}
+
+
+Note that we do not mention the $G$ predicate in this specification --
+$\ctext{mark\_unready}$ is part of the implementation of the library
+and has a specification in terms of invariants invisible to the
+client.
+
+Our next step will be to prove this function using the fixed point
+induction rule, and precisely this specification. (In fact, the
+function is totally correct, since it is always called on arguments
+higher up in the partial ordering on cells, but tracking the
+termination metric in detail obscures the key ideas.) 
+
+Now we'll proceed line-by-line through the function body. To simplify
+matters, we'll split into two cases, one for when the argument is
+already unready, and one for when it is ready.
+
+First, suppose the cell $c$ is unready --- that is, it is not an
+element of $V_H$.  In this case, $H'$ is just the same as $H$. Then from the
+definition of $\mathit{Inv}$ we know that its reads and observers sets
+are empty, since $R_H \subseteq V_H \times V_H$.  So the
+$\mathit{heap}(H)$ predicates tells us that the pointer dereferences
+on lines 6 and 7 of Figure~\ref{notification-implementation-update}
+bind the empty set to the $os$ and $rs$ variables. Then, by the
+definition of $\mathit{iterseq}$, we know that the calls to
+$\ctext{iterset}$ on lines 8 and 9 are equal to $\comp{\unit}$ and
+hence no-ops.  Furthermore, the definition of $V_H$ means that
+$\mathit{value}{h(c)} = \None$. So the assignments to
+$c.\mathit{value}$ on line 10 does not change the contents of the
+heap, and likewise neither do the assignments to $c.\mathit{reads}$
+and $c.\mathit{obs}$ on lines 11 and 12. Since the heap is unchanged,
+we know that $\mathit{Inv}(H,\phi)$ must continue to hold.
+
+On the other hand, suppose that $c$ is in $V_H$. Then from the
+definition of $\mathit{Inv}$ we know that $c.\mathit{reads}$ and
+$c.\mathit{obs}$ point to sets which implement the reads and observers
+sets of $c$. Then, the $\mathit{heap}(H)$ predicates tells us that the
+pointer dereferences on lines 6 and 7 of
+Figure~\ref{notification-implementation-update} bind values
+corresponding to those sets to the $os$ and $rs$ variables, in the
+current world $D$.
+
+Now, the axioms describing $\ctext{iterseq}$ says that
+$\ctext{iterseq\;mark\_unready}\;os$ is equal to a sequence of calls
+of $\ctext{mark\_unready}$ to the elements of $os$ (which we will name
+$c_1, \ldots, c_k$) in some order.  The net effect of such a sequence
+of calls is to give us an $H_k$ which have removed $U - \setof{c}$
+from $V_{H_k}$. However, this is not an entirely trivial fact to
+prove, since each call to $\ctext{mark\_unready}(c_{i+1})$ starts from
+a different state $H_{i}$. 
+
+So we need a simple observation about (finite) partial orders. 
+
+\begin{lemma}{(Commutativity and Idempotence of Deletion)}
+Suppose $R$ is a partial order on a set $X$. Now, define $R - \uparrow(x)$ to 
+be the set $\comprehend{y \in X}{\lnot R(x,y)}$. Then, it follows that 
+$R - \uparrow(x) - \uparrow(y) = R - \uparrow(y) - \uparrow(x)$. 
+Furthermore, $R - \uparrow(x) - \uparrow(x) = R - \uparrow(y) - \uparrow(x)$. 
+\end{lemma}
+
+These facts essentially follows immediately from the definition of set
+comprehension, and imply that the order we remove transitive closures
+from a partial order does not matter.
+
+Then, observe that $h'$ in the specification of
+$\ctext{mark\_unready}$ is defined by setting $U$ to $V_H -
+\uparrow{c}$, and that $\mathit{value}$, $\mathit{reads}$, and
+$\mathit{obs}$ simply take $h$ and restrict to the domain $V_H -
+\uparrow{c}$. Since we call $\ctext{mark\_unready}$ on each element
+directly above $c$ in the partial order, it follows that $V_{H_k} =
+V_{H} - (U - \setof{c})$, with the functions updated in the evident
+way.
+
+This in turn means that there are no longer any elements of $D$ above
+$c$ in $R_{H_k}$. So after setting $c.\mathit{value}$ to $\None$ and
+removing $c$ from the observer sets of the elements of $os$, we know
+that we have reached a state whose heap satisfies $\mathit{heap}(D,
+h')$.
+
+Now, it becomes relatively easy to prove the correctness of
+$\ctext{update}$.  We perform the invalidation, which takes the
+current cell $c$ and takes us into a state $H'$ in which the the cell
+is unready (i.e., $V_{H'}(c) = \None$). Now, the only remaining challenge
+is to show that $\cellneg{c}{e'} \otimes \psi$ is still satisfied by
+the new model. This follows from an easy induction on $\psi$ -- as the
+ready cells in the new heap are a strict subset of the ready cells of
+the original heap, any negative cell formulas in $\psi$ stay negative,
+and we only need to consider the case of positive cell formulas. 
+
+Concretely, suppose we have a formula $\cellpos{c'}{e}{v}{r}$. If
+$c' \not\in V_H$ (i.e., was not semantically ready in the original
+heap) then it will not be in $V_{H'}$, since $V_{H'} \subseteq V_H$,
+since its dependencies will not have gotten any more ready.
+
+On the other hand, if $c' \in V_H$, then consider whether $c' \in U$.
+If it is in $U$, then there will be path in $H$ from $c$ to $u$, which
+means that both $c'$ will be semantically invalid, \emph{and} all of
+the cells in $r$ (which lie on all the paths from $c$ to $c'$) are in
+$U$, and hence unready. Then in this case, the clause of the
+satisfaction relation holds. If $c' \not\in U$, then it also follows
+that nothing in $r$ is in $U$, either, and so both $r$ and $c'$ are
+semantically ready, in which case they continue to validate the other
+case of the conditional in the definition of the satisfaction
+relation.
+
 \end{proof}
+
 
 We can prove the soundness of a similar specification for $\newcell$ as
 well:
@@ -566,6 +707,37 @@ $\forall \psi:\formula.\; $\=$\setof{G(\psi)}$ \\
 This is much easier than $\updatecell$: we just need to allocate a new
 numeric id for the new cell, and show that the extended cell heap
 continues to satisfy all of the expected properties.
+
+Concretely, suppose that $G(\psi) = \mathit{Inv}{(H, \psi)}$ for some
+$H = (D,h)$. Now, by the invariant, we know that each cell in $D$ has 
+a unique numeric id somewhere in the range from $0$ to $|D|-1$. Then,
+on lines 29-30, we increment the global counter by 1, and let $id = |D|$. 
+Then, on lines 31-34, we allocate a pointer $\mathit{code}$ to the code $e$, a pointer
+$\mathit{value}$ to $\None$ (to indicate the unitialized state), as well as pointers to 
+$\mathit{read}$ and $\mathit{obs}$ to empty read and observer sets. 
+
+At line 35, all of these values are bound to variables in scope, so we
+can define $H' = (D',h')$, where $\mathit{ec} = \pack(\tau,\mathit{(code, value, read, obs, id)})$, 
+and 
+\begin{displaymath}
+(D',h') = (D \cup \setof{\mathit{ec}}, h' = [h|\mathit{ec}: (e, \None, \emptyset, \emptyset, id)])
+\end{displaymath}
+
+Then, it is easy to show that the modified heap realizes $H'$ -- the
+only fact that does not carry over immediately are the predicates
+establishing the the read and observer sets are implemented
+correctly. This is because they held for world $D$, and we are now in
+world $D'$. Happily, we required as an axiom that $(W \subseteq W')
+\implies \mathit{set}(W, v, S) \implies \mathit{set}(W', v, S)$.
+
+Finally, we need to show that $\cellneg{a}{e} \otimes \psi$ is
+satisfied by $H'$. This follows from an easy induction on $\psi$:
+since $h'$ is just an extension of $h$ with $V_{H'} = V_H$, none
+of the conditionals or function calls in the cell predicates have
+different results, which means that the truth-values they define
+are unchanged. 
+
+Then we can hide $H'$ behind an existential to establish the postcondition. 
 \end{proof}
 
 \begin{figure}
