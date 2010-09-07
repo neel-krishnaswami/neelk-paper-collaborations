@@ -1943,6 +1943,67 @@ higher-order quantification lets us store and pass formulas around,
 making it easy to allow each callback to have a totally different
 invariant. 
 
+\subsection{Correctness Proofs for Subject-Observer}
+
+\subsubsection{Proof of the $\ctext{register}$ Function}
+
+\begin{tabbedproof}
+\oo Assume we have $f, O, s, cs, n, os$ and the specification $\forall i,k.\;\spec{O(i)}{\run{f(k)}}{a:1}{O(k)}$ \\
+\ooo Assume we are in the prestate $\setof{\mathit{sub}((s,cs), n, os)}$ \\
+\ooo This state is equivalent to $s \pointsto n * \mathit{list}(cs, \mathit{map}\;\snd{}\;os) \land \mathit{Good}(os)$ \\
+\ooo By the definition of $\mathit{list}$, we know \\
+\ooox $\mathit{list}(cs, \mathit{map}\;\snd{}\;os) = \exists cell.\;cs \pointsto cell * \mathit{list'}(cell, \mathit{map}\;\snd{}\;os)$ \\
+\ooo $[\letv{mathit{cell}}{!r}{}$ \\
+\ooo We can drop the existential now, giving a state of \\
+\ooox $s \pointsto n * cs \pointsto cell * \mathit{list'}(cell, \mathit{map}\;\snd{}\;os) \land \mathit{Good}(os)$ \\
+\ooo $\letv{r}{[\newref{\reftype{\listtype{(\N \to \monad{\unittype})}}}{\mathit{cell}}]}{}$ \\
+\ooo We add $r \pointsto \mathit{cell}$ to the state, and fold the definition of list, to get \\
+\ooox $s \pointsto n * cs \pointsto - * \mathit{list}(r, \mathit{map}\;\snd{}\;os) \land \mathit{Good}(os)$ \\ 
+\ooo $cs := \Cons(f, r)]$ \\
+\ooo Therefore $s \pointsto n * cs \pointsto \Cons(f,r) * \mathit{list}(r, \mathit{map}\;\snd{}\;os) \land \mathit{Good}(os)$ \\ 
+\ooo Therefore $s \pointsto n * \mathit{list}(cs, \mathit{map}\;\snd{}\;((O,f) \cdot os)) \land \mathit{Good}(os)$ \\ 
+\ooo Since we assume $\forall i,k.\;\spec{O(i)}{\run{f(k)}}{a:1}{O(k)}$, we can conjoin it to the state \\
+\ooox to get $s \pointsto n * \mathit{list}(cs, \mathit{map}\;\snd{}\;((O,f) \cdot os)) \land \mathit{Good}((O,f) \cdot os)$ \\ 
+\ooo This is $\mathit{sub}((s,cs), (O,f)\cdot os)$
+\end{tabbedproof}
+
+\subsubsection{Proof of the $\ctext{newsub}$ Function}
+
+\begin{tabbedproof}
+\oo Assume we have a variable $n$ and the initial state $\emp$\\
+\ooo Now consider the body of the $\ctext{newsub}$ function: \\
+\ooo $[\letv{\mathit{data}}{\newref{\N}{n}}{}$ \\
+\ooo The state is $\mathit{data} \pointsto n$ \\
+\ooo $\letv{\mathit{callbacks}}{\newref{\listtype{\N\to\monad{1}}}}{\Nil}{}$ \\
+\ooo The state is $\mathit{data} \pointsto n * \mathit{callbacks} \pointsto \Nil$ \\
+\ooo This is equivalent to $\mathit{data} \pointsto n * \mathit{list}(\mathit{callbacks}, \epsilon)$ \\
+\ooo This is equivalent to $\mathit{data} \pointsto n * \mathit{list}(\mathit{callbacks}, \epsilon) \land \mathit{Good}(\epsilon)$ \\
+\ooo This is equivalent to $\mathit{sub}(\mathit{(data,callbacks)}, n, \epsilon)$ \\
+\ooo $(data, callbacks)]$ \\
+\ooo Therefore $\mathit{sub}(a, n, \epsilon)$ with return value $a$ \\
+\end{tabbedproof}
+
+\subsubsection{Proof of the $\ctext{broadcast}$ Function}
+
+To prove this function, we first need to prove an auxilliary lemma about the $\ctext{loop}$ function:
+
+\begin{lemma}{($\ctext{loop}$ Invariant)}
+For all $k$, $fs$  and $os$ we have
+\begin{displaymath}
+\spec{\mathit{Good}(os) \land \mathit{obs}(os)}{\ctext{loop}(k, fs)}{a:1}{\mathit{obs\_at}(os, k)}
+\end{displaymath}
+\end{lemma}
+
+\begin{tabbedproof}
+\oo Assume we have a suitable $k$ and $fs$, and then proceed by induction on $os$.  \\
+\oo Suppose $os = \epsilon$:  \\
+\ooo Then our precondition is $\mathit{list}(fs, \epsilon)$ \\
+\ooo This is equivalent to $fs \pointsto \Nil$ \\
+\ooo $[\letv{\mathit{cell}}{[!fs]}{}$  \\
+\ooo So we know $fs \pointsto \Nil \land \mathit{cell} = \Nil$ \\
+\ooo Since $\mathit{cell} = \Nil$ and equational reasoning, we know the remainder of the program is $[\unit]$
+\end{tabbedproof}
+
 
 % \input{htt-experiments}
 
