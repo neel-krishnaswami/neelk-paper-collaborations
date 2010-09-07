@@ -193,8 +193,8 @@ $p$ to get the root, and then passing that to $w$.
 \nextline \> \> $\Some(w) \to w)]$
 
 \nextline[1em] $\union(x, y) = [$\= 
-                 $\letv{(r, u, m)}{\find\;x}{}$ 
-\nextline \>     $\letv{(s, v, n)}{\find\;y}{}$ 
+                 $\letv{(r, u, m)}{\findroot\;x}{}$ 
+\nextline \>     $\letv{(s, v, n)}{\findroot\;y}{}$ 
 \nextline \>     $\run{}$\=$\ctext{if}\;m < n\;\ctext{then}$ 
 \nextline \> \>   \;\;$[$\=$\letv{\unit}{[s := \Root(u, n)]}{}$ 
 \nextline \> \>         \>$r := \Child(s)]$ 
@@ -510,9 +510,22 @@ follows:
     \nextline $\{G(n, p, w, \phi) \land \ufcontains{\phi}{x}{y}\}$
     \nextline $\findroot(x)$ 
     \nextline $\{(u, y', n).\; \exists p'.\;G(n, p', w, \phi) \;\land
-                       u = \mathit{root}(x) \land y' = \Some(w(u))\}$
+                       u = \mathit{root}(x) \land y' = \Some(w(u)) 
+                       \land p'(x) = u\}$
   \end{specification}
 \end{prop}
+
+\begin{proof}
+Assume we begin in the precondition $\ufcontains{\phi}{x}{y} \land
+G(n, p, w, \phi)$.  By definition, we know that $G(n, p, w, \phi) =
+p^{*}\mbox{ partial order} \land (n,p,w) \models \phi \land
+\heap(n,p,w)$, by the soundness of the models relation, we
+additionally know that $w(\mathit{root}_p(w(x))) = y$.
+
+
+\end{proof}
+
+
 
 \begin{specification}
 \nextline $\{\ufcontains{\phi}{x}{y} \land G(n, p, w, \phi)\}$
@@ -557,7 +570,7 @@ follows:
              x \in n $
 \nextline\> \> $\;\;\land\; \heap(n, p, w) \land x = p(x) \land \mathit{root}(x) = x \land z = \Some(y) land a = (x, \Some(y), k)\}$
 
-\nextline\> \> $\{a.\;G(n, p, w) \land land a = (x, \Some(y), k)\}$
+\nextline\> \> $\{a.\;G(n, p, w) \land a = (x, \Some(y), k)\}$
 \nextline\> \> $\{a.\;\exists n, p, w.\; G(n, p, w) \land land a = (x, \Some(y), k)\}$
 
 \nextline\> \> $\Child(m) \to$

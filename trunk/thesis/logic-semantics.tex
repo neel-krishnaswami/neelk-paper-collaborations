@@ -1,9 +1,9 @@
 \chapter{The Semantics of Separation Logic}
 
-In this chapter, we'll describe the semantics of our separation logic.
-Rather than working directly with the heap model of separation logic,
-we will approach the semantics in a somewhat more modular
-style. 
+In this chapter, we will describe the semantics of our separation
+logic. Rather than working directly with the heap model of separation
+logic, we will approach the semantics in a somewhat more modular
+style.
 
 First, we'll define what we mean by ``semantics of separation logic''
 in terms of \emph{BI algebras}, which give an algebraic semantics of
@@ -17,7 +17,6 @@ Then, we will show that our predomain of heaps actually forms a
 partial commutative monoid, which means that we can now apply the
 theorems and definitions of the previous sections to immediately get
 the heap model we want.
-
 
 \section{BI Algebras}
 
@@ -65,9 +64,8 @@ well-defined.
 \end{enumerate}
 
 We'll eventually use completeness in order to interpret quantifiers as 
-possibly-infinitary conjunctions or disjunctions. 
-
-
+possibly-infinitary conjunctions or disjunctions.
+ 
 \subsection{Partial Commutative Monoids}
 
 A partial commutative monoid is a triple $(M, e, \cdot)$, where $e \in
@@ -935,6 +933,35 @@ implies $v_i \sqsubseteq v_j$ and $h_i \sqsubseteq h_j$. \\
 \end{tabbedproof}
 \end{itemize}
 This establishes that $Best(Q)$ is a continuous function. 
+
+Now we'll prove a minor lemma about this function, which shows that we
+are interpreting the Sierpinski lattice such that the bottom element
+is truth, and the top element is falsehood.
+
+\begin{lemma}{(Lattice Order Reverses Approximation Order)}
+Suppose $Q$ and $Q'$ are $A$-predicates in $\interp{A} \to \powerset{H}$, and that
+for all $a \in \interp{A}$, $Q(a) \subseteq Q'(a)$. Then $\mathit{Best}(Q') \sqsubseteq \mathit{Best}(Q)$. 
+\end{lemma}
+
+\begin{tabbedproof}
+\oo We want to show $\mathit{Best}(Q') \sqsubseteq \mathit{Best}(Q)$ \\
+\oo First, we'll observe that $\mathit{Approx}(Q') \subseteq \mathit{Approx}(Q)$ \\
+\oo So, suppose that $k \in \mathit{Approx}(Q')$. We want to show $k \in \mathit{Approx}(Q)$. \\
+\ooo We want to show that for all $a \in \interp{A}$ and $h \in Q(a)$, $k\;a\;h = \bot$.  \\
+\ooo Assume that $a \in \interp{A}$ and $h \in Q(a)$. \\ 
+\oooo We know that since $Q(a) \subseteq Q'(a)$, we have $h \in Q'(a)$.  \\
+\oooo Therefore since $k \in \mathit{Approx}(Q')$, we know $k\;a\;h = \bot$ \\
+\oo Now, we want to show that $\mathit{Approx}(Q') \subseteq \mathit{Approx}(Q)$ \\
+\oo So we want to show that for all $a \in \interp{A}$ and $h \in H$, $\mathit{Approx}(Q')\;a\;h \subseteq \mathit{Approx}(Q)\;a\;h$ \\
+\oo Assume we have $a \in \interp{A}$ and $h \in H$ \\
+\ooo Suppose $\mathit{Approx}(Q')\;a\;h = \top$: \\
+\oooo Therefore there is a $k\in\mathit{Approx}(Q')$ such that $k\;a\;h = \top$ \\
+\oooo Therefore $k \in \mathit{Approx}(Q)$, and so $\mathit{Approx}(Q)\;a\;h = \top$ \\
+\ooo Suppose $\mathit{Approx}(Q')\;a\;h = \bot$: \\
+\oooo Therefore for all $k \in \mathit{Approx}(Q')$, we have $k\;a\;h = \top$ \\
+\oooo Therefore for all $k \in \mathit{Approx}(Q)$, we have $\mathit{Approx}(Q)\;a\;h = \bot$ \\
+
+\end{tabbedproof}
 
 \subsubsection{Basic Boolean Hoare Triples}
 
@@ -2151,7 +2178,7 @@ together.
 \label{spec-interpretation}  
 \end{figure}
 
-\subsubsection{Do the Restriction Operations Make Sense?|}
+\subsubsection{Do the Restriction Operations Make Sense?}
 
 As the rule \textsc{TermExpr} shows, program expressions can occur
 inside within terms, and in type checking them, we only allow
@@ -4323,7 +4350,7 @@ is valid.
 \begin{proof}
   \begin{tabbedproof}
     \oo Let $S = \forall x:\monad{A}.\; \mspec{p}x{a:A}{q(a)} \specimp \mspec{p}{e}{a:A}{q}$\\
-    \oo Let $S = \mspec{p}{\fix{x:\monad{A}}{e}}{a:A}{q}$ \\
+    \oo Let $S' = \mspec{p}{\fix{x:\monad{A}}{e}}{a:A}{q}$ \\
     \oo Assume $\delta \in \interp{\judgeACtx{\Delta}}$ \\
     \ooo So we want to show $\interp{S'}\;\delta = \top$ \\
     \ooo Let $P = \interp{\judgeA{P}{\assert}}\;\delta$ \\
@@ -4351,7 +4378,7 @@ is valid.
   \end{tabbedproof}
 \end{proof}
 
-\begin{lemma}{(Weakening from Preconditions)}
+\begin{lemma}{(Assumptions From Preconditions)}
 If we know that $\judgeS{\setof{r} \specimp \spec{p}{c}{a:A}{q}}$ is
 valid, $r$ is a pure formula of separation logic, and we know that $p
 \implies r$ is a valid truth of separation logic, then
@@ -4383,6 +4410,36 @@ $\judgeS{\spec{p}{c}{a:A}{q}}$ is valid.
     \ooooo Therefore we know that $\interp{\judgeS{\setof{r}}}\;\delta = \top$ \\
     \ooooo Therefore we know that $\interp{\judgeS{\spec{p}{c}{a:A}{q}}}\;\delta = \top$ \\
   \end{tabbedproof}
+\end{proof}
+
+\begin{lemma}{(Assumptions Into Preconditions)}
+If we know that $\judgeS{\setof{r} \specimp \spec{p \land r}{c}{a:A}{q}}$ is
+valid, then $\judgeS{\setof{r} \specimp \spec{p}{c}{a:A}{q}}$ is valid.
+\end{lemma}
+
+\begin{proof}
+\begin{tabbedproof}
+  \oo Assume $\judgeS{\setof{r} \specimp \spec{p \land r}{c}{a:A}{q}}$ is valid. \\
+  \ooo This is equivalent to if $\setof{r}$ is valid, then $\spec{p \land r}{c}{a:A}{q}$ is valid. \\
+  \ooo We want to show that $\judgeS{\setof{r} \specimp \spec{p \land r}{c}{a:A}{q}}$ is valid \\
+  \ooo This is equivalent to showing if $\setof{r}$ is valid, then $\spec{p}{c}{a:A}{q}$ is valid. \\
+  \ooo Assume $\setof{r}$ is valid. \\
+  \oooo Therefore we know $\spec{p \land r}{c}{a:A}{q}$ is valid. \\
+  \oooo We want to show $\spec{p}{c}{a:A}{q}$ is valid. \\
+  \oooo Assume $\delta \in \interp{\Delta}$.  \\
+  \ooooo So we want to show for all $r$, and all $s \worldgeq r$, that $\basicspec{P*s}{C}{a}{Q(a) * s}$ holds\\
+  \oooox where \\
+  \ooooox $R = \interp{\judgeA{r}{\assert}}\;\delta$ \\
+  \ooooox $P = \interp{\judgeA{p}{\assert}}\;\delta$ \\
+  \ooooox $C = \interp{\judgeC[\restrictkind{\Delta}]{\restricttype{\Delta}}{c}{A}}\;\theta\;\gamma$ \\
+  \ooooox $Q = \semfun{v}{\interp{\judgeA[\Delta,a:A]{q}{\assert}}\;(\delta,v)}$ \\
+  \ooooox $\theta = \restricttyenv{\Delta}{\delta}$ \\
+  \ooooox $\gamma = \restrictvals{\Delta}{\delta}$ \\
+  \ooooo Assume a semantic predicate $r$, and $s \worldgeq r$, and $h \in P * s$. \\
+  \oooooo We want to show that $C\;\mathit{Best}(\semfun{a}{Q(a) * s})\;h = \bot$ \\
+  \oooooo Since $\setof{r}$ is valid, we know $R = \top$, and so $h \in P \land R * s$ \\
+  \oooooo Since $\spec{p \land r}{c}{a:A}{q}$ is valid, we know $C\;\mathit{Best}(\semfun{a}{Q(a) * s})\;h = \bot$\\
+\end{tabbedproof}
 \end{proof}
 
 \begin{lemma}{(Getting Specs Out of Assertions)}
@@ -4436,6 +4493,61 @@ If $\judgeS{\spec{\exists u:\omega.\;p}{c}{a:A}{q}}$ is valid, then
     
   \end{tabbedproof}
 \end{proof}
+
+\begin{lemma}{(Disjunction Rule)}
+If $\judgeS{\spec{p}{c}{a:A}{q}}$ is valid and 
+   $\judgeS{\spec{p'}{c}{a:A}{q'}}$ is valid, 
+then $\judgeS{\spec{p \vee p'}{c}{a:A}{q \vee q'}}$ is valid. 
+\end{lemma}
+
+\begin{proof}
+  \begin{tabbedproof}
+    \oo Assume $\judgeS{\spec{p}{c}{a:A}{q}}$ is valid \\
+    \oo Assume $\judgeS{\spec{p'}{c}{a:A}{q'}}$ is valid \\
+
+    \oo Assume $\delta \in \interp{\judgeACtx{\Delta}}$ \\
+    \ooo We want to show $\interp{\judgeS{\spec{p \vee p'}{c}{a:A}{q \vee q'}}}\delta = \top$ \\
+    \ooo So we want to show $\forall r.\; r \in \interp{\judgeS{\spec{p \vee p'}{c}{a:A}{q \vee q'}}}\delta$ \\
+    \ooo Assume $r$, \\
+    \oooo So we want to show $r \in\interp{\judgeS{\spec{p \vee p'}{c}{a:A}{q \vee q'}}}\delta$ \\
+    \oooo Let $\Theta = \restrictkind{\Delta}$ \\
+    \oooo Let $\theta = \restricttyenv{\Delta}{\delta}$ \\
+    \oooo Let $\Gamma = \restricttype{\Delta}$ \\
+    \oooo Let $\gamma = \restrictvals{\Delta}{\delta}$ \\
+    \oooo Let $P'' = \interp{\judgeA{p \vee p'}{\assert}}\;\delta$ \\
+    \oooo Let $C = \interp{\judgeE{\Gamma}{[c]}{\monad{A}}}\;\theta\;\gamma$ \\
+    \oooo Let $Q'' = \semfun{v}{\interp{\judgeA[\Delta,a:A]{q \vee q'}{\assert}}\;(\delta, v)}$ \\
+    \oooo So we want to show $r \in \spec{P''}{C}{a:A}{Q''(a)}$ \\
+    \oooo So we want to show $\forall s \sqsupseteq r.\; \basicspec{P'' * s}{C}{a:A}{Q''(a) * s}$ \\
+    \oooo Assume $s \sqsupseteq r$ \\
+    \ooooo We want to show $\basicspec{P'' * s}{C}{a:A}{Q''(a) * s}$ \\
+    \ooooo We want to show $\forall h \in P'' * s.\; C\;Best(\semfun{a}{Q''(a) * s})\;h = \bot$ \\
+    \ooooo Assume $h \in P'' * s$ \\
+    \oooooo Therefore there are $h_1 \in P''$ and $h_2 \in s$ such that $h = h_1 \cdot h_2$ \\
+    \oooooo We know $P'' = \interp{\judgeA{p \vee p'}{\assert}}\;\delta = 
+                           \interp{\judgeA{p}{\assert}}\;\delta \vee 
+                           \interp{\judgeA{p'}{\assert}}\;\delta$ \\ 
+    \oooooo Call $P = \interp{\judgeA{p}{\assert}}\;\delta$ and $P' = \interp{\judgeA{p'}{\assert}}\;\delta$ \\
+    \oooooo Call $Q = \interp{\judgeA{q}{\assert}}\;\delta$ and $Q' = \interp{\judgeA{q'}{\assert}}\;\delta$ \\
+    \oooooo By the definition of $\vee$, we know that $h_1 \in P$ or $h_1 \in P'$ \\
+    \oooooo Suppose $h_1 \in P$: \\
+    \ooooooo We know by assumption that $\basicspec{P * s}{C}{a:A}{Q(a) * s}$ \\
+    \ooooooo We know that $h = h_1 \cdot h_2 \in P * s$ \\
+    \ooooooo Hence $C\;\mathit{Best}(\semfun{a}{Q(a) * s})\;h = \bot$ \\
+    \ooooooo For any $a$, $Q(a) \subseteq Q''(a)$, \\
+    \ooooooo Hence $\mathit{Best}(\semfun{a}{Q''(a) * s}) \sqsubseteq \mathit{Best}(\semfun{a}{Q(a) * s})$ \\ 
+    \ooooooo Since $C$ is continuous, $C\;\mathit{Best}(\semfun{a}{Q''(a) * s})\;h = \bot$ \\
+    \oooooo Suppose $h_1 \in P'$: \\
+    \ooooooo We know by assumption that $\basicspec{P' * s}{C}{a:A}{Q(a) * s}$ \\
+    \ooooooo We know that $h = h_1 \cdot h_2 \in P' * s$ \\
+    \ooooooo Hence $C\;\mathit{Best}(\semfun{a}{Q'(a) * s})\;h = \bot$ \\
+    \ooooooo For any $a$, $Q'(a) \subseteq Q''(a)$ \\
+    \ooooooo Hence $\mathit{Best}(\semfun{a}{Q''(a) * s}) \sqsubseteq \mathit{Best}(\semfun{a}{Q'(a) * s})$ \\
+    \ooooooo Since $C$ is continuous, $C\;\mathit{Best}(\semfun{a}{Q''(a) * s})\;h = \bot$ \\
+  \end{tabbedproof}
+\end{proof}
+
+
 
 \subsection{The Syntactic Frame Property}
 
