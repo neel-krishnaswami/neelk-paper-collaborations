@@ -1996,12 +1996,33 @@ For all $k$, $fs$  and $os$ we have
 
 \begin{tabbedproof}
 \oo Assume we have a suitable $k$ and $fs$, and then proceed by induction on $os$.  \\
+\oo Pull $\mathit{Good}(os)$ into the context and frame it away. \\
 \oo Suppose $os = \epsilon$:  \\
-\ooo Then our precondition is $\mathit{list}(fs, \epsilon)$ \\
+\ooo Then our precondition is $\mathit{list}(fs, \epsilon) * \mathit{obs}(\epsilon)$ \\
 \ooo This is equivalent to $fs \pointsto \Nil$ \\
 \ooo $[\letv{\mathit{cell}}{[!fs]}{}$  \\
 \ooo So we know $fs \pointsto \Nil \land \mathit{cell} = \Nil$ \\
-\ooo Since $\mathit{cell} = \Nil$ and equational reasoning, we know the remainder of the program is $[\unit]$
+\ooo Since $\mathit{cell} = \Nil$ and equational reasoning, we know the remainder of the program is $\unit$\\
+\ooo $\unit]$ \\
+\ooo So the state is still $\mathit{list}(fs, \epsilon)$ \\
+\ooo This is equivalent to $\mathit{list}(fs, \epsilon) * \emp$ \\
+\ooo This is equivalent to $\mathit{list}(fs, \epsilon) * \mathit{obs\_at}(\epsilon, k)$ \\
+\oo Suppose $os = (O,f) \cdot os'$:  \\
+\ooo Then our precondition is $\mathit{list}(fs, (O,f) \cdot os') * \mathit{obs}((O,f)\cdot os')$ \\
+\ooo This is equivalent to $\mathit{list}(fs, (O,f) \cdot os') * \mathit{obs}((O,f)\cdot os')$ \\
+\ooo This is equivalent to $\exists fs'.\; fs \pointsto \Cons(f, fs') * \mathit{list}(fs',  os') * \exists j.\;O(j) * \mathit{obs}( os')$ \\
+\ooo By dropping existentials, $fs \pointsto \Cons(f, fs') * \mathit{list}(fs',  os') * O(j) * \mathit{obs}( os')$ \\
+\ooo $[\letv{\mathit{cell}}{[!fs]}{}$ \\
+\ooo We know $fs \pointsto \mathit{cell}  * \mathit{list}(fs',  os') * O(j) * \mathit{obs}( os') \land \mathit{cell} = \Cons(f, fs')$ \\
+\ooo Since $\mathit{cell} = \Cons(f, fs')$, we can use equational reasoning to eliminate the case \\
+\ooo $\letv{\mathit{dummy}}{f(k)}{}$ \\
+\ooo We know $fs \pointsto \mathit{cell}  * \mathit{list}(fs',  os') * O(k) * \mathit{obs}( os') \land \mathit{cell} = \Cons(f, fs')$ \\
+\ooo This call is justified because we assumed $\mathit{Good}(os)$ \\
+\ooo $\mathsf{loop}(k, fs')]$\\
+\ooo By induction, $fs \pointsto \mathit{cell}  * \mathit{list}(fs',  os') * O(k) * \mathit{obs\_at}( os') \land \mathit{cell} = \Cons(f, fs')$ \\
+\ooo This is equivalent to $\mathit{list}(fs, os) * \mathit{obs\_at}(os, k)$ \\
+\oo Therefore $\mathit{Good}(os) * \mathit{list}(fs, os) * \mathit{obs\_at}(os, k)$ \\
+\oo Since $\mathit{Good}$ is pure, we have $\mathit{list}(fs, os) * \mathit{obs\_at}(os, k)$ \\
 \end{tabbedproof}
 
 
