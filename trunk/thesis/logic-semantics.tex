@@ -2253,11 +2253,10 @@ We proceed by induction on $D$. \\
 \end{proof}
 
 \begin{lemma}{(Restriction for Values Makes Sense)}
+\label{value-restriction}
 If $\judgeACtx{\Delta}$ and $\delta \in \interp{\judgeACtx{\Delta}}$, 
-then there exists an $\eta$ such that 
-$\eta \in \interp{\restrictkind{\Delta} \vdash \restricttype{\Delta}}\;
-            \restricttyenv{\Delta}{\delta}\;
-            (K,K)$ and $U(\eta) = \restrictvals{\Delta}{\delta}$
+then $\restrictvals{\Delta}{\delta} \in U(\interp{\restrictkind{\Delta} \vdash \restricttype{\Delta}}\;
+            \restricttyenv{\Delta}{\delta}\;(K,K))$
 \end{lemma}
 
 \begin{proof}
@@ -2274,7 +2273,7 @@ As before, we proceed by induction on $\judgeACtx{\Delta}$.
     \ooo By semantics, $\restricttyenv{\cdot}{\delta} = \unit$ \\
     \ooo Now, let $\eta = \unit$ in CPO. \\
     \ooo Then $\interp{\restrictkind{\cdot} \vdash \restricttype{\cdot}}\;\unit\;(K,K) = 1$ in CPO \\
-    \ooo So $\eta \in \interp{\restrictkind{\Delta} \vdash \restricttype{\Delta}}\;
+    \ooo Since $U(1) = 1$, we have $\eta \in \interp{\restrictkind{\Delta} \vdash \restricttype{\Delta}}\;
             \restricttyenv{\Delta}{\delta}\;
             (K,K)$ \\
   \end{tabbedproof}
@@ -2289,10 +2288,9 @@ As before, we proceed by induction on $\judgeACtx{\Delta}$.
     \ooo By semantics, $\delta \in \interp{D_1 :: \judgeACtx{\Delta}}$ \\
     \ooo By semantics, $x \in \interp{D_2 :: \judgeSort{\omega}}\;\delta$ \\
     \ooo By induction, there exists an $\eta$ such that \\
-    \oooo $\eta \in \interp{\restrictkind{\Delta} \vdash
-                              \restricttype{\Delta}}\;
-                      \restricttyenv{\Delta}{\delta}\;(K,K)$ and \\
-    \oooo $U(\eta) = \restrictvals{\Delta}{\delta}$ \\
+    \oooo $\restricttyenv{\Delta}{\delta} \in 
+             U(\interp{\restrictkind{\Delta} \vdash \restricttype{\Delta}}\;
+                      \restricttyenv{\Delta}{\delta}\;(K,K))$ and \\
     \ooo Case analyze $\omega$: \\
     \oooo If $\omega = \kappa$: \\
     \ooooo Then $\restrictkind{\Delta, u:\kappa} = \restrictkind{\Delta}, u:\kappa$ \\
@@ -2305,28 +2303,34 @@ As before, we proceed by induction on $\judgeACtx{\Delta}$.
                           \interp{\restrictkind{\Delta}, u:\kappa \vdash
                               \restricttype{\Delta}}\;
                       (\restricttyenv{\Delta}{\delta}, x)$\\
-    \ooooo By equality, $\eta \in \interp{\restrictkind{\Delta}, u:\kappa \vdash
+    \ooooo So $\restrictvals{\Delta}{\delta} \in U(\interp{\restrictkind{\Delta}, u:\kappa \vdash
                               \restricttype{\Delta}}\;
-                      (\restricttyenv{\Delta}{\delta}, x)\;(K,K)$\\
-    \ooooo By equality, $\eta \in \interp{\restrictkind{\Delta}, u:\kappa \vdash
+                      (\restricttyenv{\Delta}{\delta}, x)\;(K,K))$\\
+    \ooooo So $\restrictvals{\Delta}{\delta} \in U(\interp{\restrictkind{\Delta}, u:\kappa \vdash
                               \restricttype{\Delta}}\;
-                      \restricttyenv{\Delta, u:\kappa}{(\delta, x)}\;(K,K)$\\
-    \ooooo By equality, $\eta \in \interp{\restrictkind{\Delta}, u:\kappa \vdash
-                                       \restricttype{\Delta, u:\kappa}}\;
-                       \restricttyenv{\Delta, u:\kappa}{(\delta, x)}\;(K,K)$\\
-    \ooooo Therefore $U(\eta) = \restricttyenv{\Delta, u:\kappa}{(\delta,x)}$ \\
+                      \restricttyenv{\Delta,u:\kappa}{(\delta, x)}\;(K,K))$\\
+    \ooooo So $\restrictvals{\Delta}{\delta} \in U(\interp{\restrictkind{\Delta}, u:\kappa \vdash
+                              \restricttype{\Delta, u:\kappa}}\;
+                      \restricttyenv{\Delta,u:\kappa}{(\delta, x)}\;(K,K))$\\
+    \ooooo So $\restrictvals{\Delta}{\delta} \in U(\interp{\restrictkind{\Delta, u:\kappa} \vdash
+                              \restricttype{\Delta, u:\kappa}}\;
+                      \restricttyenv{\Delta,u:\kappa}{(\delta, x)}\;(K,K))$\\
+    \ooooo Therefore 
+        $\restricttyenv{\Delta,u:\kappa}{\delta,x} \in U(\interp{\restrictkind{\Delta, u:\kappa} \vdash
+                                                                 \restricttype{\Delta, u:\kappa}}\;
+                      \restricttyenv{\Delta,u:\kappa}{(\delta, x)}\;(K,K))$\\
     \oooo If $\omega = A$: \\
     \ooooo Then $\restrictkind{\Delta, u:A} = \restrictkind{\Delta}$ \\
     \ooooo Then $\restricttyenv{\Delta,u:A}{(\delta,x)} = \restricttyenv{\Delta}{\delta}$ \\
-    \ooooo Then $\restricttype{\Delta, u:A} = \restricttype{\Delta}$, u:A \\
+    \ooooo Then $\restricttype{\Delta, u:A} = \restricttype{\Delta}, u:A$ \\
     \ooooo Then $\restricttyenv{\Delta, u:A}{(\delta, x)} = (\restricttyenv{\Delta}{\delta}, x)$ \\
-    \ooooo By equality, 
+    \ooooo By equality,  
            $\interp{\restrictkind{\Delta} \vdash \restricttype{\Delta}}\;
             \restricttyenv{\Delta}{\delta}
             = 
             \interp{\restrictkind{\Delta, u:A} \vdash \restricttype{\Delta}}\;
             \restricttyenv{\Delta}{(\delta, x)}$ \\
-    \ooooo So $\eta \in \interp{\restrictkind{\Delta, u:A} \vdash \restricttype{\Delta}}\;
+    \ooooo So $\restrictvals{\Delta}{\delta} \in \interp{\restrictkind{\Delta, u:A} \vdash \restricttype{\Delta}}\;
             \restricttyenv{\Delta,u:A}{(\delta, x)}$ \\
     \ooooo Also, $x \in \interp{\judgeSort{A}}\;\delta$ \\
     \ooooo Therefore $x \in U(\interp{\judgeWK[\restrictkind{\Delta}]{A}{\bigstar}}\;
@@ -2336,35 +2340,34 @@ As before, we proceed by induction on $\judgeACtx{\Delta}$.
     \ooooo Let $T \in CPO = \interp{\judgeWK[\restrictkind{\Delta, u:A}]{A}{\bigstar}}\;
                                \restricttyenv{\Delta, u:A}{(\delta, x)}\;(K,K)$ \\
     \ooooo Now, $\sqsubseteq_T$ is an order for the predomain, and $x \in U(T)$. \\
-    \ooooo Therefore, $(\eta, x) \in 
-                         \interp{\restrictkind{\Delta, u:A} \vdash \restricttype{\Delta}}\;
-            \restricttyenv{\Delta}{(\delta, x)} \times T$ \\
-    \ooooo By semantics of contexts, $(\eta, x) \in 
-           \interp{\restrictkind{\Delta, u:A} \vdash \restricttype{\Delta, u:A}}\;
-                   \restricttyenv{\Delta}{(\delta, x)}$ \\
-    \ooooo And from induction hypothesis and $x \in U(T)$, we know \\
-    \ooooo $U(\eta, x) \in U(\interp{\restrictkind{\Delta, u:A} \vdash \restricttype{\Delta, u:A}}\;
-                   \restricttyenv{\Delta}{(\delta, x)})$ \\
-    \ooooo So the witness in this case is $(\eta,x)$ \\
+    \ooooo Therefore, $(\restrictvals{\Delta}{\delta}, x) \in 
+                         U(\interp{\restrictkind{\Delta, u:A} \vdash \restricttype{\Delta}}\;
+            \restricttyenv{\Delta, u:A}{(\delta, x)}) \times U(T)$ \\
+    \ooooo Therefore, $(\restrictvals{\Delta}{\delta}, x) \in 
+                         U(\interp{\restrictkind{\Delta, u:A} \vdash \restricttype{\Delta}}\;
+            \restricttyenv{\Delta, u:A}{(\delta, x)} \times T)$ \\
+    \ooooo Therefore, $(\restrictvals{\Delta}{\delta}, x) \in 
+                         U(\interp{\restrictkind{\Delta, u:A} \vdash \restricttype{\Delta, u:A}}\;
+            \restricttyenv{\Delta, u:A}{(\delta, x)})$ \\
+    \ooooo Therefore, $\restrictvals{\Delta, u:A}{(\delta,x)} \in 
+                         U(\interp{\restrictkind{\Delta, u:A} \vdash \restricttype{\Delta, u:A}}\;
+            \restricttyenv{\Delta, u:A}{(\delta, x)})$ \\
+
     \oooo If $\omega \not= A$ and $\omega \not= \kappa$: \\
     \ooooo Then $\restrictkind{\Delta, u:\omega} = \restrictkind{\Delta}$ \\
     \ooooo Then $\restricttyenv{\Delta,u:\omega}{(\delta,x)} = \restricttyenv{\Delta}{\delta}$ \\
     \ooooo Then $\restricttype{\Delta, u:\omega} = \restricttype{\Delta}$ \\
     \ooooo Then $\restricttyenv{\Delta, u:\omega}{(\delta, x)} = \restricttyenv{\Delta}{\delta}$ \\
-    \ooooo Then by equalities, $\eta \in 
+    \ooooo Therefore, $\restrictvals{\Delta,u:\omega}{(\delta,x)} \in 
               \interp{\restrictkind{\Delta, u:\omega} \vdash
                       \restricttype{\Delta, u:\omega}}\;
-                     \restricttyenv{\Delta, u:\omega}{(\delta,x)}\;(K,K)$ and \\
-    \ooooo $U(\eta) =  \restrictvals{\Delta, u:\omega}{(\delta,x)}$ \\
+                     \restricttyenv{\Delta, u:\omega}{(\delta,x)}\;(K,K)$ \\
 
   \end{tabbedproof}
 \end{itemize}
 \end{proof}
 
-Since the $\eta$ constructed in this proof has the same values as the
-restricted substitution, we will often abuse notation and write things 
-like $\restrictvals{\Delta}{\delta}$ to indicate the environment in 
-CPO. 
+
 
 
 \section{Substitution Theorems}
@@ -4420,25 +4423,25 @@ valid, then $\judgeS{\setof{r} \specimp \spec{p}{c}{a:A}{q}}$ is valid.
 \begin{proof}
 \begin{tabbedproof}
   \oo Assume $\judgeS{\setof{r} \specimp \spec{p \land r}{c}{a:A}{q}}$ is valid. \\
-  \ooo This is equivalent to if $\setof{r}$ is valid, then $\spec{p \land r}{c}{a:A}{q}$ is valid. \\
-  \ooo We want to show that $\judgeS{\setof{r} \specimp \spec{p \land r}{c}{a:A}{q}}$ is valid \\
-  \ooo This is equivalent to showing if $\setof{r}$ is valid, then $\spec{p}{c}{a:A}{q}$ is valid. \\
-  \ooo Assume $\setof{r}$ is valid. \\
-  \oooo Therefore we know $\spec{p \land r}{c}{a:A}{q}$ is valid. \\
-  \oooo We want to show $\spec{p}{c}{a:A}{q}$ is valid. \\
-  \oooo Assume $\delta \in \interp{\Delta}$.  \\
-  \ooooo So we want to show for all $r$, and all $s \worldgeq r$, that $\basicspec{P*s}{C}{a}{Q(a) * s}$ holds\\
-  \oooox where \\
-  \ooooox $R = \interp{\judgeA{r}{\assert}}\;\delta$ \\
-  \ooooox $P = \interp{\judgeA{p}{\assert}}\;\delta$ \\
-  \ooooox $C = \interp{\judgeC[\restrictkind{\Delta}]{\restricttype{\Delta}}{c}{A}}\;\theta\;\gamma$ \\
-  \ooooox $Q = \semfun{v}{\interp{\judgeA[\Delta,a:A]{q}{\assert}}\;(\delta,v)}$ \\
-  \ooooox $\theta = \restricttyenv{\Delta}{\delta}$ \\
-  \ooooox $\gamma = \restrictvals{\Delta}{\delta}$ \\
-  \ooooo Assume a semantic predicate $r$, and $s \worldgeq r$, and $h \in P * s$. \\
-  \oooooo We want to show that $C\;\mathit{Best}(\semfun{a}{Q(a) * s})\;h = \bot$ \\
-  \oooooo Since $\setof{r}$ is valid, we know $R = \top$, and so $h \in P \land R * s$ \\
-  \oooooo Since $\spec{p \land r}{c}{a:A}{q}$ is valid, we know $C\;\mathit{Best}(\semfun{a}{Q(a) * s})\;h = \bot$\\
+  \ooo This is equivalent to for all $\delta$ and $s$ if $s \in \interp{\setof{r}}\;\delta$, then $s \in \interp{\spec{p \land r}{c}{a:A}{q}}\;\delta$. \\
+  \ooo We want to show that $\judgeS{\setof{r} \specimp \spec{p}{c}{a:A}{q}}$ is valid \\
+  \ooo This is equivalent to showing for all $\delta$ and $s$, if $s \in \interp{\setof{r}}\;\delta$, then $s \in \interp{\spec{p}{c}{a:A}{q}}\;\delta$. \\
+  \ooo Assume we have $\delta$ and $s$ such that $s \in \interp{\setof{r}}\;\delta$. \\
+  \oooo We want to show $s \in \interp{\spec{p}{c}{a:A}{q}}\;\delta$ is valid. \\
+  \oooo So we want to show for all $t \worldgeq s$, that $\basicspec{P*t}{C}{a}{Q(a) * t}$ holds\\
+  \ooox where \\
+  \oooox $R = \interp{\judgeA{r}{\assert}}\;\delta$ \\
+  \oooox $P = \interp{\judgeA{p}{\assert}}\;\delta$ \\
+  \oooox $C = \interp{\judgeC[\restrictkind{\Delta}]{\restricttype{\Delta}}{c}{A}}\;\theta\;\gamma$ \\
+  \oooox $Q = \semfun{v}{\interp{\judgeA[\Delta,a:A]{q}{\assert}}\;(\delta,v)}$ \\
+  \oooox $\theta = \restricttyenv{\Delta}{\delta}$ \\
+  \oooox $\gamma = \restrictvals{\Delta}{\delta}$ \\
+  \oooo Assume $t \worldgeq s$, and $h \in P * t$. \\
+  \ooooo We want to show that $C\;\mathit{Best}(\semfun{a}{Q(a) * s})\;h = \bot$ \\
+  \ooooo Since $s \in \interp{\spec{p \land r}{c}{a:A}{q}}\;\delta$, we know $C\;\mathit{Best}(\semfun{a}{Q(a) * s})\;h = \bot$ if  $h \in (P \land R) * t$. \\
+  \ooooo Since we assumed that $\interp{\setof{r}}\;\delta$ was non-empty, this means that $\interp{r}\;\delta = \top = H$. \\
+  \ooooo Hence $h \in (P \land R) * t$. \\
+  \ooooo Hence $C\;\mathit{Best}(\semfun{a}{Q(a) * s})\;h = \bot$ \\ 
 \end{tabbedproof}
 \end{proof}
 
@@ -4547,7 +4550,75 @@ then $\judgeS{\spec{p \vee p'}{c}{a:A}{q \vee q'}}$ is valid.
   \end{tabbedproof}
 \end{proof}
 
+\begin{lemma}{(Equality Substitution)}
+If $\judgeS{\setof{r} \specimp \spec{p}{c[e/x]}{a:A}{q}}$ is valid and
+$\judgeA{r \vdash e =_A e'}{\assert}$, then $\judgeS{\setof{r} \specimp \spec{p}{c[e'/x]}{a:A}{q}}$ is valid.
+\end{lemma}
 
+\begin{proof}
+This rule follows as a consequence of the restriction lemmas we proved earlier. 
+
+\begin{tabbedproof}
+\oo Assume $\judgeS{\setof{r} \specimp \spec{p}{c[e/x]}{a:A}{q}}$ is valid. \\
+\ooo This is equivalent to assuming for all $\delta$ and $s$, if $s \in \interp{\setof{r}}\;\delta$, then $s \in \interp{\spec{p}{c[e/x]}{a:A}{q}}\;\delta$. \\
+\ooo Assume $\delta$, $r$, and $s \in \interp{\setof{r}}\;\delta$ \\
+\oooo Let \\
+\oooox $C = \interp{c[e/x]}\;\restricttyenv{\Delta}{\delta}\;\restrictvals{\Delta}{\delta}$ \\
+\oooox $C' = \interp{c[e'/x]}\;\restricttyenv{\Delta}{\delta}\;\restrictvals{\Delta}{\delta}$ \\
+\oooox $P = \interp{\judgeA{p}{\assert}}\;\delta$ \\
+\oooox $Q = \semfun{v}{\interp{\judgeA[\Delta,a:A]{q}{\assert}}\;(\delta,v)}$ \\
+\oooo Therefore we know that $R = \interp{r}\;\delta = \top = H$. \\
+\oooo Therefore it follows that $\interp{\judgeA{e =_A e'}{\assert}}\;\delta = H$ \\
+\oooo Therefore we know that $U(\interp{\judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}{e}{A}}\;\restricttyenv{\Delta}{\delta})\;\restrictvals{\Delta}{\delta}$ equals \\
+\ooox $U(\interp{\judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}{e'}{A}}\;\restricttyenv{\Delta}{\delta})\;\restrictvals{\Delta}{\delta}$ \\
+\oooo By Lemma~\ref{value-restriction}, we know that 
+$(\interp{\judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}{e}{A}}\;\restricttyenv{\Delta}{\delta})\;\restrictvals{\Delta}{\delta}$ equals \\
+\ooox $(\interp{\judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}{e'}{A}}\;\restricttyenv{\Delta}{\delta})\;\restrictvals{\Delta}{\delta}$, using lambda-notation for CPO \\
+\oooo Since substitution is sound, $\interp{c[e/x]}\;\restricttyenv{\Delta}{\delta}\;\restrictvals{\Delta}{\delta}  = \interp{c[e'/x]}\;\restricttyenv{\Delta}{\delta}\;\restrictvals{\Delta}{\delta}$, or $C = C'$\\
+\oooo By hypothesis, $s \in \interp{\spec{p}{c[e/x]}{a:A}{q}}\;\delta$. \\
+\oooo So for all $t \worldgeq s, h \in P * t$, we have $C\;\mathit{Best}(\semfun{v}{Q(v) * t})\;h = \bot$ \\
+\oooo Since $C = C'$, we know for all $t \worldgeq s, h \in P * t$, we have $C'\;\mathit{Best}(\semfun{v}{Q(v) * t})\;h = \bot$ \\
+\oooo Therefore, $s \in \interp{\spec{p}{c[e'/x]}{a:A}{q}}\;\delta$. \\
+\end{tabbedproof}
+\end{proof}
+
+\begin{lemma}{(Case Analysis)}
+  Suppose $\judgeS[\Delta,x:A]{\mspec{p \land e =_{A+B} \inl(x)}{e_A}{a:C}{q}}$ is valid,
+      and $\judgeS[\Delta,y:B]{\mspec{p \land e =_{A+B} \inr(y)}{e_B}{a:C}{q}}$ is valid.
+
+Then $\judgeS{\mspec{p}{\Case{e}{x}{e_A}{y}{e_B}}{a:C}{q}}$ is valid. 
+\end{lemma}
+
+\begin{proof}
+\begin{tabbedproof}
+\oo Assume $\judgeS[\Delta,x:A]{\mspec{p \land e =_{A+B} \inl(x)}{e_A}{a:C}{q}}$ is valid. \\
+\oo Assume $\judgeS[\Delta,y:B]{\mspec{p \land e =_{A+B} \inr(y)}{e_B}{a:C}{q}}$ is valid. \\
+\ooo We want to show $\judgeS{\mspec{p}{\Case{e}{x}{e_A}{y}{e_B}}{a:C}{q}}$ is valid. \\
+\ooo So we want to show that for all $\delta, s$, $s \in \interp{\judgeS{\mspec{p}{\Case{e}{x}{e_A}{y}{e_B}}{a:C}{q}}}\;\delta$ \\
+\ooo Assume $\delta$ and $s$, and $h \in P * s$, letting \\
+\ooox $P = \interp{\judgeA{p}{\assert}}\;\delta$ \\
+\ooox $Q = \semfun{v}{\interp{\judgeA[\Delta, a:C]{p}{\assert}}\;(\delta,v)}$ \\
+\ooox $C_A = \semfun{v}{\interp{\judgeE[\restrictkind{\Delta, x:A}]{\restricttype{\Delta, x:A}}{e_A}{\monad{C}}}\;\restricttyenv{\Delta,x:A}{(\delta,v)}\;\restrictvals{\Delta, x:A}{(\delta,v)}}$ \\
+\ooox $C_B = \semfun{v}{\interp{\judgeE[\restrictkind{\Delta, y:B}]{\restricttype{\Delta, y:B}}{e_B}{\monad{C}}}\;\restricttyenv{\Delta,y:B}{(\delta,v)}\;\restrictvals{\Delta, y:B}{(\delta,v)}}$ \\
+\ooox $E = \interp{\judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}{e}{A+B}}\;\restricttyenv{\Delta}{\delta}\;\restrictvals{\Delta}{\delta}$ \\
+\oooo We want to show $[C_A,C_B](E)\;\mathit{Best}(\semfun{v}{Q(v)*s})\;h = \bot$\\
+\oooo Suppose $E = \inl(u)$ for some $u$: \\
+\ooooo Then we want to show that $C_A\;u\;\mathit{Best}(\semfun{v}{Q(v)*s})\;h = \bot$\\
+\ooooo We know $\judgeS[\Delta,x:A]{\mspec{p \land e =_{A+B} \inl(x)}{e_A}{a:C}{q}}$ is valid. \\
+\ooooo So for all $h \in (P \land \interp{e =_{A+B} \inl(x)}\;(\delta,\inl(u))) * s$, $C_A\;u\;\mathit{Best}(\semfun{v}{Q(v)*s})\;h = \bot$\\
+\ooooo Since $E=\inl(u)$, we know that $\top = \interp{\judgeA[\Delta,x:A]{e=_{A+B}\inl(x)}{\assert}}\;(\delta,\inl(u))$\\
+\ooooo Since equality is pure, $h \in \interp{p \land e =_{A+B} \inl(x)}\;(\delta,\inl(u)) * s$ \\
+\ooooo Therefore $C_A\;u\;\mathit{Best}(\semfun{v}{Q(v)*s})\;h = \bot$\\
+\oooo Suppose $E = \inr(u)$ for some $u$:  \\
+\ooooo Then we want to show that $C_B\;u\;\mathit{Best}(\semfun{v}{Q(v)*s})\;h = \bot$\\
+\ooooo We know $\judgeS[\Delta,y:B]{\mspec{p \land e =_{A+B} \inr(x)}{e_A}{a:C}{q}}$ is valid. \\
+\ooooo So for all $h \in (P \land \interp{e =_{A+B} \inr(x)}\;(\delta,\inr(u))) * s$, $C_B\;u\;\mathit{Best}(\semfun{v}{Q(v)*s})\;h = \bot$\\
+\ooooo Since $E=\inr(u)$, we know that $\top = \interp{\judgeA[\Delta,y:B]{e=_{A+B}\inr(x)}{\assert}}\;(\delta,\inr(u))$\\
+\ooooo Since equality is pure, $h \in \interp{p \land e =_{A+B} \inr(x)}\;(\delta,\inr(u)) * s$ \\
+\ooooo Therefore $C_B\;u\;\mathit{Best}(\semfun{v}{Q(v)*s})\;h = \bot$\\
+
+\end{tabbedproof}
+\end{proof}
 
 \subsection{The Syntactic Frame Property}
 
