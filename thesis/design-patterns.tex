@@ -1543,31 +1543,29 @@ argument and will return appropriate $\ctext{newglyph}$ and
 $\ctext{getdata}$ functions.
 
 \begin{tabbing}
-Flyweight$($\=$I : \assert,\;\; $\\
+Flyweight$($\=$I : (\ctext{char} \rightharpoonup \ctext{glyph}) \to \assert,\;\; $\\
 \> $\ctext{newglyph} : \chartp \to \monad{\ctext{glyph}},$ \\
 \> $\ctext{getdata} : \ctext{glyph} \to \monad{(\chartp \times \fonttp)},$ \\
 \> $f:\fonttp) \equiv$ \\
-1 \qquad \=$\exists $\=$glyph : \ctext{glyph} \times \chartp \times \fonttp \To \assert.$ 
-\\[0.5em]
+% 1 \qquad \=$\exists $\=$glyph : \ctext{glyph} \times \chartp \times \fonttp \To \assert.$ 
+% \\[0.5em]
 
-2  \> \> $\forall c, S.\;$\=
-         $\{I \land chars(S)\}$ \\
-   \>\>\>$\run{\ctext{newglyph}(c)}$ \\
-   \>\>\>$\setof{a:\ctext{glyph}.\; 
-                 I \land chars(\setof{(a, (c,f))} \cup S)}$ \\
+1 \qquad\=  $\forall$\=$c, h.\;$\=
+         $\{I(h)\}$ \\
+  \>\>\>$\run{\ctext{newglyph}(c)}$ \\
+  \>\>\>$\setof{a:\ctext{glyph}.\; I([h|c:a]) \land (c \in \domain{h} \implies a = h(c))}$ \\
   \> \!$\specand$ \\
-3 \> $\forall l, c, f, P.\;$\=
-     $\setof{glyph(l, c, f) \land P}$ \\
+2 \> $\forall l, h, c.\;$\=
+     $\setof{I(h) \land l = h(c)}$ \\
 \>\> $\run{\ctext{getdata}(l)}$ \\
-\>\> $\setof{a:\chartp \times \fonttp.\; glyph(l, c, f) \land P \land a = (c,f)}$
-\\
-  \> \!$\specand$ \\
-4 \> $\{\forall l, l', c, c'.\;$\=$I \land glyph(l,c,f) \land glyph(l',c',f')
- \implies $ \\
-\>\>  $\;\;\;\left(l = l' \iff (c = c'\land f=f')\right)\}$ \\[0.5em]
-
-$chars(\emptyset)$ \qquad\qquad\qquad \;\;\= $\equiv$ \= $\top$ \\
-$chars(\setof{(l,(c,f))} \cup S)$ \> $\equiv$ \> $glyph(l,c,f) \land chars(S)$ \\
+\>\> $\setof{a:\chartp \times \fonttp.\;  I(h) \land a = (c,f)}$
+%   \> \!$\specand$ \\
+% 4 \> $\{\forall l, l', c, c'.\;$\=$I \land glyph(l,c,f) \land glyph(l',c',f')
+%  \implies $ \\
+% \>\>  $\;\;\;\left(l = l' \iff (c = c'\land f=f')\right)\}$ \\[0.5em]
+% 
+% $chars(\emptyset)$ \qquad\qquad\qquad \;\;\= $\equiv$ \= $\top$ \\
+% $chars(\setof{(l,(c,f))} \cup S)$ \> $\equiv$ \> $glyph(l,c,f) \land chars(S)$ \\
 \end{tabbing}
 
 
@@ -1578,54 +1576,22 @@ type. The reason we do this instead of existentially quantifying over
 them will become clear shortly, once we see the factory function that
 creates flyweight constructors.
 
-On line 1, we assert the existence of a three-place predicate
-$glyph(l, c, f)$, which is read as saying the glyph value $l$ is a
-glyph of character $c$ and font $f$. 
+On line 1, we specify the effect of a call $\ctext{newglyph}(c)$
+procedure. Its precondition is the predicate $I(h)$, which asserts
+that the abstract state contains glyphs for all of the characters in
+the domain of the partial function $h$. Its postcondition changes to a
+state $I([h|c:a])$, which is a partial function extended to include
+the character $c$, with the additional condition that if $c$ was
+already in $h$'s domain, the same glyph value is returned. 
 
-On line 2, we specify the $\ctext{newglyph}$ procedure. Its
-precondition says the pre-state must be the private flyweight state
-$I$, and that this state overlaps with the character state for the
-glyph/data pairs in $S$. The definition of $chars$ takes a set of
-glyph/data pairs and produces the conjunction of $glyph(l,c,f)$ for
-all the $(l,(c,f)) \in S$. Running $\ctext{newglyph}(c)$ will yield a
-postcondition state in which $(a, (c,f))$ is added to the set $S$ --
-that is, the postcondition state is $I \land chars(S) \land
-glyph(a,c,f)$.
+The intuition for this specification is that $I(h)$ abstractly represents
+a memo table (i.e., the function $h$), which characterizes all the 
+glyphs allocated so far. 
 
-The intuition for this specification is that $I$ represents the
-private state of the memo table. We use an ordinary conjunction
-instead of the separating conjunction in the definition of $chars$ to
-say that the different glyphs may alias with each other, and with the
-private state $I$. In other words, even though the $\ctext{newglyph}$
-function returns a new glyph value, the ownership of the state
-associated with that value is not transferred -- it remains with the
-constructor. All the client can know is that some glyph state exists
-for the value it created, and that the glyph state is owned by the
-constructor.
-
-On line 3, we specify the $\ctext{getdata}$ function. If the predicate
-$glyph(r, c, f)$ is in the precondition, then $\ctext{getdata}(r)$
-will return $(c, f)$.  To enforce the flyweight invariant that the
-glyph objects are read-only, we conjoin the pre- and post-conditions
-with an arbitrary predicate variable $P$. Since $P$ must be preserved
-for any instantiation, we know that $\ctext{getdata}$ cannot make any
-changes to the underlying data. (It might be possible to internalize
-this style of argument into the logic via some sort of relational
-parametricity proof. However, we have not yet done so.)
-
-Finally, on lines 4, we give an axiom about the interaction of $I$ and
-$glyph(l,c,f)$, which says that if we know that $I \land glyph(l,c,f)
-\land glyph(l',c', f')$ holds, then $l = l'$ holds if and only $c =
-c'$ and $f = f'$. This axiom gives clients the ability to take
-advantage of the fact that we are caching object creation and conclude
-that two calls to $\ctext{newglyph}$ with the same arguments will
-yield the same result. 
-
-Requiring an axiom of separation hold of the abstract predicates is
-how we state reasoning principles about aliasing as part of the
-interface of a module. When we verify the implementation, we will need
-to give concrete definitions of $I$ and $glyph$, and show that the
-formula is actually a tautology of separation logic.
+On line 2, we specify the $\ctext{getdata}$ function. This just says 
+that if we call $\ctext{getdata}(c)$ on a character $c$ in the domain
+of $h$, then we are returned the data (the alphabetic character 
+and font) for this glyph. 
 
 The specification of the flyweight factory looks like this:
 
@@ -1636,7 +1602,7 @@ The specification of the flyweight factory looks like this:
 \> \> $(\ctext{glyph} \to \monad{(\chartp \times \fonttp)})).$\\
 2 \> \;\;\= $\forall f.\;$\=$\setof{\emp}$ \\
   \>\> \> $\run{\ctext{make\_flyweight}(f)}$ \\
-  \>\> \> $\setof{a.\; \exists I:\assert.\; I \land \validprop{\mbox{Flyweight}(I, \fst{a}, \snd{a}, f)}}$ \\
+  \>\> \> $\setof{a.\; \exists I.\; I([]) \land \validprop{\mbox{Flyweight}(I, \fst{a}, \snd{a}, f)}}$ 
 \end{tabbing}
 
 
@@ -1658,7 +1624,6 @@ make use of existentially-quantified \emph{state}.
 
 Below, we define $\ctext{make\_flyweight}$ and its predicates:
 
-
 \begin{specification}
 \nextline $\ctext{m}$\=$\ctext{ake\_flyweight} \equiv$ 
 \nextline            \> $\lambda f:$\=$\fonttp.\;$
@@ -1673,31 +1638,27 @@ $\None \to [$\=$\ctext{letv}\; r = [\newref{\ctext{glyph}}{c,f}] \ctext{ in}$
 \nextline \> \> $(\mathit{newglyph}, \mathit{getdata})]$
 \\
 
-\nextline $glyph(r, c, f) \equiv r \pointsto (c,f) * \top$ \\
-
-\nextline $I \equiv table(t,mapping) * refs(mapping, \mbox{dom}(mapping))$ \\
-
-\nextline $refs(mapping, \emptyset) \qquad\qquad  $ \= $\equiv$\;\;\=$\emp$ 
-\nextline $refs(mapping, \setof{c} \cup D)$ \> $\equiv$\> $mapping(c) \pointsto (c,f) * refs(f, D)$ 
+\nextline $I(h) \equiv table(t,h) * \mathit{refs}(mapping, \mbox{dom}(mapping))$ \\
+\nextline $\mathit{refs}(h) = \forall^{*} c \in \domain{h}.\; h(c) \pointsto (c, f)$ 
 \end{specification}
 
 
 In this implementation we have assumed the existence of a hash table
 implementation with operations $\ctext{newtable}$, $\ctext{lookup}$,
-and $\ctext{update}$, whose specifications we omit for space
-reasons. The $\ctext{make\_flyweight}$ function definition takes a
+and $\ctext{update}$, whose specifications we give at the end of the
+chapter. The $\ctext{make\_flyweight}$ function definition takes a
 font argument $f$, and then in its body it creates a new table $t$. It
 then constructs two functions as closures which capture this state
 (and the argument $f$) and operate on it. In lines 4-7, we define
-$newglyph$, which takes a character and checks to see (line 5) if it is
-already in the table. If it is not (lines 5-6), it allocates a new
+$newglyph$, which takes a character and checks to see (line 5) if it
+is already in the table. If it is not (lines 5-6), it allocates a new
 glyph reference, stores it in the table, and returns the
 reference. Otherwise (line 7), it returns the existing reference from
-the table.  On lines 8, we define $getdata$, which dereferences
-its pointer argument and returns the result. This implementation does
-no writes, fulfilling the promise made in the specification. The
+the table.  On lines 8, we define $getdata$, which dereferences its
+pointer argument and returns the result. This implementation does no
+writes, fulfilling the promise made in the specification. The
 definition of the invariant state $I$ describes the state of the table
-$t$ (and $mapping$), which are hidden from clients.
+$t$ (as the partial function $h$), which are hidden from clients.
 
 Observe how the post-condition to $\ctext{make\_flyweight}$ nests the
 existential state $I$ with the validity assertion to specialize the
@@ -1709,8 +1670,114 @@ they have compatible types.
 
 \subsection{Verification of the Implementation}
 
-To prove the correctness of the implementation, we will make use of 
-the following specifications for the new
+To prove the correctness of the implementation, we will work
+inside-out, first giving specifications and correctness proofs for the
+``methods'' of the factory, and then using these to prove the correctness
+of the $\mathsf{make\_flyweight}$ function. 
+
+\begin{lemma}{(Correctness of \textit{newglyph})}
+Define the function $\mathit{newglyph}$ as follows:
+\begin{tabbing}
+  $\mathit{newglyph} \equiv \lambda c.\; [$\=
+     $\letv{x}{\ctext{lookup}(t,c)}{}$ \\
+\>   $\ctext{run}\;\ctext{case}(x, $\=$\None \to [$\=$\letv{r}{[\newref{\ctext{glyph}}{(c,f)}]}{}$ \\
+\>                                  \>            \>$\letv{\_}{\ctext{update}(t, c, r)}{}$ \\
+\>                                  \>            \>$r]$\\
+\>                                  \>$\Some(r) \to [r])]$ 
+\end{tabbing}
+\noindent This function satisfies the following specification:
+\begin{tabbing}
+\;\;\=
+$\setof{\mathit{table}(t, \sigma) * \forall^{*}c \in \domain{\sigma}.\;\sigma(c) \pointsto (c,f)}$ \\
+\> $\mathit{newglyph}(c,f)$ \\
+\> $\{a:\reftype{\ctext{glyph}}.\;
+   \exists \sigma' \supseteq \sigma. \mathit{table}(t, \sigma') \land \sigma'(a) = (c,f) * \forall^{*}c \in \domain{\sigma}.\;\sigma(c) \pointsto (c,f) \}$ \\
+\end{tabbing}
+\end{lemma}
+
+\begin{proof}
+Note that in this definition, the $t$ and $f$ variables occur free. We are going to 
+prove our specification valid with respect to these variables, so that we can substitute
+them with whatever actual terms in context that we need to use. 
+
+\begin{tabbedproof}
+\oo Assume we are in the precondition state $\mathit{table}(t, \sigma) * \forall^{*}c \in \domain{\sigma}.\;\sigma(c) \pointsto (c,f)$ \\
+\ooo $[\letv{x}{\ctext{lookup}(t,c)}{}$ \\
+\ooo We now have $\mathit{table}(t, \sigma) * \forall^{*}c \in \domain{\sigma}.\;\sigma(c) \pointsto (c,f)$  \\
+\oox $\land\; ((c \not \in \domain{\sigma} \land x = \None) \vee (c \in \domain{\sigma} \land x = \Some(\sigma(c))))$ \\
+\ooo Suppose $x = \None$:\\
+\oooo Then it follows that $\mathit{table}(t, \sigma) * \forall^{*}c \in \domain{\sigma}.\;\sigma(c) \pointsto (c,f) \land c \not \in \domain{\sigma} \land x = \None$\\
+\oooo By equality reasoning, we can simplify the case statement. \\
+\oooo $\letv{r}{[\newref{\ctext{glyph}}{(c,f)}]}{}$ \\
+\oooo So $r \pointsto (c,f) * \forall^{*}c \in \domain{\sigma}.\;\sigma(c) \pointsto (c,f) * \mathit{table}(t, \sigma) \land c \not \in \domain{\sigma} \land x = \None$\\
+\oooo $\letv{\_}{\ctext{update}(t, c, r)}{}$ \\
+\oooo So $r \pointsto (c,f) * \forall^{*}c \in \domain{\sigma}.\;\sigma(c) \pointsto (c,f) * \mathit{table}(t, [\sigma|c:r]) \land c \not \in \domain{\sigma}$\\
+\oooo So $\forall^{*}c \in \domain{\sigma'}.\;\sigma(c) \pointsto (c,f) * \mathit{table}(t, \sigma') \land \sigma' = [\sigma|c:r]$\\
+\oooo $r]$ \\
+\oooo We can choose the witness to the existential to be $\sigma'$, yielding \\
+\ooox $\exists \sigma' \supseteq \sigma. \mathit{table}(t, \sigma') \land \sigma'(a) = (c,f) * \forall^{*}c \in \domain{\sigma}.\;\sigma(c) \pointsto (c,f)$ \\
+\ooo Suppose $\exists y.\; x = \Some(y)$:  \\
+\oooo Then it follows that $\mathit{table}(t, \sigma) * \forall^{*}c \in \domain{\sigma}.\;\sigma(c) \pointsto (c,f) \land x = \Some(\sigma(c))$\\
+\oooo By equality reasoning, we can simplify the case statement. \\
+\oooo Furthermore, we have $\mathit{table}(t, \sigma) * \forall^{*}c \in \domain{\sigma}.\;\sigma(c) \pointsto (c,f) \land r = \sigma(c)$\\
+\oooo $r]$ \\
+\oooo We can choose the witness to the existential to be $\sigma$, yielding \\
+\ooox $\exists \sigma' \supseteq \sigma. \mathit{table}(t, \sigma') \land \sigma'(a) = (c,f) * \forall^{*}c \in \domain{\sigma}.\;\sigma(c) \pointsto (c,f)$ 
+\end{tabbedproof}
+\end{proof}
+
+\begin{lemma}{(Correctness of $\mathit{getdata}$)}
+Define the $\mathit{getdata}$ function as follows:
+\begin{tabbing}
+\qquad $\mathit{getdata} \equiv \semfun{r}{[!r]}$  
+\end{tabbing}
+
+\noindent This function satisfies the following specification:
+\begin{displaymath}
+  \spec{\mathit{table}(t, \sigma) * \mathit{refs}(\sigma) \land l \in \domain{\sigma}}
+       {\mathit{getdata}(l)}
+       {a:\chartp \times \fonttp}
+       {\mathit{table}(t, \sigma) * \mathit{refs}(\sigma)}
+\end{displaymath}
+\end{lemma}
+
+\begin{proof}
+The correctness proof for this function is very simple, amounting to a single application
+of the frame rule, together with the dereference rule.
+\begin{tabbedproof}
+\oo Assume our state is $\mathit{table}(t, \sigma) * \mathit{refs}(\sigma) \land l = h(c)$ \\
+\oo This is $\mathit{table}(t, \sigma) * (\mathit{refs}(\sigma - [c:l]) * l \pointsto (c,f)$ \\
+\oo $[!l]$ \\
+\oo This is $\mathit{table}(t, \sigma) * (\mathit{refs}(\sigma - [c:l]) * l \pointsto (c,f) \land a = (c,f)$ \\
+\oo This is $\mathit{table}(t, \sigma) * \mathit{refs}(\sigma) \land a = (c, f)$ 
+\end{tabbedproof}
+\end{proof}
+
+\begin{lemma}{(Correctness of $\mathsf{make\_flyweight}$)}
+  The $\mathsf{make\_flyweight}$ meets the specification above. 
+\end{lemma}
+
+Now, we can prove the correctness of the $\mathsf{make\_flyweight}$ function. To do
+this, we will assume a font argument $f$, and then prove the correctness of the body
+of the function.
+\begin{proof}
+\begin{tabbedproof}
+\oo We begin with an assumed $\emp$ precondition. \\
+\oo $[\letv{t}{\mathsf{newtable}()}{}$ \\
+\oo Now our state is $\mathit{table}(t, [])$ \\
+\oo $\letv{\mathit{newglyph}}{\ldots}{}$ (Take the ``\ldots'' to be the definition above) \\
+\oo $\letv{\mathit{getdata}}{\ldots}{}$ (Take the ``\ldots'' to be the definition above)\\
+\oo Now our state is $\mathit{table}(t, []) \land \mathit{newglyph} = \ldots \land \mathit{getdata} = \ldots$ \\
+\oo Choose $I(h) = table(t,h) * \mathit{refs}(mapping, \mbox{dom}(mapping))$ with the $t$ in this scope\\
+\oo Then we can instantiate the specs of $\mathit{newglyph}$ and $\mathit{getdata}$ with $I$ and $f$ in this scope\\
+\oo Then since valid specs allow us to introduce validity assertions, we know  \\
+\ox $I([]) \land \validprop{\mbox{Flyweight}(I, \mathit{newglyph}, \mathit{getdata}, f)}$  \\
+\oo We can existentially quantify over $I$, to get \\
+\ox $\exists I.\; I([]) \land \validprop{\mbox{Flyweight}(I, \mathit{newglyph}, \mathit{getdata}, f)}$  \\
+\oo $(\mathit{newglyph}, \mathit{getdata})]$\\
+\oo Now we know $\exists I.\;I([]) \land \validprop{\mbox{Flyweight}(I, \fst{a}, \snd{a}, f)}$\\
+\end{tabbedproof}
+\end{proof}
 
 \section{Subject-Observer}
 
@@ -1946,16 +2013,16 @@ invariant.
 \subsection{Correctness Proofs for Subject-Observer}
 
 \subsubsection{Proof of the $\ctext{register}$ Function}
-
+\begin{proof}
 \begin{tabbedproof}
 \oo Assume we have $f, O, s, cs, n, os$ and the specification $\forall i,k.\;\spec{O(i)}{\run{f(k)}}{a:1}{O(k)}$ \\
 \ooo Assume we are in the prestate $\setof{\mathit{sub}((s,cs), n, os)}$ \\
 \ooo This state is equivalent to $s \pointsto n * \mathit{list}(cs, \mathit{map}\;\snd{}\;os) \land \mathit{Good}(os)$ \\
 \ooo By the definition of $\mathit{list}$, we know \\
-\ooox $\mathit{list}(cs, \mathit{map}\;\snd{}\;os) = \exists cell.\;cs \pointsto cell * \mathit{list'}(cell, \mathit{map}\;\snd{}\;os)$ \\
+\ooox $\mathit{list}(cs, \mathit{map}\;\snd{}\;os) = \exists cell.\;cs \pointsto cell * \mathit{listcell}(cell, \mathit{map}\;\snd{}\;os)$ \\
 \ooo $[\letv{mathit{cell}}{!r}{}$ \\
 \ooo We can drop the existential now, giving a state of \\
-\ooox $s \pointsto n * cs \pointsto cell * \mathit{list'}(cell, \mathit{map}\;\snd{}\;os) \land \mathit{Good}(os)$ \\
+\ooox $s \pointsto n * cs \pointsto cell * \mathit{listcell}(cell, \mathit{map}\;\snd{}\;os) \land \mathit{Good}(os)$ \\
 \ooo $\letv{r}{[\newref{\reftype{\listtype{(\N \to \monad{\unittype})}}}{\mathit{cell}}]}{}$ \\
 \ooo We add $r \pointsto \mathit{cell}$ to the state, and fold the definition of list, to get \\
 \ooox $s \pointsto n * cs \pointsto - * \mathit{list}(r, \mathit{map}\;\snd{}\;os) \land \mathit{Good}(os)$ \\ 
@@ -1966,9 +2033,10 @@ invariant.
 \ooox to get $s \pointsto n * \mathit{list}(cs, \mathit{map}\;\snd{}\;((O,f) \cdot os)) \land \mathit{Good}((O,f) \cdot os)$ \\ 
 \ooo This is $\mathit{sub}((s,cs), (O,f)\cdot os)$
 \end{tabbedproof}
+\end{proof}
 
 \subsubsection{Proof of the $\ctext{newsub}$ Function}
-
+\begin{proof}
 \begin{tabbedproof}
 \oo Assume we have a variable $n$ and the initial state $\emp$\\
 \ooo Now consider the body of the $\ctext{newsub}$ function: \\
@@ -1980,8 +2048,9 @@ invariant.
 \ooo This is equivalent to $\mathit{data} \pointsto n * \mathit{list}(\mathit{callbacks}, \epsilon) \land \mathit{Good}(\epsilon)$ \\
 \ooo This is equivalent to $\mathit{sub}(\mathit{(data,callbacks)}, n, \epsilon)$ \\
 \ooo $(data, callbacks)]$ \\
-\ooo Therefore $\mathit{sub}(a, n, \epsilon)$ with return value $a$ \\
+\ooo Therefore $\mathit{sub}(a, n, \epsilon)$ with return value $a$ 
 \end{tabbedproof}
+\end{proof}
 
 \subsubsection{Proof of the $\ctext{broadcast}$ Function}
 
@@ -1990,10 +2059,10 @@ To prove this function, we first need to prove an auxilliary lemma about the $\c
 \begin{lemma}{($\ctext{loop}$ Invariant)}
 For all $k$, $fs$  and $os$ we have
 \begin{displaymath}
-\spec{\mathit{Good}(os) \land \mathit{obs}(os)}{\ctext{loop}(k, fs)}{a:1}{\mathit{obs\_at}(os, k)}
+\spec{\mathit{Good}(os) \land \mathit{list}(fs, \mathit{map}\;\snd{}os) * \mathit{obs}(os)}{\ctext{loop}(k, fs)}{a:1}{\mathit{list}(fs, \mathit{map}\;\snd{}\;os) * \mathit{obs\_at}(os, k)}
 \end{displaymath}
 \end{lemma}
-
+\begin{proof}
 \begin{tabbedproof}
 \oo Assume we have a suitable $k$ and $fs$, and then proceed by induction on $os$.  \\
 \oo Pull $\mathit{Good}(os)$ into the context and frame it away. \\
@@ -2008,23 +2077,49 @@ For all $k$, $fs$  and $os$ we have
 \ooo This is equivalent to $\mathit{list}(fs, \epsilon) * \emp$ \\
 \ooo This is equivalent to $\mathit{list}(fs, \epsilon) * \mathit{obs\_at}(\epsilon, k)$ \\
 \oo Suppose $os = (O,f) \cdot os'$:  \\
-\ooo Then our precondition is $\mathit{list}(fs, (O,f) \cdot os') * \mathit{obs}((O,f)\cdot os')$ \\
-\ooo This is equivalent to $\mathit{list}(fs, (O,f) \cdot os') * \mathit{obs}((O,f)\cdot os')$ \\
-\ooo This is equivalent to $\exists fs'.\; fs \pointsto \Cons(f, fs') * \mathit{list}(fs',  os') * \exists j.\;O(j) * \mathit{obs}( os')$ \\
-\ooo By dropping existentials, $fs \pointsto \Cons(f, fs') * \mathit{list}(fs',  os') * O(j) * \mathit{obs}( os')$ \\
+\ooo Then our precondition is $\mathit{list}(fs, f \cdot \mathit{map}\;\snd{}\;os') * \mathit{obs}((O,f)\cdot os')$ \\
+\ooo This is equivalent to $\mathit{list}(fs, f \cdot \mathit{map}\;\snd{}\; os') * \mathit{obs}((O,f)\cdot os')$ \\
+\ooo This is equivalent to $\exists fs'.\; fs \pointsto \Cons(f, fs') * \mathit{list}(fs',  \mathit{map}\;\snd{}\; os') * \exists j.\;O(j) * \mathit{obs}( os')$ \\
+\ooo By dropping existentials, $fs \pointsto \Cons(f, fs') * \mathit{list}(fs',  \mathit{map}\;\snd{}\;os') * O(j) * \mathit{obs}( os')$ \\
 \ooo $[\letv{\mathit{cell}}{[!fs]}{}$ \\
-\ooo We know $fs \pointsto \mathit{cell}  * \mathit{list}(fs',  os') * O(j) * \mathit{obs}( os') \land \mathit{cell} = \Cons(f, fs')$ \\
+\ooo We know $fs \pointsto \mathit{cell}  * \mathit{list}(fs',  \mathit{map}\;\snd{}\;os') * O(j) * \mathit{obs}( os') \land \mathit{cell} = \Cons(f, fs')$ \\
 \ooo Since $\mathit{cell} = \Cons(f, fs')$, we can use equational reasoning to eliminate the case \\
 \ooo $\letv{\mathit{dummy}}{f(k)}{}$ \\
-\ooo We know $fs \pointsto \mathit{cell}  * \mathit{list}(fs',  os') * O(k) * \mathit{obs}( os') \land \mathit{cell} = \Cons(f, fs')$ \\
+\ooo We know $fs \pointsto \mathit{cell}  * \mathit{list}(fs',  \mathit{map}\;\snd{}\;os') * O(k) * \mathit{obs}( os') \land \mathit{cell} = \Cons(f, fs')$ \\
 \ooo This call is justified because we assumed $\mathit{Good}(os)$ \\
 \ooo $\mathsf{loop}(k, fs')]$\\
-\ooo By induction, $fs \pointsto \mathit{cell}  * \mathit{list}(fs',  os') * O(k) * \mathit{obs\_at}( os') \land \mathit{cell} = \Cons(f, fs')$ \\
-\ooo This is equivalent to $\mathit{list}(fs, os) * \mathit{obs\_at}(os, k)$ \\
-\oo Therefore $\mathit{Good}(os) * \mathit{list}(fs, os) * \mathit{obs\_at}(os, k)$ \\
-\oo Since $\mathit{Good}$ is pure, we have $\mathit{list}(fs, os) * \mathit{obs\_at}(os, k)$ \\
+\ooo By induction, $fs \pointsto \mathit{cell}  * \mathit{list}(fs',  \mathit{map}\;\snd{}\;os') * O(k) * \mathit{obs\_at}( os') \land \mathit{cell} = \Cons(f, fs')$ \\
+\ooo This is equivalent to $\mathit{list}(fs, \mathit{map}\;\snd{}\;os) * \mathit{obs\_at}(os, k)$ \\
+\oo Therefore $\mathit{Good}(os) * \mathit{list}(fs, \mathit{map}\;\snd{}\;os) * \mathit{obs\_at}(os, k)$ \\
+\oo Since $\mathit{Good}$ is pure, we have $\mathit{list}(fs, \mathit{map}\;\snd{}\;os) * \mathit{obs\_at}(os, k)$
 \end{tabbedproof}
+\end{proof}
 
+There is an interesting feature of this proof which distinguishes it
+from the proofs we gave for the iterator implementation. In this
+proof, we reason about branches by doing a case analysis in the
+program logic, and then using the specification-level equality to
+justify \emph{simplifying} the program we are proving. That is, when
+we consider an empty input list, we can use the equational theory of
+the lambda calculus to simplify the program we are proving to
+eliminate that case altogether.
+
+This contrasts with the usual situation in Hoare logic, 
+
+
+
+
+Now, the proof of the $\mathsf{broadcast}$ function is quite easy: 
+
+\begin{tabbedproof}
+\oo Assume we have $s, i, os, k$ with a precondition of $\mathit{sub}(s, i, os) * \mathit{obs}(os)$ \\
+\oo This is equivalent to $\mathit{Good}(os) \land \fst{s}\pointsto i * \mathit{list}(\snd{s}, \mathit{map}\;\snd{}\;os) * \mathit{obs}(os)$ \\
+\oo $[\letv{dummy}{[\fst{s} := k]}{}$ \\
+\oo This yields $\mathit{Good}(os) \land \fst{s}\pointsto k * \mathit{list}(\snd{s}, \mathit{map}\;\snd{}\;os) * \mathit{obs}(os)$ \\
+\oo $\mathsf{loop}(k, \snd{s})]$ \\
+\oo This yields $\mathit{Good}(os) \land \fst{s}\pointsto k * \mathit{list}(\snd{s}, \mathit{map}\;\snd{}\;os) * \mathit{obs\_at}(os, k)$ \\
+\oo This is equivalent to $\mathit{sub}(s, k, os) * \mathit{obs\_at}(os,k)$ 
+\end{tabbedproof}
 
 % \input{htt-experiments}
 
