@@ -208,6 +208,129 @@ $p$ to get the root, and then passing that to $w$.
 \label{union-find:impl}  
 \end{figure}
 
+
+\section{Correctness Proofs}
+
+\subsection{Proof of $\ctext{find}$}
+
+\texttt{FIXME: FIX DEFINITION OF FINDROOT}
+
+Suppose $R \subseteq X \times X$ is a strict partial order. We say $x \in X$ is \emph{maximal}
+when there is no $y \in X$ such that $(x,y) \in R$. 
+
+\begin{lemma}{(Path Compression Lemma)}
+  Suppose $D$ is a finite set and $f : D \rightharpoonup D$ is a partial function on $D$,
+such that $f^{+}$ is a strict partial order. Now suppose $(x,y) \in f^{+}$ with $y$ maximal.
+
+Then, $(u,v) \in [f|x:y]^{+}$ with $v$ maximal if and only if $(u,v) \in f^{+}$ with $v$ maximal. 
+\end{lemma}
+
+\begin{proof}
+\begin{itemize}
+\item[$\Leftarrow$] Suppose that $(u, v)$ in $f^{+}$. Then there is some $k$ such 
+that $f^k(u) = v$. So we have a sequence $u, f(u), \ldots, f^k(u)$. 
+
+If any of the $f^i(u) = x$ for $i < k$, then we know that $v = y$,
+since both $v$ and $y$ are maximal. Therefore, it follows that the
+sequence $0, [f|x:y](u), \ldots, [f|x:y]^i(u), y$ shows that $(u,v)
+\in [f^|x:y]^+$ with $v$ maximal.
+
+If none of the $f^i(u) = x$, then it follows that the sequence $u,
+f(u), \ldots, f^k(u)$ is exactly the same as $u, [f|x:y](u), \ldots,
+[f|x:y]^k(u)$, and so $(u, v) \in [f|x:y]^+$ with $(u,v)$ maximal.
+
+\item[$\Rightarrow$] Suppose $(u,v) \in [f|x:y]^{+}$ with $v$
+  maximal. Then we know that there is some sequence $u, [f|x:y](u),
+  \ldots, [f|x:y]^k(u)$ with $[f|x:y]^k(u) = v$.
+
+Suppose $[f|x:y]^i(u) = x$ for some $i \leq k$. Then we know that $i =
+k-1$ and $v = y$, since $x$ is not maximal and $y$ is, and furthermore
+we know that none of the $[f|x:y]^j(u) = x$ for $j < i$, and so
+$[f|x:y]^j(u) = f^j(u)$. We also know that $x, f(x), \ldots, f^n(x) =
+y$ is a sequence in $f$. So we can construct the sequence $u, f(u),
+\ldots, f^i(u) = u, \ldots, f(x), \ldots, f^n(x) = y$, which shows
+that $(u,v) \in f^+$ with $v$ maximal.
+
+Otherwise, suppose that $[f|x:y]^i(u) \not= x$ for any $i \leq
+k$. Then we know that $[f|x:y]^i(u) = f^i(u)$, and so we have the
+sequence $u, f(u), \ldots, f^k(u) = v$ to show us that $(u,v) \in f^+$ with
+$v$ maximal.
+\end{itemize}
+\end{proof}
+
+\begin{lemma}{(Path Compression Preserves Satisfaction)}
+Suppose $D$ is a finite set and $f : D \rightharpoonup D$ is a partial function on $D$,
+such that $f^{+}$ is a strict partial order, and that $(x,y) \in f^{+}$ with $y$ maximal.
+
+For all $\phi$ and $D' \subseteq D$, if $D', f \models \phi$, then $D', [f|x:y] \models \phi$.  
+\end{lemma}
+
+\begin{proof}
+This lemma follows by induction on $\phi$. 
+\begin{itemize}
+\item Case $\phi = I$. This follows immediately from the definition of satisfaction. 
+\item Case $\phi = \psi \otimes \theta$. 
+  \begin{tabbedproof}
+    \oo By assumption, we have $D', f \models \psi \otimes \theta$. \\
+    \ooo From the definition of satisfaction, we get  $D_1, D_2$ such that $D' = D_1 \uplus D_2$ \\
+    \oox and $D_1, f \models \phi$ and $D_2, f \models \phi$.  \\
+    \ooo By induction, we get $D_1, [f|x:y] \models \psi$ \\
+    \ooo By induction, we get $D_2, [f|x:y] \models \theta$ \\
+    \ooo By definition, we get $D_1 \cup D_2, [f|x:y] \models \psi \otimes \theta$ \\
+    \ooo Hence $D, [f|x:y] \models \phi$ \\
+  \end{tabbedproof}
+\item Case $\phi = \elt{u}{v}$.
+  \begin{tabbedproof}
+    \oo By assumption, $D', f \models \elt{u}{v}$ \\
+    \oo So we know that $u \in D'$ and $(u,v) \in f^+$ and $v$ maximal. \\
+    \oo By the path compression lemma, $(u,v) \in [f|x:y]^+$ and $v$ maximal. \\
+    \oo Hence $D', [f|x:y] \models \elt{u}{v}$ 
+  \end{tabbedproof}
+\end{itemize}
+\end{proof}
+
+
+Now, we can specify and prove the correctness of $\findroot$. 
+
+\begin{displaymath}
+  \spec{G(D, f, \phi) \land \ufcontains{\phi}{u}{v}}
+       {\findroot(u)}
+       {a:\tau}
+       {\exists f'.\; G(D, f', \phi) \land a = v}
+\end{displaymath}
+
+
+
+\begin{proof}
+\begin{tabbedproof}
+\oo Assume our precondition state is $G(D, f, \phi) \land \ufcontains{\phi}{u}{v}$ \\
+\ooo Since $\ufcontains{\phi}{u}{v}$, and $D,f \models \phi$, we know that $u \in D$ [PROVE LEMMA]\\
+\ooo Now, do a case split on whether or not $u \in \domain{f}$. \\
+\ooo If $u \in \domain{f}$: \\
+\oooo Then $\mathit{heap}(D,f) \implies (u \hookrightarrow \Child(w))$ for some $w$ \\
+\oooo $[\letv{v}{[!u]}{}$ \\
+\oooo So we add $v = \Child(w)$ to the state, and simplify the case statement \\
+\oooo $\letv{p}{\findroot(w)}{}$ \\
+\oooo Then $G(D, f', \phi) \land p = v$ for some $f'$ \\
+\oooo Since $D,f' \models \phi$, we know that $(u,v) \in f'^{+}$ with $v$ maximal. \\
+\oooo Hence $D,[f'|u:v] \models \phi$ since path compression preserves satisfaction. \\
+\oooo $\letv{\_}{[u := \Child(p)]}{}$ \\
+\oooo Hence $G(D, [f'|u:v], \phi) \land p = v$ \\
+\oooo Hence $\exists f''.\;G(D, f'', \phi) \land p = v$ \\
+\oooo $p]$ \\
+\oooo Hence $\exists f''.\;G(D, f'', \phi) \land a = v$ \\
+\ooo If $u \not\in \domain{f}$:  \\
+\oooo Then $\mathit{heap}(D,f) \implies (u \hookrightarrow \Root)$  \\
+\oooo $[\letv{v}{[!u]}{}$ \\
+\oooo So we add $v = \Root$ to the state, and simplify the case statement \\
+\oooo Furthermore, note that since $D,f' \models \phi$, $u = v$ \\
+\oooo So $\exists f''.\;G(D, f'', \phi) \land u = v$  \\
+\oooo $u]$\\
+\oooo So $\exists f''.\;G(D, f'', \phi) \land a = v$  \\
+\end{tabbedproof}
+\end{proof}
+
+
 \begin{lemma}{(Existence of Upper Fixed Points)}
 Suppose $A$ is a finite set, and $f : A \to A$ is a function whose
 transitive closure is a partial order, and let $\mu(f)$ be the
@@ -248,7 +371,6 @@ However, $\find$ also updates parents as it goes, and so at each
 iteration it works on a \emph{different} global order structure.
 We need to ensure that the answers we return are preserved under
 this update, which is what the following lemma will ensure. 
-
 
 \begin{lemma}{(Fixed Point Update)}
 Suppose $A$ is a finite set, and $f : A \to A$ is a function whose
