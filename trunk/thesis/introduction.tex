@@ -1,0 +1,24 @@
+\chapter{Introduction}
+
+My thesis is that it is possible to give modular correctness proofs of
+interesting higher-order imperative programs using higher-order
+separation logic.
+
+
+\section{Contributions}
+
+To demonstrate my thesis, I make a number of concrete contributions.
+In Chapter 2, I define a higher-order imperative programming language
+based on a predicate variant of $F_\omega$~\citep{fomega}, augmented
+with reference types which uses a monadic language to encapsulate its
+side-effects (including both modification of the heap, and
+nontermination). I give this language a domain-theoretic denotational
+semantics based on the techniques of \citet{smyth-plotkin}, which lets
+me validate strong equational reasoning principles --- including both
+the $\beta-$ and $\eta$-rules of the lambda calculus ---
+
+Equational reasoning is less helpful for imperative programs, and to
+support reasoning about this part of the programming language, I
+define and prove the soundness of a program logic in Chapter 3. The
+program logic combines ideas from specification logic and higher-order
+separation logic to give an expressive program logic 
