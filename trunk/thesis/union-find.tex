@@ -21,19 +21,20 @@ canonical representatives and setting one to point to the other.
 
 As described, this data structure is no better than using a linked
 list. However, two optimizations give rise to an extremely efficient
-implementation. First, the root node can be modified to keep track of
-a bound on the maximum height, so that whenever two sets are merged,
-the shorter tree can be made a subtree of the deeper one. Second, the
-algorithm can make use of \emph{path compression} -- whenever the $\find$
-operation is called, it can set all of the nodes on the path to the
-root to point directly at the root. Together, these optimizations
-permit performing a sequence of $n$ $\union$ and $\find$ operations in $O(n
-\cdot \alpha(n))$ time, where $\alpha$ is the inverse Ackermann
-function.
+implementation~\cite{galler-fischer-union-find}. First, the root node
+can be modified to keep track of a bound on the maximum height, so
+that whenever two sets are merged, the shorter tree can be made a
+subtree of the deeper one. Second, the algorithm can make use of
+\emph{path compression} -- whenever the $\find$ operation is called,
+it can set all of the nodes on the path to the root to point directly
+at the root. Together, these optimizations permit performing a
+sequence of $n$ $\union$ and $\find$ operations in $O(n \cdot
+\alpha(n))$ time, where $\alpha$ is the inverse Ackermann
+function~\cite{tarjan-union-find-bound}.
 
 This permitted Huet~\cite{huet-unification} to give a simple
-implementation of near-linear-time unification algorithms, and a
-variant of this idea is used in the proofs of congruence closure
+implementation of near-linear-time unification algorithms, and
+variants of this idea is used in the proofs of congruence closure
 algorithms~\cite{congruence-closure}.
 
 However, path compression is an idiom difficult to accomodate within
