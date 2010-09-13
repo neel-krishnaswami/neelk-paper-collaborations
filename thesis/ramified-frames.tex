@@ -1,14 +1,14 @@
-\chapter{Ramified Frame Properties}
+\chapter{Verifying Interactive Programs}
 
 \section{Introduction}
 
 In many interactive programs, there are mutable data structures which
 change over time, and which must maintain some relationships with one
 another. For example, in a web browser, we need to present a web page
-both as a tree data structure for scripts to manipulate, and 
-display a graphical image for the human user to view. Any change made
-to the tree by a script must be reflected in a change to the image
-that the human sees --- the two structures must remain synchronized.
+both as a tree data structure for scripts to manipulate, and display a
+graphical image for the human user to view. Any change made to the
+tree by a script must be reflected in a change to the image that the
+human sees --- the two structures must remain synchronized.
 
 Likewise, in a spreadsheet, each cell contains a formula, which may
 refer to other cells, and whenever the user changes a cell, all of the
@@ -27,13 +27,12 @@ subjects of still other observers, ultimately forming DAGs of
 notifications.)
 
 While natural, these programs are very challenging to verify in a
-modular way, even when using a resource-sensitive logic adapted to
-reasoning about aliased mutable data, such as separation logic. The
-reason is that there are two directions of dependency, both of which
-matter for program proof. First, our program invariant must have
-ownership over the subject's data (its \emph{footprint}) in order to
-prove the correctness of code modifying the subject. This direction
-of ownership is natural to verify with separation logic. 
+modular way. The reason is that there are two directions of
+dependency, both of which matter for program proof. First, our program
+invariant must have ownership over the subject's data (its
+\emph{footprint}) in order to prove the correctness of code modifying
+the subject. This direction of ownership is natural to verify with
+separation logic.
 
 However, we must explicitly maintain the \emph{other} direction of
 dependency as well --- we track everything which depends upon the
@@ -46,13 +45,13 @@ invariant means that a naive correctness proof will not respect the
 modular structure of the program --- if we modify the dependency graph
 in any way, we now have to re-verify the entire program!
 
-However, the intention of the subject-observer pattern is
-precisely to allow the program to remain oblivious to the exact number
-and nature of the observers, which allows the programmer to add new
-observers without disturbing the behavior of the rest of the program.
-Our goal, then, is to find a way of taking this piece of practical
-software engineering wisdom, and casting it into formal terms amenable
-to proof.
+However, the intention of the subject-observer pattern is precisely to
+allow the program to remain oblivious to the exact number and nature
+of the observers, which allows the programmer to add new observers
+without disturbing the behavior of the rest of the program.  Our goal,
+then, is to find a way of taking this piece of practical software
+engineering wisdom, and casting it into formal terms amenable to
+proof.
 
 Concretely, our contributions are as follows: 
 
@@ -60,7 +59,7 @@ Concretely, our contributions are as follows:
   \item We define a library with a monadic API for writing
     demand-driven computations with dynamic dependencies and local
     state, and which is implemented as higher-order functions
-    dynamically creating networks of imperative callbacks
+    dynamically creating networks of imperative callbacks.
 
     We then give an ``abstract semantics'' for this
     library, structured as a set of separation logic lemmas about our
@@ -437,7 +436,7 @@ type $\cellset$, each of which represent the appropriate sets of cells.
 
 
 \begin{figure}
-
+\mbox{}
 \begin{tabbing}
 $CellHeap = \Sigma$\=$ D \in \powersetfin{ecell}.$ \\
                \>$(\Pi (\pack{\alpha}{\_}) \in D. ($\=${\codetype{\alpha}} \;\times$
@@ -741,6 +740,7 @@ Then we can hide $H'$ behind an existential to establish the postcondition.
 \end{proof}
 
 \begin{figure}
+\mbox{}
 \begin{mathpar}
   \inferrule*[right=AUnit]
             { }
@@ -786,6 +786,7 @@ Then we can hide $H'$ behind an existential to establish the postcondition.
 \end{figure}
 
 \begin{figure}
+\mbox{}
 \begin{mathpar}
   \inferrule*[right=Ready]
             {\forall a' \in r.\; \exists v.\; \ready{\phi}{a'}{r}}
@@ -806,6 +807,7 @@ Then we can hide $H'$ behind an existential to establish the postcondition.
 \end{figure}
 
 \begin{figure}
+\mbox{}
   \begin{displaymath}
     \begin{array}{lcl}
       closed(I, s) & = & \top \\
@@ -820,6 +822,7 @@ Then we can hide $H'$ behind an existential to establish the postcondition.
 \end{figure}
 
 \begin{figure}
+\mbox{}
   \begin{displaymath}
     \begin{array}{lcl}
       R(s, I)                 & = & I \\
@@ -966,6 +969,7 @@ expression $e$ will have directly read the cells in $r$, and will have
 updated the cells in $u$ from an unready to a ready state.'' 
 
 \begin{figure}
+\mbox{}
 \begin{tabbing}
 $\astep{\phi}{e}{\phi'}{v}{r}{u} \triangleq$ \\[0.5em]
 \;\;\= $\forall \psi.\;$\=$\setof{G(\phi \otimes \boxed{\psi})}$ \\
@@ -1083,6 +1087,7 @@ approximations. Then, we can define a family of combinators acting on
 causal transducers, which we give in Figure~\ref{transducer-semantics}.
 
 \begin{figure}
+\mbox{}
 \begin{tabbing}
 $\ST{A}{B} = \comprehend{f \in \stream{A} \to \stream{B}}{causal(f)}$\\[1em]
 
@@ -1171,6 +1176,7 @@ the next section is the following:
 \subsection{Realizing Stream Transducers with Notifications}
 
 \begin{figure}
+\mbox{}
 \begin{tabbing}
 $\ST{A}{B} \equiv \celltype{A} \to \monad{\celltype{B}}$ \\[1em]
 
