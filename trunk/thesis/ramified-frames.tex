@@ -414,7 +414,7 @@ the Cartesian product $V_H \times V_H$ of the set of cells with values
 $V_H$. This ensures that a) there are no dependencies on unready
 cells, and b) all unready cells have empty read and observe
 sets. Finally, we ask that all of the cells in $H$ have unique
-identifiers -- $unique(H)$ asserts that the identifier field is one
+identifiers --- $unique(H)$ asserts that the identifier field is one
 half of an isomorphism between the cells in $H$, and the natural
 numbers from 0 to the size of $H$.
 
@@ -475,14 +475,14 @@ $sat(H, D, \cellpos{a}{e}{v}{r}) =\; $\=$ a \in D \land code(h(a)) = e \;\land$ 
 
 $heap(D,h) = $ \\
 \;\;$counter \pointsto |D| \;* $ \\
-\;\;$\forall^* c \in D.\;$\=$\exists v_r, v_o : \cellset.\;$ \\
-                         \>$c.code \pointsto code(h(c))   \;* $ \\
-                         \>$c.value \pointsto value(h(c)) \;* $ \\
+\;\;$\forall^* (\pack{\tau}{c}\mbox{ as }cell) \in D.\;$\=$\exists v_r, v_o : \cellset.\;$ \\
+                         \>$c.code \pointsto code(h(cell))   \;* $ \\
+                         \>$c.value \pointsto value(h(cell)) \;* $ \\
                          \>$c.reads \pointsto v_r \;* $ \\
                          \>$c.obs   \pointsto v_o \;* $ \\
-                         \>$c.id    = identity(h(c)) \;\land$ \\
-                         \>$set(D, v_r, reads(h(c))) \;\land$ \\
-                         \>$set(D, v_o, obs(h(c)))$ 
+                         \>$c.id    = identity(h(cell)) \;\land$ \\
+                         \>$set(D, v_r, reads(h(cell))) \;\land$ \\
+                         \>$set(D, v_o, obs(h(cell)))$ 
 \end{tabbing}
 
 \caption{Definitions for Heap Invariant}
@@ -507,7 +507,7 @@ application-specific version of the frame rule for our library.
 To do this, we will adapt some ideas proposed by
 Benton~\cite{benton}, and Birkedal and Yang~\cite{birkedal-yang}. They
 suggested interpreting the frame rule of separation logic as a form of
-quantification -- instead of having a separate frame rule that allows
+quantification --- instead of having a separate frame rule that allows
 adding a frame to any triple, they proposed that all of the atomic
 rules of the program logic be replaced with rules possessing an extra
 quantifier ranging over ``the rest of the heap'':
@@ -524,7 +524,7 @@ quantifier appropriately. The reason this idea is fruitful for us is
 that it will allow us to give a frame rule, even though the underlying
 semantics of our library does not actually satisfy any analogues of
 the traditional safety monotonicity and frame lemmas. For example, the
-$\updatecell$ operation certainly does not act locally -- it
+$\updatecell$ operation certainly does not act locally --- it
 recursively traverses the observers set, possibly mutating a very
 large part of the cell graph.
 
@@ -542,8 +542,7 @@ $\forall \psi:\formula.\; $\=$\setof{G(\celleither{o}{e} \otimes \psi)}$ \\
 \end{tabbing}
 \end{prop}
 
-\begin{proof}
-\\\textbf{Proof Strategy.} The key to this proof is the conditional
+\textbf{Proof Strategy.} The key to this proof is the conditional
 interpretation of the $\cellpos{c}{e}{v}{r}$ formula. When we evaluate
 the $\updatecell$ command, we recursively find every cell which
 depends on $o$, and modify it to be unready.
@@ -557,16 +556,14 @@ formula to represent a ready cell. As a result, we can leave the
 entire frame $\psi$ untouched, even though the physical heap it
 represents may have been (quite drastically) modified. 
 
-\textbf{Proof Details.} We will not give this proof as an annotated
-specification, since the invariant is so large that repeatedly copying
-it from precondition to postcondition would make the annotation
-unreadable.
-
-First, let's consider the specification of $\ctext{mark\_unready(c)}$,
+However, before we can give a proper proof of this theorem, we need
+to specify and prove correct the $\ctext{mark\_unready(c)}$ procedure,
 which does the bulk of the work of the update function. The purpose of
 this function is to set every cell transitively reachable from $c$ to
-the unready state. So, what we want is for the procedure to satisfyh
-the specification
+the unready state. 
+
+\begin{lemma}{(Correctness of $\ctext{mark\_unready}$)}
+The $\ctext{mark\_unready}$ function satisfies the following specification:
 
 \begin{displaymath}
 \spec{\mathit{Inv}(H, \phi \otimes \celleither{c}{e})}{\ctext{mark\_unready}(c)}{a:1}{\mathit{Inv}(H', \phi \otimes \cellneg{c}{e})}
@@ -582,22 +579,76 @@ and define $h'$ with the following components.
 \item $\mathit{obs}(h') = \semfun{c'}{\IfThenElse{c'\in U}{\emptyset}{\mathit{obs}(h(c'))}}$
 \item $\mathit{identity}(h') = \mathit{identity}(h)$
 \end{itemize}
+\end{lemma}
 
 
-Note that we do not mention the $G$ predicate in this specification --
-$\ctext{mark\_unready}$ is part of the implementation of the library
-and has a specification in terms of invariants invisible to the
-client.
+\begin{proof}
+We will be to prove this function using the fixed point induction
+rule, using precisely this specification. (In fact, the function is
+totally correct, since it is always called on arguments higher up in
+the partial ordering on cells, but tracking the termination metric in
+detail obscures the key ideas.)
 
-Our next step will be to prove this function using the fixed point
-induction rule, and precisely this specification. (In fact, the
-function is totally correct, since it is always called on arguments
-higher up in the partial ordering on cells, but tracking the
-termination metric in detail obscures the key ideas.) 
+Now we'll proceed line-by-line through the function body of $\ctext{mark\_unready}(c)$: 
 
-Now we'll proceed line-by-line through the function body. To simplify
-matters, we'll split into two cases, one for when the argument is
-already unready, and one for when it is ready.
+\begin{tabbedproof}
+\oo Suppose $\mathit{Inv}(H, \phi \otimes \celleither{c}{e})$ \\
+\oo Then we know \\
+\oox $R^\dagger_H = O_H$ \\
+\oox $R^+_H$ strict partial order \\
+\oox $R_H \subseteq V_H \times V_H$ \\
+\oox $\mathit{unique}(H)$ \\
+\oox $\mathit{satisfies}(H, \phi)$ \\
+\oox $\mathit{heap}(H)$ \\
+\ooo Consider whether $c$ is in $V_H$ \\
+\ooo Suppose $c \not\in V_H$: \\
+\oooo Then $H'$ is equal to $H$ \\
+\oooo Since $R_H \subseteq V_H \times V_H$, we know $\mathit{reads}(h'(c)) = \mathit{obs}(h'(c)) = \emptyset$ \\
+\oooo $[\unpack{\alpha}{a}{c}{}$ \\
+\oooo Now, we know that $c = \pack{\alpha}{a}$ \\
+\oooo $\letv{os}{!a.obs}{}$ \\
+\oooo $\letv{rs}{!a.reads}{}$ \\
+\oooo From the definition of $\mathit{heap}(H)$, we know that  \\
+\oooo $\mathit{set}(D, os, \emptyset)$ and $\mathit{set}(D, rs, \emptyset)$ \\
+\oooo Simplifying using the axioms for sets, lines 8 and 9 are no-ops \\
+\oooo $\letv{\_}{[a.value := \None]}{}$ \\
+\oooo $\letv{\_}{[a.reads := \emptyset]}{}$ \\
+\oooo $a.obs := \emptyset]$ \\
+\oooo None of these assignments have any effect on the validity of $\mathit{heap}(H')$ \\
+\ooo Consider whether $c \in V_H$: \\
+\oooo $[\unpack{\alpha}{a}{c}{}$ \\
+\oooo Now, we know that $c = \pack{\alpha}{a}$ \\
+\oooo $\letv{os}{!a.obs}{}$ \\
+\oooo $\letv{rs}{!a.reads}{}$ \\
+\oooo From the definition of $\mathit{heap}(H)$, we know that  \\
+\oooo $\mathit{set}(D, os, \mathit{obs}(h(c)))$ and $\mathit{set}(D, rs, \mathit{reads}(h(c)))$ \\
+\oooo Now, by axiom in the cellset interface, we know that $\ctext{iterseq\;mark\_unready}\;os$ \\
+\ooox is equal to a sequence of calls to $\ctext{mark\_unready}$, once for each element of $\mathit{obs}(h(c))$\\
+\oooo By induction on the size of $\mathit{obs}(h(c))$, we end in a state with $h'$ such that \\
+\oooox $\mathit{value}(h') = \semfun{c'}{\IfThenElse{c'\in \mathit{obs}(h(c))}{\None}{\mathit{value}(h(c'))}}$ \\
+\oooox $\mathit{reads}(h') = \semfun{c'}{\IfThenElse{c'\in \mathit{obs}(h(c))}{\emptyset}{\mathit{reads}(h(c'))}}$ \\
+\oooox $\mathit{obs}(h') = \semfun{c'}{\IfThenElse{c'\in \mathit{obs}(h(c))}{\emptyset}{\mathit{obs}(h(c'))}}$ \\
+\oooo Hence in $H' = (D,h')$, every $c'$ strictly above $c$ in $H$ is now not in $V_{H'}$ \\ 
+\oooo Since $R_H$ was a strict partial order, $c$ is still in $V_{H'}$ \\
+\oooo Therefore consider $h''$ such that   \\
+\oooox $\mathit{value}(h'') = \semfun{c'}{\IfThenElse{c' = c)}{\None}{\mathit{value}(h'(c'))}}$ \\
+\oooox $\mathit{reads}(h'') = \semfun{c'}{\IfThenElse{c' = c)}{\emptyset}{\mathit{reads}(h'(c'))}}$ \\
+\oooox $\mathit{obs}(h'') = \semfun{c'}{\IfThenElse{c'\in \mathit{obs}(h(c))}{\emptyset}{\mathit{obs}(h'(c'))}}$ \\
+\oooo Likewise, by axiom in the cellset interface, we know that $\ctext{iterseq}\;(\ctext{remove\_obs}\;cell)\;rs$ \\
+\ooox is equal to a sequence of calls to $\ctext{remove\_obs}$, once for each element of $\mathit{reads}(h'(c))$\\
+\oooo $\letv{\_}{[a.value := \None]}{}$ \\
+\oooo $\letv{\_}{[a.reads := \emptyset]}{}$ \\
+\oooo $a.obs := \emptyset]$ \\
+\oooo These commands ensure that $\mathit{heap}(D, h'')$ is satisfied. 
+\ooo Now, by appeal to a 
+
+\end{tabbedproof}
+
+
+
+
+To simplify matters, we'll split into two cases, one for when the
+argument is already unready, and one for when it is ready.
 
 First, suppose the cell $c$ is unready --- that is, it is not an
 element of $V_H$.  In this case, $H'$ is just the same as $H$. Then from the
@@ -666,7 +717,7 @@ $\ctext{update}$.  We perform the invalidation, which takes the
 current cell $c$ and takes us into a state $H'$ in which the the cell
 is unready (i.e., $V_{H'}(c) = \None$). Now, the only remaining challenge
 is to show that $\cellneg{c}{e'} \otimes \psi$ is still satisfied by
-the new model. This follows from an easy induction on $\psi$ -- as the
+the new model. This follows from an easy induction on $\psi$ --- as the
 ready cells in the new heap are a strict subset of the ready cells of
 the original heap, any negative cell formulas in $\psi$ stay negative,
 and we only need to consider the case of positive cell formulas. 
@@ -722,7 +773,7 @@ and
 (D',h') = (D \cup \setof{\mathit{ec}}, h' = [h|\mathit{ec}: (e, \None, \emptyset, \emptyset, id)])
 \end{displaymath}
 
-Then, it is easy to show that the modified heap realizes $H'$ -- the
+Then, it is easy to show that the modified heap realizes $H'$ --- the
 only fact that does not carry over immediately are the predicates
 establishing the the read and observer sets are implemented
 correctly. This is because they held for world $D$, and we are now in
@@ -742,44 +793,114 @@ Then we can hide $H'$ behind an existential to establish the postcondition.
 \begin{figure}
 \mbox{}
 \begin{mathpar}
-  \inferrule*[right=AUnit]
-            { }
-            {\astep{I}{\return v}{I}{v}{\emptyset}{\emptyset}}
-\and
-  \inferrule*{\astep{\phi}{e}{\phi'}{v'}{r_1}{u_1} \\
-              \astep{\phi'}{f\;v'}{\phi''}{v''}{r_2}{u_2}}
-             {\astep{\phi}{\bind e\; f}{\phi''}{v''}{r_1 \cup r_2}{u_1 \cup u_2}}
-\\
-\\
-  \inferrule*[right=AReady]
-            {\ready{\phi}{a}{v}}
-            {\astep{\phi}{\readcell a}{\phi}{v}{\setof{a}}{\emptyset}}
-\and
-  \inferrule*[right=AUnready]
-            {\unready{\celleither{a}{e} \otimes \phi}{a} \;\;
-             \astep{\phi}{e}{\phi'}{v}{r}{u}}
-            {\aconfig{\celleither{a}{e} \otimes \phi}
-                     {\readcell a} \Downarrow \\
-             \aconfig{\cellpos{a}{e}{v}{r} \otimes R(\setof{a},\phi')}
-                     {v}
-             \aeffect{\setof{a}}
-                     {u \cup \setof{a}}}
-\\
-\\
-  \inferrule*[right=AGetRef]
-            { } 
-            {\astep{\localref{r}{v}}{\getref r}
-                   {\localref{r}{v}}{v}{\emptyset}{\emptyset}}
-\and
-  \inferrule*[right=ASetRef]
-            { } 
-            {\astep{\localref{r}{v}}{\setref r\;v'}
-                   {\localref{r}{v'}}{\unit}{\emptyset}{\emptyset}}
-\\
-\\
-  \inferrule*[right=AbstractFrame]
-            {\astep{\phi}{e}{\phi'}{v}{r}{u}}
-            {\astep{\phi \otimes \psi}{e}{\phi' \otimes R(u, \psi)}{v}{r}{u}}
+\begin{array}{ll}  
+\mbox{\textsc{AUnit}} & 
+\forall \psi.\; \mspec{G(\psi)}
+                     {\return v}
+                     {a}{G(\psi) \land \exists z.\; a = (v, z) \land \mathit{set}(z, \emptyset, \emptyset)} 
+\\[1em]
+
+\mbox{\textsc{ABind}} & 
+\forall \psi.\; \mspec{G(\phi \otimes \psi)}
+                     {e}
+                     {a}{G(\phi' \otimes R(u', \psi)) \land \exists z.\;a = (v', r') \land \mathit{set}(z, r', r')} 
+                \specand \\
+&  \forall \psi.\; \mspec{G(\phi' \otimes \psi)}
+                        {f\;v'}
+                        {a}{G(\phi'' \otimes R(u'', \psi)) \land \exists z.\; a = (v'', z) \land \mathit{set}(z, r'', r'')}\\
+&  \specimp \\
+&  \forall \psi.\; \mspec{G(\phi \otimes \psi)}
+                        {\bind e\;f}
+                        {a}{a = (v'', r' \cup r'') \land G(\phi'' \otimes R(u' \cup u'', \psi))} 
+\\[1em]
+\mbox{\textsc{AReady}} & 
+  \setof{\ready{\phi}{c}{v}} \specimp \\
+& \forall \psi.\; \mspec{G(\phi \otimes \psi)}
+                       {\readcell c}
+                       {a}{G(\phi \otimes \psi) \land \exists z.\;a = (v, z) \land \mathit{set}(\, \setof{c}, \setof{c})} 
+\\[1em]
+\mbox{\textsc{AUnready}} & 
+  \setof{\unready{\phi \otimes \celleither{c}{e}}{c}} \specand \\
+& \forall \psi.\; \mspec{G(\phi \otimes \psi)}
+                       {e}
+                       {a}{G(\phi' \otimes R(u, \psi)) \land \exists z.\; a = (v, z) \land \mathit{set}(z, r, r)} \\
+& \specimp \\
+& \begin{array}{ll}
+   \forall \psi. & \left<G(\phi \otimes \celleither{c}{e} \otimes \psi)\right> \\
+                 & \readcell c \\
+                 & \left<a.\; 
+                     \begin{array}{l}
+                       G(R(\setof{c}, \phi') \otimes \cellpos{c}{e}{v}{r} \otimes R(u \cup \setof{c}, \psi)) 
+                        \;\land \\
+                        \exists z.\;a = (v, z) \land \mathit{set}(z, \setof{c}, \setof{c})
+                     \end{array}\right> 
+  \end{array}
+\\[3em]
+
+\mbox{\textsc{AGetRef}}
+& \begin{array}{ll}
+    \forall \psi.\; 
+    &  \left<G(\localref{r}{v} \otimes \psi)\right> \\
+    &  \getref r \\
+    &  \left<a.\; G(\localref{r}{v} \otimes \psi) 
+                  \land  \exists z.\;a = (v,z) \land \mathit{set}(z, \emptyset, \emptyset)
+       \right> \\
+     \end{array}
+\\[2em]
+
+\mbox{\textsc{ASetRef}}
+& \begin{array}{ll}
+    \forall \psi.\; 
+    &  \left<G(\localref{r}{v'} \otimes \psi)\right> \\
+    &  \setref r\;v \\
+    &  \left<a.\; G(\localref{r}{v} \otimes \psi) 
+                  \land  \exists z.\;a = (v,z) \land \mathit{set}(z, \emptyset, \emptyset)
+       \right> \\
+     \end{array}
+\\[2em]
+\mbox{\textsc{ANewCell}}
+& \forall \psi.\; \mspec{G(\psi)}{\newcell e}{(c,z)}{G(\cellneg{c}{e} \otimes \psi) \land \mathit{set}(z, \emptyset, \emptyset)}
+\end{array}
+
+%   \inferrule*[right=AUnit]
+%             { }
+%             {\astep{I}{\return v}{I}{v}{\emptyset}{\emptyset}}
+% 
+% \and
+%   \inferrule*{\astep{\phi}{e}{\phi'}{v'}{r_1}{u_1} \\
+%               \astep{\phi'}{f\;v'}{\phi''}{v''}{r_2}{u_2}}
+%              {\astep{\phi}{\bind e\; f}{\phi''}{v''}{r_1 \cup r_2}{u_1 \cup u_2}}
+% \\
+% \\
+%   \inferrule*[right=AReady]
+%             {\ready{\phi}{a}{v}}
+%             {\astep{\phi}{\readcell a}{\phi}{v}{\setof{a}}{\emptyset}}
+% \and
+%   \inferrule*[right=AUnready]
+%             {\unready{\celleither{a}{e} \otimes \phi}{a} \;\;
+%              \astep{\phi}{e}{\phi'}{v}{r}{u}}
+%             {\aconfig{\celleither{a}{e} \otimes \phi}
+%                      {\readcell a} \Downarrow \\
+%              \aconfig{\cellpos{a}{e}{v}{r} \otimes R(\setof{a},\phi')}
+%                      {v}
+%              \aeffect{\setof{a}}
+%                      {u \cup \setof{a}}}
+% \\
+% \\
+%   \inferrule*[right=AGetRef]
+%             { } 
+%             {\astep{\localref{r}{v}}{\getref r}
+%                    {\localref{r}{v}}{v}{\emptyset}{\emptyset}}
+% \and
+%   \inferrule*[right=ASetRef]
+%             { } 
+%             {\astep{\localref{r}{v}}{\setref r\;v'}
+%                    {\localref{r}{v'}}{\unit}{\emptyset}{\emptyset}}
+% \\
+% \\
+%   \inferrule*[right=AbstractFrame]
+%             {\astep{\phi}{e}{\phi'}{v}{r}{u}}
+%             {\astep{\phi \otimes \psi}{e}{\phi' \otimes R(u, \psi)}{v}{r}{u}}
 \end{mathpar}
 \caption{Abstract Semantics of Notifications}
 \label{abs-semantics}
