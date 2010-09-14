@@ -244,13 +244,13 @@
   $T(A)$ monadic type built from language's pre-existing state monad
   \begin{block}{}
   \begin{semiverbatim}
-    T(A) = \(\bigcirc\)(A \(\times\) Set(anycell))
+    code A = \(\bigcirc\)(A \(\times\) Set(\(\exists \alpha.\) cell \(\alpha\)))
  
-    return : \(\alpha\) \(\to\) T(\(\alpha\))
-    bind   : T(\(\alpha\)) \(\to\) (\(\alpha\) \(\to\) T(\(\beta\))) \(\to\) T(\(\beta\))
-    read   : Cell(\(\alpha\)) \(\to\) T(\(\alpha\))
+    return : \(\alpha\) \(\to\) code(\(\alpha\))
+    bind   : code(\(\alpha\)) \(\to\) (\(\alpha\) \(\to\) code(\(\beta\))) \(\to\) code(\(\beta\))
+    read   : cell(\(\alpha\)) \(\to\) code(\(\alpha\))
 
-    update : Cell(\(\alpha\)) \(\to\) T(\(\alpha\)) \(\to\) \(\bigcirc(1)\)
+    update : cell \(\alpha\) \(\to\) code \(\alpha\) \(\to\) \(\bigcirc(1)\)
   \end{semiverbatim}
 %    getref : ref \(\alpha\) \(\to\) T(\(\alpha\)) 
 %    setref : ref \(\alpha\) \(\to\) \(\alpha\) \(\to\) T(1) 
