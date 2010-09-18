@@ -11,8 +11,6 @@ continuations. Its syntax is given in figure~\ref{lang-type-syntax}.
 
 
 \begin{figure}[h]
-\todo{Add support for polynomial data types}
-
 \begin{displaymath}
   \begin{array}{lcll}
     \mbox{Kinds} & 
@@ -1835,13 +1833,6 @@ types whose interpretations are domains with least elements. This
 ensures that the semantic fixed point operation is well-defined, and
 hence we can give a semantics of fixed points at this type. The typing
 rules for all of these forms are given in figure~\ref{lang-typing-pure}. 
-
-\todo{However, I'm not entirely happy with the \emph{operational}
-interpretation of the fixed point construct. Each term
-$\fix{x:D}{e}$ is really a \emph{value}, which means that the
-introduction forms for $D$ isn't just the ordinary intro forms
-for each type -- we have an extra constant for each type. This will 
-make the equational theory and operational semantics all go a bit funny.}
 
 I give the computation forms of the language in
 figure~\ref{lang-typing-monadic}. 

@@ -556,22 +556,132 @@ formula to represent a ready cell. As a result, we can leave the
 entire frame $\psi$ untouched, even though the physical heap it
 represents may have been (quite drastically) modified. 
 
-However, before we can give a proper proof of this theorem, we need
-to specify and prove correct the $\ctext{mark\_unready(c)}$ procedure,
+However, before we can give a proper proof of this theorem, we need to
+specify and prove correct the $\ctext{mark\_unready(c)}$ procedure,
 which does the bulk of the work of the update function. The purpose of
 this function is to set every cell transitively reachable from $c$ to
-the unready state. 
+the unready state.
 
-\begin{lemma}{(Correctness of $\ctext{mark\_unready}$)}
-The $\ctext{mark\_unready}$ function satisfies the following specification:
+As with the proofs in the previous chapter, these follow the pattern 
+of a lemma about partial orders, a lemma connecting it to the satisfaction
+relation, and finally a correctness proof of the procedure. 
 
-\begin{displaymath}
-\spec{\mathit{Inv}(H, \phi \otimes \celleither{c}{e})}{\ctext{mark\_unready}(c)}{a:1}{\mathit{Inv}(H', \phi \otimes \cellneg{c}{e})}
-\end{displaymath}
 
-In the above, supposing that $H = (D,h)$, we take $H'$ to be the pair
-$(D, h')$, where we let $U = \comprehend{c' \in D}{(c, c') \in R^{*}_H}$, 
-and define $h'$ with the following components. 
+\begin{lemma}{(Transitive Invalidation Preserves Order Structure)}
+Suppose we have $H = (D,h)$ such that 
+\begin{enumerate}
+\item $R^+_H$ is a strict partial order 
+\item $R_H \subseteq V_H \times V_H$
+\item $R^\dagger_H = O_H$ 
+\item $\mathit{unique}(H)$
+\end{enumerate}
+
+Now let $U = \comprehend{c' \in D}{(c',c) \in R^*_H}$ to be the set of
+cells which (transitively) read $c$, and define $h'$ to have the
+following components:
+
+\begin{itemize}
+\item $\mathit{code}(h') = \mathit{code}(h)$
+\item $\mathit{value}(h') = \semfun{c'}{\IfThenElse{c'\in U}{\None}{\mathit{value}(h(c'))}}$
+\item $\mathit{reads}(h') = \semfun{c'}{\IfThenElse{c'\in U}{\emptyset}{\mathit{reads}(h(c'))}}$
+\item $\mathit{obs}(h') = \semfun{c'}{\IfThenElse{c'\in U}{\emptyset}{\mathit{obs}(h(c')) - U}}$
+\item $\mathit{identity}(h') = \mathit{identity}(h)$
+\end{itemize}
+
+\noindent Then it is the case that $H' = (D,h')$ satisfies the five properties below. 
+\begin{enumerate}
+\item $R^+_{H'}$ is a strict partial order 
+\item $V_{H'} = V_H - U$
+\item $R_{H'} \subseteq V_{H'} \times V_{H'}$
+\item $R^\dagger_{H'} = O_{H'}$ 
+\item $\mathit{unique}(H')$
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+\begin{enumerate}
+\item $R^+_{H'}$ is a strict partial order 
+  \begin{tabbedproof}
+    \oo This follows if $R^+_{H'}$ is transitive relation without any $(a,a) \in R^+_H$ \\
+    \oo Since it is a transitive closure, it is a transitive relation \\
+    \oo To show that there is no $a \in D$ such that $(a,a) \in R^+_H$, \\
+    \ox we will show that $R^+_{H'} \subseteq R^+_H$ \\
+    \oo Assume that $(a_0,b) \in R^+_{H'}$ \\
+    \oo Then there is a sequence $a_0, \ldots, a_k$ such $b = a_k$ and each $a_{i+1} \in \mathit{reads}(h'(a_i))$ \\
+    \oo Suppose we have an arbitrary $a_i, a_{i+1}$, so $a_{i+1} \in \mathit{reads}(h'(a_i))$ \\
+    \oo Hence it follows that $a_i \not\in U$, since otherwise $\mathit{reads}(h'(a_i)) = \emptyset$ \\
+    \oo Hence it tollows that $\mathit{reads}(h'(a_i)) = \mathit{reads}(h(a_i))$ \\
+    \oo Hence $a_0, \ldots, a_k$ such $b = a_k$ and each $a_{i+1} \in \mathit{reads}(h(a_i))$ \\
+    \oo Hence $(a_0, b) \in R^+_H$ \\
+    \oo Hence $a_0 \not= b$, since $R^+_H$ strict partial order 
+  \end{tabbedproof}
+
+\item $V_{H'} = V_H - U$
+  \begin{tabbedproof}
+    \oo Suppose $a \in V_{H'}$ \\
+    \ooo Then $\mathit{value}(h'(a)) = \Some(v)$ for some $v$ \\
+    \ooo Hence $a \not\in U$ \\
+    \ooo Hence $\mathit{value}(h'(a)) = \mathit{value}(h(v))$  \\
+    \ooo Hence $a \in V_H$ \\
+    \ooo Hence $a \in V_{H} - U$ \\
+    \oo Conversely, suppose $a \in V_{H} - U$ \\
+    \ooo Then $\mathit{value}(h(a)) = \Some(v)$ for some $v$ \\
+    \ooo But since $a \not\in U$, we know $\mathit{value}(h'(a)) = \mathit{value}(h(a)) = \Some(v)$ \\
+    \ooo Hence $a \in V_{H'}$ 
+  \end{tabbedproof}
+
+\item $R_{H'} \subseteq V_{H'} \times V_{H'}$
+  \begin{tabbedproof}
+    \oo Assume $(a,b) \in R_{H'}$ \\
+    \oo Hence $b \in \mathit{reads}(h'(a))$ \\
+    \oo Hence we know that $a \not\in U$ \\
+    \oo Hence we know that $b \in \mathit{reads}(h(a))$ \\
+    \oo Hence we know that $a \in V_H$\\
+    \oo Hence we know that $a \in V_H - U$ \\
+    \oo Hence we know that $a \in V_{H'}$ \\
+    \oo Since $U$ is transitively-closed, we know that if $b \in U$, then $a \in U$ \\
+    \oo Since $a \not\in U$, we know that $b \not\in U$ \\
+    \oo Hence we know that $b \in V_H - U$ \\
+    \oo Hence we know that $b \in V_{H'}$ 
+  \end{tabbedproof}
+
+\item $R^\dagger_{H'} = O_{H'}$ 
+  \begin{tabbedproof}
+    \oo Suppose that $(a, b) \in R^\dagger_{H'}$. \\
+    \ooo We want to show that $(a, b) \in O_{H'}$ \\
+    \ooo We know that $(b, a) \in R_{H'}$ \\
+    \ooo We know that $a \in \mathit{reads}(h'(b))$ \\
+    \ooo Since $R_{H'} \subseteq V_{H'} \times V_{H'}$, we know $a \not\in U$ and $b \not \in U$ \\
+    \ooo Hence $a \in \mathit{reads}(h(b))$ \\ 
+    \ooo Hence $b \in \mathit{obs}(h(a))$ \\
+    \ooo Hence $b \in \mathit{obs}(h'(a))$ \\
+    \ooo Hence $(a,b) \in O_{H'}$ \\
+    \oo Suppose that $(a, b) \in O_{H'}$. \\
+    \ooo We want to show that $(a,b) \in R^\dagger_{H'}$, so we want $(b,a) \in R_{H'}$ \\
+    \ooo Since $(a,b) \in O_{H'}$, we know $b \in \mathit{obs}(h'(a))$ \\
+    \ooo Hence $a \not\in U$ and $b \in \mathit{obs}(h(a)) - U$ \\
+    \ooo So $b \in \mathit{obs}(h(a))$ and $b \not \in U$ \\
+    \ooo So $(a,b) \in O_H$ \\
+    \ooo So $(b,a) \in R_H$, and so $a \in \mathit{reads}(h(b))$ \\
+    \ooo Since $b \not\in U$, $\mathit{reads}(h'(b)) = \mathit{reads}(h(b))$ \\
+    \ooo Therefore $a \in \mathit{reads}(h'(a))$, and so $(b,a) \in R_{H'}$ \\
+    \ooo Therefore $(a,b) \in R^\dagger_{H'}$ 
+  \end{tabbedproof}
+
+\item $\mathit{unique}(h) = \mathit{unique}(h')$.
+
+This is immediate, since $\mathit{identity}(h) = \mathit{identity}(h')$ 
+\end{enumerate}
+\end{proof}
+
+
+\begin{lemma}{(Updating the Abstract Heap)}
+Suppose we have $H = (D,h)$ and $H, D', \models \phi \otimes
+\celleither{c}{e}$ and $c \in D$, and let $U = \comprehend{c' \in
+  D}{(c,c') \in R^*_H}$ to be the set of cells which (transitively)
+read $c$.
+
+Now, define $h'$ to have the following components
 \begin{itemize}
 \item $\mathit{code}(h') = \mathit{code}(h)$
 \item $\mathit{value}(h') = \semfun{c'}{\IfThenElse{c'\in U}{\None}{\mathit{value}(h(c'))}}$
@@ -579,8 +689,89 @@ and define $h'$ with the following components.
 \item $\mathit{obs}(h') = \semfun{c'}{\IfThenElse{c'\in U}{\emptyset}{\mathit{obs}(h(c'))}}$
 \item $\mathit{identity}(h') = \mathit{identity}(h)$
 \end{itemize}
+
+It is the case that $(D, h'), D' \models \phi$. 
 \end{lemma}
 
+\begin{proof}
+\begin{tabbedproof}
+\oo Assume we have $H, D' \models \phi \otimes \celleither{c}{e}$ \\
+\oo Then we have $D_1, D_2$ such that $D_1 \uplus D_2 = D'$ and $H, D_1 \models \phi$ and $H, D_2 \models \celleither{c}{e}$ \\
+\oo Note that this means $c$ is not in the domain of $\phi$ \\
+\oo First, consider $(D,h), D_1 \models \phi$ \\
+\ooo We will show by induction that $(D,h'), D_1 \models \phi$ \\
+\ooo Case $\phi = I$: \\
+\oooo In this case, by the definition of satisfaction, $(D,h), D_1 \models I$ \\
+\ooo Case $\phi = \psi \otimes \theta$: \\
+\oooo In this case, we have $D_1, D_2$ such that $D_1 = D_1 \uplus D_2$ and \\
+\oooox $(D,h), D_1 \models \psi$ \\
+\oooox $(D,h), D_2 \models \theta$ \\
+\oooo By induction, we know that \\
+\oooox $(D,h'), D_1 \models \psi$ \\
+\oooox $(D,h'), D_2 \models \theta$ \\
+\oooo Hence by the definition of satisfaction, $(D,h'), D \models \psi \otimes \theta$ \\
+\ooo Case $\phi = \cellneg{a}{e}$: \\
+\oooo In this case, we know $a \in D_1$ and $\mathit{code}(h(a)) = e$ and $a \not\in V_{(D,h)}$ \\
+\oooo Since $R_H \subseteq V_H \times V_H$, it follows  $U = \emptyset$ \\
+\oooo Hence $h' = h$ \\
+\oooo Hence $(D,h'), D_1 \models \cellneg{a}{e}$ \\
+\ooo Case $\phi = \cellpos{a}{e}{v}{r}$: \\
+\oooo Now, consider whether $r \subseteq V_H$ \\
+\oooo If $r \subseteq V_H$: \\
+\ooooo We know $a \in D_1$ and $\mathit{code}(h(a)) = e$ and 
+ o     $\mathit{value}(h(a)) = \Some(v)$ and $\mathit{reads}(h(a)) = r$ \\
+\ooooo So $a \in V_H$. \\
+\ooooo Now consider whether $a \in U$ \\
+\ooooo If $a \in U$: \\
+\oooooo First, note $a \not\in V_{(D,h')}$ \\
+\oooooo Then $(c, a) \in R^*_H$ \\
+\oooooo Since $c \not= a$ (since $c$ is not in the domain of $\phi$), we know $(c,a) \in R^+_H$ \\
+\oooooo Hence there is a $d \in r$ such that $d \in U$ \\
+\oooooo Hence $r \not\subseteq V_{(D, h')}$ \\
+\oooooo Hence $(D,h'), D_1 \models \cellpos{a}{e}{v}{r}$ \\
+\ooooo If $a \not\in U$: \\
+\oooooo Then note $a \in V_{(D,h')}$ \\
+\oooooo Furthermore, $(c, a) \not\in R^*_H$ \\
+\oooooo Hence there is no $d \in r$ such that $(c, d) \in R^*_H$  \\
+\oooooo Hence $r \cap U = \emptyset$ \\
+\oooooo Hence $r \subseteq V_{(D,h')}$ \\
+\oooooo Hence $(D,h'), D_1 \models \cellpos{a}{e}{v}{r}$ \\
+\oooo If $r \not\subseteq V_H$: \\
+\ooooo Then we know $a \in D_1$ and $\mathit{code}(h(a)) = e$ and $a \not\in V_H$ \\
+\ooooo Since $R_H \subseteq V_H \times V_H$, it follows  $U = \emptyset$ \\
+\ooooo Hence $h' = h$ \\
+\ooooo Hence $(D,h'), D_1 \models \cellpos{a}{e}{v}{r}$ \\
+\oo Next, consider $(D,h), D_2 \models \celleither{c}{e}$: \\
+\ooo Since $(c, c) \in R^*_H$,  we know $c \in U$ \\
+\ooo Hence it follows $c \not\in V_{(D, h')}$ \\
+\ooo Hence $(D,h'), D_2 \models \cellneg{c}{e}$ \\
+\oo Now, it follows that $(D,h'), D' \models \phi \otimes \cellneg{c}{e}$ \\ 
+\end{tabbedproof}
+\end{proof}
+
+
+\begin{lemma}{(The $\ctext{mark\_unready}$ procedure preserves order structure)}
+Suppose $H = (D,h)$ where $R^+_H$ is a strict partial order, $O^\dagger_H = R_H$,
+$R_H \subseteq V_H \times V_H$ and $\mathit{unique}(H)$. Furthermore, suppose 
+$U = \comprehend{c' \in D}{(c,c') \in R^*_H}$ to be the set of cells which (transitively)
+read $c$.
+
+Now, define $h'$ to have the following components
+\begin{itemize}
+\item $\mathit{code}(h') = \mathit{code}(h)$
+\item $\mathit{value}(h') = \semfun{c'}{\IfThenElse{c'\in U}{\None}{\mathit{value}(h(c'))}}$
+\item $\mathit{reads}(h') = \semfun{c'}{\IfThenElse{c'\in U}{\emptyset}{\mathit{reads}(h(c'))}}$
+\item $\mathit{obs}(h') = \semfun{c'}{\IfThenElse{c'\in U}{\emptyset}{\mathit{obs}(h(c'))}}$
+\item $\mathit{identity}(h') = \mathit{identity}(h)$
+\end{itemize}
+
+Then $\ctext{mark\_unready}$ function satisfies the following specification:
+
+\begin{displaymath}
+\mspec{\mathit{heap}(H)}{\ctext{mark\_unready}}{a:\unittype}{\mathit{heap}(D,h')}
+\end{displaymath}
+  
+\end{lemma}
 
 \begin{proof}
 We will be to prove this function using the fixed point induction
@@ -625,9 +816,11 @@ Now we'll proceed line-by-line through the function body of $\ctext{mark\_unread
 \oooo Now, by axiom in the cellset interface, we know that $\ctext{iterseq\;mark\_unready}\;os$ \\
 \ooox is equal to a sequence of calls to $\ctext{mark\_unready}$, once for each element of $\mathit{obs}(h(c))$\\
 \oooo By induction on the size of $\mathit{obs}(h(c))$, we end in a state with $h'$ such that \\
-\oooox $\mathit{value}(h') = \semfun{c'}{\IfThenElse{c'\in \mathit{obs}(h(c))}{\None}{\mathit{value}(h(c'))}}$ \\
+\oooox $\mathit{value}(h' ) = \semfun{c'}{\IfThenElse{c'\in \mathit{obs}(h(c))}{\None}{\mathit{value}(h(c'))}}$ \\
 \oooox $\mathit{reads}(h') = \semfun{c'}{\IfThenElse{c'\in \mathit{obs}(h(c))}{\emptyset}{\mathit{reads}(h(c'))}}$ \\
 \oooox $\mathit{obs}(h') = \semfun{c'}{\IfThenElse{c'\in \mathit{obs}(h(c))}{\emptyset}{\mathit{obs}(h(c'))}}$ \\
+\oooo Note that we need the the fact that invalidation preserves order structure to  \\
+\ooox make the induction go through. \\
 \oooo Hence in $H' = (D,h')$, every $c'$ strictly above $c$ in $H$ is now not in $V_{H'}$ \\ 
 \oooo Since $R_H$ was a strict partial order, $c$ is still in $V_{H'}$ \\
 \oooo Therefore consider $h''$ such that   \\
@@ -639,106 +832,78 @@ Now we'll proceed line-by-line through the function body of $\ctext{mark\_unread
 \oooo $\letv{\_}{[a.value := \None]}{}$ \\
 \oooo $\letv{\_}{[a.reads := \emptyset]}{}$ \\
 \oooo $a.obs := \emptyset]$ \\
-\oooo These commands ensure that $\mathit{heap}(D, h'')$ is satisfied. 
-\ooo Now, by appeal to a 
-
+\oooo We know that $c$ occurs only in $rs$ since $R^\dagger_{H'} = O_{H'}$, and so \\ 
+\oooo these assignments ensure that $\mathit{heap}(D, h'')$ is satisfied. \\
 \end{tabbedproof}
 
-
-
-
-To simplify matters, we'll split into two cases, one for when the
-argument is already unready, and one for when it is ready.
-
-First, suppose the cell $c$ is unready --- that is, it is not an
-element of $V_H$.  In this case, $H'$ is just the same as $H$. Then from the
-definition of $\mathit{Inv}$ we know that its reads and observers sets
-are empty, since $R_H \subseteq V_H \times V_H$.  So the
-$\mathit{heap}(H)$ predicates tells us that the pointer dereferences
-on lines 6 and 7 of Figure~\ref{notification-implementation-update}
-bind the empty set to the $os$ and $rs$ variables. Then, by the
-definition of $\mathit{iterseq}$, we know that the calls to
-$\ctext{iterset}$ on lines 8 and 9 are equal to $\comp{\unit}$ and
-hence no-ops.  Furthermore, the definition of $V_H$ means that
-$\mathit{value}{h(c)} = \None$. So the assignments to
-$c.\mathit{value}$ on line 10 does not change the contents of the
-heap, and likewise neither do the assignments to $c.\mathit{reads}$
-and $c.\mathit{obs}$ on lines 11 and 12. Since the heap is unchanged,
-we know that $\mathit{Inv}(H,\phi)$ must continue to hold.
-
-On the other hand, suppose that $c$ is in $V_H$. Then from the
-definition of $\mathit{Inv}$ we know that $c.\mathit{reads}$ and
-$c.\mathit{obs}$ point to sets which implement the reads and observers
-sets of $c$. Then, the $\mathit{heap}(H)$ predicates tells us that the
-pointer dereferences on lines 6 and 7 of
-Figure~\ref{notification-implementation-update} bind values
-corresponding to those sets to the $os$ and $rs$ variables, in the
-current world $D$.
-
-Now, the axioms describing $\ctext{iterseq}$ says that
-$\ctext{iterseq\;mark\_unready}\;os$ is equal to a sequence of calls
-of $\ctext{mark\_unready}$ to the elements of $os$ (which we will name
-$c_1, \ldots, c_k$) in some order.  The net effect of such a sequence
-of calls is to give us an $H_k$ which have removed $U - \setof{c}$
-from $V_{H_k}$. However, this is not an entirely trivial fact to
-prove, since each call to $\ctext{mark\_unready}(c_{i+1})$ starts from
-a different state $H_{i}$. 
-
-So we need a simple observation about (finite) partial orders. 
-
-\begin{lemma}{(Commutativity and Idempotence of Deletion)}
-Suppose $R$ is a partial order on a set $X$. Now, define $R - \uparrow(x)$ to 
-be the set $\comprehend{y \in X}{\lnot R(x,y)}$. Then, it follows that 
-$R - \uparrow(x) - \uparrow(y) = R - \uparrow(y) - \uparrow(x)$. 
-Furthermore, $R - \uparrow(x) - \uparrow(x) = R - \uparrow(y) - \uparrow(x)$. 
+\begin{lemma}{(Correctness of $\ctext{mark\_unready}$)}
+The $\ctext{mark\_unready}$ function satisfies the following specification:   
+\begin{displaymath}
+\mspec{G(H, \phi \otimes \celleither{c}{e})}{\ctext{mark\_unready}}{a:\unittype}{\exists H'.\;G(H', \phi \otimes \cellneg{c}{e})}
+\end{displaymath}
 \end{lemma}
 
-These facts essentially follows immediately from the definition of set
-comprehension, and imply that the order we remove transitive closures
-from a partial order does not matter.
-
-Then, observe that $h'$ in the specification of
-$\ctext{mark\_unready}$ is defined by setting $U$ to $V_H -
-\uparrow{c}$, and that $\mathit{value}$, $\mathit{reads}$, and
-$\mathit{obs}$ simply take $h$ and restrict to the domain $V_H -
-\uparrow{c}$. Since we call $\ctext{mark\_unready}$ on each element
-directly above $c$ in the partial order, it follows that $V_{H_k} =
-V_{H} - (U - \setof{c})$, with the functions updated in the evident
-way.
-
-This in turn means that there are no longer any elements of $D$ above
-$c$ in $R_{H_k}$. So after setting $c.\mathit{value}$ to $\None$ and
-removing $c$ from the observer sets of the elements of $os$, we know
-that we have reached a state whose heap satisfies $\mathit{heap}(D,
-h')$.
-
-Now, it becomes relatively easy to prove the correctness of
-$\ctext{update}$.  We perform the invalidation, which takes the
-current cell $c$ and takes us into a state $H'$ in which the the cell
-is unready (i.e., $V_{H'}(c) = \None$). Now, the only remaining challenge
-is to show that $\cellneg{c}{e'} \otimes \psi$ is still satisfied by
-the new model. This follows from an easy induction on $\psi$ --- as the
-ready cells in the new heap are a strict subset of the ready cells of
-the original heap, any negative cell formulas in $\psi$ stay negative,
-and we only need to consider the case of positive cell formulas. 
-
-Concretely, suppose we have a formula $\cellpos{c'}{e}{v}{r}$. If
-$c' \not\in V_H$ (i.e., was not semantically ready in the original
-heap) then it will not be in $V_{H'}$, since $V_{H'} \subseteq V_H$,
-since its dependencies will not have gotten any more ready.
-
-On the other hand, if $c' \in V_H$, then consider whether $c' \in U$.
-If it is in $U$, then there will be path in $H$ from $c$ to $u$, which
-means that both $c'$ will be semantically invalid, \emph{and} all of
-the cells in $r$ (which lie on all the paths from $c$ to $c'$) are in
-$U$, and hence unready. Then in this case, the clause of the
-satisfaction relation holds. If $c' \not\in U$, then it also follows
-that nothing in $r$ is in $U$, either, and so both $r$ and $c'$ are
-semantically ready, in which case they continue to validate the other
-case of the conditional in the definition of the satisfaction
-relation.
-
+\begin{proof}
+  This follows immediately from the previous lemma, together with the lemma about updating the 
+abstract heap. 
 \end{proof}
+
+
+\begin{lemma}{(Updating Negative Formulas)}
+Suppose we have  $H = (D,h)$ and $H, D' \models \phi \otimes \cellneg{c}{e}$. Then, if
+we define $h'$ such that $\mathit{code}(h'(c)) = e'$ and is equal to $h$ otherwise, 
+it follows that with $H' = (D,h')$, we have $H', D' \models \phi \otimes \cellneg{c}{e'}$. 
+\end{lemma}
+
+\begin{proof}
+  \begin{tabbedproof}
+    \oo Assume $H, D' \models \phi \otimes \cellneg{c}{e}$. \\
+    \ooo So we have $D_1, D_2$ such that $D' = D_1 \uplus D_2$ and $H, D_1 models \phi$ and $H, D_2 \models \cellneg{c}{e}$ \\
+    \ooo Since $H, D_2 \models \cellneg{c}{e}$, we know that $c \in D_2$ and $c \not\in D_1$ \\
+    \ooo Now proceed by induction on $\phi$: \\
+    \ooo Case $\phi = I$: \\
+    \oooo In this case, it is immediate that $H', D_1 \models I$ \\
+    \ooo Case $\phi = \psi \otimes \theta$: \\
+    \oooo In this case, we have $D_3, D_4$ such that $D_1 = D_3 \uplus D_4$ and  \\
+    \oooox $H, D_3 \models \psi$ and $H, D_4 \models \theta$ \\
+    \oooo So by induction we have $H', D_3 \models \psi$ and $H', D_4 \models \theta$ \\
+    \oooo Hence $H', D_1 \models \phi$\\
+    \ooo Case $\phi = \cellneg{c'}{e}$: \\
+    \oooo We know $c' \in D_1$ \\
+    \oooo We know that $c' \not= c$. Hence $\mathit{code}(h'(c')) = \mathit{code}(h(c))$ \\
+    \oooo Hence $H', D_1 \models \cellneg{c'}{e}$ \\
+    \ooo Case $\phi = \cellpos{c'}{e}{v}{r}$: \\
+    \oooo We know that $c' \in D_1$ and hence $c \not= c'$ \\
+    \oooo Hence $\mathit{code}(h'(c')) = \mathit{code}(h(c))$ \\
+    \oooo Furthermore, $V_{H'} = V_H$ since $\mathit{value} \circ h' = \mathit{value} \circ h$\\
+    \oooo Also $\mathit{reads} \circ h' = \mathit{reads} \circ h$ \\
+    \oooo Hence $H', D_1 \models \cellpos{c'}{e}{v}{r}$: \\
+    \ooo Therefore $H', D_1 \models \phi$ \\
+    \ooo Now, we want to show $H', D_2 \models \cellneg{c}{e'}$ \\
+    \oooo We know $c \in D_2$ \\
+    \oooo Furthermore, $\mathit{code}(h'(c)) = e'$ \\
+    \oooo Hence $H', D_2 \models \cellneg{c}{e'}$ \\
+    \ooo Hence $H', D' \models \phi \otimes \cellneg{c}{e'}$ 
+  \end{tabbedproof}
+\end{proof}
+
+\begin{lemma}{(Update Rule)}
+For all cells $o$ and code expressions $e$ and $e'$, the following
+triple is provable: 
+
+\begin{tabbing}
+$\forall \psi:\formula.\; $\=$\setof{G(\celleither{o}{e} \otimes \psi)}$ \\
+                           \>$\runcmd {\updatecell\;o\;e}$ \\
+                           \>$\setof{a:1.\; G(\cellneg{o}{e} \otimes \psi)}$
+\end{tabbing}
+\end{lemma}
+
+\begin{proof}
+This follows immediately from first applying the specification of $\ctext{mark\_unready}$, 
+and then using the lemma that updating negative lemmas works as expected. 
+\end{proof}
+
+
 
 
 We can prove the soundness of a similar specification for $\newcell$ as
@@ -1161,7 +1326,208 @@ combination of quantification and ramification give us a domain-specific
 frame property, which allow us to modularly prove the correctness of programs 
 that construct and produce notifications.
 
-\section{Verifying an Imperative Implementation of Functional Reactive Programming}
+\subsection{Correctness Proofs}
+
+\subsubsection{Proving the correctness of $\ctext{read}$}
+
+\begin{lemma}{(Reading an Unready Cell Preserves Order Structure)}
+Suppose that $H = (D,h)$ and $c \in D - V_H$. Then for any subset $r
+\subseteq V_H$ and value $v$, define $h'$ so that
+\begin{itemize}
+\item $\mathit{code} \circ h' = \mathit{code} \circ h$ 
+\item $\mathit{value} \circ h' = \semfun{c'}{\IfThenElse{c' = c}{\Some(v)}{\mathit{value}(h(c'))}}$ 
+\item $\mathit{reads} \circ h' = \semfun{c'}{\IfThenElse{c' = c}{r}{\mathit{reads}(h(c'))}}$ 
+\item $\mathit{obs} \circ h' = \semfun{c'}{\IfThenElse{c' \in r}{\mathit{obs}(h(c')) \cup \setof{c}}{\mathit{obs}(h(c'))}}$ 
+\item $\mathit{identity} \circ h' = \mathit{identity} \circ h$
+\end{itemize}
+\noindent Then it is the case that $H' = (D,h')$ satisfies the five properties below. 
+\begin{enumerate}
+\item $V_{H'} = V_H \cup \setof{c}$
+\item $R^+_{H'}$ is a strict partial order 
+\item $R_{H'} \subseteq V_{H'} \times V_{H'}$
+\item $R^\dagger_{H'} = O_{H'}$ 
+\item $\mathit{unique}(H') = \mathit{unique}(H)$
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+\begin{enumerate}
+\item $V_{H'} = V_H \cup \setof{c}$ 
+  \begin{tabbedproof}
+    \oo So we want to show that $a \in V_{H'}$ iff $a \in V_H \cup \setof{c}$ \\
+    \oo Assume that $a \in V_{H'}$ \\
+    \ooo So we know that $\mathit{value}(h'(a)) = \Some(u)$ for some $u$ \\
+    \ooo Now consider whether $a$ is $c$ \\
+    \ooo Suppose $a = c$: \\
+    \oooo Then $a \in \setof{c}$, and hence $a \in V_H \cup \setof{c}$ \\
+    \ooo Suppose $a \not= c$: \\
+    \oooo Then we know that $\mathit{value}(h'(a)) = \mathit{value}(h(a))$ \\
+    \oooo Since $\mathit{value}(h'(a)) = \Some(u)$, we know $a \in V_H$ \\
+    \oooo Hence $a \in V_H \cup \setof{c}$ \\
+    \oo Assume that $a \in V_H \cup \setof{c}$ \\
+    \ooo Now consider whether $a$ is $c$ \\
+    \ooo Suppose $a = c$: \\
+    \oooo Then $\mathit{value}(h'(a)) = \Some(v)$ \\
+    \oooo Therefore $a \in V_{H'}$ \\
+    \ooo Suppose $a \not= c$: \\
+    \oooo Then $a \in V_H$ \\
+    \oooo Also, $\mathit{value}(h'(a)) = \mathit{value}(h(a))$ \\
+    \oooo Therefore there is a $u$ such that $\mathit{value}(h'(a)) = \Some(u)$ \\
+    \oooo Hence $a \in V_{H'}$ \\
+  \end{tabbedproof}
+
+\item $R^+_{H'}$ is a strict partial order 
+  \begin{tabbedproof}
+    \oo This follows if $R^+_{H'}$ is a transitive, irreflexive relation \\
+    \oo Since it is a transitive closure, it is a transitive relation \\
+    \oo So we want to show there is no $a \in D$ such that $(a,a) \in R^+_{H'}$ \\
+    \oo Consider an arbitrary $(a_0, b) \in R^+_{H'}$ \\
+    \oo Hence there is a sequence $a_0, \ldots, a_k$ such that $b = a_k$ and each $a_{i+1} \in \mathit{reads}(h'(a_i))$ \\
+    \oo Now consider whether $c$ is equal to any of the $a_i$ \\
+    \oo Suppose $a_i \not= c$ for all $0 \leq i \leq k$: \\
+    \ooo Then in this case, it follows that $\mathit{reads}(h'(a_i)) = \mathit{reads}(h'(a_i))$ for all $i$\\
+    \ooo Then $(a_0, a_k) \in R^+_H$ \\
+    \ooo Thn $a_0 \not= a_k$ since $R^+_H$ is irreflexive \\
+    \oo Suppose $a_i = c$ for some $0 \leq i \leq k$: \\
+    \ooo Note $\mathit{reads}(h'(a)) \subseteq V_H$ for all $a$  \\
+    \ooo Since $c \not\in V_H$, it follows $c \not\in \mathit{reads}(h'(a))$ for any $a$ \\
+    \ooo Hence $i = 0$, and $c \not= a_j$ for any $j > 0$ \\
+    \ooo Therefore $a \not= b$ for any sequence of length greater than 1 \\
+    \ooo Since $r \subseteq V_H$, it follows that  $a \not\in \mathit{reads}(h(a))$ \\
+    \ooo Hence $a \not= b$ for sequences of length 1, too \\
+  \end{tabbedproof}
+
+\item $R_{H'} \subseteq V_{H'} \times V_{H'}$ 
+  \begin{tabbedproof}
+    \oo We want to show that for all $(a,b)$, if $b \in \mathit{reads}(h'(a))$, then $a \in V_{H'}$ and $b \in V_{H'}$ \\
+    \oo Assume $b \in \mathit{reads}(h'(a))$ \\
+    \ooo Now consider whether $a = c$  \\
+    \ooo Suppose $a = c$: \\
+    \oooo Then $a \in V_{H'}$ \\
+    \oooo Since $\mathit{reads}(h'(c)) = r$, we know $r \subseteq V_H$ \\
+    \oooo Since $V_{H} \subseteq V_{H'}$, it follows $b \in V_{H'}$ \\
+    \ooo Suppose $a \not= c$: \\
+    \oooo Then $\mathit{reads}(h'(a)) = \mathit{reads}(h(a))$ \\
+    \oooo Then $b \in \mathit{reads}(h(a))$, and so $(a,b) \in R_H$ \\
+    \oooo Since $R_H \subseteq V_H \times V_H$, we know $a \in V_H$ and $b \in V_H$ \\
+    \oooo Since $V_{H} \subseteq V_{H'}$, we know $a \in V_{H'}$ and $b \in V_{H'}$ \\
+  \end{tabbedproof}
+
+\item $R^\dagger_{H'} = O_{H'}$ 
+  \begin{tabbedproof}
+    \oo We want to show that for all $(a,b)$, we have $(a,b) \in R^\dagger_{H'}$ iff $(a,b) \in O_{H'}$ \\
+    \oo Assume $(a,b) \in R^\dagger_{H'}$ \\
+    \ooo Then $(b, a) \in R_{H'}$ \\
+    \ooo So $a \in \mathit{reads}(h'(b))$ \\
+    \ooo We want to show that $b \in \mathit{obs}(h'(a))$ \\
+    \ooo Consider whether $b = c$ \\
+    \ooo Suppose $b = c$: \\
+    \oooo Then $a \in r$, since $\mathit{reads}(h'(b)) = r$ \\
+    \oooo Therefore $\mathit{obs}(h'(a)) = \mathit{obs}(h(a)) \cup \setof{c}$ \\
+    \oooo Hence $b \in \mathit{obs}(h'(a))$ \\
+    \ooo Suppose $b \not= c$: \\
+    \oooo Then $\mathit{reads}(h'(b)) = \mathit{reads}(h(b))$ \\
+    \oooo So $a \in \mathit{reads}(h(b))$ \\
+    \oooo Hence $b \in \mathit{obs}(h(a))$ \\
+    \oooo Since $\mathit{obs}(h(x)) \subseteq \mathit{obs}(h(x))$ for all $x$, $b \in \mathit{obs}(h'(a))$ \\
+    \oo Assume $(a,b) \in O_{H'}$ \\
+    \ooo Then $b \in \mathit{obs}(h'(a))$ \\
+    \ooo We want to show that $a \in \mathit{reads}(h'(b))$ \\
+    \ooo Consider whether $b = c$ \\
+    \ooo Suppose $b = c$: \\
+    \oooo Now consider whether $a \in r$ \\
+    \oooo Suppose $a \in r$: \\
+    \ooooo Then by definition $a \in \mathit{reads}(h'(b))$ \\
+    \oooo Suppose $a \not\in r$: \\
+    \ooooo Then $\mathit{obs}(h'(a)) = \mathit{obs}(h(a))$ \\
+    \ooooo So $b \in \mathit{obs}(h(a))$ \\
+    \ooooo But $\mathit{obs}(h(a)) \subseteq V_H$, and $b = c \not\in V_H$ \\
+    \ooooo So this case is impossible \\
+    \ooo Suppose $b \not= c$: \\
+    \oooo Consider whether $a = c$: \\
+    \oooo Suppose $a = c$: \\
+    \ooooo This case is impossible since $c \not\in V_H$ and $\mathit{obs}(h'(x)) = \emptyset$ for any $x \not\in V_H$ \\
+    \oooo Suppose $a \not= c$: \\
+    \ooooo Then it follows that $b \in \mathit{obs}(h(a))$ \\
+    \ooooo Then it follows that $a \in \mathit{reads}(h(b))$ \\
+    \ooooo Therefore $a \in \mathit{reads}(h'(b))$ 
+  \end{tabbedproof}
+
+\item $\mathit{unique}(H') = \mathit{unique}(H)$
+
+This is immediate since $\mathit{identity} \circ h' = \mathit{identity} \circ h$.
+\end{enumerate}
+\end{proof}
+
+\begin{lemma}{(Reading an Unready Cell, Semantically)}
+Suppose that $H = (D,h)$ and $H, D' \models \phi \otimes
+\celleither{c}{e}$ and $c \in D' - V_H$. Then for any subset $r
+\subseteq V_H$ and value $v$, define $h'$ so that
+\begin{itemize}
+\item $\mathit{code} \circ h' = \mathit{code} \circ h$ 
+\item $\mathit{value} \circ h' = \semfun{c'}{\IfThenElse{c' = c}{\Some(v)}{\mathit{value}(h(c'))}}$ 
+\item $\mathit{reads} \circ h' = \semfun{c'}{\IfThenElse{c' = c}{r}{\mathit{reads}(h(c'))}}$ 
+\item $\mathit{obs} \circ h' = \semfun{c'}{\IfThenElse{c' \in r}{\mathit{obs}(h(c')) \cup \setof{c}}{\mathit{obs}(h(c'))}}$ 
+\item $\mathit{identity} \circ h' = \mathit{identity} \circ h$
+\end{itemize}
+Then it follows that for $H' = (D,h')$, we have $H', D' \models R(\setof{c}, \phi) \otimes \cellpos{c}{e}{v}{r}$.
+\end{lemma}
+
+\begin{proof}
+  \begin{tabbedproof}
+    \oo Assume $H, D' \models \phi \otimes \celleither{c}{e}$ and $c \in D' - V_H$ \\
+    \ooo Then there are $D_1, D_2$ with $D' = D_1 \uplus D_2$ and $H, D_1 \models \phi$ and $H, D_2 \models \celleither{c}{e}$ \\
+    \ooo Then $c \in D_2$ and $c \not \in D_1$, and $\mathit{value}(h(c)) = \None$ \\
+    \ooo By assumption, $\mathit{value}(h'(c)) = \Some(v)$ and $\mathit{reads}(h'(c)) = r$ \\
+    \ooo Hence $H', D_2 \models \cellpos{c}{e}{v}{r}$ \\
+    \ooo Now proceed by induction on $\phi$, letting the support $D_1$ be a parameter \\
+    \ooo Case $\phi = I$: \\
+    \oooo By definition $H', D_1 \models I$ \\
+    \ooo Case $\phi = \psi \otimes \theta$: \\
+    \oooo So we know there are $D_3, D_4$ such that $D_1 = D_3 \uplus D_4$ and \\
+    \oooox $H, D_3 \models \psi$ and \\
+    \oooox $H, D_4 \models \theta$ \\
+    \oooo By induction, we know that \\
+    \oooox $H', D_3 \models R(\setof{c}, \psi)$ and \\
+    \oooox $H', D_4 \models R(\setof{c}, \theta)$ \\
+    \oooo Hence $H', D_1 \models R(\setof{c}, \psi) \otimes R(\setof{c}, \theta)$ \\
+    \oooo Hence $H', D_1 \models R(\setof{c}, \psi \otimes \theta)$ \\
+
+    \ooo Case $\phi = \cellneg{c'}{e'}$: \\
+    \oooo So we know that $c' \not\in V_H$ and $c' \not= c$ and $\mathit{code}(h(c')) = e'$ and $c' \in D_1$\\
+    \oooo Hence $c' \not\in V_{H'}$ \\
+    \oooo Hence $H', D_1 \models \cellneg{c'}{e'}$ \\
+    \oooo Hence $H', D_1 \models R(\setof{c}, \cellneg{c'}{e'})$ \\
+
+    \ooo Case $\phi = \cellpos{c'}{e'}{v'}{r'}$: \\
+    \oooo Now consider whether $r' \subseteq V_H$ \\
+    \oooo Suppose $r' \subseteq V_{H}$: \\
+    \ooooo So $\mathit{value}(h(c')) = \Some(v')$ and $\mathit{reads}(h(c')) = r'$ and
+           $\mathit{code}(h(c')) = e'$ and $a \in D$ \\
+    \ooooo Since $c \not \in D_1$, we know $c' \not= c$ \\
+    \ooooo Therefore $\mathit{value}(h'(c')) = \Some(v')$ \\
+    \ooooo Therefore $\mathit{reads}(h'(c')) = r'$ \\
+    \ooooo Since $V_{H'} \supseteq V_H$, it follows that $r' \cap V_{H'} = r'$ \\
+    \ooooo Therefore $H', D_1 \models \cellpos{c'}{e'}{v'}{r'}$ \\
+    \ooooo Furthermore, since $r' \subseteq V_H$, we know $c \not\in r'$ \\
+    \ooooo Hence $R(\setof{c}, \cellpos{c'}{e'}{v'}{r'}) = \cellpos{c'}{e'}{v'}{r'}$ \\
+    \oooo Suppose $r' \not\subseteq V_{H}$: \\
+    \ooooo Then $c' \not\in V_H$ and $c' \not= c$\\
+    \ooooo So $c' \not \in V_{H'}$ \\
+    \ooooo Now, consider whether $c \in r'$: \\
+    \ooooo Suppose $c \in r'$: \\
+    \oooooo Since $c' \not \in V_{H'}$, we know $H', D_1 \models \cellneg{c'}{e'}$ \\
+    \oooooo Hence $H', D_1 \models R(\setof{c}, \cellpos{c'}{e'}{v'}{r'})$ \\
+    \ooooo Suppose $c \not\in r'$: \\
+    \oooooo Then since $r' \not\subseteq V_H$, there is $x \in r'$ such that $x \not \in V_H$ and $x \not= c$ \\
+    \oooooo Therefore $r' \not\subseteq V_{H'}$ \\
+    \oooooo Therefore $H', D_1 \models \cellpos{c'}{e'}{v'}{r'}$ \\
+    \oooooo Therefore $H', D_1 \models R(\setof{c}, \cellpos{c'}{e'}{v'}{r'})$ 
+  \end{tabbedproof}
+\end{proof}
+
+
+\section{Implementing Functional Reactive Programming}
 
 In this section, we will see how to verify an imperative
 implementation of a simple synchronous functional reactive programming
