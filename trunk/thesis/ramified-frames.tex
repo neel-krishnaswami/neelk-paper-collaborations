@@ -119,8 +119,8 @@ $\celltype{A} = \{$\=$code: \reftype{\codetype{A}};$ \nextline
 
 $ecell = \exists \alpha:\star.\; \celltype{\alpha}$ \nextline[1em]
 
-$\ctext{unit} : \forall \alpha:\star.\; \alpha \to \codetype{\alpha}$ \nextline
-$\ctext{unit}\;x = \comp{\pair{x}{\ctext{emptyset}}}$ \nextline[1em]
+$\ctext{return} : \forall \alpha:\star.\; \alpha \to \codetype{\alpha}$ \nextline
+$\ctext{return}\;x = \comp{\pair{x}{\ctext{emptyset}}}$ \nextline[1em]
 
 $\ctext{bind} : \forall \alpha,\beta:\star.\; \codetype{\alpha} \to (\alpha \to \codetype{\beta}) \to \codetype{\beta}$ \nextline
 $\ctext{bind}\;e\;f = [$\=$\letv{(v,r_1)}{e}{}$ \nextline
@@ -489,7 +489,6 @@ $heap(D,h) = $ \\
 \label{heap-invariant}
 \end{figure}
 
-
 The global character of this invariant should be evident; we need to
 talk about \emph{all} of the cells in the heap in order to state our
 invariants. So it is not immediately clear that we have made much
@@ -528,7 +527,9 @@ $\updatecell$ operation certainly does not act locally --- it
 recursively traverses the observers set, possibly mutating a very
 large part of the cell graph.
 
-Nonetheless, we can prove the soundness of the following triple
+\subsubsection{Correctness of $\updatecell$}
+
+Despite this issue, we can prove the soundness of the following triple
 specifying $\updatecell$.
 
 \begin{prop}{(Update Rule)}
@@ -835,6 +836,7 @@ Now we'll proceed line-by-line through the function body of $\ctext{mark\_unread
 \oooo We know that $c$ occurs only in $rs$ since $R^\dagger_{H'} = O_{H'}$, and so \\ 
 \oooo these assignments ensure that $\mathit{heap}(D, h'')$ is satisfied. \\
 \end{tabbedproof}
+\end{proof}
 
 \begin{lemma}{(Correctness of $\ctext{mark\_unready}$)}
 The $\ctext{mark\_unready}$ function satisfies the following specification:   
@@ -904,7 +906,7 @@ and then using the lemma that updating negative lemmas works as expected.
 \end{proof}
 
 
-
+\subsubsection{Correctness of $\newcell$}
 
 We can prove the soundness of a similar specification for $\newcell$ as
 well:
@@ -932,7 +934,7 @@ $\mathit{value}$ to $\None$ (to indicate the unitialized state), as well as poin
 $\mathit{read}$ and $\mathit{obs}$ to empty read and observer sets. 
 
 At line 35, all of these values are bound to variables in scope, so we
-can define $H' = (D',h')$, where $\mathit{ec} = \pack(\tau,\mathit{(code, value, read, obs, id)})$, 
+can define $H' = (D',h')$, where $\mathit{ec} = \pack{\tau}{\mathit{(code, value, read, obs, id)}}$, 
 and 
 \begin{displaymath}
 (D',h') = (D \cup \setof{\mathit{ec}}, h' = [h|\mathit{ec}: (e, \None, \emptyset, \emptyset, id)])
@@ -954,122 +956,6 @@ are unchanged.
 
 Then we can hide $H'$ behind an existential to establish the postcondition. 
 \end{proof}
-
-\begin{figure}
-\mbox{}
-\begin{mathpar}
-\begin{array}{ll}  
-\mbox{\textsc{AUnit}} & 
-\forall \psi.\; \mspec{G(\psi)}
-                     {\return v}
-                     {a}{G(\psi) \land \exists z.\; a = (v, z) \land \mathit{set}(z, \emptyset, \emptyset)} 
-\\[1em]
-
-\mbox{\textsc{ABind}} & 
-\forall \psi.\; \mspec{G(\phi \otimes \psi)}
-                     {e}
-                     {a}{G(\phi' \otimes R(u', \psi)) \land \exists z.\;a = (v', r') \land \mathit{set}(z, r', r')} 
-                \specand \\
-&  \forall \psi.\; \mspec{G(\phi' \otimes \psi)}
-                        {f\;v'}
-                        {a}{G(\phi'' \otimes R(u'', \psi)) \land \exists z.\; a = (v'', z) \land \mathit{set}(z, r'', r'')}\\
-&  \specimp \\
-&  \forall \psi.\; \mspec{G(\phi \otimes \psi)}
-                        {\bind e\;f}
-                        {a}{a = (v'', r' \cup r'') \land G(\phi'' \otimes R(u' \cup u'', \psi))} 
-\\[1em]
-\mbox{\textsc{AReady}} & 
-  \setof{\ready{\phi}{c}{v}} \specimp \\
-& \forall \psi.\; \mspec{G(\phi \otimes \psi)}
-                       {\readcell c}
-                       {a}{G(\phi \otimes \psi) \land \exists z.\;a = (v, z) \land \mathit{set}(\, \setof{c}, \setof{c})} 
-\\[1em]
-\mbox{\textsc{AUnready}} & 
-  \setof{\unready{\phi \otimes \celleither{c}{e}}{c}} \specand \\
-& \forall \psi.\; \mspec{G(\phi \otimes \psi)}
-                       {e}
-                       {a}{G(\phi' \otimes R(u, \psi)) \land \exists z.\; a = (v, z) \land \mathit{set}(z, r, r)} \\
-& \specimp \\
-& \begin{array}{ll}
-   \forall \psi. & \left<G(\phi \otimes \celleither{c}{e} \otimes \psi)\right> \\
-                 & \readcell c \\
-                 & \left<a.\; 
-                     \begin{array}{l}
-                       G(R(\setof{c}, \phi') \otimes \cellpos{c}{e}{v}{r} \otimes R(u \cup \setof{c}, \psi)) 
-                        \;\land \\
-                        \exists z.\;a = (v, z) \land \mathit{set}(z, \setof{c}, \setof{c})
-                     \end{array}\right> 
-  \end{array}
-\\[3em]
-
-\mbox{\textsc{AGetRef}}
-& \begin{array}{ll}
-    \forall \psi.\; 
-    &  \left<G(\localref{r}{v} \otimes \psi)\right> \\
-    &  \getref r \\
-    &  \left<a.\; G(\localref{r}{v} \otimes \psi) 
-                  \land  \exists z.\;a = (v,z) \land \mathit{set}(z, \emptyset, \emptyset)
-       \right> \\
-     \end{array}
-\\[2em]
-
-\mbox{\textsc{ASetRef}}
-& \begin{array}{ll}
-    \forall \psi.\; 
-    &  \left<G(\localref{r}{v'} \otimes \psi)\right> \\
-    &  \setref r\;v \\
-    &  \left<a.\; G(\localref{r}{v} \otimes \psi) 
-                  \land  \exists z.\;a = (v,z) \land \mathit{set}(z, \emptyset, \emptyset)
-       \right> \\
-     \end{array}
-\\[2em]
-\mbox{\textsc{ANewCell}}
-& \forall \psi.\; \mspec{G(\psi)}{\newcell e}{(c,z)}{G(\cellneg{c}{e} \otimes \psi) \land \mathit{set}(z, \emptyset, \emptyset)}
-\end{array}
-
-%   \inferrule*[right=AUnit]
-%             { }
-%             {\astep{I}{\return v}{I}{v}{\emptyset}{\emptyset}}
-% 
-% \and
-%   \inferrule*{\astep{\phi}{e}{\phi'}{v'}{r_1}{u_1} \\
-%               \astep{\phi'}{f\;v'}{\phi''}{v''}{r_2}{u_2}}
-%              {\astep{\phi}{\bind e\; f}{\phi''}{v''}{r_1 \cup r_2}{u_1 \cup u_2}}
-% \\
-% \\
-%   \inferrule*[right=AReady]
-%             {\ready{\phi}{a}{v}}
-%             {\astep{\phi}{\readcell a}{\phi}{v}{\setof{a}}{\emptyset}}
-% \and
-%   \inferrule*[right=AUnready]
-%             {\unready{\celleither{a}{e} \otimes \phi}{a} \;\;
-%              \astep{\phi}{e}{\phi'}{v}{r}{u}}
-%             {\aconfig{\celleither{a}{e} \otimes \phi}
-%                      {\readcell a} \Downarrow \\
-%              \aconfig{\cellpos{a}{e}{v}{r} \otimes R(\setof{a},\phi')}
-%                      {v}
-%              \aeffect{\setof{a}}
-%                      {u \cup \setof{a}}}
-% \\
-% \\
-%   \inferrule*[right=AGetRef]
-%             { } 
-%             {\astep{\localref{r}{v}}{\getref r}
-%                    {\localref{r}{v}}{v}{\emptyset}{\emptyset}}
-% \and
-%   \inferrule*[right=ASetRef]
-%             { } 
-%             {\astep{\localref{r}{v}}{\setref r\;v'}
-%                    {\localref{r}{v'}}{\unit}{\emptyset}{\emptyset}}
-% \\
-% \\
-%   \inferrule*[right=AbstractFrame]
-%             {\astep{\phi}{e}{\phi'}{v}{r}{u}}
-%             {\astep{\phi \otimes \psi}{e}{\phi' \otimes R(u, \psi)}{v}{r}{u}}
-\end{mathpar}
-\caption{Abstract Semantics of Notifications}
-\label{abs-semantics}
-\end{figure}
 
 \begin{figure}
 \mbox{}
@@ -1096,11 +982,11 @@ Then we can hide $H'$ behind an existential to establish the postcondition.
 \mbox{}
   \begin{displaymath}
     \begin{array}{lcl}
-      closed(I, s) & = & \top \\
-      closed(\phi \otimes \psi, s) & = & closed(\phi, s) \land closed(\psi, s) \\ 
-      closed(\localref{r}{v}, s) & = & \top \\
-      closed(\cellneg{a}{e}, s) & = & \top \\
-      closed(\cellpos{a}{e}{v}{r}, s) & = & r \subseteq s \\
+      \mathit{closed}(I, s) & = & \top \\
+      \mathit{closed}(\phi \otimes \psi, s) & = & \mathit{closed}(\phi, s) \land \mathit{closed}(\psi, s) \\ 
+      \mathit{closed}(\localref{r}{v}, s) & = & \top \\
+      \mathit{closed}(\cellneg{a}{e}, s) & = & \top \\
+      \mathit{closed}(\cellpos{a}{e}{v}{r}, s) & = & r \subseteq s \\
     \end{array}
   \end{displaymath}
 \caption{Closedness predicate}
@@ -1218,7 +1104,7 @@ For all $\phi, o,$ and $H$ such that $H = (D,h)$:
 \end{itemize}
 \end{prop}
 
-In Figure~\ref{closedness}, we define the $closed(\phi, s)$ predicate,
+In Figure~\ref{closedness}, we define the $\mathit{closed}(\phi, s)$ predicate,
 which asserts that every cell formula in $\phi$ reads at most the
 cells in $s$. Now, we can summarize the interactions between the 
 ramification operator $R$ and abstract heap formulas as follows: 
@@ -1230,7 +1116,7 @@ that:
 \item $R(s, R(u, \phi)) = R(s \cup u, \phi)$
 \item If $\unready{\phi}{o}$, then $\unready{R(u, \phi)}{o}$ 
 \item If $\ready{R(u, \phi)}{o}{v}$, then $\ready{phi}{o}{v}$ 
-\item If $R(u, \phi)$ and $closed(\phi, s)$, then $R(u, \phi) = R(u \cap s, \phi)$ 
+\item If $R(u, \phi)$ and $\mathit{closed}(\phi, s)$, then $R(u, \phi) = R(u \cap s, \phi)$ 
 \end{itemize}
 \end{prop}
 
@@ -1246,73 +1132,189 @@ know that two parts of the abstract heap formula do not read each
 other at all, we can deduce that ramifications from one will not
 affect the other.
 
-We can finally define the abstract semantics of the code expression
-monad. We introduce the ``judgment''
-$\astep{\phi}{e}{\phi'}{v}{r}{u}$, which is read as ``from an initial
-state $\phi$, evaluating the $\codetype{A}$ expression $e$ will result
-in a modified state $\phi'$ and a return value $v$ of type $A$. The
-expression $e$ will have directly read the cells in $r$, and will have
-updated the cells in $u$ from an unready to a ready state.'' 
+\begin{prop}{(Entailments)}
+Define $\phi \vdash \theta$ to mean that for all $H$ and $D$, that if $H, D \models \phi$ then 
+$H, D \models \theta$. 
 
-\begin{figure}
-\mbox{}
-\begin{tabbing}
-$\astep{\phi}{e}{\phi'}{v}{r}{u} \triangleq$ \\[0.5em]
-\;\;\= $\forall \psi.\;$\=$\setof{G(\phi \otimes \boxed{\psi})}$ \\
-    \>                  \>${\runcmd e}$ \\
-    \>                  \>$\setof{a.\;
-                             G(\phi' \otimes \boxed{R(u, \psi)})
-                             \land \exists z.\; a = (v, z) \land set(u, z, u)}$ \\
-    \>                  \>$\!\!\specand$ \\
-    \>                  \>$\{\forall o.\;$\=$(\unready{\phi \otimes \psi}{o} \land o \in \domain{\psi})$ \\
-    \>                  \> \> $\implies \unready{\phi' \otimes R(u, \psi)}{o}\}$ \\
-\>$\!\!\specand$ \\ 
-\>$\{\forall c \in r \cup u.\; \exists v.\; \ready{\phi'}{c}{v} \;\land \forall c \in u.\; \unready{\phi}{c}\}$ 
-\end{tabbing}
-\caption{Definition of the Abstract Semantics}
-\label{abstract-semantics}
-\end{figure}
+\begin{itemize}
+\item For all $\phi, \theta$, we have $\phi \otimes \theta \vdash \phi$
+\item For all $\phi, \phi', \psi$, if $\phi \vdash \phi'$ then $\phi \otimes \psi \vdash \phi' \otimes \psi$  
+\item If $\unready{\phi}{c}$ then $\phi \dashv\vdash R(\setof{c}, \phi)$
+\item If $\unready{\phi \otimes \celleither{c}{e}}{c}$ then $\phi \otimes \celleither{c}{e} \dashv\vdash \phi \otimes \cellneg{c}{e}$
+\end{itemize}
+\end{prop}
 
-We define the meaning of the abstract semantics in
-Figure~\ref{abstract-semantics}, where our ``judgment'' is revealed to 
-be a notational abbreviation for a formula in our logic of specifications.
+\begin{proof}
+\begin{itemize}
+\item For all $\phi, \theta$, we have $\phi \otimes \theta \vdash \phi$
+\begin{tabbedproof}
+\oo Assume we have $\phi, \theta$ and $H, D \models \phi \otimes \theta$ \\
+\oo Now we inductively show that for all $D' \supseteq D$, we have $H, D \models \phi$ implies $H, D' \models \phi$ \\
+\ooo Case $\phi = I$: \\
+\oooo Immediate \\
+\ooo Case $\phi = \localref{r}{v}$: \\
+\oooo Immediate\\
+\ooo Case $\phi = \psi \otimes \theta$: \\
+\oooo If $D' \supseteq D$, then there is a $D''$ such that $D' = D \uplus D''$ \\
+\oooo By inversion, we have $D_1$ and $D_2$ with $D = D_1 \uplus D_2$ such that \\
+\ooox $H, D_1 \models \psi$ and $H, D_2 \models \theta$ \\
+\oooo By induction, we know that $H, D_1 \uplus D'' \models \psi$ \\
+\oooo Since $D''$ is disjoint from $D$, we know it is disjoint from $D_1$ and $D_2$ \\
+\oooo Hence $D_1 \uplus D''$ is disjoint from $D_2$ \\
+\oooo Hence $H, D_1 \uplus D'' \uplus D_2 \models \psi \otimes \theta$ \\
+\oooo Hence $H, D' \models \phi$ \\
+\ooo Case $\phi = \cellneg{c}{e}$: \\
+\oooo Since $c \in D$, we know $c \in D'$ \\
+\oooo Hence $H, D' \models \cellneg{c}{e}$ \\
+\ooo Case $\phi = \cellpos{c}{e}{v}{r}$: \\
+\oooo Since $c \in D$, we know $c \in D'$ \\
+\oooo Hence $H, D' \models \cellneg{c}{e}$ \\
+\oo Now note that we have $D_1, D_2$ such that $D = D_1 \uplus D_2$ and \\
+\ox $H, D_1 \models \phi$ and $H, D_2 \models \theta$ \\
+\oo Since $D \supseteq D_1$, we know that $H, D \models \phi$ \\
+\end{tabbedproof}
 
-As before, we describe the effect of a command with a Hoare triple,
-prefixed with a quantification over all possible frames $\psi$. Then
-we assert that from a state $G(\phi \otimes \psi)$, running $e$ will
-give us a state $G(\phi' \otimes R(u, \psi))$ --- that is, we must
-update the frame with the ramification $u$. The frames have been put
-into boxes, to highlight the fact that the framing formulas are
-\emph{different} in the pre- and the post-condition.
+\item For all $\phi, \phi', \psi$, if $\phi \vdash \phi'$ then $\phi \otimes \psi \vdash \phi' \otimes \psi$  
+\begin{tabbedproof}
+\oo Assume we have $\phi \vdash \phi'$ \\
+\oo Now, assume we have $H, D$ such that $H,D \models \phi \otimes \psi$ \\
+\ooo So we know that there are $D_1, D_2$ such that $D = D_1 \uplus D_2$ and \\
+\oox $H, D_1 \models \phi$ and $H, D_2 \models \psi$ \\
+\ooo Since $\phi \vdash \phi'$, we know $H, D_1 \models \phi'$ \\
+\ooo Hence $H, D_1 \uplus D_2 \models \phi' \otimes \psi$ \\
+\ooo Hence $H, D \models \phi' \otimes \psi$ \\
+\end{tabbedproof}
 
-Then, there are some extra conditions which constrain how the
-expression might have modified the state. We assert that anything
-unready in the frame will stay unready, and that the cells in the
-update set were unready before running the command and ready afterward,
-and that everything the read set is also ready. 
 
-The reason we have to explicitly maintain these conditions is in order
-to prove the rules given in Figure~\ref{abs-semantics}. Here, we
-present a number of implications over specifications in inference rule
-format, mimicking the structure of a big-step operational semantics. 
-In rule \textsc{AUnit}, we give a specification for the $\return v$ command, 
-which simply returns its argument and neither reads nor updates any 
-cells or state. The \textsc{ABind} rule explains how sequential composition 
-works --- as expected, we evaluate the first monadic argument, and pass
-the result to the functional argument, and evaluate that. The read and
-update sets are simply the union of the two executions. Reading a cell
-comes in two variants, \textsc{AReady} and \textsc{AUnready}. If a cell is ready, we
-simply return its memoized value without any further computation. If
-a cell is unready, we need to evaluate its code body, and then update
-the cell with its new value. Note that we have to apply the ramification
-operator in \textsc{AUnready}, because the cell we're reading goes from unready
-to ready itself. We can also read and write local state, which do not have any
-effect on the cells. 
+\item If $\unready{\phi}{c}$ then $\phi \dashv\vdash R(\setof{c}, \phi)$
+\begin{tabbedproof}
+\oo Assume $\unready{\phi}{c}$, and that we have $H$ and $D$. \\
+\oo We want to show that $H, D \models \phi$ iff $H, D \models R(\setof{c}, \phi)$ \\
+\oo $\Rightarrow$: Assume $H, D \models \phi$ \\
+\ooo Now, we proceed by induction on $\phi$: \\
+\ooo Case $\phi = I$: \\
+\oooo Since $R(\setof{c}, I) = I$, this case is immediate \\
+\ooo Case $\phi = \localref{r}{v}$: \\
+\oooo Since this is always forced, this case is immediate \\
+\ooo Case $\phi = \sigma \otimes \theta$: \\
+\oooo By definition, we know there are $D_1, D_2$ such that $D = D_1 \uplus D_2$ and \\
+\ooox $H, D_1 \models \sigma$ and $H, D_2 \models \theta$ \\
+\oooo By induction $H, D_1 \models R(\setof{c}, \sigma)$ and $H, D_2 \models R(\setof{c}, \theta)$ \\
+\oooo Hence $H, D \models R(\setof{c}, \sigma) \otimes R(\setof{c}, \theta)$ \\
+\oooo Hence $H, D \models R(\setof{c}, \sigma \otimes \theta)$ \\
+\ooo Case $\phi = \cellneg{c'}{e}$: \\
+\oooo Since $R(\setof{c}, \cellneg{c'}{e}) = \cellneg{c'}{e}$, this case is immediate \\
+\ooo Case $\phi = \cellpos{c'}{e'}{v'}{r'}$: \\
+\oooo Consider whether $c \in r'$: \\
+\oooo If $c \not\in r'$: \\
+\ooooo Then $R(\setof{c}, \cellpos{c'}{e'}{v'}{r'}) = \cellpos{c'}{e'}{v'}{r'}$ and this case is immediate \\
+\oooo If $c \in r'$: \\
+\ooooo Since $\unready{c}{e}$ is sound, we know that $c \not\in V_H$. \\ 
+\ooooo Hence $r' \not\subseteq V_H$, and so we know that $c' \not\in V_H$ \\
+\ooooo Furthermore, we know that $c' \in D$, and $\mathit{code}(h(c')) = e'$, \\
+\oooox so we know $H, D \models \cellneg{c'}{e'}$ \\
+\ooooo Since $c \in r'$, we know $R(\setof{c}, \cellpos{c'}{e'}{v'}{r'}) = \cellneg{c'}{e'}$ \\
+\ooooo Hence $H, D \models R(\setof{c}, \cellpos{c'}{e'}{v'}{r'})$ \\
+\oo $\Leftarrow$: Assume $H, D \models R(\setof{c}, \phi)$ \\
+\ooo Now proceed by induction on $\phi$: \\
+\ooo Case $\phi = I$: \\
+\oooo Since $R(\setof{c}, I) = I$, this case is immediate \\
+\ooo Case $\phi = \localref{r}{v}$: \\
+\oooo Since $R(\setof{c}, \localref{r}{v}) = \localref{r}{v}$, this case is immediate \\
+\ooo Case $\phi = \sigma \otimes \theta$: \\
+\oooo We know $R(\setof{c}, \sigma \otimes \theta) = R(\setof{c}, \sigma) \otimes R(\setof{c}, \theta)$ \\
+\oooo Hence we know there are $D_1, D_2$ such that $D = D_1 \uplus D_2$ and \\
+\ooox $H, D_1 \models R(\setof{c}, \sigma)$ and $H, D_2 \models R(\setof{c}, \theta)$ \\
+\oooo By induction $H, D_1 \models \sigma$ and $H, D_2 \models \theta$ \\
+\oooo Hence $H, D \models \sigma \otimes \theta$ \\
+\ooo Case $\phi = \cellneg{c'}{e}$: \\
+\oooo Since $R(\setof{c}, \cellneg{c'}{e}) = \cellneg{c'}{e}$, this case is immediate \\
+\ooo Case $\phi = \cellpos{c'}{e'}{v'}{r'}$: \\
+\oooo Consider whether $c \in r'$: \\
+\oooo If $c \not\in r'$: \\
+\ooooo Then $R(\setof{c}, \cellpos{c'}{e'}{v'}{r'}) = \cellpos{c'}{e'}{v'}{r'}$ and this case is immediate \\
+\oooo If $c \in r'$: \\
+\ooooo Since $\unready{c}{e}$ is sound, we know that $c \not\in V_H$. \\ 
+\ooooo We know $H, D \models R(\setof{c}, \cellpos{c'}{e'}{v'}{r'}) = \cellneg{c'}{e'}$ \\
+\ooooo Hence $c' \not\in V_H$ \\
+\ooooo But since $c \in r'$, we know $H, D \models \cellpos{c'}{e'}{v'}{r'}$ \\
+\end{tabbedproof}
 
-Finally, we have the \textsc{AbstractFrame} rule, which allows us to
-extend the abstract heap formulas in the style of the frame rule of 
-separation logic --- the signal difference being that we have to apply 
-the ramification operator $R$ to the frame in the post-state. 
+
+
+\item If $\unready{\phi \otimes \cellpos{c}{e}{v}{r}}{c}$ then $\phi \otimes \cellpos{c}{e}{v}{r} \dashv\vdash \phi \otimes \cellneg{c}{e}$
+\begin{tabbedproof}
+\oo Assume $\unready{\phi \otimes \cellpos{c}{e}{v}{r}}{c}$  and $H, D$ \\
+\oo Now we want to show $H, D \models \phi \otimes \cellpos{c}{e}{v}{r}$ if and only if \\
+\ox $H, D \models \phi \otimes \cellneg{c}{e}$ \\
+\oo $\Rightarrow$: Assume $H, D \models \phi \otimes \cellpos{c}{e}{v}{r}$ \\
+\ooo So we have $D_1, D_2$ such that $D = D_1 \uplus D_2$ and \\
+\oox $H, D_1 \models \phi$ and $H, D_2 \models \cellpos{c}{e}{v}{r}$ \\
+\ooo From the soundness of $\unready{c}{e}$, we know that $c \not \in C_H$ \\
+\ooo Hence we know that $H, D_2 \models cellneg{c}{e}$ \\
+\ooo Hence we know that $H, D \models \phi \otimes \cellneg{c}{e}$ \\
+\oo $\Leftarrow$: Assume $H, D \models \phi \otimes \cellneg{c}{e}$ \\
+\ooo So we have $D_1, D_2$ such that $D = D_1 \uplus D_2$ and \\
+\oox $H, D_1 \models \phi$ and $H, D_2 \models \cellpos{c}{e}{v}{r}$ \\
+\ooo We want to show $H, D \models \phi \otimes \cellpos{c}{e}{v}{r}$ \\
+\ooo By inversion on $\unready{\phi \otimes \cellpos{c}{e}{v}{r}}{c}$ we know $\unready{\phi}{d}$ for some $d \in r$ \\
+\ooo By soundness of $\unready{\phi}{d}$, we know that $d \not\in V_H$ \\
+\ooo Hence we know that $H, D_2 \models \cellpos{c}{e}{v}{r}$ \\
+\ooo Hence we know that $H, D \models \phi \otimes \cellpos{c}{e}{v}{r}$ \\
+\end{tabbedproof}
+\end{itemize}
+\end{proof}
+
+
+
+\subsection{The Abstract Semantics of Expressions}
+
+Now we can finally define the abstract semantics of the code
+expression monad, which we give in Figure~\ref{abs-semantics}.
+
+As before, we describe the effect of an expression $e$ with a Hoare
+triple, prefixed with a quantification over all possible frames
+$\psi$. Then we assert that from a state $G(\phi \otimes \psi)$,
+running $e$ will give us a state $G(\phi' \otimes R(u, \psi))$ ---
+that is, we must update the frame with the ramification $u$. Note in
+particular that the framing formulas may \emph{differ} in the pre- and
+the post-conditions. For composite commands (such as $\bind e\;f$) we
+give their specifications as implications over the specifications of
+their subcomponents.
+
+In the specification \textsc{AUnit}, we give a specification for the
+$\return v$ command, which simply returns its argument and neither
+reads nor updates any cells or state. 
+
+The \textsc{ABind} rule explains how sequential composition works for
+an expression $\bind e\;f$ --- as expected, we evaluate the first
+monadic argument, and pass the result to the functional argument, and
+evaluate that. The read and update sets are simply the union of the
+two executions. Reading a cell comes in two variants, \textsc{AReady}
+and \textsc{AUnready}. If a cell is ready (using the
+$\ready{\phi}{c}{v}$ judgment), we simply return its memoized value
+without any further computation, and do not need to use a ramification
+to update the frame. On the other hand, if a cell is unready (from the
+$\unready{\phi}{c}$ judgment), we need to evaluate its code body, and
+then update the cell with its new value. So we need to know what the
+evaluation of its body can do. Note that we have to apply the
+ramification operator to $\phi'$ in the postcondition in the
+consequence of \textsc{AUnready}, because the cell we are reading goes
+from unready to ready itself. 
+
+We can also read and write local state (with the \textsc{AGetRef} and
+\textsc{ASetRef} specifications), which do not have any effect on the
+cells. Finally, we have the \textsc{AConseq} rule, which gives us a
+version of the rule of consequence from ordinary Hoare logic.
+
+Note that the use of the ready and unready judgments, together with
+the entailment relation on abstract heaps, means that we can reason
+``syntactically'' about the behavior of cell-manipulating programs: we
+do not need to know what the concrete model (or concrete
+implementation) when we are proving the correctness of client
+programs. We will see this in the next section, which illustrates that
+this interface really does give us a genuinely modular way of
+reasoning about dataflow networks.
 
 \begin{prop}{(Soundness of Abstract Semantics)}
 
@@ -1326,9 +1328,231 @@ combination of quantification and ramification give us a domain-specific
 frame property, which allow us to modularly prove the correctness of programs 
 that construct and produce notifications.
 
-\subsection{Correctness Proofs}
 
-\subsubsection{Proving the correctness of $\ctext{read}$}
+\begin{figure}
+\mbox{}
+\begin{mathpar}
+\begin{array}{ll}  
+\mbox{\textsc{AUnit}} & 
+\forall \psi.\; \mspec{G(\psi)}
+                     {\return v}
+                     {a}{G(\psi) \land \exists z.\; a = (v, z) \land \mathit{set}(\emptyset, z, \emptyset)} 
+\\[1em]
+
+\mbox{\textsc{ABind}} & 
+\forall \psi.\; \mspec{G(\phi \otimes \psi)}
+                     {e}
+                     {a}{G(\phi' \otimes R(u', \psi)) \land \exists z.\;a = (v', r') \land \mathit{set}(r', z, r')} 
+                \specand \\
+&  \forall \psi.\; \mspec{G(\phi' \otimes \psi)}
+                        {f\;v'}
+                        {a}{G(\phi'' \otimes R(u'', \psi)) \land \exists z.\; a = (v'', z) \land \mathit{set}(r'', z, r'')}\\
+&  \specimp \\
+&  \begin{array}{ll}
+     \forall \psi. & \left<G(\phi \otimes \psi)\right> \\
+                   & \bind e\;f \\
+                   &  \left<a.\;G(\phi'' \otimes R(u' \cup u'', \psi)) \land \exists z.\;a = (v'', z) \land \mathit{set}(r' \cup r'', z, r' \cup r'')\right> \\
+   \end{array}
+\\[2em]
+
+\mbox{\textsc{AReady}} & 
+  \setof{\ready{\phi}{c}{v}} \specimp \\
+& \forall \psi.\; \mspec{G(\phi \otimes \psi)}
+                       {\readcell c}
+                       {a}{G(\phi \otimes \psi) \land \exists z.\;a = (v, z) \land \mathit{set}(\setof{c}, z, \setof{c})} 
+\\[1em]
+
+\mbox{\textsc{AUnready}} & 
+  \setof{\unready{\phi \otimes \celleither{c}{e}}{c}} \specand \\
+& \forall \psi.\; \mspec{G(\phi \otimes \psi)}
+                       {e}
+                       {a}{G(\phi' \otimes R(u, \psi)) \land \exists z.\; a = (v, z) \land \mathit{set}(r, z, r)} \\
+& \specimp \\
+& \begin{array}{ll}
+   \forall \psi. & \left<G(\phi \otimes \celleither{c}{e} \otimes \psi)\right> \\
+                 & \readcell c \\
+                 & \left<a.\; 
+                     \begin{array}{l}
+                       G(R(\setof{c}, \phi') \otimes \cellpos{c}{e}{v}{r} \otimes R(u \cup \setof{c}, \psi)) 
+                        \;\land \\
+                        \exists z.\;a = (v, z) \land \mathit{set}(\setof{c}, z, \setof{c})
+                     \end{array}\right> 
+  \end{array}
+\\[3em]
+
+\mbox{\textsc{AGetRef}}
+& \begin{array}{ll}
+    \forall \psi.\; 
+    &  \left<G(\localref{r}{v} \otimes \psi)\right> \\
+    &  \getref r \\
+    &  \left<a.\; G(\localref{r}{v} \otimes \psi) 
+                  \land  \exists z.\;a = (v,z) \land \mathit{set}(\emptyset, z, \emptyset)
+       \right> \\
+     \end{array}
+\\[2em]
+
+\mbox{\textsc{ASetRef}}
+& \begin{array}{ll}
+    \forall \psi.\; 
+    &  \left<G(\localref{r}{v'} \otimes \psi)\right> \\
+    &  \setref r\;v \\
+    &  \left<a.\; G(\localref{r}{v} \otimes \psi) 
+                  \land  \exists z.\;a = (v,z) \land \mathit{set}(\emptyset, z, \emptyset)
+       \right> \\
+     \end{array}
+\\[2em]
+
+% \mbox{\textsc{ANewCell}}
+% & \forall \psi.\; \mspec{G(\psi)}{\newcell e}{(c,z)}{G(\cellneg{c}{e} \otimes \psi) \land \mathit{set}(\emptyset, z, \emptyset)}
+% \\[1em]
+
+\mbox{\textsc{AConseq}}
+& \setof{\phi' \vdash \phi} \specand \setof{\theta \vdash \theta'} \specand \\
+& \forall \psi.\; \mspec{G(\phi \otimes \psi) \land P}{e}{(x,z)}{G(\theta\otimes R(u, \psi)) \land Q} \\
+& \specimp \\
+& \forall \psi.\; \mspec{G(\phi' \otimes \psi) \land P}{e}{(x,z)}{G(\theta'\otimes R(u, \psi)) \land Q} \specand \\
+
+\end{array}
+\end{mathpar}
+\caption{Abstract Semantics of Notifications}
+\label{abs-semantics}
+\end{figure}
+
+
+
+
+
+\subsubsection{Proving the correctness of \textsc{AUnit}}
+\begin{prop*}{(The \textsc{AUnit} specification is sound)}
+The following triple is derivable:
+\begin{displaymath}
+\forall \psi.\; \mspec{G(\psi)}
+                     {\return v}
+                     {a}{G(\psi) \land \exists z.\; a = (v, z) \land \mathit{set}(\emptyset, z, \emptyset)} 
+\end{displaymath}
+\end{prop*}
+
+\begin{proof}
+\begin{tabbedproof}
+\oo Assume we have $\psi$ and a prestate $G(\psi)$ \\
+\oo Now consider the body of $\return v$ \\
+\oo $[(v, \mathsf{emptyset})]$ \\
+\oo Hence we know that $\exists z.\; a = (v, z) \land \mathit{set}(\emptyset, z, \emptyset)$ \\
+\ox and $G(\psi)$ \\
+\end{tabbedproof}
+\end{proof}
+
+\subsubsection{Proving the correctness of \textsc{ABind}}
+
+\begin{prop*}{(The \textsc{ABind} specification is sound)}
+The following specification is derivable:
+\begin{displaymath}
+\begin{array}{l}
+\forall \psi.\; \mspec{G(\phi \otimes \psi)}
+                     {e}
+                     {a}{G(\phi' \otimes R(u', \psi)) \land \exists z.\;a = (v', r') \land \mathit{set}(r', z, r')} 
+                \specand \\
+\forall \psi.\; \mspec{G(\phi' \otimes \psi)}
+                        {f\;v'}
+                        {a}{G(\phi'' \otimes R(u'', \psi)) \land \exists z.\; a = (v'', z) \land \mathit{set}(r'', z, r'')}\\
+specimp \\
+\begin{array}{ll}
+     \forall \psi. & \left<G(\phi \otimes \psi)\right> \\
+                   & \bind e\;f \\
+                   &  \left<a.\;G(\phi'' \otimes R(u' \cup u'', \psi)) \land \exists z.\;a = (v'', z) \land \mathit{set}(r' \cup r'', z, r' \cup r'')\right> \\
+   \end{array}
+\end{array}
+\end{displaymath}
+\end{prop*}
+
+\begin{proof}
+\begin{tabbedproof}
+\oo Assume $\forall \psi.\; \mspec{G(\phi \otimes \psi)}
+                     {e}
+                     {a}{G(\phi' \otimes R(u', \psi)) \land \exists z.\;a = (v', r') \land \mathit{set}(r', z, r')}$ \\
+\oo Assume $\forall \psi.\; \mspec{G(\phi' \otimes \psi)}
+                        {f\;v'}
+                        {a}{G(\phi'' \otimes R(u'', \psi)) \land \exists z.\; a = (v'', z) \land \mathit{set}(r'', z, r'')}$ \\
+\oo Assume we have $\psi$, and a prestate $G(\phi \otimes \psi)$ \\
+\ooo Now consider the body of $\bind$ \\
+\ooo $[\letv{(v, z_1)}{e}{}$ \\
+\ooo So we know $G(\phi' \otimes R(u', \psi)) \land v = v' \land \mathit{set}(r', z_1, r')$ \\
+\ooo Simplifying $v$ away, we continue with \\
+\ooo $\letv{(v, z_2)}{f\;v'}{}$ \\
+\ooo Now we know $G(\phi'' \otimes R(u'', R(u', \psi))) \land v = v'' \land \mathit{set}(r', z_1, r') \land \mathit{set}(r'', z_2, r'')$ \\
+\ooo Hence with $z = \mathsf{union}\;z_1\;z_2$ we know $\mathit{set}(r' \cup r'', z, r' \cup r'')$ \\
+\ooo $(v, \mathsf{union}\;z_1\;z_2)]$ \\
+\ooo Hence $G(\phi'' \otimes R(u' \cup u'', \psi)) \land \exists z.\; a = (v'', z) \land \mathit{set}(r' \cup r'', z, r' \cup r'')$ 
+\end{tabbedproof}
+\end{proof}
+
+\subsubsection{Proving the correctness of \textsc{AReady}}
+
+In this subsection, we will prove the following proposition: 
+
+\begin{prop*}{(The \textsc{AReady} specification is sound)}
+The following specification holds: 
+\begin{displaymath}
+\begin{array}{ll}
+  \setof{\ready{\phi}{c}{v}} \specimp \\
+& \forall \psi.\; \mspec{G(\phi \otimes \psi)}
+                       {\readcell c}
+                       {a}{G(\phi \otimes \psi) \land \exists z.\;a = (v, z) \land \mathit{set}(\setof{c}, z, \setof{c})} 
+\end{array}
+\end{displaymath}
+\end{prop*}
+
+\begin{proof}
+\begin{tabbedproof}
+\oo Assume $\ready{\phi}{c}{v}$ and a $\psi$ \\
+\ooo Now assume we have a precondition $G(\phi \otimes \psi)$ \\
+\ooo So there is an $H = (D,h)$ such that $\mathit{Inv}(H, \phi \otimes \psi)$ holds \\
+\ooo So we know that $H, D \models \phi \otimes \psi$ and $\mathit{heap}(H)$ \\
+\ooo So we know that $c \pointsto \mathit{value}(h(c))$ \\
+\ooo From soundness we know that $\mathit{value}(h(c)) = \Some(v)$ \\
+\ooo $[\letv{o}{[!c.value]}{}$ \\
+\ooo So we know that $o = \Some(v)$ \\
+\ooo Now we can simplify the case statement and continue \\
+\ooo $(v, \mathsf{singleton}\;c)]$ \\
+\ooo So we know that $\exists z.\;a = (v, z) \land \mathit{set}(\setof{c}, z, \setof{c})$ \\
+\oox and $\mathit{Inv}(H, \phi \otimes \psi)$ holds \\
+\ooo So $G(H, \phi \otimes \psi)$ and $\exists z.\;a = (v, z) \land \mathit{set}(\setof{c}, z, \setof{c})$ hold
+\end{tabbedproof}
+\end{proof}
+
+\subsubsection{Proving the correctness of \textsc{AUnready}}
+
+In this subsection, we will prove the following proposition:
+
+\begin{prop*}{(Soundness of the \text{AUnready} specification)}
+The following triple holds:
+\begin{displaymath}
+\begin{array}{ll}
+\mbox{\textsc{AUnready}} & 
+  \setof{\unready{\phi \otimes \celleither{c}{e}}{c}} \specand \\
+& \forall \psi.\; \mspec{G(\phi \otimes \psi)}
+                       {e}
+                       {a}{G(\phi' \otimes R(u, \psi)) \land \exists z.\; a = (v, z) \land \mathit{set}(r, z, r)} \\
+& \specimp \\
+& \begin{array}{ll}
+   \forall \psi. & \left<G(\phi \otimes \celleither{c}{e} \otimes \psi)\right> \\
+                 & \readcell c \\
+                 & \left<a.\; 
+                     \begin{array}{l}
+                       G(R(\setof{c}, \phi') \otimes \cellpos{c}{e}{v}{r} \otimes R(u \cup \setof{c}, \psi)) 
+                        \;\land \\
+                        \exists z.\;a = (v, z) \land \mathit{set}(\setof{c}, z, \setof{c})
+                     \end{array}\right> 
+  \end{array}
+\end{array}
+\end{displaymath}
+\end{prop*}
+
+This follows the standard pattern of (1) proving that the update
+preserves the relevant order structure, (2) proving the new abstract
+formula continues models the updated abstract heap, and finally (3)
+showing the code actually implements this update. 
+
 
 \begin{lemma}{(Reading an Unready Cell Preserves Order Structure)}
 Suppose that $H = (D,h)$ and $c \in D - V_H$. Then for any subset $r
@@ -1526,6 +1750,107 @@ Then it follows that for $H' = (D,h')$, we have $H', D' \models R(\setof{c}, \ph
   \end{tabbedproof}
 \end{proof}
 
+\begin{prop*}{(Soundness of the \text{AUnready} specification)}
+The following triple holds:
+\begin{displaymath}
+\begin{array}{ll}
+\mbox{\textsc{AUnready}} & 
+  \setof{\unready{\phi \otimes \celleither{c}{e}}{c}} \specand \\
+& \forall \psi.\; \mspec{G(\phi \otimes \psi)}
+                       {e}
+                       {a}{G(\phi' \otimes R(u, \psi)) \land \exists z.\; a = (v, z) \land \mathit{set}(r, z, r)} \\
+& \specimp \\
+& \begin{array}{ll}
+   \forall \psi. & \left<G(\phi \otimes \celleither{c}{e} \otimes \psi)\right> \\
+                 & \readcell c \\
+                 & \left<a.\; 
+                     \begin{array}{l}
+                       G(R(\setof{c}, \phi') \otimes \cellpos{c}{e}{v}{r} \otimes R(u \cup \setof{c}, \psi)) 
+                        \;\land \\
+                        \exists z.\;a = (v, z) \land \mathit{set}(\setof{c}, z, \setof{c})
+                     \end{array}\right> 
+  \end{array}
+\end{array}
+\end{displaymath}
+\end{prop*}
+
+\begin{proof}
+\begin{tabbedproof}
+\oo Assume $\unready{\phi \otimes \celleither{c}{e}}{c}$ \\
+\oo Assume $\forall \psi.\; 
+       \mspec{G(\phi \otimes \psi)}
+            {e}
+            {a}{G(\phi' \otimes R(u, \psi)) \land \exists z.\; a = (v, z) \land \mathit{set}(r, z, r)} $ \\
+\oo Assume we have some $\psi$ \\
+\ooo Assume we are in a prestate $G(\phi \otimes \psi)$ \\
+\ooo So there is an $H = (D,h)$ such that $\mathit{Inv}(H, \phi \otimes \psi)$ holds \\
+\ooo Hence we know that \\
+\ooox $R^\dagger_H = O_H$ \\
+\ooox $R^+_H$ strict partial order \\
+\ooox $R_H \subseteq V_H \times V_H$ \\
+\ooox $\mathit{unique}(H)$ \\
+\ooox $H, D \models \phi \otimes \psi$ \\
+\ooox $\mathit{heap}(H)$ \\
+\ooo Since $\mathsf{unready}$ is sound, we know that $\mathit{value}(h'(c)) = \None$ \\
+\ooo Hence we also know that $H, D \models \phi \otimes \cellneg{c}{e} \otimes \psi$ \\
+\ooo We also know that $c.\mathit{value} \pointsto \None$ \\
+\ooo $[\letv{o}{!a.\mathit{value}}{}$ \\
+\ooo Now we additionally know that $o = \None$ \\
+\ooo Hence we can simplify the remaining program to eliminate the case \\
+\ooo $\letv{exp}{!a.code}{}$ \\
+\ooo From the definition of $\mathit{heap}$, we know that $exp = \mathit{code}(h(c))$ \\
+\ooo From the fact that $H, D \models \phi \otimes \cellneg{c}{e} \otimes \psi$, \\
+\oox we know $\mathit{code}(h(c)) = e$ \\
+\ooo $\letv{(v',z)}{exp}{}$ \\
+\ooo Using our assumption about $e$, and setting $\psi$ to $\cellneg{c}{e} \otimes \psi$, \\
+\ooo our poststate is $G(\phi' \otimes R(u, \cellneg{c}{e} \otimes \psi)) \land v = v' \land \mathit{set}(r, z, r)$ \\
+\ooo Simplifying away the $v'$, we get $\mathit{set}(r, z, r)$ and $G(\phi' \otimes \cellneg{c}{e} \otimes R(u, \psi))$ \\
+\ooo Now take $H' = (D,h')$ and $h'$ as in the semantic update lemma \\
+\ooo We know $H', D \models R(\setof{a}, \phi' \otimes \cellpos{c}{e}{v}{r} \otimes R(u, \psi))$\\
+\ooo So we know $H', D \models R(\setof{a}, \phi') \otimes \cellpos{c}{e}{v}{r} \otimes R(u \cup \setof{a}, \psi))$ \\
+\ooo Furthermore we know that this $H'$ preserves the relevant order structure \\
+\ooo $\letv{\_}{[a.value := v']}{}$ \\
+\ooo $\letv{\_}{[a.reads := z]}{}$ \\
+\ooo $\letv{\_}{\mathsf{setiter}\;(\mathsf{add\_observer}\;a)\;z}{}$ \\
+\ooo These commands establish $\mathit{heap}(H')$ \\
+\ooo The last requires an induction based on the size of $r$ \\ 
+\oox and the unfolding axiom in the cellset interface \\
+\ooo Now we know $\mathit{Inv}(H', R(\setof{a}, \phi') \otimes \cellpos{c}{e}{v}{r} \otimes R(u \cup \setof{a}, \psi))$ \\
+\ooo So we know $G(R(\setof{a}, \phi') \otimes \cellpos{c}{e}{v}{r} \otimes R(u \cup \setof{a}, \psi))$ \\
+\ooo $(v, z)]$ \\
+\ooo So $\exists z.\;a = (v,z) \land \mathit{set}(\setof{c}, z, \setof{c})$ 
+\end{tabbedproof}
+\end{proof}
+
+\subsubsection{Proving the correctness of \textsc{AConseq}}
+
+\begin{prop*}{(The correctness of the \textsc{AConseq} specification)}
+The following specification is valid:
+\begin{displaymath}
+\begin{array}{l}
+\setof{\phi' \vdash \phi} \specand \setof{\psi \vdash \psi'} \specand \\
+\forall \psi.\; \mspec{G(\phi \otimes \psi) \land P}{e}{(x,z)}{G(\theta\otimes R(u, \psi)) \land Q} \\
+\specimp \\
+\forall \psi.\; \mspec{G(\phi' \otimes \psi) \land P}{e}{(x,z)}{G(\theta'\otimes R(u, \psi)) \land Q} \specand \\
+\end{array}
+\end{displaymath}
+\end{prop*}
+
+\begin{proof}
+\begin{tabbedproof}
+\oo Assume we know $\phi' \vdash \phi$ and $\psi \vdash \psi'$ \\
+\oo Furthermore assume $\forall \psi.\; \spec{G(\phi \otimes \psi) \land P}{e}{(x,z)}{G(\theta\otimes R(u, \psi)) \land Q}$ \\
+\ooo Now assume $\psi$, and that we are in a prestate $G(\phi' \otimes \psi) \land P$ \\
+\ooo So we know there is an $H$ such that $\mathit{Inv}(H, \phi' \otimes \psi)$ \\
+\ooo Since $\phi' \models \phi$, we know that $H, D \models \phi \otimes \psi$ \\
+\ooo Hiding the existential again, we know that $G(\phi \otimes \psi) \land P$ \\
+\ooo $e$
+\ooo Now by assumption we know $G(\theta \otimes R(u, \psi)) \land Q$ \\
+\ooo So we know there is an $H$ such that $\mathit{Inv}(H, \theta \otimes \psi)$ \\
+\ooo Since $\theta \vdash \theta'$, we know that $\mathit{Inv}(H, \theta' \otimes \psi)$ \\
+\ooo Hiding the existential, we get the poststate $G(\theta'\otimes R(u, \psi)) \land Q$ \\
+\end{tabbedproof}
+\end{proof}
 
 \section{Implementing Functional Reactive Programming}
 
@@ -1772,98 +2097,246 @@ returns a value of type $C$. The use of a local reference (rather than
 a cell) to store the current state of $A$ is essential, because we need
 to maintain the acyclicity of the dataflow graph. 
 
-Now, with these ideas in mind, we come to the definition of what it
-means for a dataflow network to realize a stream transducer. This
-property is (unavoidably) quite large, but despite its size is quite
-pleasant to work with.
-\begin{tabbing}
-$Realize(i, \Phi, o, f) \triangleq$ \\
-\;\;\= $\forall v:$\=$\,\stream{A}.\;$ \fbox{$\exists \phi:\stream{\formula}, u:\stream{\powersetfin{ecell}}.$} \\
-\>\> $\{\forall n:\N.\;$\=$\closed{\phi_n}{\domain{\phi_n} \cup \setof{i}} \;\land$ \\
-\>\>\>$\domain{\phi_n} = \domain{\phi_{n+1}}\; \land$ \\
-\>\>\>$\forall \psi.\; \unready{\psi}{i} \implies \unready{\psi \otimes \phi_n}{o}\}$ \\
-\>\> $\specand \; \{\Phi = \phi_0\}$ \\
-\>\> $\specand \;  Transduce(i, \phi, o, u, f, v)$ \\[1em]
+\subsection{Specifying Transducers}
 
+\begin{specification}
+\nextline $\mathit{Transduce}(vs, i, \phi, o, ws)  =  $
+\nextline\;\;\= $\forall n, \theta, \theta'.$ 
+\nextline\qquad\= $\unready{\theta}{i} \specand \mathit{closed}(\theta, \domain{\theta}) \specand $ 
+\nextline\> $\ready{\theta'}{i}{vs_n} \specand \mathit{closed}(\theta', \domain{\theta'}) \specand$
+\nextline\> $i \in \domain{\theta} \specand \domain{\theta} = \domain{\theta'} \specand$ 
+\nextline\> $\forall \psi.\;$\=$\left<G(\theta \otimes \psi)\right>$ 
+\nextline\>\> $\readcell i$
+\nextline\>\> $\left<a.\;a = (vs_n, \setof{i}) \land \exists u.\; G(\theta' \otimes R(u,\psi)) \land u \subseteq \domain{\theta} \right>$ 
+\nextline\> $\specimp$ 
+\nextline\qquad\= $\unready{\theta \otimes \phi_n}{o} \specand \mathit{closed}(\phi_n, \domain{\phi_n} \cup \setof{i}) \specand $ 
+\nextline\> $\ready{\theta' \otimes \phi_{n+1}}{o}{ws_n} \specand \mathit{closed}(\phi_{n+1}, \domain{\phi_{n+1}} \cup \setof{i}) \specand$
+\nextline\> $o \in \domain{\phi_n} \specand \domain{\phi_n} = \domain{\phi_{n+1}} \specand$ 
+\nextline\> $\forall \psi.\;$\=$\left<G(\theta \otimes \phi_n \otimes \psi)\right>$ 
+\nextline\>\>$\readcell o$ 
+\nextline\>\>$\left<a.\;\exists u'.\;a = (ws_n, \setof{o}) \land 
+                        G(\theta' \otimes \phi_{n+1} \otimes R(u', \psi)) \land u' \subseteq \domain{\theta \otimes \phi_n}\right>$ 
+\end{specification}
 
-$Transduce(i, \phi, o, u, f, v) \triangleq$ \\
-\> $\forall $\=$ n:\N, \phi_i, \phi'_i, u_i.$ \\
-\>\> \fbox{$\astep{\phi_i}{\readcell i}{\phi'_i}{v_n}{\setof{i}}{u_i}$} $\; \land$ \\
-\>\> $\{$\=$\domain{\phi_i} = \domain{\phi'_i} \;\land $ \\
-\>\>     \>$\closed{\phi_i}{\domain{\phi_i}} \land 
-            \closed{\phi_i}{\domain{\phi'_i}} \land $ \\
-\>\>     \>$\unready{\phi_i}{i} \land
-            i \in u_i\}$ \\
-\>\> $\Longrightarrow$ \\
-\>\> \fbox{$\astep{\phi_i \otimes \phi_n}{\readcell o}
-              {\phi'_i \otimes \phi_{n+1}}{(f\;v)_n}
-              {\setof{o}}{u_i \cup u_n}$} \\
-\>\> $\specand\; \{u \subseteq \domain{\phi_n} \land o \in u\}$ \\
-\end{tabbing}
+\begin{specification}
+\nextline $\mathit{Realize}(\mathsf{\hat{f}}, f) = $ 
+\nextline\;\;\= $\forall \psi, vs.\; \spec{G(\psi)}{\mathsf{\hat{f}}\;i}{a}{\exists \phi.\;G(\psi \otimes \phi_0) \land \mathit{Transduce}(vs, i, \phi, a, f\;vs)}$
+\end{specification}
 
-We read $Realize(i, \Phi, o, f)$ as saying ``the dataflow network
-$\Phi$ realizes the stream transducer $f$, when the event loop writes
-inputs into $i$ and reads outputs from $o$''. We have highlighted the
-key pieces of this definition with boxes. First, given some input
-stream $v$, we existentially assert the existence of a \emph{stream}
-of abstract heap formulas $\phi$. This stream represents the evolving
-state of the network over time --- because our notification networks
-contain local state, that state can potentially have a different value
-at each time step. Then, in the unboxed formulas, we assert some
-well-formedness properties, such as 1) the initial value of the stream
-matching our $\Phi$, 2) the domain of the network (i.e., the cells whose
-atomic formulas are in that formula) remaining constant
-over time, 3) that the output is unready if the input is, and 4) that
-the network reads only the specified input cell. (All of these
-conditions could be relaxed, but for the basic FRP combinators we
-consider in this paper there is no need. It \emph{would} become
-necessary if we added combinators that dynamically created new
-transducers as the program ran, since at that point we would need to
-create new cells at each time step.)
-
-We state the stream property with the $Transducer$ sub-predicate. It
-asserts for all time $n$, that if we have input state $\phi_i$ which
-yields $v_i$ when $i$ is read (the second boxed formula), then 
-reading $o$ in a larger state containing both the input $phi_i$ and the
-$n$-th transducer state $\phi_n$ will 1) return the $n$-th output
-value $(f\;v)_n$, and 2) will update the state of the network to 
-the next time step $\phi_{n+1}$ (the third boxed formula). 
-
-With this property in hand, we can prove the following specifications: 
+\subsection{Correctness Proofs}
 
 \begin{prop}{(FRP Correctness)}
-We define the $Relate$ predicate:
+Then, the following specifications are provable: 
 \begin{tabbing}
-$Relate_{A,B}(p, f) \triangleq$ \\
-\;\; $\forall \psi:\formula, i:\celltype{A}.$ \\ 
-\qquad $\setof{G(\psi)}\;p\;i\;\{o:\celltype{B}.\;
-               \exists \Phi.\;$\=$G(\Phi \otimes \psi) \;\land$ \\
-                               \>$ Realize(i, \Phi, o, f) \valid\}$
-\end{tabbing}
-\noindent Then, the following specifications are provable: 
-\begin{tabbing}
-$\forall f:A\to B.\; Relate(\liftop f, lift\;f)$ \\[1em]
+$\forall f:A\to B.\; \mathit{Realize}(\liftop f, \mathit{lift}\;f)$ \\[1em]
 
-$\forall p, f, q, g.\;$\=$Relate(p, f) \specand Relate(q, g)$ \\
-                       \>$\specimp Relate(\composeop p\;q, compose\;f\;g)$ \\[1em]
+$\forall p, f, q, g.\;$\=$\mathit{Realize}(p, f) \specand \mathit{Realize}(q, g) \specimp \mathit{Realize}(\composeop p\;q, \mathit{compose}\;f\;g)$ \\[1em]
 
-$\forall p, f, q, g.\;$\=$Relate(p, f) \specand Relate(q, g)$ \\
-                       \>$\specimp Relate(\parop p\;q, par\;f\;g)$ \\[1em]
+$\forall p, f, q, g.\;$\=$\mathit{Realize}(p, f) \specand \mathit{Realize}(q, g)
+                       \specimp \mathit{Realize}(\parop p\;q, par\;f\;g)$ \\[1em]
 
-$\forall k, p, f, q, g.\;$\=$Relate(p, f) \specand Relate(q, g)$ \\
-                          \>$\specimp Relate(\switchop k\;p\;q, switch\;k\;f\;g)$ \\[1em]
+$\forall k, p, f, q, g.\;$\=$\mathit{Realize}(p, f) \specand \mathit{Realize}(q, g)
+                          \specimp \mathit{Realize}(\switchop k\;p\;q, switch\;k\;f\;g)$ \\[1em]
 
 $\forall a_0, p, f.\; 
-  Relate(p, f) \specimp Relate(\loopop\;a_0\;p, loop\;a_0\;f)$
+  \mathit{Realize}(p, f) \specimp \mathit{Realize}(\loopop\;a_0\;p, loop\;a_0\;f)$
 \end{tabbing}
 \end{prop}
 
-These lemmas permit us to reason about our transducer implementation
-as if it were a pure implementation --- for each combinator in the
-interface, we have a proof that shows the corresponding implementation
-combinator lifts related arguments to related results. As a result, 
-we can show that, for example, $\composeop (\liftop f) \;(\liftop g)$
-and $\liftop (g \circ f)$ both realize the same function $lift\;(g\circ f)$. 
+\noindent To prove these properties, we will first prove transduction lemmas for each kind of 
+network, and then show that each operator creats an appropriate network. 
+
+\subsubsection{Correctness of $\mathsf{lift}$}
+
+\begin{lemma}{(The $\mathsf{lift}$ network)}
+It is the case that $\mathit{Transduce}(vs, i, \phi, o, \mathit{lift}\;f\;vs)$ holds, when
+\begin{itemize}
+\item $\phi = \semfun{n}{\cellpos{c}{e}{ws_n}{\setof{i}}}$, where $ws = x \cdot (f\;vs)$ for some dummy $x$ and
+\item $e = \bind (\readcell i)\; (\semfun{v}{\return (f\;v)})$
+\end{itemize}
+\end{lemma}
+
+
+\begin{proof}
+\begin{tabbedproof}
+\oo Assume we have $n, \theta, \theta'$ and  \\
+\oo $\unready{\theta}{i}$ and $\mathit{closed}(\theta, \domain{\theta})$ and \\
+\oo $\ready{\theta'}{i}{vs_n}$ and $\mathit{closed}(\theta', \domain{\theta'})$ and \\
+\oo  $\forall \psi.\;\spec{H(\theta \otimes \psi)}{\readcell i}{a}{a = (vs_n, \setof{i}) \land \exists u.\; H(\theta' \otimes R(u, \psi)) \land u \subseteq \domain{\theta}}$ \\
+\ooo Now assume we have $\psi$ and are in a prestate $G(\theta \otimes \phi_n \otimes \psi)$ \\
+\ooo Since $\unready{\theta}{i}$, it follows that $\unready{\theta \otimes \phi_n}{o}$ \\
+\ooo Hence $G(\theta \otimes \cellneg{c}{e} \otimes \psi)$ \\
+\ooo $\readcell o$ \\
+\ooo By the \textsc{AUnready}, \textsc{ABind}, and \textsc{AUnit} rules, we end in a state \\
+\ooo $a = ((f\;vs)_n, \setof{o}) \land G(R(\setof{o}, \theta') \otimes \cellpos{o}{e}{(f\;vs)_n}{\setof{i}} \otimes R(u \cup \setof{o}, \psi))$ \\
+\ooo Note that $\domain{\phi_n} = \domain{\phi_{n+1}}$ \\ 
+\ooo Note that $o \in \domain{\phi_n}$ \\
+\ooo Since $\unready{\theta}{i}$, we know $\unready{\theta \otimes \phi_n}{o}$\\
+\ooo Note that since $\ready{\theta'}{i}{vs_n}$, we have $\ready{\theta' \otimes \phi_{n+1}}{o}{(ws_n}$ \\
+\ooo Note that $R(\setof{o}, \theta')$ is equivalent to $\theta'$, since $o \not\in \domain{\theta'}$ \\
+\ooo Note that $\mathit{closed}(\phi_{n+1}, \setof{o, i})$ \\
+\ooo Note that $(f\;vs)_n = ws_{n+1}$, so our poststate entails \\ 
+\ooox $a = ((f\;vs)_n, \setof{o}) \land \exists u'.\; G(\theta' \otimes \phi_{n+1} \otimes R(u', \psi)) \land u' \subseteq \domain{\theta \otimes \phi_n}$ \\
+\end{tabbedproof}
+\end{proof}
+
+\subsubsection{Correctness of $\mathsf{compose}$}
+
+\begin{lemma}{(The $\mathsf{compose}$ network)}
+If it is the case that $\mathit{Transduce}(vs, i, \phi, m, f\;vs)$ holds, and that
+$\mathit{Transduce}(f\;vs, m, \sigma, o, g(f\;vs))$ holds, then it is the case that
+$\mathit{Transduce}(vs, i, \phi \otimes \sigma, o, g\;(f\;vs))$ holds.
+\end{lemma}
+
+\begin{proof}
+\begin{tabbedproof}
+\oo Assume we have $n, \theta, \theta', u$ and  \\
+\oox $\unready{\theta}{i}$ and $\ready{\theta'}{i}{vs_n}$ and $\mathit{closed}(\theta', \domain{\theta'})$\\
+\oox and $\mathit{closed}(\theta, \domain{\theta})$ and $i \in \domain{\theta}$ and $\domain{\theta}=\domain{\theta'}$ \\
+\oox and $\forall \psi.\;\spec{H(\theta \otimes \psi)}{\readcell i}{a}{a = (vs_n, \setof{i}) \land \exists u.\; H(\theta' \otimes R(u, \psi)) \land u \subseteq \domain{\theta}}$ \\
+\oo Now, from the fact $\mathit{Transduce}(vs, i, \phi, m, f\;vs)$ holds, we know that \\
+\oo $\unready{\theta \otimes \phi_n}{m}$ and $\ready{\theta' \otimes \phi_{n+1}}{m}{(f\;vs)_n}$ and \\
+\oo $\mathit{closed}(\phi_n, \domain{\phi_n} \cup \setof{i})$ and $\mathit{closed}(\phi_{n+1}, \domain{\phi_{n+1}} \cup \setof{i})$ \\
+\oo and $m \in \domain{\phi_n}$ and $\domain{\phi_n} = \domain{\phi_{n+1}}$ and \\
+\oo $\forall \psi.\;\spec{H(\theta \otimes \phi_n \otimes \psi)}{\readcell m}{a}{a = ((f\;vs)_n, \setof{m}) \land \exists u.\; H(\theta' \otimes \phi_{n+1} \otimes R(u, \psi)) \land u \subseteq \domain{\theta \otimes \phi_n}}$ \\
+\oo Therefore we know that $\mathit{closed}(\theta \otimes \phi_n, \domain{\theta \otimes \phi_n})$ and \\
+\oo $\mathit{closed}(\theta' \otimes \phi_{n+1}, \domain{\theta' \otimes \phi_{n+1}})$ and \\
+\oo $\domain{\theta \otimes \phi_n} = \domain{\theta' \otimes \phi_{n+1}}$ and $m \in \domain{\theta \otimes \phi_n}$ \\
+\oo Hence we can instantiate the quantifiers in $\mathit{Transduce}(f\;vs, m, \sigma, o, g(f\;vs))$ \\
+\oo so that we can conclude \\
+\oo $\unready{\theta \otimes \phi_n \otimes \sigma_n}{o}$ and $\ready{\theta' \otimes \phi_{n+1} \otimes \sigma_{n+1}}{o}{(g(f\;vs))_n}$ and \\
+\oo $\mathit{closed}(\sigma_n, \domain{\sigma_n} \cup \setof{m})$ and $\mathit{closed}(\sigma_{n+1}, \domain{\sigma_{n+1}} \cup \setof{m})$ \\
+\oo and $o \in \domain{\sigma_n}$ and $\domain{\sigma_n} = \domain{\sigma_{n+1}}$ and \\
+\oo $\forall \psi.\;$\=$\left<H(\theta \otimes \phi_n \otimes \otimes \sigma_n \otimes \psi)\right>$ \\
+\oo \> $\readcell o$ \\
+\oo \> $\left<a.\;a = ((g(f\;vs))_n, \setof{o}) \land \exists u.\; H(\theta' \otimes \phi_{n+1} \otimes \otimes \sigma_{n+1} \otimes R(u, \psi)) \land u \subseteq \domain{\theta' \otimes \phi_n \otimes \sigma_n \otimes \phi_n}\right>$ \\
+
+
+
+
+
+% \oo Now, from the fact $\mathit{Transduce}(vs, i, \phi, m, f\;vs)$ holds, we know that \\
+% \oo $\unready{\theta \otimes \phi_n}{m}$ and $\mathit{closed}(\phi_n, \domain{\phi_n} \cup \setof{i})$ \\
+% \oo and $\ready{\theta' \otimes \phi_{n+1}}{(f\; vs)_n}$ and $\mathit{closed}(\phi_{n+1}, \domain{\phi_{n+1}} \cup \setof{i})$ \\
+% \oo and \\
+% 
+% \oo We want to show $\unready{\theta \otimes \phi_n \otimes \sigma_n}{o}$ \\
+% \oox and $\mathit{closed}(\phi_n \otimes \sigma_n, \domain{\phi_n \otimes \sigma_n} \cup \setof{o})$ \\
+% \oox and $\ready{\theta' \otimes \phi_{n+1} \otimes \sigma_{n+1}}{o}{(g\;(f\;vs))_n}$ \\
+% \oox and $\mathit{closed}(\phi_{n+1} \otimes \sigma_{n+1}, \domain{\phi_{n+1} \otimes \sigma_{n+1}} \cup \setof{o})$ \\
+% \oox and $\forall \psi.\; \mspec{G(\theta \otimes \phi_{n} \otimes \sigma_{n} \otimes \psi)}
+%                                 {\readcell o}
+%                                 {a}{\exists u'.\;a = ((g\;(f\;vs))_n, \setof{o}) \land 
+%                                         u' \subseteq \domain{\theta' \otimes \phi_{n+1} \otimes \sigma_{n+1}} \land 
+%                                         G(\theta' \otimes \phi_{n+1} \otimes \sigma_{n+1} \otimes R(u',\psi))}$\\
+% \ooo Now instantiate the quantifiers of $\mathit{Transduce}(f\;vs, m, \theta, o, g(f\;vs))$ with \\
+% \ooo $n = n$, $\theta = \theta \otimes \sigma_n$, $\theta' = \theta' \otimes \sigma_{n+1}$ \\
+% 
+% assume we have $\psi$ and are in a prestate $G(\theta \otimes \phi_n \otimes \psi)$ \\
+% \ooo Since $\unready{\theta}{i}$, it follows that $\unready{\theta \otimes \phi_n}{o}$ \\
+% \ooo Hence $G(\theta \otimes \cellneg{c}{e} \otimes \psi)$ \\
+% \ooo $\readcell o$ \\
+% \ooo By the \textsc{AUnready} rule, we end in a state \\
+% \ooo $G(\theta' \otimes \cellpos{o}{e}{f\;vs_n}{\setof{i}} \otimes R(u \cup \setof{o}, \psi))$ \\
+% \ooo Note that since $\ready{\theta'}{i}{vs_n}$, we have $\ready{\theta' \otimes \phi_{n+1}}{o}{(f\;vs)_n}$ \\
+\end{tabbedproof}
+\end{proof}
+
+
+
+% 
+% Now, with these ideas in mind, we come to the definition of what it
+% means for a dataflow network to realize a stream transducer. This
+% property is (unavoidably) quite large, but despite its size is quite
+% pleasant to work with.
+% \begin{tabbing}
+% $Realize(i, \Phi, o, f) \triangleq$ \\
+% \;\;\= $\forall v:$\=$\,\stream{A}.\;$ \fbox{$\exists \phi:\stream{\formula}, u:\stream{\powersetfin{ecell}}.$} \\
+% \>\> $\{\forall n:\N.\;$\=$\closed{\phi_n}{\domain{\phi_n} \cup \setof{i}} \;\land$ \\
+% \>\>\>$\domain{\phi_n} = \domain{\phi_{n+1}}\; \land$ \\
+% \>\>\>$\forall \psi.\; \unready{\psi}{i} \implies \unready{\psi \otimes \phi_n}{o}\}$ \\
+% \>\> $\specand \; \{\Phi = \phi_0\}$ \\
+% \>\> $\specand \;  Transduce(i, \phi, o, u, f, v)$ \\[1em]
+% 
+% 
+% $Transduce(i, \phi, o, u, f, v) \triangleq$ \\
+% \> $\forall $\=$ n:\N, \phi_i, \phi'_i, u_i.$ \\
+% \>\> \fbox{$\astep{\phi_i}{\readcell i}{\phi'_i}{v_n}{\setof{i}}{u_i}$} $\; \land$ \\
+% \>\> $\{$\=$\domain{\phi_i} = \domain{\phi'_i} \;\land $ \\
+% \>\>     \>$\closed{\phi_i}{\domain{\phi_i}} \land 
+%             \closed{\phi_i}{\domain{\phi'_i}} \land $ \\
+% \>\>     \>$\unready{\phi_i}{i} \land
+%             i \in u_i\}$ \\
+% \>\> $\Longrightarrow$ \\
+% \>\> \fbox{$\astep{\phi_i \otimes \phi_n}{\readcell o}
+%               {\phi'_i \otimes \phi_{n+1}}{(f\;v)_n}
+%               {\setof{o}}{u_i \cup u_n}$} \\
+% \>\> $\specand\; \{u \subseteq \domain{\phi_n} \land o \in u\}$ \\
+% \end{tabbing}
+% 
+% We read $Realize(i, \Phi, o, f)$ as saying ``the dataflow network
+% $\Phi$ realizes the stream transducer $f$, when the event loop writes
+% inputs into $i$ and reads outputs from $o$''. We have highlighted the
+% key pieces of this definition with boxes. First, given some input
+% stream $v$, we existentially assert the existence of a \emph{stream}
+% of abstract heap formulas $\phi$. This stream represents the evolving
+% state of the network over time --- because our notification networks
+% contain local state, that state can potentially have a different value
+% at each time step. Then, in the unboxed formulas, we assert some
+% well-formedness properties, such as 1) the initial value of the stream
+% matching our $\Phi$, 2) the domain of the network (i.e., the cells whose
+% atomic formulas are in that formula) remaining constant
+% over time, 3) that the output is unready if the input is, and 4) that
+% the network reads only the specified input cell. (All of these
+% conditions could be relaxed, but for the basic FRP combinators we
+% consider in this paper there is no need. It \emph{would} become
+% necessary if we added combinators that dynamically created new
+% transducers as the program ran, since at that point we would need to
+% create new cells at each time step.)
+% 
+% We state the stream property with the $Transducer$ sub-predicate. It
+% asserts for all time $n$, that if we have input state $\phi_i$ which
+% yields $v_i$ when $i$ is read (the second boxed formula), then 
+% reading $o$ in a larger state containing both the input $phi_i$ and the
+% $n$-th transducer state $\phi_n$ will 1) return the $n$-th output
+% value $(f\;v)_n$, and 2) will update the state of the network to 
+% the next time step $\phi_{n+1}$ (the third boxed formula). 
+% 
+% With this property in hand, we can prove the following specifications: 
+% 
+% \begin{prop}{(FRP Correctness)}
+% We define the $Relate$ predicate:
+% \begin{tabbing}
+% $Relate_{A,B}(p, f) \triangleq$ \\
+% \;\; $\forall \psi:\formula, i:\celltype{A}.$ \\ 
+% \qquad $\setof{G(\psi)}\;p\;i\;\{o:\celltype{B}.\;
+%                \exists \Phi.\;$\=$G(\Phi \otimes \psi) \;\land$ \\
+%                                \>$ Realize(i, \Phi, o, f) \valid\}$
+% \end{tabbing}
+% \noindent Then, the following specifications are provable: 
+% \begin{tabbing}
+% $\forall f:A\to B.\; Relate(\liftop f, lift\;f)$ \\[1em]
+% 
+% $\forall p, f, q, g.\;$\=$Relate(p, f) \specand Relate(q, g)$ \\
+%                        \>$\specimp Relate(\composeop p\;q, compose\;f\;g)$ \\[1em]
+% 
+% $\forall p, f, q, g.\;$\=$Relate(p, f) \specand Relate(q, g)$ \\
+%                        \>$\specimp Relate(\parop p\;q, par\;f\;g)$ \\[1em]
+% 
+% $\forall k, p, f, q, g.\;$\=$Relate(p, f) \specand Relate(q, g)$ \\
+%                           \>$\specimp Relate(\switchop k\;p\;q, switch\;k\;f\;g)$ \\[1em]
+% 
+% $\forall a_0, p, f.\; 
+%   Relate(p, f) \specimp Relate(\loopop\;a_0\;p, loop\;a_0\;f)$
+% \end{tabbing}
+% \end{prop}
+% 
+% These lemmas permit us to reason about our transducer implementation
+% as if it were a pure implementation --- for each combinator in the
+% interface, we have a proof that shows the corresponding implementation
+% combinator lifts related arguments to related results. As a result, 
+% we can show that, for example, $\composeop (\liftop f) \;(\liftop g)$
+% and $\liftop (g \circ f)$ both realize the same function $lift\;(g\circ f)$. 
 
 \section{Future Work}
 

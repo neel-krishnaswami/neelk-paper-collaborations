@@ -145,14 +145,16 @@
 \newcommand{\TYPE}{Type}
 
 \newtheorem{prop}{Proposition}
+\newtheorem*{prop*}{Proposition}
 \newtheorem{lemma}{Lemma}
+\newtheorem*{lemma*}{Lemma}
 
 \newcommand{\comprehend}[2]{\setof{{#1}\;|\;{#2}}}
 
 
 % \newenvironment{proof}{\begin{comment}}{\end{comment}}
 
-\newenvironment{proof}{\noindent\textbf{Proof.}}{\noindent\ensuremath{\Box}}
+\renewenvironment{proof}{\noindent\textbf{Proof.}}{\noindent\ensuremath{\Box}}
 
 \newcounter{prooflinenum}
 \newenvironment{tabbedproof}
