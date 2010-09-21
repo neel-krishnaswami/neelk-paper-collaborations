@@ -4107,6 +4107,72 @@ for all $\delta$ and $r$, if $r \in \interp{\judgeS{S_1}}\;\delta$ then $r \in \
   \end{tabbedproof}
 \end{proof}
 
+\begin{lemma}{(Equivalence of the Two Forms of Triples)}
+We have that $\judgeS{\spec{p}{c}{a:A}{q}}$ is valid if and only if $\judgeS{\mspec{p}{\comp{c}}{a:A}{q}}$ is valid.
+\end{lemma}
+
+\begin{proof}
+\begin{tabbedproof}
+\oo We want to show that for all suitable $\delta$, $\judgeS{\spec{p}{c}{a:A}{q}} = \top$  \\
+\ox iff $\judgeS{\mspec{p}{\comp{c}}{a:A}{q}} = \top$  \\
+\oo Now, let \\
+\oox $P = \interp{\judgeA{p}{\assert}}\;\delta$ \\
+\oox $E = \interp{\judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}
+                  {[c]}{A}} \;(\restricttyenv{\Delta}{\delta})
+                            \;(\restrictvals{\Delta}{\delta})$ \\
+\oox $C = \interp{\judgeC[\restrictkind{\Delta}]{\restricttype{\Delta}}
+                  {c}{A}} \;(\restricttyenv{\Delta}{\delta})
+                          \;(\restrictvals{\Delta}{\delta})$ \\
+\oox $Q = \semfun{v}{\interp{\judgeA[\Delta, a:A]{q}{\assert}}\;(\delta,v)}$ \\
+\oo Observe that $E = C$, from the semantics of $\comp{c}$ \\
+\oo $\Rightarrow$: Assume $\judgeS{\spec{p}{c}{a:A}{q}}$ is valid \\
+\ooo Hence the semantic spec $\spec{P}{C}{a}{Q(a)} = \top$ \\
+\ooo Hence $\spec{P}{E}{a}{Q(a)} = \top$ \\
+\oo $\Leftarrow$: Assume $\judgeS{\mspec{p}{\comp{c}}{a:A}{q}}$ is valid \\
+\ooo Hence the semantic spec $\spec{P}{E}{a}{Q(a)} = \top$ \\
+\ooo Hence $\spec{P}{C}{a}{Q(a)} = \top$
+\end{tabbedproof}
+\end{proof}
+
+
+\begin{lemma}{(Return Value Axiom)}
+The schema $\judgeS{\spec{P}{e}{a:A}{P \land a = e}}$ is valid.
+\end{lemma}
+
+\begin{proof}
+\begin{tabbedproof}
+\oo We want to show that for all suitable $\delta$, $\interp{\spec{P}{e}{a:A}{P \land a = e}}\;\delta = \top$ \\
+\oo Now let \\
+\oox $P = \interp{\judgeA{p}{\assert}}\;\delta$ \\
+\oox $C = \interp{\judgeC[\restrictkind{\Delta}]{\restricttype{\Delta}}
+                  {e}{A}} \;(\restricttyenv{\Delta}{\delta})
+                          \;(\restrictvals{\Delta}{\delta})$ \\
+\oox $E = \interp{\judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}
+                  {e}{A}} \;(\restricttyenv{\Delta}{\delta})
+                          \;(\restrictvals{\Delta}{\delta})$ \\
+\oox $Q = \semfun{v}{\interp{\judgeA[\Delta, a:A]{P \land a = e}{\assert}}\;(\delta,v)}$ \\
+\oo We want to show that $\spec{P}{C}{a}{Q(a)} = \top$ \\
+\oo So we want to show that for all $R$, we have $R \in \spec{P}{C}{a}{Q(a)}$ \\
+\oo Hence it suffices to show that $\basicspec{P * R}{C}{v}{P \land \interp{a = e}\;(\delta,v) * R}$ \\
+\oo So we want to show that for all $h \in P * R$, we have $C\;\mathit{Best}(\semfun{v}{P \land \interp{a = e * R}\;(delta,v)})\;h = \bot$ \\
+\oo Assume we have $h \in P * R$ \\
+\ooo Next, observe that $C\;k\;h = k\;E\;h$ \\
+\ooo To show that $\mathit{Best}(\semfun{a}{P \land a = e * R})\;E\;h = \bot$, \\
+\oox we need to show that $k\;\;E\;h = \bot$, for every $k \in \mathit{Approx}(\semfun{a}{P \land a = e *R})$ \\
+\ooo So assume $k \in \mathit{Approx}(\semfun{v}{P \land \interp{a = e}\;(\delta,v) * R})$ \\
+\oooo Therefore for all $v \in \interp{A}$, and $h \in Q(v) * R$, we know $k\;v\;h = \bot$ \\
+\oooo We know $E \in \interp{A}$ \\
+\oooo So we need to show that given $h \in P * R$, we have $h \in Q(E) * R$ \\
+\ooooo Assume we have $h \in P * R$ \\
+\ooooo So we need to show $h \in (P \land \interp{a = e}\;(\delta,E)) * R$ \\
+\ooooo Note that $\interp{a = e}\;(\delta,E) = \top$ if $E = E$, which is true \\
+\ooooo Hence $P = (P \land \interp{a = e}\;(\delta,E))$ \\
+\ooooo Hence we need to show $h \in P * R$ \\
+\ooooo This is a hypothesis, so we're done \\
+\end{tabbedproof}
+\end{proof}
+
+
 \begin{lemma}{(Assignment Axiom)}
 $\judgeS{\spec{e \pointsto_A -}{e := e'}{a:\unittype}{e \pointsto_A e'}}$ is valid  
 \end{lemma}
@@ -4167,6 +4233,7 @@ $\judgeS{\spec{e \pointsto_A -}{e := e'}{a:\unittype}{e \pointsto_A e'}}$ is val
     \ooo Therefore $\interp{\judgeS{\spec{e \pointsto_A -}{e := e'}{a:\unittype}{e \pointsto_A e'}}}\;\delta = \top$ \\
   \end{tabbedproof}
 \end{proof}
+
 
 
 \begin{lemma}{(Allocation Axiom)}
