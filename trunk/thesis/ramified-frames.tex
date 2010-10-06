@@ -2127,20 +2127,16 @@ to maintain the acyclicity of the dataflow graph.
 
 \begin{prop}{(FRP Correctness)}
 Then, the following specifications are provable: 
-\begin{tabbing}
-$\forall f:A\to B.\; \mathit{Realize}(\liftop f, \mathit{lift}\;f)$ \\[1em]
+\begin{enumerate}
+\item $\forall f:A\to B.\; \mathit{Realize}(\liftop f, \mathit{lift}\;f)$
+\item $\forall p, f, q, g.\;\mathit{Realize}(p, f) \specand \mathit{Realize}(q, g) \specimp \mathit{Realize}(\composeop p\;q, \mathit{compose}\;f\;g)$
+\item $\forall p, f, q, g.\;\mathit{Realize}(p, f) \specand \mathit{Realize}(q, g)
+                       \specimp \mathit{Realize}(\parop p\;q, par\;f\;g)$
+\item $\forall k, p, f, q, g.\;\mathit{Realize}(p, f) \specand \mathit{Realize}(q, g)
+                          \specimp \mathit{Realize}(\switchop k\;p\;q, switch\;k\;f\;g)$
+\item $\forall a_0, p, f.\; \mathit{Realize}(p, f) \specimp \mathit{Realize}(\loopop\;a_0\;p, loop\;a_0\;f)$
+\end{enumerate}
 
-$\forall p, f, q, g.\;$\=$\mathit{Realize}(p, f) \specand \mathit{Realize}(q, g) \specimp \mathit{Realize}(\composeop p\;q, \mathit{compose}\;f\;g)$ \\[1em]
-
-$\forall p, f, q, g.\;$\=$\mathit{Realize}(p, f) \specand \mathit{Realize}(q, g)
-                       \specimp \mathit{Realize}(\parop p\;q, par\;f\;g)$ \\[1em]
-
-$\forall k, p, f, q, g.\;$\=$\mathit{Realize}(p, f) \specand \mathit{Realize}(q, g)
-                          \specimp \mathit{Realize}(\switchop k\;p\;q, switch\;k\;f\;g)$ \\[1em]
-
-$\forall a_0, p, f.\; 
-  \mathit{Realize}(p, f) \specimp \mathit{Realize}(\loopop\;a_0\;p, loop\;a_0\;f)$
-\end{tabbing}
 \end{prop}
 
 \noindent To prove these properties, we will first prove transduction lemmas for each kind of 

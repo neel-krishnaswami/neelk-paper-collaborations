@@ -1743,6 +1743,186 @@ do so.
 \label{logic-spec-ok}
 \end{figure}
 
+\subsection{Substitution Properties}
+
+In the syntax for the program logic, we have systematically made the
+decision to forbid the appearance of logical expressions within
+program expressions. For example, suppose $P$ is a variable of type
+$\assert \To \N$. The syntax I have given so far forbids us from
+writing an expression of program type $\monad{\N}$ such as $\comp{P(x
+  \pointsto y)}$. This is because the restriction operations ensure
+that program expressions never use variables whose of logical type, and
+since the sort of $P$ is neither a kind nor a type, it cannot appear 
+within a term typed by the \textsc{TermExpr} rule. 
+
+By requiring program expressions to only contain programmatic
+subexpressions, we effectively forbid the use of ``ghost expressions''
+in our programs. This restriction will simplify the semantics of the
+program logic -- as we will see, I intend for the sorts of our logic
+to be interpreted in Set. Since the terms of our programming language
+are interpreted in CPO, it is not trivial to intermingle logical and
+program expressions, and so the simplest course is to forbid this
+mixing.
+
+This will not restrict the expressiveness of our program logic
+reasoning, since we can always use \emph{propositions} to assert the
+equality of a program variable to some non-programmatic expression. In
+the previous example, if we had a variable $z : \N$, then we could
+write the expression $\comp{z}$ and separately add a proposition that
+$z = P(x \pointsto y)$.
+
+The price we must pay for this simplicity is an increase in the
+complexity of the substitution theorems of the logic. From a
+proof-theoretic point of view, this is entirely to be expected: since
+the restriction operations modify the context, they must have
+unusual substitution properties. 
+
+\subsubsection{Syntactic Substitution Lemmas}
+
+\begin{lemma}{(Syntactic Substitution for Sorts)}
+If $\judgeA{p}{\omega}$, then we have that:
+
+\begin{enumerate}
+\item If $\judgeACtx{\Delta, u:\omega, \Delta'}$, and $u$ does not occur in any subterm of sort type, or $\omega = \kappa$ and $p = A$,  then  
+         $\judgeACtx{\Delta, [p/u]\Delta'}$. 
+\item If $\judgeSort[\Delta, u:\omega, \Delta']{\omega'}$, and $u$ does not occur in any subterm of sort type, or $\omega = \kappa$ and $p = A$, then
+         $\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega'}$. 
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+This proof follows by mutual structural induction on each derivation. 
+Assume $D_0 :: \judgeA{p}{\omega}$. 
+
+\begin{enumerate}
+\item We want to show if $D  ::\; \judgeACtx{\Delta, u:\omega, \Delta'}$, then  
+                         $D' ::\; \judgeACtx{\Delta, [p/u]\Delta'}$. 
+  \begin{itemize}
+  \item Case \textsc{CtxNil}: 
+    \begin{tabbedproof}
+      \oo Assume $D ::\; \judgeACtx{\cdot}$ \\
+      \ooo Therefore $\cdot = \Delta, u:\omega, \Delta'$ \\
+      \ooo This is a contradiction, hence this case is vacuously true. 
+    \end{tabbedproof}
+
+  \item Case \textsc{CtxCons}: 
+    \begin{tabbedproof}
+      \oo Assume $D ::\; \judgeACtx{\Delta'', u'':\omega''}$ \\
+      \ooo Therefore $\Delta, u:\omega, \Delta' = \Delta'', u'':\omega''$ \\
+      \ooo By inversion on $D$, $D_1 :: \judgeACtx{\Delta''}$ \\
+      \ooo By inversion on $D$, $D_2 :: \judgeSort{\omega''}$ \\
+      \ooo We want to show $\judgeACtx{\Delta, [p/u]\Delta'}$ \\
+      \ooo By cases on $\Delta'$: \\
+      \oooo If $\Delta' = \cdot$: \\
+      \ooooo Then $\Delta'' = \Delta$, and $u = u''$, and $\omega = \omega''$ \\
+      \ooooo Then $[p/u]\Delta' = [p/u]\cdot = \cdot$ \\
+      \ooooo So $D_1 :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
+      \oooo If $\Delta' = \Delta''', u''':\omega'''$:\\
+      \ooooo Then $\Delta'' = \Delta, u:\omega, \Delta'''$ and $u''' = u''$ and $\omega'' = \omega'''$ \\ 
+      \ooooo By equality, $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'''}$ \\
+      \ooooo By induction on $D_1$, we have $D'_1 :: \judgeACtx{\Delta, [p/u]\Delta'''}$ \\ 
+      \ooooo By mutual induction on $D_2$, we have 
+                 $D'_2 :: \judgeSort[{\Delta, [p/u]\Delta'''}]{[p/u]\omega''}$ \\ 
+      \ooooo By rule $\textsc{CtxCons}$ on $D'_1$, $D'_2$, we have 
+                 $\judgeACtx{\Delta, [p/u]\Delta'}$ \\
+    \end{tabbedproof}
+  \end{itemize}
+
+\item We want to show that if 
+         $\judgeSort[\Delta, u:\omega, \Delta']{\omega'}$,  then
+         $\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega'}$. 
+
+  \begin{itemize}
+  \item Case \textsc{SortKind}: 
+    \begin{tabbedproof}
+      \oo Assume $D :: \judgeSort[\Delta, u:\omega, \Delta']{\kappa}$ \\
+      \ooo By inversion on $D$, we have $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'}$ \\
+      \ooo By mutual induction on $D_1$, we have 
+             $D'_1 :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
+      \ooo Since $\kappa$ has no free variables, $[p/u]\kappa = \kappa$ \\
+      \ooo By rule \textsc{SortKind} on $D'_1$, we have 
+             $\judgeSort[{\Delta, [p/u]\Delta'}]{\kappa}$ \\
+      \ooo By equality, we have 
+             $\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\kappa}$ \\
+    \end{tabbedproof}
+
+  \item Case \textsc{SortProp}: 
+    \begin{tabbedproof}
+      \oo Assume $D :: \judgeSort[\Delta, u:\omega, \Delta']{\assert}$ \\
+      \ooo By inversion on $D$, we have $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'}$ \\
+      \ooo By mutual induction on $D_1$, we have 
+             $D'_1 :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
+      \ooo Since $\assert$ has no free variables, $[p/u]\assert = \assert$ \\
+      \ooo By rule \textsc{SortProp} on $D'_1$, we have 
+             $\judgeSort[{\Delta, [p/u]\Delta'}]{\assert}$ \\
+      \ooo By equality, we have 
+             $\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\assert}$ \\
+    \end{tabbedproof}
+
+  \item Case \textsc{SortImp}: 
+    \begin{tabbedproof}
+      \oo Assume $D :: \judgeSort[\Delta, u:\omega, \Delta']{\omega_1 \To \omega_2}$ \\
+      \ooo By inversion on $D$, we have 
+             $D_1 :: \judgeSort[\Delta, u:\omega, \Delta']{\omega_1}$ \\
+      \ooo By inversion on $D$, we have 
+             $D_2 :: \judgeSort[\Delta, u:\omega, \Delta']{\omega_2}$ \\
+      \ooo By induction on $D_1$, we have 
+             $D'_1 :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega_1}$ \\
+      \ooo By induction on $D_2$, we have 
+             $D'_2 :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega_2}$ \\
+      \ooo By rule \textsc{SortImp}, we have 
+            $D' :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega_1 \To [p/u]\omega_2}$ \\
+      \ooo By definition of substitution, 
+            $D' :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u](\omega_1 \To \omega_2)}$ \\
+    \end{tabbedproof}
+
+  \item Case \textsc{SortType}: 
+    \begin{tabbedproof}
+      \oo Assume $D :: \judgeSort[\Delta, u:\omega, \Delta']{A}$ \\
+      \ooo By inversion on $D$, we have $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'}$ \\
+      \ooo By mutual induction on $D_1$, we have $D'_1 :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
+      \ooo By inversion on $D$, we have $D_2 :: \judgeWK[\restrictkind{\Delta, u:\omega, \Delta'}]
+                                                        {A}{\bigstar}$ \\
+      \ooo Case on $\omega$: \\
+      \oooo If $\omega = \kappa$: \\
+      \ooooo Then $\restrictkind{\Delta, u:\omega, \Delta'} = 
+                     \restrictkind{\Delta}, u:\kappa, \restrictkind{\Delta'}$ \\
+      \ooooo Then $D_0 :: \judgeA[\Delta]{\tau}{\kappa}$  where $p = \tau$ \\
+      \ooooo By inversion on $D_0$, we have $D'_0 :: \judgeWK[\restrictkind{\Delta}]{\tau}{\kappa}$ \\
+      \ooooo By substitution for types, we have 
+               $D'_2 :: \judgeWK[\restrictkind{\Delta}, \restrictkind{\Delta'}]
+                                {[\tau/u]A}{\bigstar}$ \\
+      \ooooo Since no kind in $\restrictkind{\Delta'}$ has any free variables, 
+             $\restrictkind{\Delta'} = \restrictkind{[\tau/u]\Delta'}$ \\
+      \ooooo Therefore $D'_2 :: \judgeWK[{\restrictkind{\Delta}, \restrictkind{[\tau/u]\Delta'}}]
+                                {[\tau/u]A}{\bigstar}$ \\
+      \ooooo By rule \textsc{SortType} on $D'_1$ and $D'_2$, we have 
+               $D' :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]A}$ \\
+      \oooo If $\omega \not= \kappa$: \\
+      \ooooo Then $\restrictkind{\Delta, u:\omega, \Delta'} = 
+                   \restrictkind{\Delta, \Delta'}$ \\
+      \ooooo Since no kind in $\restrictkind{\Delta'}$ has any free variables, 
+             $\restrictkind{\Delta'} = \restrictkind{[\tau/u]\Delta'}$ \\
+      \ooooo Then $\restrictkind{\Delta, u:\omega, \Delta'} = 
+                   \restrictkind{\Delta, [p/u]\Delta'}$ \\
+      \ooooo Therefore $D'_2 :: \judgeWK[\restrictkind{\Delta, [p/u]\Delta'}]
+                                       {A}{\bigstar}$ \\
+      \ooooo Therefore $u \not\in FV(A)$ \\
+      \ooooo Therefore $A = [p/u]A$ \\
+      \ooooo Therefore $D'_2 :: \judgeWK[\restrictkind{\Delta, [p/u]\Delta'}]
+                                      {[p/u]A}{\bigstar}$ \\
+      \ooooo By rule \textsc{SortType} on $D'_1, D'_2$, we have 
+              $D' :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]A}$ 
+      
+    \end{tabbedproof}
+  \end{itemize}
+\end{enumerate}
+\end{proof}
+
+
+
+
+
+
 \section{Semantics}
 
 Now, we'll consider the interpretation of the syntax. 
@@ -2373,147 +2553,6 @@ As before, we proceed by induction on $\judgeACtx{\Delta}$.
 \section{Substitution Theorems}
 
 \subsection{Substitution for Sorts}
-
-\subsubsection{Syntactic Substitution}
-
-\begin{lemma}{(Syntactic Substitution for Sorts)}
-If $\judgeA{p}{\omega}$, then we have that:
-
-\begin{enumerate}
-\item If $\judgeACtx{\Delta, u:\omega, \Delta'}$, then  
-         $\judgeACtx{\Delta, [p/u]\Delta'}$. 
-\item If $\judgeSort[\Delta, u:\omega, \Delta']{\omega'}$,  then
-         $\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega'}$. 
-\end{enumerate}
-\end{lemma}
-\begin{proof}
-This proof follows by mutual structural induction on each derivation. 
-Assume $D_0 :: \judgeA{p}{\omega}$. 
-
-\begin{enumerate}
-\item We want to show if $D  ::\; \judgeACtx{\Delta, u:\omega, \Delta'}$, then  
-                         $D' ::\; \judgeACtx{\Delta, [p/u]\Delta'}$. 
-  \begin{itemize}
-  \item Case \textsc{CtxNil}: 
-    \begin{tabbedproof}
-      \oo Assume $D ::\; \judgeACtx{\cdot}$ \\
-      \ooo Therefore $\cdot = \Delta, u:\omega, \Delta'$ \\
-      \ooo This is a contradiction, hence this case is vacuously true. 
-    \end{tabbedproof}
-
-  \item Case \textsc{CtxCons}: 
-    \begin{tabbedproof}
-      \oo Assume $D ::\; \judgeACtx{\Delta'', u'':\omega''}$ \\
-      \ooo Therefore $\Delta, u:\omega, \Delta' = \Delta'', u'':\omega''$ \\
-      \ooo By inversion on $D$, $D_1 :: \judgeACtx{\Delta''}$ \\
-      \ooo By inversion on $D$, $D_2 :: \judgeSort{\omega''}$ \\
-      \ooo We want to show $\judgeACtx{\Delta, [p/u]\Delta'}$ \\
-      \ooo By cases on $\Delta'$: \\
-      \oooo If $\Delta' = \cdot$: \\
-      \ooooo Then $\Delta'' = \Delta$, and $u = u''$, and $\omega = \omega''$ \\
-      \ooooo Then $[p/u]\Delta' = [p/u]\cdot = \cdot$ \\
-      \ooooo So $D_1 :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
-      \oooo If $\Delta' = \Delta''', u''':\omega'''$:\\
-      \ooooo Then $\Delta'' = \Delta, u:\omega, \Delta'''$ and $u''' = u''$ and $\omega'' = \omega'''$ \\ 
-      \ooooo By equality, $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'''}$ \\
-      \ooooo By induction on $D_1$, we have $D'_1 :: \judgeACtx{\Delta, [p/u]\Delta'''}$ \\ 
-      \ooooo By mutual induction on $D_2$, we have 
-                 $D'_2 :: \judgeSort[{\Delta, [p/u]\Delta'''}]{[p/u]\omega''}$ \\ 
-      \ooooo By rule $\textsc{CtxCons}$ on $D'_1$, $D'_2$, we have 
-                 $\judgeACtx{\Delta, [p/u]\Delta'}$ \\
-    \end{tabbedproof}
-  \end{itemize}
-
-\item We want to show that if 
-         $\judgeSort[\Delta, u:\omega, \Delta']{\omega'}$,  then
-         $\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega'}$. 
-
-  \begin{itemize}
-  \item Case \textsc{SortKind}: 
-    \begin{tabbedproof}
-      \oo Assume $D :: \judgeSort[\Delta, u:\omega, \Delta']{\kappa}$ \\
-      \ooo By inversion on $D$, we have $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'}$ \\
-      \ooo By mutual induction on $D_1$, we have 
-             $D'_1 :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
-      \ooo Since $\kappa$ has no free variables, $[p/u]\kappa = \kappa$ \\
-      \ooo By rule \textsc{SortKind} on $D'_1$, we have 
-             $\judgeSort[{\Delta, [p/u]\Delta'}]{\kappa}$ \\
-      \ooo By equality, we have 
-             $\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\kappa}$ \\
-    \end{tabbedproof}
-
-  \item Case \textsc{SortProp}: 
-    \begin{tabbedproof}
-      \oo Assume $D :: \judgeSort[\Delta, u:\omega, \Delta']{\assert}$ \\
-      \ooo By inversion on $D$, we have $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'}$ \\
-      \ooo By mutual induction on $D_1$, we have 
-             $D'_1 :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
-      \ooo Since $\assert$ has no free variables, $[p/u]\assert = \assert$ \\
-      \ooo By rule \textsc{SortProp} on $D'_1$, we have 
-             $\judgeSort[{\Delta, [p/u]\Delta'}]{\assert}$ \\
-      \ooo By equality, we have 
-             $\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\assert}$ \\
-    \end{tabbedproof}
-
-  \item Case \textsc{SortImp}: 
-    \begin{tabbedproof}
-      \oo Assume $D :: \judgeSort[\Delta, u:\omega, \Delta']{\omega_1 \To \omega_2}$ \\
-      \ooo By inversion on $D$, we have 
-             $D_1 :: \judgeSort[\Delta, u:\omega, \Delta']{\omega_1}$ \\
-      \ooo By inversion on $D$, we have 
-             $D_2 :: \judgeSort[\Delta, u:\omega, \Delta']{\omega_2}$ \\
-      \ooo By induction on $D_1$, we have 
-             $D'_1 :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega_1}$ \\
-      \ooo By induction on $D_2$, we have 
-             $D'_2 :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega_2}$ \\
-      \ooo By rule \textsc{SortImp}, we have 
-            $D' :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega_1 \To [p/u]\omega_2}$ \\
-      \ooo By definition of substitution, 
-            $D' :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u](\omega_1 \To \omega_2)}$ \\
-    \end{tabbedproof}
-
-  \item Case \textsc{SortType}: 
-    \begin{tabbedproof}
-      \oo Assume $D :: \judgeSort[\Delta, u:\omega, \Delta']{A}$ \\
-      \ooo By inversion on $D$, we have $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'}$ \\
-      \ooo By mutual induction on $D_1$, we have $D'_1 :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
-      \ooo By inversion on $D$, we have $D_2 :: \judgeWK[\restrictkind{\Delta, u:\omega, \Delta'}]
-                                                        {A}{\bigstar}$ \\
-      \ooo Case on $\omega$: \\
-      \oooo If $\omega = \kappa$: \\
-      \ooooo Then $\restrictkind{\Delta, u:\omega, \Delta'} = 
-                     \restrictkind{\Delta}, u:\kappa, \restrictkind{\Delta'}$ \\
-      \ooooo Then $D_0 :: \judgeA[\Delta]{\tau}{\kappa}$  where $p = \tau$ \\
-      \ooooo By inversion on $D_0$, we have $D'_0 :: \judgeWK[\restrictkind{\Delta}]{\tau}{\kappa}$ \\
-      \ooooo By substitution for types, we have 
-               $D'_2 :: \judgeWK[\restrictkind{\Delta}, \restrictkind{\Delta'}]
-                                {[\tau/u]A}{\bigstar}$ \\
-      \ooooo Since no kind in $\restrictkind{\Delta'}$ has any free variables, 
-             $\restrictkind{\Delta'} = \restrictkind{[\tau/u]\Delta'}$ \\
-      \ooooo Therefore $D'_2 :: \judgeWK[{\restrictkind{\Delta}, \restrictkind{[\tau/u]\Delta'}}]
-                                {[\tau/u]A}{\bigstar}$ \\
-      \ooooo By rule \textsc{SortType} on $D'_1$ and $D'_2$, we have 
-               $D' :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]A}$ \\
-      \oooo If $\omega \not= \kappa$: \\
-      \ooooo Then $\restrictkind{\Delta, u:\omega, \Delta'} = 
-                   \restrictkind{\Delta, \Delta'}$ \\
-      \ooooo Since no kind in $\restrictkind{\Delta'}$ has any free variables, 
-             $\restrictkind{\Delta'} = \restrictkind{[\tau/u]\Delta'}$ \\
-      \ooooo Then $\restrictkind{\Delta, u:\omega, \Delta'} = 
-                   \restrictkind{\Delta, [p/u]\Delta'}$ \\
-      \ooooo Therefore $D'_2 :: \judgeWK[\restrictkind{\Delta, [p/u]\Delta'}]
-                                       {A}{\bigstar}$ \\
-      \ooooo Therefore $u \not\in FV(A)$ \\
-      \ooooo Therefore $A = [p/u]A$ \\
-      \ooooo Therefore $D'_2 :: \judgeWK[\restrictkind{\Delta, [p/u]\Delta'}]
-                                      {[p/u]A}{\bigstar}$ \\
-      \ooooo By rule \textsc{SortType} on $D'_1, D'_2$, we have 
-              $D' :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]A}$ \\
-      
-    \end{tabbedproof}
-  \end{itemize}
-\end{enumerate}
-\end{proof}
 
 \subsubsection{Semantics of Sort Substitution}
 
