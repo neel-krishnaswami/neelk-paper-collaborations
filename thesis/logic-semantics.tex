@@ -1566,8 +1566,7 @@ $\judgeA{p}{\omega}$, defined in Figure~\ref{logic-prop-ok}.
 \and
 \inferrule*[right=TermHyp]
           {\judgeACtx{\Delta} \\
-           u:\omega \in \Delta \\
-           (\omega = \assert \vee \omega = \omega' \To \omega'')}
+           u:\omega \in \Delta }
           {\judgeA{u}{\omega}}
 \and
 \inferrule*[right=TermAbs]
@@ -1659,21 +1658,26 @@ Figure~\ref{context-ops}.
 \label{context-ops}  
 \end{figure}
 
-The rule \textsc{TermHyp} is the hypothesis rule for all variables
-which are not of type sort $A$ or kind sort $\kappa$. We restrict the
-applicability of this rule so that there will only be one way to
-derive a sort for a variable -- types and kinds must use variable rule
-from their corresponding judgements. Without this, we would have to
-prove a coherence theorem, which is not difficult but would be a
-nuisance.
- 
-The \textsc{TermAbs} and \textsc{TermApp} rules give the lambda-abstraction
-and application rules for the function sort $\omega \To \omega'$ -- there
-are no surprises here. Finally, there are all the rules giving the sorting
-of propositions. The nullary propositions $\top, \bot$, and $\emp$ are
-typed with the \textsc{TermPropConst} rule, and the binary propositions
-$\land, \vee, \implies, *$, and $\wand$ are typed with the \textsc{TermPropBinary}
-rule, requiring their two arguments to both be of sort $\assert$. 
+The rule \textsc{TermHyp} is the hypothesis rule for all variables.
+% 
+% (There is a minor technical issue here: we can refer to a program
+% variable either via the \textsc{TermExpr} rule, or using the
+% \textsc{TermHyp} rule. Strictly speaking, this means that well-sorting
+% derivations are not unique, and so when we give a semantics, we would
+% need to prove a coherence theorem. However, this could easily be
+% avoided by adding some syntactic annotation to the use of program
+% terms (for instance, by writing $\left\lfloor e \right\rfloor$ or
+% similarly for variables), so we will simply let this issue slide.
+% 
+The \textsc{TermAbs} and \textsc{TermApp} rules give the
+lambda-abstraction and application rules for the function sort $\omega
+\To \omega'$ -- there are no surprises here. Finally, there are all
+the rules giving the sorting of propositions. The nullary propositions
+$\top, \bot$, and $\emp$ are typed with the \textsc{TermPropConst}
+rule, and the binary propositions $\land, \vee, \implies, *$, and
+$\wand$ are typed with the \textsc{TermPropBinary} rule, requiring
+their two arguments to both be of sort $\assert$.
+
 
 The two quantifiers $\forall u:\omega.\;p$ and $\exists u:\omega.\;p$
 are sorted with the \textsc{TermPropQuantify} rule, and the points-to
@@ -1695,8 +1699,6 @@ saying that $e$ must be a term of monadic type $\monad{A}$, but
 otherwise as in the \textsc{SpecTriple} rule.  Finally, the remaining
 atomic proposition \textsc{SpecAssert} rule recursively calls back into the
 assertion well-kinding judgement.
-
-
 
 
 The \textsc{SpecBinary} rules gives well-formedness conditions for the
@@ -1748,12 +1750,12 @@ do so.
 In the syntax for the program logic, we have systematically made the
 decision to forbid the appearance of logical expressions within
 program expressions. For example, suppose $P$ is a variable of type
-$\assert \To \N$. The syntax I have given so far forbids us from
+$\assert \To \N$. The typing rules given so far forbid us from
 writing an expression of program type $\monad{\N}$ such as $\comp{P(x
   \pointsto y)}$. This is because the restriction operations ensure
-that program expressions never use variables whose of logical type, and
-since the sort of $P$ is neither a kind nor a type, it cannot appear 
-within a term typed by the \textsc{TermExpr} rule. 
+that program expressions never use variables whose of logical type,
+and since the sort of $P$ is neither a kind nor a type, it cannot
+appear within a term typed by the \textsc{TermExpr} rule.
 
 By requiring program expressions to only contain programmatic
 subexpressions, we effectively forbid the use of ``ghost expressions''
@@ -1774,8 +1776,8 @@ $z = P(x \pointsto y)$.
 The price we must pay for this simplicity is an increase in the
 complexity of the substitution theorems of the logic. From a
 proof-theoretic point of view, this is entirely to be expected: since
-the restriction operations modify the context, they must have
-unusual substitution properties. 
+the restriction operations modify the context, they must have unusual
+substitution properties.
 
 \subsubsection{Syntactic Substitution Lemmas}
 
@@ -1783,16 +1785,15 @@ unusual substitution properties.
 If $\judgeA{p}{\omega}$, then we have that:
 
 \begin{enumerate}
-\item If $\judgeACtx{\Delta, u:\omega, \Delta'}$, and $u$ does not occur in any subterm of sort type, or $\omega = \kappa$ and $p = A$,  then  
+\item If $\judgeACtx{\Delta, u:\omega, \Delta'}$, and $u$ does not occur in any subterm of sort type in $\Delta'$, or $\omega = \kappa$ and $p = \tau$,  then  
          $\judgeACtx{\Delta, [p/u]\Delta'}$. 
-\item If $\judgeSort[\Delta, u:\omega, \Delta']{\omega'}$, and $u$ does not occur in any subterm of sort type, or $\omega = \kappa$ and $p = A$, then
+\item If $\judgeSort[\Delta, u:\omega, \Delta']{\omega'}$, and $u$ does not occur in any subterm of sort type in $\Delta'$ and $\omega'$, or $\omega = \kappa$ and $p = \tau$, then
          $\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega'}$. 
 \end{enumerate}
 \end{lemma}
 \begin{proof}
 This proof follows by mutual structural induction on each derivation. 
-Assume $D_0 :: \judgeA{p}{\omega}$. 
-
+Assume $D_0 :: \judgeA{p}{\omega}$
 \begin{enumerate}
 \item We want to show if $D  ::\; \judgeACtx{\Delta, u:\omega, \Delta'}$, then  
                          $D' ::\; \judgeACtx{\Delta, [p/u]\Delta'}$. 
@@ -1800,6 +1801,7 @@ Assume $D_0 :: \judgeA{p}{\omega}$.
   \item Case \textsc{CtxNil}: 
     \begin{tabbedproof}
       \oo Assume $D ::\; \judgeACtx{\cdot}$ \\
+      \oo Assume $u$ does not occur in any subterm of sort type, or $\omega = \kappa$ and $p = \tau$ \\
       \ooo Therefore $\cdot = \Delta, u:\omega, \Delta'$ \\
       \ooo This is a contradiction, hence this case is vacuously true. 
     \end{tabbedproof}
@@ -1807,6 +1809,7 @@ Assume $D_0 :: \judgeA{p}{\omega}$.
   \item Case \textsc{CtxCons}: 
     \begin{tabbedproof}
       \oo Assume $D ::\; \judgeACtx{\Delta'', u'':\omega''}$ \\
+      \oo Assume $u$ does not occur in any subterm of sort type in $\Delta''$, or $\omega = \kappa$ and $p = \tau$ \\
       \ooo Therefore $\Delta, u:\omega, \Delta' = \Delta'', u'':\omega''$ \\
       \ooo By inversion on $D$, $D_1 :: \judgeACtx{\Delta''}$ \\
       \ooo By inversion on $D$, $D_2 :: \judgeSort{\omega''}$ \\
@@ -1817,6 +1820,8 @@ Assume $D_0 :: \judgeA{p}{\omega}$.
       \ooooo Then $[p/u]\Delta' = [p/u]\cdot = \cdot$ \\
       \ooooo So $D_1 :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
       \oooo If $\Delta' = \Delta''', u''':\omega'''$:\\
+      \ooooo So either $u$ does not occur in any subterm of sort type in $\Delta'''$ and $\omega'''$, \\
+      \ooooox or $\omega = \kappa$ and $p = \tau$ \\ 
       \ooooo Then $\Delta'' = \Delta, u:\omega, \Delta'''$ and $u''' = u''$ and $\omega'' = \omega'''$ \\ 
       \ooooo By equality, $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'''}$ \\
       \ooooo By induction on $D_1$, we have $D'_1 :: \judgeACtx{\Delta, [p/u]\Delta'''}$ \\ 
@@ -1828,19 +1833,23 @@ Assume $D_0 :: \judgeA{p}{\omega}$.
   \end{itemize}
 
 \item We want to show that if 
-         $\judgeSort[\Delta, u:\omega, \Delta']{\omega'}$,  then
+         $\judgeSort[\Delta, u:\omega, \Delta']{\omega'}$,  
+         and $u$ does not occur in any subterm of sort type in $\Delta'$ and $\omega'$, or 
+         $\omega = \kappa$ and $p = \tau$, then
          $\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega'}$. 
 
   \begin{itemize}
   \item Case \textsc{SortKind}: 
     \begin{tabbedproof}
       \oo Assume $D :: \judgeSort[\Delta, u:\omega, \Delta']{\kappa}$ \\
+      \oo Assume $u$ does not occur in any subterm of sort type in $\Delta'$ and $\omega'$, \\
+      \ox or $\omega = \kappa$ and $p = \tau$\\
       \ooo By inversion on $D$, we have $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'}$ \\
       \ooo By mutual induction on $D_1$, we have 
              $D'_1 :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
-      \ooo Since $\kappa$ has no free variables, $[p/u]\kappa = \kappa$ \\
       \ooo By rule \textsc{SortKind} on $D'_1$, we have 
              $\judgeSort[{\Delta, [p/u]\Delta'}]{\kappa}$ \\
+      \ooo Since $\kappa$ has no free variables, $[p/u]\kappa = \kappa$ \\
       \ooo By equality, we have 
              $\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\kappa}$ \\
     \end{tabbedproof}
@@ -1848,6 +1857,8 @@ Assume $D_0 :: \judgeA{p}{\omega}$.
   \item Case \textsc{SortProp}: 
     \begin{tabbedproof}
       \oo Assume $D :: \judgeSort[\Delta, u:\omega, \Delta']{\assert}$ \\
+      \oo Assume $u$ does not occur in any subterm of sort type in $\Delta'$ and $\omega'$, \\
+      \ox or $\omega = \kappa$ and $p = \tau$\\
       \ooo By inversion on $D$, we have $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'}$ \\
       \ooo By mutual induction on $D_1$, we have 
              $D'_1 :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
@@ -1861,6 +1872,8 @@ Assume $D_0 :: \judgeA{p}{\omega}$.
   \item Case \textsc{SortImp}: 
     \begin{tabbedproof}
       \oo Assume $D :: \judgeSort[\Delta, u:\omega, \Delta']{\omega_1 \To \omega_2}$ \\
+      \oo Assume $u$ does not occur in any subterm of sort type in $\Delta'$ and $\omega'$, \\
+      \ox or $\omega = \kappa$ and $p = \tau$\\
       \ooo By inversion on $D$, we have 
              $D_1 :: \judgeSort[\Delta, u:\omega, \Delta']{\omega_1}$ \\
       \ooo By inversion on $D$, we have 
@@ -1878,12 +1891,14 @@ Assume $D_0 :: \judgeA{p}{\omega}$.
   \item Case \textsc{SortType}: 
     \begin{tabbedproof}
       \oo Assume $D :: \judgeSort[\Delta, u:\omega, \Delta']{A}$ \\
+      \oo Assume $u$ does not occur in any subterm of sort type in $\Delta'$ and $\omega'$, \\
+      \ox or $\omega = \kappa$ and $p = \tau$\\
       \ooo By inversion on $D$, we have $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'}$ \\
       \ooo By mutual induction on $D_1$, we have $D'_1 :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
       \ooo By inversion on $D$, we have $D_2 :: \judgeWK[\restrictkind{\Delta, u:\omega, \Delta'}]
                                                         {A}{\bigstar}$ \\
-      \ooo Case on $\omega$: \\
-      \oooo If $\omega = \kappa$: \\
+      \ooo Case on $\omega$ and the disjunction on line 2: \\
+      \oooo If $\omega$ is a kind and $\omega = \kappa$ and $p = \tau$: \\
       \ooooo Then $\restrictkind{\Delta, u:\omega, \Delta'} = 
                      \restrictkind{\Delta}, u:\kappa, \restrictkind{\Delta'}$ \\
       \ooooo Then $D_0 :: \judgeA[\Delta]{\tau}{\kappa}$  where $p = \tau$ \\
@@ -1897,11 +1912,21 @@ Assume $D_0 :: \judgeA{p}{\omega}$.
                                 {[\tau/u]A}{\bigstar}$ \\
       \ooooo By rule \textsc{SortType} on $D'_1$ and $D'_2$, we have 
                $D' :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]A}$ \\
+      \oooo If $\omega$ is a kind $\kappa$ and $u$ does not occur in any subterm of sort type: \\
+      \ooooo Then $u \not\in \mathrm{FV}(A)$ \\
+      \ooooo Then $\restrictkind{\Delta, u:\omega, \Delta'} = 
+                     \restrictkind{\Delta}, u:\kappa, \restrictkind{\Delta'}$ \\
+      \ooooo Since $u$ does not occur in $A$, we have $D'_2 :: \judgeWK[\restrictkind{\Delta}, \restrictkind{\Delta'}]
+                                                        {A}{\bigstar}$ \\
+      \ooooo Since $u$ does not occur in $A$ or $\Delta'$, $A = [p/u]A$ and $\Delta' = [p/u]\Delta'$ \\
+      \ooooo Hence $D'_2 :: \judgeWK[\restrictkind{\Delta}, \restrictkind{[[p/u]\Delta'}]
+                                                        {[p/u]A}{\bigstar}$ \\
+      \ooooo By rule \textsc{SortType}, we have $\judgeSort[\Delta, [p/u]\Delta']{[p/u]A}$ \\
       \oooo If $\omega \not= \kappa$: \\
       \ooooo Then $\restrictkind{\Delta, u:\omega, \Delta'} = 
                    \restrictkind{\Delta, \Delta'}$ \\
       \ooooo Since no kind in $\restrictkind{\Delta'}$ has any free variables, 
-             $\restrictkind{\Delta'} = \restrictkind{[\tau/u]\Delta'}$ \\
+             $\restrictkind{\Delta'} = \restrictkind{[p/u]\Delta'}$ \\
       \ooooo Then $\restrictkind{\Delta, u:\omega, \Delta'} = 
                    \restrictkind{\Delta, [p/u]\Delta'}$ \\
       \ooooo Therefore $D'_2 :: \judgeWK[\restrictkind{\Delta, [p/u]\Delta'}]
