@@ -25,64 +25,117 @@ logic~\citep{sep-logic}, which has proven extremely successful at
 enabling reasoning about even such intricate imperative programs as
 garbage collectors~\citep{gc-proof}. However, separation logic has
 historically focused on low-level programming languages that lack a
-strong type discipline and allow the use of techniques such as
-treating pointers as integers.
+strong type discipline and allow the use of techniques such as casting
+pointers to integers.
 
-Most high level languages that allow the use of state are also prone
-to aliasing errors, since (with a few exceptions) type systems do not
-track interference properties. Even languages such as Haskell, which
-isolate all side-effects within a particular family of monadic types,
+However, even high level languages that allow the use of state are
+prone to aliasing errors, since (with a few exceptions) type systems
+do not track interference properties. Some languages, such as Haskell,
+isolate all side-effects within a particular family of monadic types:
+but while this preserves reasoning principles for functional code, we
 still face the problem that reasoning about monadic code remains as
-difficult as ever. Mutation and state have been imprisoned, but they
-have not been rehabilitated.
+difficult as ever. Monadic type disciplines imprison mutation and
+state, but they have not been rehabilitated.
 
 If this combination only posed challenges, but had no applications,
-then it would be only of theoretical interest. However, it is possible
-to use it to simply and naturally express many common kinds of
-programs. For example, graphical user interfaces are typically
-structured as families of callbacks that operate over the shared data
-structures representing the interface and program. These callbacks are
-structured using the subject-observer pattern, which use collections of 
-callbacks to implicitly synchronize mutable data structures across 
-a program. 
-
-
-\section{Proposed Thesis}
-
-The thesis I want to demonstrate is: ``The modular formal verification
-of interesting higher-order imperative programs is feasible using
-higher-order separation logic.''
+then it would be only of theoretical interest. However, it is widely
+used in many common kinds of programs. For example, graphical user
+interfaces are typically structured as families of callbacks that
+operate over the shared data structures representing the interface and
+program. These callbacks are structured using the subject-observer
+pattern, which use collections of callbacks to implicitly synchronize
+mutable data structures across a program.
 
 \section{Higher Order Separation Logic}
 
-The main tool I will use to prove programs correct is a higher order
+The main tool I develop to prove programs correct is a higher order
 separation logic for a simple higher-order imperative programming
-details. The details of the language and the specification logic are
-given at the end of the proposal document, but I will say a few words
-about them here to set the stage for what follows. 
+language. The details of the language and the specification logic are
+given in the following chapters, but I will say a few words about them
+here to set the stage for what follows.
 
-The programming language I consider is a simply-typed monadic
-functional language, in Pfenning-Davies~\cite{pfenning-davies}
-style. It can be considered an instance of Moggi's ~\cite{moggi}
-monadic metalanguage -- all heap effects are encapsulated within the
+The programming language I consider is a predicative version of System
+$F^\omega$, extended with a monadic type constructor for state in
+Pfenning-Davies~\cite{pfenning-davies} style. This language can be
+considered an instance of Moggi's~\cite{moggi} monadic metalanguage,
+as all heap effects and nontermination are encapsulated within the
 monadic type constructor.
 
-The basic form of specification is the Hoare triple over an imperative
-computation $\spec{P}{c}{a:\tau}{Q}$. Here, $P$ is the precondition,
-$c$ is the computation that we are specifying, and $Q$ is the post-
-condition. The binder $a:\tau$ names the return value of the computation,
-so that we can mention it in the post-condition. 
+We can reason about the functional part of programs using the standard
+$\beta\eta$-theory of the lambda calculus, but to reason about
+imperative computations, we introduce a specification logic, in the
+style of Reynolds' specification logic for Algol~\citep{spec-logic}.
+
+In this logic, the basic form of specification is the Hoare triple
+over an imperative computation $\spec{P}{c}{a:A}{Q}$. Here, $P$ is the
+precondition, $c$ is the computation that we are specifying, and $Q$
+is the post- condition. The binder $a:A$ names the return value of the
+computation, so that we can mention it in the post-condition.
 
 The assertion logic for the pre- and post-conditions is higher order
-separation logic~\cite{hosl}. This is a substructural logic that 
-extends ordinary logic with three spatial connectives, which enable
-reasoning about the aliasing behavior of data. 
+separation logic~\citep{hosl}. This is a substructural logic that
+extends ordinary logic with three spatial connectives to enable
+reasoning about the aliasing behavior of data. The Hoare triples
+themselves form the atomic propositions of a first-order
+intuitionistic logic of specifications. The quantifiers range over the
+sorts of the assertion logic, so that we can universally and
+existentially quantify over assertions and expressions.
 
-The Hoare triples themselves form the atomic propositions of a
-first-order intuitionistic logic of specifications. The quantifiers
-range over the sorts of the assertion logic, so that we can
-universally and existentially quantify over assertions and
-expressions.
+As a teaser example, consider the specification of a counter module.
+
+\begin{tabbing}
+$\exists \alpha : \star$ \\
+$\exists \mathtt{create} : \unittype \to \monad{\alpha}$ \\
+$\exists \mathtt{next} : \alpha \to \monad{\N}$ \\
+$\exists $\= $\mathit{counter} : \alpha \times \N \To \assert$ \\
+\> $\mspec{\emp}{\mathtt{create}()}{a:\alpha}{\mathit{counter}(a, 0)}$ \\
+\> $\specand$ \\
+\> $\forall c:\alpha, n:\N.\; \mspec{counter(c, n)}{\mathtt{next}(c)}{a:\N}{a = n \land \mathit{counter}(c, n+1)}$
+\\
+\end{tabbing} 
+
+The idea is that in our program logic, we can assert the existence of
+an abstract type of counters $\alpha$, operations $\mathtt{create}$
+and $\mathtt{next}$ (which create and advance counters, respectively),
+and a state predicate $\mathit{counter}(c, n)$ (which asserts that the
+counter $c$ has value $n$).
+
+The specifications are Hoare triples --- the triple for $\mathtt{create}$ asserts
+that from an empty heap, calling $\mathtt{create}$ creates a counter initialized
+to 0, and the triple for $\mathtt{next}(c)$ asserts that if $\mathtt{next}$ is called
+on $c$, in a state where it has value $n$, then the return value will be $n$ and
+the state of the counter will be advanced to $n+1$. 
+
+Now, here are two possible implementations for the existential witnesses:
+
+\begin{displaymath}
+\begin{array}{lcl}
+\alpha & \equiv & \reftype{\N} \\[0.5em]
+counter & \equiv & \lambda (r, n).\; (r \pointsto n) \\[0.5em]
+\mathtt{create} & \equiv & \lambda ().\; [\newref{\N}{0}] \\[0.5em]
+\mathtt{next}  & \equiv & \lambda r.\; [\letv{n}{[!r]}{
+                                        \letv{()}{[r := n + 1]}{n}}] \\
+\end{array}
+\end{displaymath}
+
+and also                                        
+\begin{displaymath}
+\begin{array}{lcl}
+\alpha & \equiv & \reftype{\N} \\[0.5em]
+counter & \equiv & \lambda (r, n).\; (r \pointsto n + 7) \\[0.5em]
+\mathtt{create} & \equiv & \lambda ().\; [\newref{\N}{7}] \\[0.5em]
+\mathtt{next}  & \equiv & \lambda r.\; [\letv{n}{[!r]}{
+                                        \letv{()}{[r := n + 1]}{n - 7}}] \\
+\end{array}
+\end{displaymath}
+
+So in our program logic, the implementations of modules consist of the
+witnesses to the existential formulas. As described above, this is
+essentially an application of Mitchell and Plotkin's identification of
+data abstraction and existential types. However, note that instead of
+abstracting only over types, we also abstracting over the
+\emph{heap}. So linking a module with a client is nothing but an
+application of the existential elimination rule in logic.
 
 
 \section{Modular Verification}
@@ -109,79 +162,35 @@ different features of our logic.
   state, because we must explicitly specify the aliasing or
   non-alsiasing of every variable and mutable data structure in our
   pre- and post-conditions. Besides the quadratic dependence on the
-  size of the program, the relevant set of variables grows whenever 
-  a subprogram is embedded in a larger. Separation logic resolves this
+  size of the program, the relevant set of variables grows whenever a
+  subprogram is embedded in a larger. Separation logic resolves this
   problem by introducing via the frame rule, a feature which we carry
-  forward in our logic. 
+  forward in our logic.
 
 \item Finally, it is important to ensure that the abstractions we
-  introduce compose. Benton\cite{benton-modularity}described a
+  introduce compose. Benton\cite{benton-modularity} described a
   situation where he was able to prove that a memory allocator and the
   rest of the program interacted only through a particular interface,
   but when he tried to divide the rest of the program into further
   modules, he encountered difficulties, because it was unclear how to
   share the resources and responsibility for upholding the contract
-  with the allocator. 
+  with the allocator.
 
-
+  While we introduce no specific technical devices to enable this kind
+  of reasoning, I exploit the expressiveness of this program logic to
+  introduce several specification patterns for verifying these kinds
+  of programs. For example, in Chapters 5 and 6 of this thesis, I make
+  use of the expressiveness of higher-order logic to introduce
+  \emph{domain-specific logics} to verify particular program
+  libraries.
+  
+  This lets me give modular specifications for programs such as the 
+  union-find~\citep{union-find} and event-driven programs, even though
+  the programs themselves rely on global, nonmodular invariants. The 
+  key technique here is to introduce the 
 \end{enumerate}
 
 
-The specification logic I give is a first order logic of Hoare
-triples. This gives us a simple technique for separating
-implementation and client -- namely, we can use existentially
-quantified specifications to create the boundary between a module and
-its client. We can verify a client program by proving it under the
-\emph{hypothesis} that it has access to a program satisfying the
-existentially quantified specification, and we can verify the module
-implementation by proving that it \emph{witnesses} the truth of the
-specification. Then, linking the two together is merely an application
-of the cut rule of logic.
-
-As described above, this is essentially an application of Mitchell and
-Plotkin's identification of data abstraction and existential
-types. It's worth noting at this point that we do not have existential
-types in our programming language (yet?). Instead, we are abstracting
-over the \emph{heap}. As a concrete example, consider the
-specification of a counter module.
-
-\begin{tabbing}
-$\exists $\= $counter : \reftype{\N} \times \N \To prop$ \\
-$\exists \mathtt{create} : \unittype \to \monad{\tau_c}$ \\
-$\exists \mathtt{next} : \tau_c \to \monad{\N}$ \\
-\> $\spec{\emp}{\mathtt{create}()}{a:\tau_c}{counter(a, 0)}$ \\
-\> $\specand$ \\
-\> $\forall c, n.\; \spec{counter(c, n)}{\mathtt{next}(c)}{a:\N}{a = n \land counter(c, n+1)}$
-\\
-\end{tabbing} 
-
-Here are two possible implementations for the existential witnesses:
-
-\begin{displaymath}
-\begin{array}{lcl}
-counter & \equiv & \lambda (r, n).\; (r \pointsto n) \\[1em]
-\mathtt{create} & \equiv & \lambda ().\; [\newref{\N}{0}] \\[1em]
-\mathtt{next}  & \equiv & \lambda r.\; [\letv{n}{[!r]}{
-                                        \letv{()}{[r := n + 1]}{n}}] \\
-\end{array}
-\end{displaymath}
-
-and also                                        
-\begin{displaymath}
-\begin{array}{lcl}
-counter & \equiv & \lambda (r, n).\; (r \pointsto n + 7) \\[1em]
-\mathtt{create} & \equiv & \lambda ().\; [\newref{\N}{7}] \\[1em]
-\mathtt{next}  & \equiv & \lambda r.\; [\letv{n}{[!r]}{
-                                        \letv{()}{[r := n + 1]}{n - 7}}] \\
-\end{array}
-\end{displaymath}
-
-As an aside, note that a client program cannot distinguish these two
-implementations, even though the reference type is a concrete (and not
-abstract) type, because of the resource semantics of separation
-logic. Merely knowing that the counter module's implementation type
-does not let us access the pointer, because we must have a points-to
-assertion $e \pointsto e'$ to dereference the pointer $e$. 
 
 \subsection{Imperative Modularity}
 
@@ -479,210 +488,6 @@ modularity is seeing how many starred subformulas show up in the
 pre- and post-conditions. 
 
 \end{itemize}
-
-\subsection{Larger Programs}
-
-Proving that I can prove the correctness of a wide variety of design
-patterns is nice, but design patterns are a means, not an end. The
-question remains whether these techniques can scale up to a larger
-program. There are two main reasons that a larger program might prove
-more difficult:
-
-\begin{enumerate}
-\item A \emph{formula} of moderate size is much smaller than a 
-\emph{program} of moderate size; so we may see a larger gap between 
-the structure of a program's invariants and the structure of its code
-in larger examples. I suspect this is a result of the fact that an
-interesting program will tend to use a sophisticated implementation to
-realize its specification. For example, an optimization pass for a
-compiler works because the code implements a fixed point iteration
-justified from various facts in lattice theory, but its actual
-implementation will typically be some kind of imperative worklist
-algorithm that pushes elements on and off a queue.
-
-\item Secondly, we might discover that we can specify the components
-of a program (e.g., design patterns), but that composing them is
-difficult, because of unforseen interactions between different
-aspects. For example, suppose we have two modules which each depend on
-a common (stateful) module. An important question is whether their
-specifications \emph{necessarily} reveal that dependence in a way that
-causes specification blow-up. Or alternately, suppose we have a data
-structure that implements multiple design patterns. Under what
-conditions can we avoid (or not avoid) interactions between those
-different facets of an API?
-\end{enumerate}
-
-So to validate my thesis, I should look for a program that exhibits
-both of these features -- we want a program with a high level
-specification divorced from the structure, and which is systematically
-constructed from smaller components. I am currently considering two
-possibilities for such a program.
-
-\subsubsection{A Graphical User Interface Library}
-
-The first possibility is to implement and prove correct a graphical
-user interface library. This is attractive for several reasons.
-
-First, the structure of typical GUI code is quite awkward, in
-\emph{precisely} a higher-order imperative way. A GUI program is
-structured as a set of callback functions which are executed by an
-event loop, which invokes each callback whenever an event of interest
-to it happens. All communication between callbacks happens via the
-heap. This is a bit like converting a program to continuation-passing
-style and then representing the continuation as heap data the
-programmer must manually modify. Such code is notoriously difficult to
-write and debug, and many patterns such as the model-view-controller
-pattern have been proposed to help tame the complexity.
-
-The next question is what we might mean by proving the correctness of
-a GUI. We can only prove a program correct with respect to a
-specification, and so we need a specification of a GUI. Here, I
-propose adapting a simplified version of the work of
-Courtney~\cite{courtney-fruit}, on denotational semantics for GUI
-libraries. He gave a semantics in terms of synchronous dataflow, where
-each GUI component is a signal transformer that takes an input signal
-of events and transforms it into an output signal of window layouts.
-
-Below, I give partial ML-style datatypes describing events and
-layouts, and then define two simple GUI widgets as signal
-transformers, in a purely functional style.
-
-\begin{tabbing}
-$ST(A, B)\;\;$ \= $=(\mathrm{Time} \to A) \to (\mathrm{Time} \to B)$ \\[1em]
-
-$GUI(A, B)$ \> $=ST(A \times Event, B \times Layout)$ \\[1em]
-
-$Layout$ \> $=$\ \= \texttt{Label of String $|$ Button of Unit $|$} \\
-         \> \> \texttt{Stack of Layout * Layout $|$ $\cdots$} \\[1em]
-
-$Event$ \> $=$ \texttt{Click of Unit $|$ Key of Char $|$ $\cdots$}\\[1em]
-
-$\mathtt{label}$ \= $ : GUI(String, Unit)$ \\
-\> $ \equiv $ \= $\lambda $\=$input : \mathrm{Time} \to (String \times Event).\;$ \\
-\> \> $\lambda t : \mathrm{Time}.\;$ \\
-\> \> \> $\mathrm{let}\; (s, \_) = input(t)\; \mathrm{in}$ \\
-\> \> \> $(\mathtt{Label}(s), ())$ \\[1em]
-
-$\mathtt{button}$ \= $ : GUI(Unit, Bool)$ \\
-\> $\equiv$ \= $\lambda$\=$ input: \mathrm{Time} \to (Unit \times Event).$\\
-\> \> $\lambda t : \mathrm{Time}.$ \\
-\> \> \> $\mathrm{let}\; (\_, e) = input(t) \;\mathrm{in}$\\
-\> \> \> $\mathrm{case}\; e \; \mathrm{of}$ \\
-\> \> \> $\bnfalt \mathtt{Click()} $\=$\To (true, \mathtt{Button}())$ \\
-\> \> \> $\bnfalt \_$ \> $\To (false, \mathtt{Button}())$ \\[1em]
-
-$\mathtt{stack}$ \= $ : GUI(A, B) \times GUI(X, Y) \to 
-                        GUI(A \times X, B \times Y) $ \\
-\> $\equiv$\= $\lambda$\=$(w_1, w_2) : GUI(A, B) \times GUI(X,Y).$\\
-\> \> $\lambda input : \mathrm{Time} \to A \times X.$ \\
-\> \> $\lambda t : \mathrm{Time}.$\\
-\> \> \> $\mathrm{let} (b, l_1) = w_1\;input\;t \;\mathrm{in}$ \\
-\> \> \> $\mathrm{let} (y, l_2) = w_2\;input\;t \;\mathrm{in}$ \\
-\> \> \> $((b,y), \mathtt{Stack}(l_1, l_2))$ \\
-\end{tabbing}
-
-The \texttt{label} widget takes a \texttt{String} input signal and at
-each time step produces a \texttt{Label} value carrying that string.
-Likewise, the \texttt{button} widget produces a boolean output signal,
-registering whether the button has been clicked on this time step or
-not. The \texttt{stack} widget takes two widgets, and combines them into
-a new, larger widget which multiplexes the inputs and outputs. 
-
-We can also specify various operations to combine widgets and
-compositionally construct a GUI. For example, two signals $ST(A,B)$
-and $ST(B, C)$ can be composed into a result $ST(A, C)$, similarly to
-function composition. More exotically, we can take a signal
-transformer of type $ST(A \times X, B \times X)$ along with an element
-of $X$, and construct a feedback loop of type $ST(A,B)$.
-
-This functional-dataflow specification style is quite different from
-an implementation, which would have a single, mutable layout that gets
-updated by a family of callbacks on each trip through the event loop.
-So this will let us test the claim that we can prove programs with a
-reasonable gap between the specification and the implementation.
-
-Additionally, we would want to respect the modularity constraints
-within the implementation -- the callbacks and the event loop should
-of course be oblivious to one anothers' concrete implementations, and
-the callback code should be structured in proper MVC style. This will
-let us test the idea that we can prove a program modularly, out of 
-modularly-proven sub-components. 
-
-\subsubsection{A Dataflow Optimization Infrastructure}
-
-Another possible program that would be interesting to verify would be
-a dataflow optimization framework, such as might be found inside a
-compiler.
-
-\begin{itemize}
-\item Worklist algorithm over mutable data
-
-The core algorithm in these frameworks is a worklist algorithm which
-uses a transfer function to update some data until it reaches a fixed
-point.
-
-\item Plugin architecture
-
-Adding a new optimization pass is a matter of giving the worklist
-framework callback functions that will update some new data in a way
-that implements an appropriate transfer function.
-
-
-\item Lattice theory for specification
-
-The justification for why this optimization works is generally an
-appeal to the Knaster-Tarski theorem and an observation that the
-dataflow lattice is finite. Combined analyses can be justified from
-the various functorial operations on lattices (e.g., the product of
-two lattices is a lattice). 
-
-These proofs would need to be ``parametric'' in the exact lattice
-structure, because of the possibility of new plugins.
-
-
-This is interesting because there are ways of combining analyses that
-yield more power than either one run separately, and we'd want to
-show how that fits together too. 
-
-\end{itemize}
-
-\subsection{``Feasible''}
-
-
-
-\section{Related Work}
-
-\subsection{Separation Logic}
-
-General stuff here. 
-
-Mention Hongseok and Lars's work here. 
-
-Who invented the admissible closure trick? Nick? Lars? Hongseok?
-
-\subsection{Specification Logic}
-
-Talk about specification logic for Algol.
-\subsection{Separation Logic for Java}
-
-Matthew Parkinson's work, plus abstract predicates.
-
-\subsection{Hoare Type Theory}
-
-\subsection{JML}
-
-\subsection{Spec\# and Boogie}
-
-\subsection{Linear Types and Typestates}
-
-Obviously, talk about Kevin's work, Bob's stuff on linearity, Boyland's
-fractional permisssions.
-
-\subsection{Regions? Step-indexed models? Syntactic control of interference?}
-
-This is starting to get further afield.
-
-
 
 \section{Contributions}
 
