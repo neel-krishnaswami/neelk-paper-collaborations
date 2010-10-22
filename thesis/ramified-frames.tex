@@ -982,11 +982,11 @@ Then we can hide $H'$ behind an existential to establish the postcondition.
 \mbox{}
   \begin{displaymath}
     \begin{array}{lcl}
-      \mathit{closed}(I, s) & = & \top \\
-      \mathit{closed}(\phi \otimes \psi, s) & = & \mathit{closed}(\phi, s) \land \mathit{closed}(\psi, s) \\ 
-      \mathit{closed}(\localref{r}{v}, s) & = & \top \\
-      \mathit{closed}(\cellneg{a}{e}, s) & = & \top \\
-      \mathit{closed}(\cellpos{a}{e}{v}{r}, s) & = & r \subseteq s \\
+      \closed{I}{s} & = & \top \\
+      \closed{\phi \otimes \psi}{s} & = & \closed{\phi}{s} \land \closed{\psi}{s} \\ 
+      \closed{\localref{r}{v}}{s} & = & \top \\
+      \closed{\cellneg{a}{e}}{s} & = & \top \\
+      \closed{\cellpos{a}{e}{v}{r}}{s} & = & r \subseteq s \\
     \end{array}
   \end{displaymath}
 \caption{Closedness predicate}
@@ -1104,7 +1104,7 @@ For all $\phi, o,$ and $H$ such that $H = (D,h)$:
 \end{itemize}
 \end{prop}
 
-In Figure~\ref{closedness}, we define the $\mathit{closed}(\phi, s)$ predicate,
+In Figure~\ref{closedness}, we define the $\closed{\phi}{s}$ predicate,
 which asserts that every cell formula in $\phi$ reads at most the
 cells in $s$. Now, we can summarize the interactions between the 
 ramification operator $R$ and abstract heap formulas as follows: 
@@ -1116,7 +1116,7 @@ that:
 \item $R(s, R(u, \phi)) = R(s \cup u, \phi)$
 \item If $\unready{\phi}{o}$, then $\unready{R(u, \phi)}{o}$ 
 \item If $\ready{R(u, \phi)}{o}{v}$, then $\ready{phi}{o}{v}$ 
-\item If $R(u, \phi)$ and $\mathit{closed}(\phi, s)$, then $R(u, \phi) = R(u \cap s, \phi)$ 
+\item If $R(u, \phi)$ and $\closed{\phi}{s}$, then $R(u, \phi) = R(u \cap s, \phi)$ 
 \end{itemize}
 \end{prop}
 
@@ -2101,22 +2101,25 @@ to maintain the acyclicity of the dataflow graph.
 
 \begin{specification}
 \nextline $\mathit{Transduce}(vs, i, \phi, o, ws)  =  $
-\nextline\;\;\= $\forall n, \theta, \theta'.$ 
-\nextline\qquad\= $\unready{\theta}{i} \specand \mathit{closed}(\theta, \domain{\theta}) \specand $ 
-\nextline\> $\ready{\theta'}{i}{vs_n} \specand \mathit{closed}(\theta', \domain{\theta'}) \specand$
-\nextline\> $i \in \domain{\theta} \specand \domain{\theta} = \domain{\theta'} \specand$ 
+\nextline $\forall \theta, n.\; \unready{\theta}{i} \implies \unready{\theta \otimes \phi_n}{o} \specand$ 
+\nextline $\forall \theta, n.\; \ready{\theta}{i}{vs_n} \implies \ready{\theta \otimes \phi_{n+1}}{o}{ws_n} \specand$
+\nextline $\forall n.\; \closed{\phi_n}{\domain{\phi_n} \cup \setof{i}} \specand$ 
+\nextline $\forall n.\; o \in \domain{\phi_n} \specand$
+\nextline $\forall n.\; \unready{R(\setof{i}, \phi_n)}{o} \specand$
+\nextline\;\; $\forall n, \theta, \theta', u \subseteq \domain{\theta}.$  
+\nextline\qquad\=$(\ready{\theta}{i}{v_n} \land \theta = \theta' \land u = \emptyset \specor
+                         \unready{\theta}{i} \land i \in u) \specand$ 
+\nextline\> $\ready{\theta'}{i}{v_n} \specand \closed{\theta'}{\domain{\theta'}} \specand$
 \nextline\> $\forall \psi.\;$\=$\left<G(\theta \otimes \psi)\right>$ 
 \nextline\>\> $\readcell i$
-\nextline\>\> $\left<a.\;a = (vs_n, \setof{i}) \land \exists u.\; G(\theta' \otimes R(u,\psi)) \land u \subseteq \domain{\theta} \right>$ 
+\nextline\>\> $\left<a.\;a = (vs_n, \setof{i}) \land G(\theta' \otimes R(u,\psi)\right>$ 
 \nextline\> $\specimp$ 
-\nextline\qquad\= $\unready{\theta \otimes \phi_n}{o} \specand \mathit{closed}(\phi_n, \domain{\phi_n} \cup \setof{i}) \specand $ 
-\nextline\> $\ready{\theta' \otimes \phi_{n+1}}{o}{ws_n} \specand \mathit{closed}(\phi_{n+1}, \domain{\phi_{n+1}} \cup \setof{i}) \specand$
-\nextline\> $o \in \domain{\phi_n} \specand \domain{\phi_n} = \domain{\phi_{n+1}} \specand$ 
-\nextline\> $\forall \psi.\;$\=$\left<G(\theta \otimes \phi_n \otimes \psi)\right>$ 
+\nextline\> $\exists \setof{o} \subseteq u' \subseteq \domain{\phi_n}.\;  \forall \psi.\;$\=$\left<G(\theta \otimes R(\setof{i}, \phi_n) \otimes \psi)\right>$ 
 \nextline\>\>$\readcell o$ 
-\nextline\>\>$\left<a.\;\exists u'.\;a = (ws_n, \setof{o}) \land 
-                        G(\theta' \otimes \phi_{n+1} \otimes R(u', \psi)) \land u' \subseteq \domain{\theta \otimes \phi_n}\right>$ 
+\nextline\>\>$\left<a.\;a = (ws_n, \setof{o}) \land 
+                        G(\theta' \otimes \phi_{n+1} \otimes R(u \cup u', \psi))\right>$ 
 \end{specification}
+
 
 \begin{specification}
 \nextline $\mathit{Realize}(\mathsf{\hat{f}}, f) = $ 
@@ -2145,35 +2148,41 @@ network, and then show that each operator creats an appropriate network.
 \subsubsection{Correctness of $\mathsf{lift}$}
 
 \begin{lemma}{(The $\mathsf{lift}$ network)}
-It is the case that $\mathit{Transduce}(vs, i, \phi, o, \mathit{lift}\;f\;vs)$ holds, when
+It is the case that $\mathit{Transduce}(vs, i, \phi, c, \mathit{lift}\;f\;vs)$ holds, when
 \begin{itemize}
 \item $\phi = \semfun{n}{\cellpos{c}{e}{ws_n}{\setof{i}}}$, where $ws = x \cdot (f\;vs)$ for some dummy $x$ and
 \item $e = \bind (\readcell i)\; (\semfun{v}{\return (f\;v)})$
 \end{itemize}
 \end{lemma}
 
-
 \begin{proof}
+\begin{itemize}
+\item First, it is clear that for all $\theta$ and $n$, if $\unready{\theta}{i}$, then $\unready{\theta \otimes \phi_n}{c}$, since $i$ is in the read set of $\phi_n$. 
+\item Second, it is clear that for all $\theta$ and $n$, if $\ready{\theta}{i}{v_n}$, then $\ready{\theta \otimes \phi_n}{c}{(f\;v)_n}$, since the read set of $\phi_n$ is $i$, which is by hypothesis ready. 
+\item Third, it is immediately clear that for all $n$, $\closed{\phi_n}{\setof{i} \cup \domain{\phi_n}}$,
+since $\phi_n$ has a single cell whose read set contains only $i$. 
+\item Fourth, for all $n$, we know that $R(\setof{i}, \phi_n) = \cellneg{c}{e}$, which obviously satisfies $\unready{R(\setof{i}, \phi_n)}{c}$ 
+\end{itemize}
+Now we need to show the implication over triples. 
 \begin{tabbedproof}
-\oo Assume we have $n, \theta, \theta'$ and  \\
-\oo $\unready{\theta}{i}$ and $\mathit{closed}(\theta, \domain{\theta})$ and \\
-\oo $\ready{\theta'}{i}{vs_n}$ and $\mathit{closed}(\theta', \domain{\theta'})$ and \\
-\oo  $\forall \psi.\;\spec{H(\theta \otimes \psi)}{\readcell i}{a}{a = (vs_n, \setof{i}) \land \exists u.\; H(\theta' \otimes R(u, \psi)) \land u \subseteq \domain{\theta}}$ \\
-\ooo Now assume we have $\psi$ and are in a prestate $G(\theta \otimes \phi_n \otimes \psi)$ \\
-\ooo Since $\unready{\theta}{i}$, it follows that $\unready{\theta \otimes \phi_n}{o}$ \\
-\ooo Hence $G(\theta \otimes \cellneg{c}{e} \otimes \psi)$ \\
-\ooo $\readcell o$ \\
-\ooo By the \textsc{AUnready}, \textsc{ABind}, and \textsc{AUnit} rules, we end in a state \\
-\ooo $a = ((f\;vs)_n, \setof{o}) \land G(R(\setof{o}, \theta') \otimes \cellpos{o}{e}{(f\;vs)_n}{\setof{i}} \otimes R(u \cup \setof{o}, \psi))$ \\
-\ooo Note that $\domain{\phi_n} = \domain{\phi_{n+1}}$ \\ 
-\ooo Note that $o \in \domain{\phi_n}$ \\
-\ooo Since $\unready{\theta}{i}$, we know $\unready{\theta \otimes \phi_n}{o}$\\
-\ooo Note that since $\ready{\theta'}{i}{vs_n}$, we have $\ready{\theta' \otimes \phi_{n+1}}{o}{(ws_n}$ \\
-\ooo Note that $R(\setof{o}, \theta')$ is equivalent to $\theta'$, since $o \not\in \domain{\theta'}$ \\
-\ooo Note that $\mathit{closed}(\phi_{n+1}, \setof{o, i})$ \\
-\ooo Note that $(f\;vs)_n = ws_{n+1}$, so our poststate entails \\ 
-\ooox $a = ((f\;vs)_n, \setof{o}) \land \exists u'.\; G(\theta' \otimes \phi_{n+1} \otimes R(u', \psi)) \land u' \subseteq \domain{\theta \otimes \phi_n}$ \\
+\oo Assume we have $n$, $\theta$, $\theta'$ and $u$. \\
+\oo Assume that either $\ready{\theta}{i}{v_n}$ and $\theta = \theta'$ and $u = \emptyset$,  \\
+\oo or $\unready{\theta}{i} \land i \in u$ \\
+\oo Assume that $\closed{\theta'}{\domain{\theta'}}$ and that $\ready{\theta'}{i}{v_n}$ \\
+\oo Assume for all $\psi$, we have \\
+\ox  $\mspec{G(\theta \otimes \psi)}{\readcell i}{a}{a = ((f\;v)_n, \setof{c}) 
+      \land G(\theta' \otimes R(u,\psi))}$ \\
+\oo Now assume we have a $\psi$ and a prestate $G(\theta \otimes R(\setof{i}, \phi_n) \otimes \psi)$ \\
+\oo We know $R(\setof{i}, \phi_n) = \cellneg{c}{e}$ \\
+\oo So we know $\unready{\theta \otimes R(\setof{i}, \phi_n) \otimes \psi}{c}$ \\
+\oo By the \textsc{AUnready}, \textsc{ABind}, and \textsc{AUnit} rules, we end in a state \\
+\oo $G(R(u',\theta') \otimes \cellpos{c}{e}{f\;v_n}{\setof{i}} \otimes R(u \cup u',\psi)) \land a = (f\;v_n, \setof{o})$ \\
+\oo where $u' = \setof{c}$ \\
+\oo Since $c$ does not occur in $\theta'$ or else false is entailed, we know $c \not\in \domain{\theta'}$ \\
+\oo Since $\theta'$ is closed with respect to its domain, $R(u',\theta') = \theta'$ \\
+\oo Note that $f\;v_n = (\mathit{lift}\;f\;v)_n$, hence we have the conclusion we want. \\
 \end{tabbedproof}
+
 \end{proof}
 
 \subsubsection{Correctness of $\mathsf{compose}$}
@@ -2185,154 +2194,424 @@ $\mathit{Transduce}(vs, i, \phi \otimes \sigma, o, g\;(f\;vs))$ holds.
 \end{lemma}
 
 \begin{proof}
+\begin{itemize}
+\item First, we want to show that for all $\theta, n$, if $\unready{\theta}{i}$ then $\unready{\theta \otimes \phi_n \otimes \sigma_n}{o}$. 
+
+  To show this assume $\unready{\theta}{i}$. Then we know from $\mathit{Transduce}(vs, i, \phi, m, f\;vs)$
+  that $\unready{\theta \otimes \phi_n}{m}$. Then we know from $\mathit{Transduce}(f\;vs, m, \sigma, o, g(f\;vs))$
+  that $\unready{\theta \otimes \phi_n \otimes \sigma_n}{o}$. 
+
+\item Second, we want to show that for all $\theta, n$, if
+  $\ready{\theta}{i}{vs_n}$ then $\ready{\theta \otimes \phi_n \otimes
+  \sigma_{n+1}}{o}{(f\;vs)_n}$.
+
+  Assume $\ready{\theta}{i}{vs_n}$. 
+
+  Then we know from $\mathit{Transduce}(vs, i, \phi, m, f\;vs)$ that
+  $\ready{\theta \otimes \phi_{n+1}}{m}{(f\;vs)_n}$. Then we know from
+  $\mathit{Transduce}(f\;vs, m, \sigma, o, g(f\;vs))$ that
+  $\ready{\theta \otimes \phi_{n+1} \otimes
+    \sigma_{n+1}}{o}{(g\;(f\;vs))_n}$.
+
+\item Third we want to show that $o \in \domain{\phi_n \otimes \sigma_n}$. Since $o \in \domain{\sigma_n}$,
+  it follows immediately that $o \in \domain{\phi_n \otimes \sigma_n}$. 
+
+\item Fourth, we want to show that $\closed{\phi_n \otimes \sigma_n}{\domain{\phi_n \otimes \sigma_n} \cup \setof{i}}$. We know that  $\closed{\phi_n}{\domain{\phi_n} \cup \setof{i}}$ and 
+$\closed{\sigma_n}{\domain{\sigma_n} \cup \setof{m}}$. So we know that $\closed{\phi_n \otimes \sigma_n}{\domain{\phi_n \otimes \sigma_n} \cup \setof{i,m}}$. Since $m \in \domain{\phi_n}$, we have that
+$\closed{\phi_n \otimes \sigma_n}{\domain{\phi_n \otimes \sigma_n} \cup \setof{i}}$
+\end{itemize}
+
+Now, let's prove the entailment of specifications. 
+
 \begin{tabbedproof}
-\oo Assume we have $n, \theta, \theta', u$ and  \\
-\oox $\unready{\theta}{i}$ and $\ready{\theta'}{i}{vs_n}$ and $\mathit{closed}(\theta', \domain{\theta'})$\\
-\oox and $\mathit{closed}(\theta, \domain{\theta})$ and $i \in \domain{\theta}$ and $\domain{\theta}=\domain{\theta'}$ \\
-\oox and $\forall \psi.\;\spec{H(\theta \otimes \psi)}{\readcell i}{a}{a = (vs_n, \setof{i}) \land \exists u.\; H(\theta' \otimes R(u, \psi)) \land u \subseteq \domain{\theta}}$ \\
-\oo Now, from the fact $\mathit{Transduce}(vs, i, \phi, m, f\;vs)$ holds, we know that \\
-\oo $\unready{\theta \otimes \phi_n}{m}$ and $\ready{\theta' \otimes \phi_{n+1}}{m}{(f\;vs)_n}$ and \\
-\oo $\mathit{closed}(\phi_n, \domain{\phi_n} \cup \setof{i})$ and $\mathit{closed}(\phi_{n+1}, \domain{\phi_{n+1}} \cup \setof{i})$ \\
-\oo and $m \in \domain{\phi_n}$ and $\domain{\phi_n} = \domain{\phi_{n+1}}$ and \\
-\oo $\forall \psi.\;\spec{H(\theta \otimes \phi_n \otimes \psi)}{\readcell m}{a}{a = ((f\;vs)_n, \setof{m}) \land \exists u.\; H(\theta' \otimes \phi_{n+1} \otimes R(u, \psi)) \land u \subseteq \domain{\theta \otimes \phi_n}}$ \\
-\oo Therefore we know that $\mathit{closed}(\theta \otimes \phi_n, \domain{\theta \otimes \phi_n})$ and \\
-\oo $\mathit{closed}(\theta' \otimes \phi_{n+1}, \domain{\theta' \otimes \phi_{n+1}})$ and \\
-\oo $\domain{\theta \otimes \phi_n} = \domain{\theta' \otimes \phi_{n+1}}$ and $m \in \domain{\theta \otimes \phi_n}$ \\
-\oo Hence we can instantiate the quantifiers in $\mathit{Transduce}(f\;vs, m, \sigma, o, g(f\;vs))$ \\
-\oo so that we can conclude \\
-\oo $\unready{\theta \otimes \phi_n \otimes \sigma_n}{o}$ and $\ready{\theta' \otimes \phi_{n+1} \otimes \sigma_{n+1}}{o}{(g(f\;vs))_n}$ and \\
-\oo $\mathit{closed}(\sigma_n, \domain{\sigma_n} \cup \setof{m})$ and $\mathit{closed}(\sigma_{n+1}, \domain{\sigma_{n+1}} \cup \setof{m})$ \\
-\oo and $o \in \domain{\sigma_n}$ and $\domain{\sigma_n} = \domain{\sigma_{n+1}}$ and \\
-\oo $\forall \psi.\;$\=$\left<H(\theta \otimes \phi_n \otimes \otimes \sigma_n \otimes \psi)\right>$ \\
-\oo \> $\readcell o$ \\
-\oo \> $\left<a.\;a = ((g(f\;vs))_n, \setof{o}) \land \exists u.\; H(\theta' \otimes \phi_{n+1} \otimes \otimes \sigma_{n+1} \otimes R(u, \psi)) \land u \subseteq \domain{\theta' \otimes \phi_n \otimes \sigma_n \otimes \phi_n}\right>$ \\
-
-
-
-
-
-% \oo Now, from the fact $\mathit{Transduce}(vs, i, \phi, m, f\;vs)$ holds, we know that \\
-% \oo $\unready{\theta \otimes \phi_n}{m}$ and $\mathit{closed}(\phi_n, \domain{\phi_n} \cup \setof{i})$ \\
-% \oo and $\ready{\theta' \otimes \phi_{n+1}}{(f\; vs)_n}$ and $\mathit{closed}(\phi_{n+1}, \domain{\phi_{n+1}} \cup \setof{i})$ \\
-% \oo and \\
-% 
-% \oo We want to show $\unready{\theta \otimes \phi_n \otimes \sigma_n}{o}$ \\
-% \oox and $\mathit{closed}(\phi_n \otimes \sigma_n, \domain{\phi_n \otimes \sigma_n} \cup \setof{o})$ \\
-% \oox and $\ready{\theta' \otimes \phi_{n+1} \otimes \sigma_{n+1}}{o}{(g\;(f\;vs))_n}$ \\
-% \oox and $\mathit{closed}(\phi_{n+1} \otimes \sigma_{n+1}, \domain{\phi_{n+1} \otimes \sigma_{n+1}} \cup \setof{o})$ \\
-% \oox and $\forall \psi.\; \mspec{G(\theta \otimes \phi_{n} \otimes \sigma_{n} \otimes \psi)}
-%                                 {\readcell o}
-%                                 {a}{\exists u'.\;a = ((g\;(f\;vs))_n, \setof{o}) \land 
-%                                         u' \subseteq \domain{\theta' \otimes \phi_{n+1} \otimes \sigma_{n+1}} \land 
-%                                         G(\theta' \otimes \phi_{n+1} \otimes \sigma_{n+1} \otimes R(u',\psi))}$\\
-% \ooo Now instantiate the quantifiers of $\mathit{Transduce}(f\;vs, m, \theta, o, g(f\;vs))$ with \\
-% \ooo $n = n$, $\theta = \theta \otimes \sigma_n$, $\theta' = \theta' \otimes \sigma_{n+1}$ \\
-% 
-% assume we have $\psi$ and are in a prestate $G(\theta \otimes \phi_n \otimes \psi)$ \\
-% \ooo Since $\unready{\theta}{i}$, it follows that $\unready{\theta \otimes \phi_n}{o}$ \\
-% \ooo Hence $G(\theta \otimes \cellneg{c}{e} \otimes \psi)$ \\
-% \ooo $\readcell o$ \\
-% \ooo By the \textsc{AUnready} rule, we end in a state \\
-% \ooo $G(\theta' \otimes \cellpos{o}{e}{f\;vs_n}{\setof{i}} \otimes R(u \cup \setof{o}, \psi))$ \\
-% \ooo Note that since $\ready{\theta'}{i}{vs_n}$, we have $\ready{\theta' \otimes \phi_{n+1}}{o}{(f\;vs)_n}$ \\
+\oo Assume we have $\theta, \theta', n$, and $u$. \\
+\oo Assume that either $\ready{\theta}{i}{v_n}$ and $\theta = \theta'$ and $u = \emptyset$,  \\
+\oo or $\unready{\theta}{i} \land i \in u$ \\
+\oo Assume that $\closed{\theta'}{\domain{\theta'}}$ \\
+\oo Assume that $\ready{\theta'}{i}{v_n}$ and $\closed{\theta'}{\domain{\theta'}}$ \\
+\oo Assume for all $\psi$, we have \\
+\ox  $\mspec{G(\theta \otimes \psi)}{\readcell i}{a}{a = ((f\;v)_n, \setof{c}) 
+      \land G(\theta' \otimes R(u,\psi)) }$ \\
+\oo Assume we have a $\psi$. Now, we use the hypothesis above, together \\
+\oo with the fact that $\mathit{Transduce}(f\;vs, m, \sigma, o, g(f\;vs))$ holds, \\
+\oo to conclude that there is a $u'$ such that $\setof{m} \subseteq u' \subseteq \domain{\phi_n}$ and \\
+\ox $\left<G(\theta \otimes R(\setof{i}, \phi_n) \otimes \psi)\right>$ \\
+\ox $\readcell m$ \\
+\ox $\left<a.\;G(\theta' \otimes \phi_{n+1} \otimes R(u \cup u',\psi)
+             \land  a = ((f\;v)_n, \setof{m})\right>$ \\
+\oo Note that since $\theta'$ is closed with respect to its own domain and $\phi_n$ is closed with \\
+\oo respect to $i$ and its own domain, we have $\closed{\theta' \otimes \phi_{n+1}}{\domain{\theta' \otimes \phi_{n+1}}}$ \\
+\oo Note also that $m \in u \cup u'$ and $\unready{\theta \otimes R(\setof{i}, \phi_n)}{m}$ \\
+\oo Furthermore, since $\ready{\theta'}{i}{v_n}$, we know $\ready{\theta' \otimes \phi_{n+1}}{m}{(f\;v)_n}$ \\
+\oo Hence from $\mathit{Transduce}(f\;vs, m, \sigma, o, g(f\;vs))$, we can conclude that \\
+\oo there is a $u''$ such that $\setof{o} \subseteq u'' \subseteq \domain{\sigma_n}$ and for all $\psi$ \\
+\ox $\left<G(\theta \otimes R(\setof{i}, \phi_n) \otimes R(\setof{m}, \sigma_n) \otimes \psi)\right>$ \\
+\ox $\readcell o$ \\
+\ox $\left<a.\;G(\theta' \otimes \phi_{n+1} \otimes \sigma_{n+1} \otimes R(u \cup u' \cup u'',\psi)
+             \land a = ((f\;v)_n, \setof{o})\right>$ \\
+\oo Since $\unready{\theta \otimes R(\setof{i}, \phi_n)}{m}$, we know that \\
+\oo $\unready{\theta \otimes R(\setof{i}, \phi_n) \otimes \sigma_n}{m}$ \\
+\oo Hence $\theta \otimes R(\setof{i}, \phi_n) \otimes \sigma_n \vdash R(\setof{m}, \theta \otimes R(\setof{i}, \phi_n) \otimes \sigma_n)$ \\
+\oo Hence $\theta \otimes R(\setof{i}, \phi_n) \otimes \sigma_n \vdash \theta \otimes R(\setof{i}, \phi_n) \otimes R(\setof{m}, \sigma_n)$ \\
+\oo Since $i \not\in \domain{\sigma_n} \cup \setof{m}$, we know $R(\setof{i}, \sigma_n) = \sigma_n$ \\
+\oo Hence $\theta \otimes R(\setof{i}, \phi_n) \otimes R(\setof{i}, \sigma_n) \vdash \theta \otimes R(\setof{i}, \phi_n) \otimes R(\setof{m}, \sigma_n)$ \\
+\oo Hence $\theta \otimes R(\setof{i}, \phi_n \otimes \sigma_n) \vdash \theta \otimes R(\setof{i}, \phi_n) \otimes R(\setof{m}, \sigma_n)$ \\
+\oo Hence we can conclude that \\
+\ox $\left<G(\theta \otimes R(\setof{i}, \phi_n \otimes \sigma_n) \otimes R(\setof{m}, \sigma_n) \otimes \psi)\right>$ \\
+\ox $\readcell o$ \\
+\ox $\left<a.\;G(\theta' \otimes \phi_{n+1} \otimes \sigma_{n+1} \otimes R(u \cup u' \cup u'',\psi)
+             \land a = ((f\;v)_n, \setof{o})\right>$ \\
+\oo Note that $u' \cup u'' \subseteq \domain{\phi_n \otimes \sigma_n}$, which is the existential witness
 \end{tabbedproof}
 \end{proof}
 
+\subsubsection{Correctness of $\mathsf{par}$}
 
+\begin{lemma}{(The $\mathsf{par}$ network)}
+If it is the case that $\mathit{Transduce}(v, i, \phi, b, f\;v)$ holds, and that
+$\mathit{Transduce}(v, i, \sigma, c, g\;v)$ holds, then it is the case that
+$\mathit{Transduce}(v, i, \phi \otimes \sigma \otimes \omega, o, \mathit{par}\;f\;g\;v)$ holds,
+where 
 
-% 
-% Now, with these ideas in mind, we come to the definition of what it
-% means for a dataflow network to realize a stream transducer. This
-% property is (unavoidably) quite large, but despite its size is quite
-% pleasant to work with.
-% \begin{tabbing}
-% $Realize(i, \Phi, o, f) \triangleq$ \\
-% \;\;\= $\forall v:$\=$\,\stream{A}.\;$ \fbox{$\exists \phi:\stream{\formula}, u:\stream{\powersetfin{ecell}}.$} \\
-% \>\> $\{\forall n:\N.\;$\=$\closed{\phi_n}{\domain{\phi_n} \cup \setof{i}} \;\land$ \\
-% \>\>\>$\domain{\phi_n} = \domain{\phi_{n+1}}\; \land$ \\
-% \>\>\>$\forall \psi.\; \unready{\psi}{i} \implies \unready{\psi \otimes \phi_n}{o}\}$ \\
-% \>\> $\specand \; \{\Phi = \phi_0\}$ \\
-% \>\> $\specand \;  Transduce(i, \phi, o, u, f, v)$ \\[1em]
-% 
-% 
-% $Transduce(i, \phi, o, u, f, v) \triangleq$ \\
-% \> $\forall $\=$ n:\N, \phi_i, \phi'_i, u_i.$ \\
-% \>\> \fbox{$\astep{\phi_i}{\readcell i}{\phi'_i}{v_n}{\setof{i}}{u_i}$} $\; \land$ \\
-% \>\> $\{$\=$\domain{\phi_i} = \domain{\phi'_i} \;\land $ \\
-% \>\>     \>$\closed{\phi_i}{\domain{\phi_i}} \land 
-%             \closed{\phi_i}{\domain{\phi'_i}} \land $ \\
-% \>\>     \>$\unready{\phi_i}{i} \land
-%             i \in u_i\}$ \\
-% \>\> $\Longrightarrow$ \\
-% \>\> \fbox{$\astep{\phi_i \otimes \phi_n}{\readcell o}
-%               {\phi'_i \otimes \phi_{n+1}}{(f\;v)_n}
-%               {\setof{o}}{u_i \cup u_n}$} \\
-% \>\> $\specand\; \{u \subseteq \domain{\phi_n} \land o \in u\}$ \\
-% \end{tabbing}
-% 
-% We read $Realize(i, \Phi, o, f)$ as saying ``the dataflow network
-% $\Phi$ realizes the stream transducer $f$, when the event loop writes
-% inputs into $i$ and reads outputs from $o$''. We have highlighted the
-% key pieces of this definition with boxes. First, given some input
-% stream $v$, we existentially assert the existence of a \emph{stream}
-% of abstract heap formulas $\phi$. This stream represents the evolving
-% state of the network over time --- because our notification networks
-% contain local state, that state can potentially have a different value
-% at each time step. Then, in the unboxed formulas, we assert some
-% well-formedness properties, such as 1) the initial value of the stream
-% matching our $\Phi$, 2) the domain of the network (i.e., the cells whose
-% atomic formulas are in that formula) remaining constant
-% over time, 3) that the output is unready if the input is, and 4) that
-% the network reads only the specified input cell. (All of these
-% conditions could be relaxed, but for the basic FRP combinators we
-% consider in this paper there is no need. It \emph{would} become
-% necessary if we added combinators that dynamically created new
-% transducers as the program ran, since at that point we would need to
-% create new cells at each time step.)
-% 
-% We state the stream property with the $Transducer$ sub-predicate. It
-% asserts for all time $n$, that if we have input state $\phi_i$ which
-% yields $v_i$ when $i$ is read (the second boxed formula), then 
-% reading $o$ in a larger state containing both the input $phi_i$ and the
-% $n$-th transducer state $\phi_n$ will 1) return the $n$-th output
-% value $(f\;v)_n$, and 2) will update the state of the network to 
-% the next time step $\phi_{n+1}$ (the third boxed formula). 
-% 
-% With this property in hand, we can prove the following specifications: 
-% 
-% \begin{prop}{(FRP Correctness)}
-% We define the $Relate$ predicate:
-% \begin{tabbing}
-% $Relate_{A,B}(p, f) \triangleq$ \\
-% \;\; $\forall \psi:\formula, i:\celltype{A}.$ \\ 
-% \qquad $\setof{G(\psi)}\;p\;i\;\{o:\celltype{B}.\;
-%                \exists \Phi.\;$\=$G(\Phi \otimes \psi) \;\land$ \\
-%                                \>$ Realize(i, \Phi, o, f) \valid\}$
-% \end{tabbing}
-% \noindent Then, the following specifications are provable: 
-% \begin{tabbing}
-% $\forall f:A\to B.\; Relate(\liftop f, lift\;f)$ \\[1em]
-% 
-% $\forall p, f, q, g.\;$\=$Relate(p, f) \specand Relate(q, g)$ \\
-%                        \>$\specimp Relate(\composeop p\;q, compose\;f\;g)$ \\[1em]
-% 
-% $\forall p, f, q, g.\;$\=$Relate(p, f) \specand Relate(q, g)$ \\
-%                        \>$\specimp Relate(\parop p\;q, par\;f\;g)$ \\[1em]
-% 
-% $\forall k, p, f, q, g.\;$\=$Relate(p, f) \specand Relate(q, g)$ \\
-%                           \>$\specimp Relate(\switchop k\;p\;q, switch\;k\;f\;g)$ \\[1em]
-% 
-% $\forall a_0, p, f.\; 
-%   Relate(p, f) \specimp Relate(\loopop\;a_0\;p, loop\;a_0\;f)$
-% \end{tabbing}
-% \end{prop}
-% 
-% These lemmas permit us to reason about our transducer implementation
-% as if it were a pure implementation --- for each combinator in the
-% interface, we have a proof that shows the corresponding implementation
-% combinator lifts related arguments to related results. As a result, 
-% we can show that, for example, $\composeop (\liftop f) \;(\liftop g)$
-% and $\liftop (g \circ f)$ both realize the same function $lift\;(g\circ f)$. 
+\begin{itemize}
+\item $\omega = \semfun{n}{\cellpos{o}{e}{ws_n}{\setof{b,c}}}$, where $ws = x \cdot (\mathit{par}\;f\;g\;v)$ for some dummy $x$ and
+\item $e = \bind (\readcell a)\; (\semfun{x}{\bind (\readcell b)\; (\semfun{y}{\return (x,y)})})$
+\end{itemize}
+\end{lemma}
+
+\begin{proof}
+\begin{itemize}
+\item We want to show that $\unready{\theta}{i}$ implies $\unready{\theta \otimes \phi_n \otimes \sigma_n \otimes \omega_n}{o}$ 
+
+  Assume that $\unready{\theta}{i}$ holds. Then we know by hypothesis
+  that $\unready{\theta \otimes \phi_n}{b}$ holds. This lets us conclude
+  that $\unready{\theta \otimes \phi_n \otimes \omega_n}{o}$ holds. From this,
+  it follows that $\unready{\theta \otimes  \phi_n \otimes \sigma_n \otimes \omega_n}{o}$.
+
+\item We want to show that $\ready{\theta}{i}{v_n}$ implies $\ready{\theta \otimes \phi_{n+1} \otimes \sigma_{n+1} \otimes \omega_{n+1}}{o}{(\mathit{par}\;f\;g\;v)_n}$ 
+
+  Assume that $\ready{\theta}{i}{v_n}$ holds. Then we know that 
+  $\ready{\theta \otimes \phi_{n+1}}{b}{(f\;v)_n}$ holds, and that 
+  $\ready{\theta \otimes \sigma_{n+1}}{c}{(g\;v)_n}$ holds. 
+
+  So we know that $\ready{\theta \otimes \phi_{n+1} \otimes \sigma_{n+1} \otimes \omega_{n+1}}{b}{(f\;v)_n}$ holds.
+
+  So we know that $\ready{\theta \otimes \phi_{n+1} \otimes \sigma_{n+1} \otimes \omega_{n+1}}{c}{(g\;v)_n}$ holds.
+
+  Hence $\ready{\theta \otimes \phi_{n+1} \otimes \sigma_{n+1} \otimes \omega_{n+1}}{o}{(\mathit{par}\;f\;g\;v)_n}$ holds.
+
+\item We want to show that $\closed{\phi_n \otimes \sigma_n \otimes \omega_n}{\domain{\phi_n \otimes \sigma_n \otimes \omega_n} \cup \setof{i}}$ 
+
+  We know $\closed{\phi_n}{\domain{\phi_n} \cup \setof{i}}$. 
+  We know $\closed{\sigma_n}{\domain{\sigma_n} \cup \setof{i}}$. 
+  We know $\closed{\omega_n}{\domain{\omega_n} \cup \setof{b,c}}$. 
+
+  So $\closed{\phi_n \otimes \sigma_n \otimes \omega_n}{\domain{\phi_n \otimes \sigma_n \otimes \omega_n} \cup \setof{i, b, c}}$ .
+
+  But $b \in \domain{\phi_n}$ and $c \in \domain{\sigma_n}$, so 
+   $\closed{\phi_n \otimes \sigma_n \otimes \omega_n}{\domain{\phi_n \otimes \sigma_n \otimes \omega_n} \cup \setof{i}}$. 
+
+\item We want to show that $o \in \domain{\omega_n}$. This is immediate. 
+\end{itemize}
+
+\begin{tabbedproof}
+\oo Assume we have $\theta, \theta', n$, and $u$. \\
+\oo Assume that either $\ready{\theta}{i}{v_n}$ and $\theta = \theta'$ and $u = \emptyset$,  \\
+\oo or $\unready{\theta}{i} \land i \in u$ \\
+\oo Assume that $\closed{\theta'}{\domain{\theta'}}$ \\
+\oo Assume that $\ready{\theta'}{i}{v_n}$ and $\closed{\theta'}{\domain{\theta'}}$ \\
+\oo Assume for all $\psi$, we have \\
+\ox  $\mspec{G(\theta \otimes \psi)}{\readcell i}{a}{a = ((f\;v)_n, \setof{c}) 
+      \land G(\theta' \otimes R(u,\psi)) }$ \\
+\oo Since $\mathit{Transduce}(v, i, \phi, b, f\;v)$, we can conclude that \\
+\oo there is a $u'$ such that $\setof{b} \subseteq u' \subseteq \domain{\phi_n}$, \\
+\oo $\forall \psi.\;\mspec{G(\theta \otimes R(\setof{i},\phi_n) \otimes \psi)}{\readcell b}{a}{a = ((f\;v)_n, \setof{b}) \land G(\theta' \otimes \phi_{n+1} \otimes R(u \cup u', \psi))}$ \\
+\oo Now, note that $\ready{\theta'}{i}{v_n}$, so by rule \textsc{AReady} we can conclude that \\
+\oo $\forall \psi.\;\mspec{G(\theta' \otimes \psi)}{\readcell i}{a}{a = (v_n, \setof{i}) \land G(\theta' \otimes \psi)}$ \\
+\oo So from $\mathit{Transduce}(v, i, \sigma, c, f\;v)$, we can conclude that\\
+\oo there is a $u''$ such that $\setof{c} \subseteq u'' \subseteq \domain{\sigma_n}$ and \\
+\oo $\forall \psi.\;\mspec{G(\theta' \otimes R(\setof{i},\sigma_n) \otimes \psi)}{\readcell c}{a}{a = ((g\;v)_n, \setof{c}) \land G(\theta' \otimes \phi_{n+1} \otimes R(u'', \psi))}$ \\
+\oo Now let $u''' = u' \cup u'' \cup \setof{o}$ \\
+\oo So we want to show that \\
+\oo $\forall \psi.\;$\=$\left<G(\theta \otimes R(\setof{i},\phi_n \otimes \sigma_n \otimes \omega_n) \otimes \psi)\right>$ \\
+\oo \> ${\readcell c}$ \\
+\oo \> $\left<{a.\;a = ((\mathit{par}\;f\;g\;v)_n, \setof{c}) \land G(\theta' \otimes \phi_{n+1} \otimes \sigma_{n+1} \otimes \omega_{n+1} \otimes R(u'', \psi))}\right>$ \\
+\oo Since $c$ is unready in the precondition, we need to use the \textsc{AUnready} rule. \\
+\oo So consider the expression $e$, in a state \\
+\oo $G(\theta \otimes R(\setof{i},\phi_n \otimes \sigma_n) \otimes \psi)$ \\
+\oo Now, to use the \textsc{ABind} rule, consider  $\readcell b$. By hypothesis, we end up in a state \\
+\oo $G(\theta' \otimes \phi_{n+1} \otimes R(u' \cup \setof{i},\sigma_n) \otimes R(u', \psi)) \land (x,r_1) = ((f\;v)_n, \setof{b})$ \\
+\oo Since the domains of $\phi$ and $\sigma$ are disjoint, this is equivalent to (pulling out $(x,r_1) = ((f\;v)_n, \setof{b})$) \\
+\oo Also, since $i \in u'$, \\
+\oo $G(\theta' \otimes \phi_{n+1} \otimes R(\setof{i},\sigma_n) \otimes R(u', \psi))$ \\
+\oo Now, using the \textsc{ABind} rule again, consider $\readcell b$. By hypothesis, we end up in a state \\
+\oo $G(\theta' \otimes R(u'',\phi_{n+1}) \otimes \sigma_{n+1} \otimes R(u' \cup u'', \psi)) \land (y,r_2) = ((g\;v)_n, \setof{b, c})$ \\
+\oo Since the domains of $\phi$ and $\sigma$ are disjoint, this is equivalent to (pulling out $(y,r_2) = ((g\;v)_n, \setof{b, c})$) \\
+\oo $G(\theta' \otimes \phi_{n+1} \otimes \sigma_{n+1} \otimes R(u' \cup u'', \psi)) \land (y, r_2) = ((g\;v)_n, \setof{b,c})$ \\
+\oo Now, by the \textsc{AReturn} rule and the definition of $\mathit{par}$, we get \\
+\oo $G(\theta' \otimes \phi_{n+1} \otimes \sigma_{n+1} \otimes R(u' \cup u'', \psi)) \land a = ((\mathit{par}\;f\;g\;v)_n, \setof{b,c})$ \\
+\oo So the final state is \\
+\oo $G(R(\setof{c}, \theta' \otimes \phi_{n+1} \otimes \sigma_{n+1}) \otimes \omega_{n+1} \otimes R(\setof{c} \cup u' \cup u'', \psi)) \land a = ((\mathit{par}\;f\;g\;v)_n, \setof{c})$ \\
+\oo Since $c$ is not in the domain of $\theta', \phi_{n+1},$ or $\sigma_{n+1}$, and these are all suitably closed\\
+\oo $G(\theta' \otimes \phi_{n+1} \otimes \sigma_{n+1} \otimes \omega_{n+1} \otimes R(u''', \psi)) \land a = ((\mathit{par}\;f\;g\;v)_n, \setof{c})$ \\
+\end{tabbedproof}
+\end{proof}
+
+\subsubsection{Correctness of $\mathsf{switch}$}
+
+\begin{lemma}{(The $\mathsf{par}$ network)}
+If it is the case that for all $v$, $\mathit{Transduce}(v, i, \phi, b,
+f\;v)$ holds, and that for all $v$,
+$\mathit{Transduce}(\mathit{drop}\;k\;v, i, \sigma, c, g\;v)$ holds,
+then it is the case that $\mathit{Transduce}(v, i, \omega, o,
+\mathit{switch}\;k\;f\;g\;v)$ holds, where
+
+\begin{itemize}
+\item $\omega = \semfun{n}{\left\{\begin{array}{ll}
+                                    \localref{r}{n} \otimes \phi_n \otimes R(\setof{i}, \sigma_0) \otimes \delta_n 
+                                    & \mbox{if } n < k \\
+                                    \localref{r}{n} \otimes R(\setof{i}, \phi_k) \otimes \sigma_{n-k} \otimes \delta_n 
+                                    & \mbox{otherwise} \\
+                                   \end{array}\right.}$
+\item $\delta_n = \left\{\begin{array}{ll}
+                          \cellpos{o}{e}{(\mathit{switch}\;f\;g\;v)_n}{\setof{b}} & \mbox{if } n < k\\
+                          \cellpos{o}{e}{(\mathit{switch}\;f\;g\;v)_n}{\setof{c}} & \mbox{otherwise} \\
+                         \end{array}
+                 \right.$
+\item $e = \bind (\getref r)\; (\semfun{n}{\bind (\setref r\;(n+1))\; (\semfun{\unit}{\IfThenElse{n < k}{\readcell b}{\readcell c}})})$
+           
+
+\end{itemize}
+\end{lemma}
+
+\begin{proof}
+\begin{itemize}
+\item First, we need to show that $\unready{\theta}{i}$ implies $\unready{\theta \otimes \omega_n}{o}$. 
+
+  \begin{tabbedproof}
+    \oo To prove this, assume $\unready{\theta}{i}$ and consider whether $n < k$:\\
+    \oo If $n < k$:\\
+    \ooo Then $\omega_n = \localref{r}{n} \otimes \phi_n \otimes R(\setof{i}, \sigma_0) \otimes \delta_n$ \\
+    \ooo So we know that $\unready{\theta \otimes \phi_n}{b}$ holds \\
+    \ooo So we know that $\unready{\theta \otimes \omega_n}{b}$ holds \\
+    \ooo Since $\delta_n = \cellpos{o}{e}{(\mathit{switch}\;f\;g\;v)_n}{\setof{b}}$, we can see that \\
+    \ooo $\unready{\theta \otimes \omega_n}{b}$ \\
+    \oo If $n \geq k$: \\
+    \ooo Then $\omega_n = \localref{r}{n} \otimes R(\setof{i}, \phi_k) \otimes \sigma_{n-k} \otimes \delta_n$ \\
+    \ooo So we know that $\unready{\theta \otimes \sigma_{n-k}}{c}$ holds \\
+    \ooo So we know that $\unready{\theta \otimes \omega_n}{c}$ holds \\
+    \ooo Since $\delta_n = \cellpos{o}{e}{(\mathit{switch}\;f\;g\;v)_n}{\setof{c}}$, we can see that \\
+    \ooo $\unready{\theta \otimes \omega_n}{c}$ \\
+  \end{tabbedproof}
+
+\item We want to show that $\ready{\theta}{i}{v_n}$ implies $\ready{\theta \otimes \omega_{n+1}}{o}{(\mathit{par}\;f\;g\;v)_n}$. 
+
+  \begin{tabbedproof}
+    \oo To prove this, assume $\ready{\theta}{i}{v_n}$ and consider whether $n < k$:\\
+    \oo If $n < k$:\\
+    \ooo Then $\omega_n = \localref{r}{n} \otimes \phi_n \otimes R(\setof{i}, \sigma_0) \otimes \delta_n$ \\
+    \ooo So we know that $\ready{\theta \otimes \phi_n}{b}{(f\;v)_n}$ holds \\
+    \ooo So we know that $\ready{\theta \otimes \omega_n}{b}{(f\;v)_n}$ holds \\
+    \ooo Since $\delta_n = \cellpos{o}{e}{(\mathit{switch}\;f\;g\;v)_n}{\setof{b}}$, we can see that \\
+    \ooo $\ready{\theta \otimes \omega_n}{b}{(\mathit{switch}\;f\;g\;v)_n}$ \\
+    \oo If $n \geq k$: \\
+    \ooo Then $\omega_n = \localref{r}{n} \otimes R(\setof{i}, \phi_k) \otimes \sigma_{n-k} \otimes \delta_n$ \\
+    \ooo So we know that $\ready{\theta}{i}{(\mathit{drop}\;k\;v)_{n-k}}$ \\
+    \ooo So we know that $\ready{\theta \otimes \sigma_{n-k}}{c}{(g\;v)_{n-k}}$ holds \\
+    \ooo So we know that $\ready{\theta \otimes \omega_n}{c}{(g\;v)_{n-k}}$ holds \\
+    \ooo Since $\delta_n = \cellpos{o}{e}{(\mathit{switch}\;f\;g\;v)_n}{\setof{c}}$, we can see that \\
+    \ooo $\ready{\theta \otimes \omega_n}{b}{(\mathit{switch}\;f\;g\;v)_n}$ \\
+  \end{tabbedproof}
+
+\item Now we want to show that $\closed{\omega_n}{\domain{\omega_n} \cup \setof{i}}$. 
+
+  \begin{tabbedproof}
+    \oo Suppose $n < k$:\\
+    \ooo Then $\omega_n = \localref{r}{n} \otimes \phi_n \otimes R(\setof{i}, \sigma_0) \otimes \delta_n$ \\
+    \ooo So $\closed{\phi_n}{\domain{\phi_n} \cup \setof{i}}$ and \\
+    \ooox $\closed{\sigma_0}{\domain{\sigma_n} \cup \setof{i}}$ so $\closed{R(\setof{i}, \sigma_0)}{\domain{R(\setof{i}, \sigma_n)} \cup \setof{i}}$ and \\
+    \ooox $\closed{\delta_n}{\setof{b}}$ \\
+    \ooo Since $b \in \domain{\phi_n}$, it follows that $\closed{\omega_n}{\domain{\omega_n} \cup \setof{i}}$ \\
+    \oo Suppose $n \geq k$:\\
+    \ooo Then $\omega_n = \localref{r}{n} \otimes R(\setof{i}, \phi_k) \otimes \sigma_{n-k} \otimes \delta_n$ \\
+    \ooo So $\closed{\sigma_{n-k}}{\domain{\sigma_{n-k} \cup \setof{i}}}$ and \\
+    \ooox $\closed{\phi_k}{\domain{\phi_k} \cup \setof{i}}$ so $\closed{R(\setof{i}, \phi_k)}{\domain{R(\setof{i}, \phi_k)} \cup \setof{i}}$ and \\
+    \ooox $\closed{\delta_n}{\setof{c}}$ \\
+    \ooo Since $c \in \domain{\sigma_{n-k}}$, it follows that $\closed{\omega_n}{\domain{\omega_n} \cup \setof{i}}$  \end{tabbedproof}
+
+\item Next, we want to show that $o \in \domain{\omega_n}$, which is immediate. 
+\end{itemize}
+
+Now we will show the implication over triples. 
+\begin{tabbedproof}
+\oo Assume we have $\theta, \theta', n$, and $u$. \\
+\oo Assume that either $\ready{\theta}{i}{v_n}$ and $\theta = \theta'$ and $u = \emptyset$,  \\
+\oo or $\unready{\theta}{i} \land i \in u$ \\
+\oo Assume that $\closed{\theta'}{\domain{\theta'}}$ \\
+\oo Assume that $\ready{\theta'}{i}{v_n}$ and $\closed{\theta'}{\domain{\theta'}}$ \\
+\oo Assume for all $\psi$, we have \\
+\ox  $\mspec{G(\theta \otimes \psi)}{\readcell i}{a}{a = ((f\;v)_n, \setof{c}) 
+      \land G(\theta' \otimes R(u,\psi)) }$ \\
+\oo Now suppose $n < k$: \\
+\ooo In this case, $e$ in $\delta_n$ simplifies to \\
+\oooo $e = \bind (\getref r)\; (\semfun{n}{\bind (\setref r\;(n+1))\; (\semfun{\unit}{\readcell b})})$ \\
+\ooo Now assume we have $\psi$ and note that  \\
+\oooo since we know $\mathit{Transduce}(v, i, \phi, b, (f\;v)_n)$, we can conclude that \\
+\oooo there is a $u'$ such that $\setof{b} \subseteq u' \subseteq \domain{\phi_n}$ such that \\
+\oooo $\left<G(\theta \otimes \localref{r}{n+1} \otimes R(\setof{i}, \phi_n) \otimes R(\setof{i}, \sigma_0) \otimes \psi)\right>$ \\
+\oooo $\readcell b$\\
+\oooo $\left<a.\;G(\theta' \otimes \localref{r}{n+1} \otimes \phi_{n+1} \otimes R(u' \cup \setof{i}, \sigma_0) \otimes R(u', \psi))
+      \land a = ((f\;v)_n, \setof{b})\right>$ \\
+\ooo Choose a witness to the existential equal to $u' \cup \setof{o}$ and consider the prestate \\
+\ooo $G(\theta \otimes R(\setof{i}, \omega_n) \otimes \psi)$ \\
+\ooo We know $R(\setof{i}, \omega_n) = \theta \otimes \localref{r}{n} \otimes R(\setof{i}, \phi_n) \otimes R(\setof{i}, \sigma_0) \otimes \delta_n$ \\
+\ooo Now, we know that $\unready{\theta \otimes \omega_n \otimes \psi}{o}$, since $\delta_n$'s read set \\
+\ooo contains $b$, which is unready \\
+\ooo So to evaluate $\readcell o$, we need to use the \textsc{AUnready} rule \\
+\ooo So we need to evaluate $e$ in the state \\
+\ooo $G(\theta \otimes \localref{r}{n} \otimes R(\setof{i}, \phi_n) \otimes R(\setof{i}, \sigma_0) \otimes \psi)$ \\
+\ooo We begin with the \textsc{ABind} rule, which asks us to evaluate $\getref r$, which gives us \\
+\ooo $G(\theta \otimes \localref{r}{n} \otimes R(\setof{i}, \phi_n) \otimes R(\setof{i}, \sigma_0) \otimes \psi) \land (n_1,r_1) = (n,\emptyset)$ \\
+\ooo So now we need to evaluate $\bind (\setref r\;(n+1))\; (\semfun{\unit}{\readcell b})$ in \\
+\ooo $G(\theta \otimes \localref{r}{n+1} \otimes R(\setof{i}, \phi_n) \otimes R(\setof{i}, \sigma_0) \otimes \psi)$ \\
+\ooo Using the \textsc{ABind} rule, we need to evaluate $\setref r\;(n+1)$, which yields  \\
+\ooo $G(\theta \otimes \localref{r}{n+1} \otimes R(\setof{i}, \phi_n) \otimes R(\setof{i}, \sigma_0) \otimes \psi)$ \\
+\ooo with the need to consider $\readcell b$ \\
+\ooo Using the triple we derived above, we get \\
+\ooo $G(\theta' \otimes \localref{r}{n+1} \otimes \phi_{n+1} \otimes R(u' \cup \setof{i}, \sigma_0) \otimes R(u', \psi))
+      \land a = ((f\;v)_n, \setof{b})$ \\
+\ooo So then finishing the \textsc{AUnready} rule, we have a state \\
+\ooo $G(R(\setof{o}, \theta' \otimes \localref{r}{n+1} \otimes \phi_{n+1} \otimes R(u' \cup \setof{i}, \sigma_0) \otimes R(u', \psi)) \otimes \delta_{n+1}) \land a = ((f\;v)_n, \setof{o})$\\
+\ooo Simplifying using the closure properties, we get \\
+\ooo $G(\theta' \otimes \localref{r}{n+1} \otimes \phi_{n+1} \otimes R(u' \cup \setof{i}, \sigma_0) \otimes \delta_{n+1} \otimes R(u' \cup \setof{o}, \psi))) \land a = ((f\;v)_n, \setof{o})$\\
+\ooo which is \\
+\ooo $G(\theta' \otimes \localref{r}{n+1} \otimes \phi_{n+1} \otimes R(u' \cup \setof{i}, \sigma_0) \otimes \delta_{n+1} \otimes R(u' \cup \setof{o}, \psi))) \land a = ((f\;v)_n, \setof{o})$\\
+\ooo Since $(f\;v)_n = (\mathit{switch}\;k\;f\;g\;v)_n$, we have the conclusion \\
+\oo Now suppose $n \geq k$: \\
+\ooo In this case, $e$ in $\delta_n$ simplifies to \\
+\oooo $e = \bind (\getref r)\; (\semfun{n}{\bind (\setref r\;(n+1))\; (\semfun{\unit}{\readcell c})})$ \\
+\ooo Now assume we have $\psi$ and note that  \\
+\oooo since we know $\mathit{Transduce}(\mathit{drop}\;k\;v, i, \sigma, c, (g\;(\mathit{drop}\;k\;v))_n)$, we can conclude that \\
+\oooo there is a $u'$ such that $\setof{c} \subseteq u' \subseteq \domain{\sigma_{n-k}}$ such that \\
+\oooo $\left<G(\theta \otimes \localref{r}{n+1} \otimes R(\setof{i}, \phi_k) \otimes R(\setof{i}, \sigma_{n-k}) \otimes \psi)\right>$ \\
+\oooo $\readcell c$\\
+\oooo $\left<a.\;G(\theta \otimes \localref{r}{n+1} \otimes R(\setof{i}, \phi_k) \otimes \sigma_{n-k+1} \otimes R(u', \psi))
+      \land a = ((g\;(\mathit{drop}\;k\;v))_{n-k}, \setof{b})\right>$ \\
+\ooo making use of the observation that $(\mathit{drop}\;k\;v)_{n-k} = v_n$ \\
+\ooo Choose a witness to the existential equal to $u' \cup \setof{o}$ and consider the prestate \\
+\ooo $G(\theta \otimes R(\setof{i}, \omega_n) \otimes \psi)$ \\
+\ooo We know $R(\setof{i}, \omega_n) = \theta \otimes \localref{r}{n} \otimes R(\setof{i}, \phi_k) \otimes R(\setof{i}, \sigma_{n-k}) \otimes \delta_n$ \\
+\ooo Now, we know that $\unready{\theta \otimes \omega_n \otimes \psi}{o}$, since $\delta_n$'s read set \\
+\ooo contains $c$, which is unready \\
+\ooo So to evaluate $\readcell o$, we need to use the \textsc{AUnready} rule \\
+\ooo So we need to evaluate $e$ in the state \\
+\ooo $G(\theta \otimes \localref{r}{n} \otimes R(\setof{i}, \phi_k) \otimes R(\setof{i}, \sigma_{n-k}) \otimes \psi)$ \\
+\ooo We begin with the \textsc{ABind} rule, which asks us to evaluate $\getref r$, which gives us \\
+\ooo $G(\theta \otimes \localref{r}{n} \otimes R(\setof{i}, \phi_k) \otimes R(\setof{i}, \sigma_{n-k}) \otimes \psi) \land (n_1,r_1) = (n,\emptyset)$ \\
+\ooo So now we need to evaluate $\bind (\setref r\;(n+1))\; (\semfun{\unit}{\readcell c})$ in \\
+\ooo $G(\theta \otimes \localref{r}{n+1} \otimes R(\setof{i}, \phi_k) \otimes R(\setof{i}, \sigma_{n-k}) \otimes \psi)$ \\
+\ooo Using the \textsc{ABind} rule, we need to evaluate $\setref r\;(n+1)$, which yields  \\
+\ooo $G(\theta \otimes \localref{r}{n+1} \otimes R(\setof{i}, \phi_k) \otimes R(\setof{i}, \sigma_{n-k}) \otimes \psi)$ \\
+\ooo with the need to consider $\readcell c$ \\
+\ooo Using the triple we derived above, we get \\
+\ooo $G(\theta' \otimes \localref{r}{n+1} \otimes R(\setof{i}, \phi_k) \otimes \sigma_{n-k+1} \otimes R(u', \psi))
+      \land a = ((g\;(\mathit{drop}\;k\;v))_{n-k}, \setof{c})$ \\
+\ooo Here, we have used the fact that $\phi_k$ is closed with respect to $u'$ to simplify the state\\
+\ooo Hiding the equality, and then finishing the \textsc{AUnready} rule, we have a state \\
+\ooo $G(R(\setof{o}, \theta' \otimes \localref{r}{n+1} \otimes R(\setof{i}, \phi_k) \otimes R(u' \cup \setof{i}, \sigma_0) \otimes R(u', \psi)) \otimes \delta_{n+1})$\\
+\ooo Simplifying using the closure properties, we get \\
+\ooo $G(\theta' \otimes \localref{r}{n+1} \otimes R(\setof{i}, \phi_k) \otimes R(u' \cup \setof{i}, \sigma_0) \otimes \delta_{n+1} \otimes R(u' \cup \setof{o}, \psi))$\\
+\ooo which is \\
+\ooo $G(\theta' \otimes \localref{r}{n+1} \otimes R(\setof{i}, \phi_k) \otimes R(u' \cup \setof{i}, \sigma_0) \otimes \delta_{n+1} \otimes R(u' \cup \setof{o}, \psi)))$\\
+\ooo Note that $(\mathit{switch}\;k\;f\;g\;v)_n = (g\;(\mathit{drop}\;k\;v))_{n-k}$, so restoring the equality \\
+\oox we get our goal
+\end{tabbedproof}
+\end{proof}
+
+\subsubsection{Correctness of $\mathsf{loop}$}
+
+\begin{lemma}
+  Suppose that for all $xys$, we have $\mathit{Transduce}(xys, s,
+  \phi, t, f\;xys)$. Then it is the case that for all $ys$ and $x$ we
+  have $\mathit{Transduce}(ys, i, \sigma, o, \mathit{loop}\;x\;f\;ys)$, where
+
+  \begin{itemize}
+  \item $\sigma_n = \localref{r}{(x \cdot \mathit{map}\;\pi_1\;(\mathit{cycle}\;x\;f\;ys))_n} \otimes
+                      \iota_n \otimes \phi_n \otimes \delta_n$ 
+  \item $\iota_n = \cellpos{s}{e_1}{ws_n}{\setof{i}}$ where $ws_{n+1} = ((x \cdot \mathit{map}\;\pi_1\;(\mathit{cycle}\;x\;f\;ys))_n, ys_n)$ and $ws_0$ is some dummy value\\
+  \item $e_1 = \bind (\readcell i)\; \semfun{y}{\bind (\getref r)\; \semfun{x}{\return (x,y)}}$ \\
+  \item $\delta_n = \cellpos{t}{e_2}{(z\cdot (\mathit{loop}\;x\;f\;ys))_n}{\setof{v}}$ for some dummy $z$ \\ 
+  \item $e_2 = \bind (\readcell t)\; (\semfun{(x,z)}{
+               \bind (\setref r\;x)\; (\semfun{\unit}{\return z}}))$ \\
+  \end{itemize}
+\end{lemma}
+
+\begin{proof}
+  \begin{itemize}
+  \item 
+  \item 
+  \item 
+  \item 
+  \item 
+  \item 
+  \end{itemize}
+
+Now, we'll prove the entailment of implications. 
+\begin{tabbedproof}
+\oo Assume we have $\theta, \theta', n$, and $u$. \\
+\oo Assume that either $\ready{\theta}{i}{y_n}$ and $\theta = \theta'$ and $u = \emptyset$,  \\
+\oo or $\unready{\theta}{i} \land i \in u$ \\
+\oo Assume that $\closed{\theta'}{\domain{\theta'}}$ \\
+\oo Assume that $\ready{\theta'}{i}{y_n}$ and $\closed{\theta'}{\domain{\theta'}}$ \\
+\oo Assume for all $\psi$, we have \\
+\ox  $\mspec{G(\theta \otimes \psi)}{\readcell i}{a}{a = ((f\;v)_n, \setof{c}) 
+      \land G(\theta' \otimes R(u,\psi)) }$ \\
+\oo Now, we'll consider the effect of reading $s$ \\
+\ooo We know that $\unready{\theta \otimes \localref{r}{(x \cdot \mathit{map}\;\pi_1\;(\mathit{cycle}\;x\;f\;ys))_n} \otimes R(i, \iota_n)}{s}$ \\
+\ooo Using the \textsc{AUnready} rule, we can derive the following triple: \\
+\ooo $\left<G(\theta \otimes \localref{r}{(x \cdot \mathit{map}\;\pi_1\;(\mathit{cycle}\;x\;f\;ys))_n} \otimes R(\setof{i}, \iota_n) \psi)\right>$ \\
+\ooo $\readcell s$ \\
+\ooo $\left<a.\; G(\theta' \otimes \localref{r}{(x \cdot \mathit{map}\;\pi_1\;(\mathit{cycle}\;x\;f\;ys))_n} \otimes \iota_{n+1} \otimes R(u \cup {s},\psi))\right.$ \\
+\ooo $\left.\;\;\land\;a = ((\pi_1(\mathit{cycle}\;x\;f\;ys)_n, y_n), \setof{s}) \right>$ \\
+\ooo using the fact that $s \not\in \domain{\theta}$ and its closure \\
+\oo Furthermore, it's clear that $u \cup \setof{s} \subseteq \domain{\theta \otimes \localref{r}{\ldots} \otimes R(\setof{i}, \iota_n)}$\\
+\oo and that $\unready{\theta \otimes \localref{r}{\ldots} \otimes R(\setof{i}, \iota_n)}{s}$ \\
+\oo and that $s \in \domain{\theta \otimes \localref{r}{\ldots} \otimes R(\setof{i}, \iota_n)}$\\
+\oo So we can then use $\mathit{Transduce}(xys, s, \phi, t, f\;xys)$ to conclude that for all $\psi$\\
+\ooo $\left<G(\theta \otimes \localref{r}{(x \cdot \mathit{map}\;\pi_1\;(\mathit{cycle}\;x\;f\;ys))_n} \otimes R(\setof{i}, \iota_n \otimes \phi_n) \otimes \psi)\right>$\\
+\ooo $\readcell t$ \\
+\ooo $\left<G(\theta \otimes \localref{r}{(x \cdot \mathit{map}\;\pi_1\;(\mathit{cycle}\;x\;f\;ys))_n} \otimes \iota_{n+1} \otimes \phi_{n+1} \otimes R(u \cup \setof{s} \cup u', \psi))\right.$\\
+\ooo $\;\;\land\;\left.a = ((f\;(\mathit{zip}\;(x \cdot \mathit{map}\;\pi_1\;(\mathit{cycle}\;x\;f\;ys))\;y))_n, \setof{t})\right>$\\
+\ooo By the loop unrolling lemma, this postcondition is equivalent to  \\
+\ooo $\left<G(\theta \otimes \iota_{n+1} \otimes \phi_{n+1} \otimes R(u \cup \setof{s} \cup u', \psi))
+            \land a = ((\mathit{cycle}\;x\;f\;ys)_n, \setof{t})\right>$\\
+\oo Take the witness to be $u' \cup \setof{s, t}$ \\
+\oo Now, assume we have $\psi$, and a prestate \\
+\oo $G(\localref{r}{\pi_1(\mathit{cycle}\;x\;f\;ys)_n} \otimes R(\setof{i}, \iota_n \otimes \phi_n \otimes \delta_n) \otimes \psi)$ \\
+\oo Since $\unready{\localref{r}{(x \cdot \mathit{map}\;\pi_1\;(\mathit{cycle}\;x\;f\;ys))_n} \otimes \theta \otimes R(\setof{i}, \iota_n)}{s}$, we have \\
+\oox $\unready{\localref{r}{(x \cdot \mathit{map}\;\pi_1\;(\mathit{cycle}\;x\;f\;ys))_n} \otimes \theta \otimes R(\setof{i}, \iota_n \otimes \phi_n)}{t}$, so we have \\
+\oox $\unready{\localref{r}{(x \cdot \mathit{map}\;\pi_1\;(\mathit{cycle}\;x\;f\;ys))_n} \otimes \theta \otimes R(\setof{i}, \iota_n \otimes \phi_n \otimes \delta_n)}{o}$, so we have \\
+\oox $\unready{\localref{r}{(x \cdot \mathit{map}\;\pi_1\;(\mathit{cycle}\;x\;f\;ys))_n} \otimes \theta \otimes R(\setof{i}, \iota_n \otimes \phi_n \otimes \delta_n) \otimes \psi}{o}$ \\
+\oo So to read $o$, we should use the \textsc{AUnready} rule. So we want to evaluate $e_2$ in a state\\
+\oo $G(\localref{r}{(x \cdot \mathit{map}\;\pi_1\;(\mathit{cycle}\;x\;f\;ys))_n} \otimes R(\setof{i}, \iota_n \otimes \phi_n) \otimes \psi)$\\
+\oo Now by \textsc{ABind} we need to consider $\readcell t$, and from our derivation above \\
+\oo $G(\localref{r}{(x \cdot \mathit{map}\;\pi_1\;(\mathit{cycle}\;x\;f\;ys))_n} \otimes \iota_{n+1} \otimes \phi_{n+1} \otimes R(u \cup u' \cup \setof{s}, \psi))$\\
+\oo and furthermore the return value is $((\mathit{loop}\;x\;f\;ys)_n, \setof{t})$ \\
+\oo Calling $(x, z) = (\mathit{cycle}\;x\;f\;ys)_n$, we need to consider $\bind (\setref r\;x)\; (\semfun{\unit}{\return z})$ \\
+\oo Using the \textsc{ABind} rule and first the \textsc{ASetRef} rule, we see that \\
+\oo $G(\localref{r}{\pi_1\;(\mathit{cycle}\;x\;f\;ys)_n} \otimes \iota_{n+1} \otimes \phi_{n+1} \otimes R(u \cup u' \cup \setof{s}, \psi))$\\
+\oo By equational reasoning, this is equivalent to \\
+\oo $G(\localref{r}{(x \cdot \mathit{map}\;\pi_1\;(\mathit{cycle}\;x\;f\;ys))_{n+1}} \otimes \iota_{n+1} \otimes \phi_{n+1} \otimes R(u \cup u' \cup \setof{s}, \psi))$\\
+\oo Finishing with $\return z$, we get the poststate: \\
+\oo $G(R(\setof{t}, \localref{r}{(x \cdot \mathit{map}\;\pi_1\;(\mathit{cycle}\;x\;f\;ys))_{n+1}} \otimes \iota_{n+1} \otimes \phi_{n+1} \otimes R(u \cup u' \cup \setof{s}, \psi)) \otimes \delta_{n+1})$\\
+\oox $\land\; a = (z, \setof{t})$\\
+\oo Note $z = \pi_2\;(\mathit{cycle}\;x\;f\;ys)_n = (\mathit{map}\;\pi_2\;(\mathit{cycle}\;x\;f\;ys))_n = (\mathit{loop}\;x\;f\;ys)_n$ \\
+\oo Furthermore, the poststate simplifies to \\
+\oo $G(\localref{r}{(x \cdot \mathit{map}\;\pi_1\;(\mathit{cycle}\;x\;f\;ys))_{n+1}} \otimes \iota_{n+1} \otimes \phi_{n+1} \otimes R(u \cup u' \cup \setof{s,t}, \psi)) \otimes \delta_{n+1})$ \\
+\oox $\land\; a = (z, \setof{t})$\\
+\oo using the closure properties of $\phi, \theta, \delta,$ and $\iota$, which is what we want.
+\end{tabbedproof}
+\end{proof}
 
 \section{Future Work}
 

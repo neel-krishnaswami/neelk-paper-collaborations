@@ -1944,13 +1944,562 @@ Assume $D_0 :: \judgeA{p}{\omega}$
 \end{proof}
 
 
+\begin{lemma}{(Syntactic Substitution for Terms and Specifications)}
+Suppose that $D_0 :: \judgeA{p}{\omega}$. Then
+\begin{enumerate}
+\item If $D :: \judgeA[{\Delta, u:\omega, \Delta'}]{q}{\omega'}$, 
+         and either $u$ does not occur in a type or program expression in $\Delta'$, $q$ or $\omega'$,
+                or $\omega$ is a sort $\kappa$ and $p = \tau$,
+                or $\omega$ is a sort $A$ and $p = e$, 
+         then 
+         $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{[p/u]\omega'}$. 
+\item If $D :: \judgeS[{\Delta, u:\omega, \Delta'}]{S}$, 
+         and either $u$ does not occur in a type or program expression in $\Delta'$, $q$, or $\omega'$,
+                or $\omega$ is a sort $\kappa$ and $p = \tau$,
+                or $\omega$ is a sort $A$ and $p = e$, 
+         then 
+         $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u]S}$. 
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+  Before we begin this proof, we make a minor observation. Namely,
+  suppose $u$ does not occur in a type or program expression in
+  $\Delta'$, $q$, or $\omega'$, or $\omega$ is a sort $\kappa$ and $p
+  = \tau$, or $\omega$ is a sort $A$ and $p = e$. Then, it follows
+  that either $u$ does not appear in a sort in $\Delta'$ or $\omega'$,
+  or $\omega = \kappa$ and $p = \tau$.  This is because if $u$ is a
+  variable of a sort $C$, then it won't appear in any sorts (which can
+  only depend on type variables of some sort $\kappa$). This means
+  that the three-way hypothesis in this lemma is stronger than the
+  substitution theorem for contexts and sorts needs. 
 
+  Now, assume $D_0 :: \judgeA{p}{\omega}$.
+  \begin{enumerate}
+  \item We want to show if $D :: \judgeA[{\Delta, u:\omega, \Delta'}]{q}{\omega'}$, then 
+         $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{[p/u]\omega'}$.
+    \begin{itemize}
+    \item Case \textsc{TermType}: 
+      \begin{tabbedproof}
+        \oo Assume $D :: \judgeA[{\Delta, u:\omega, \Delta'}]{\tau}{\kappa}$, 
+            where $q = \tau$ and $\omega' = \kappa$ \\
+        \oo Assume $u$ does not occur in a type or program expression in $\Delta'$, $q$ or $\omega'$, \\
+        \ox or $\omega$ is a sort $\kappa$ and $p = \tau$, or $\omega$ is a sort $A$ and $p = e$ \\
+        \ooo By inversion on $D$, we have $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'}$ \\
+        \oox and $D_2 :: \judgeWK[\restrictkind{\Delta, u:\omega, \Delta'}]
+                                 {\tau}{\kappa}$ \\
+        \ooo By substitution on $D_1$, we have $D'_1 :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
+        \ooo Case analysis on $\omega$:\\
+        \oooo If $\omega = \kappa'$: \\
+        \ooooo Then we have either $D_0 :: \judgeA[\Delta]{\tau'}{\kappa'}$, with $p = \tau'$, or\\
+        \oooox $u$ does not occur free in $\tau$ \\
+        \ooooo If $D_0 :: \judgeA[\Delta]{\tau'}{\kappa'}$, with $p = \tau'$: \\
+        \oooooo By inversion on $D_0$, we have 
+                $D'_0 :: \judgeWK[\restrictkind{\Delta}]{\tau'}{\kappa'}$ \\
+        \oooooo Then $\restrictkind{\Delta, u:\kappa', \Delta'} = 
+                       \restrictkind{\Delta}, u:\kappa, \restrictkind{\Delta'}$ \\
+        \oooooo Thus $D_2 :: \judgeWK[\restrictkind{\Delta}, u:\kappa', \restrictkind{\Delta'}]
+                                   {\tau}{\kappa}$ \\
+        \oooooo By type substitution, 
+                 $D'_2 :: \judgeWK[\restrictkind{\Delta}, \restrictkind{\Delta'}]
+                                  {[\tau'/u]\tau}{\kappa}$ \\
+        \oooooo Since $\restrictkind{\Delta'}$ has no free variables in kinds, 
+                 $\restrictkind{\Delta'} = \restrictkind{[\tau'/u]\Delta'}$ \\
+        \oooooo Hence $D'_2 :: \judgeWK[\restrictkind{\Delta}, \restrictkind{[\tau'/u]\Delta'}]
+                                  {[\tau'/u]\tau}{\kappa}$ \\
+        \oooooo Hence $D'_2 :: \judgeWK[\restrictkind{\Delta}, \restrictkind{[p/u]\Delta'}]
+                                  {[p/u]\tau}{\kappa}$ \\
+        \oooooo By rule \textsc{TermType} on $D'_1, D'_2$, we have 
+                  $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]\tau}{\kappa}$  \\
+        \oooooo Since $[p/u]\kappa = \kappa$, we have 
+                  $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]\tau}{[p/u]\kappa}$ \\
+        \ooooo If $u$ does not occur free in $\tau$: \\
+        \oooooo Then $\restrictkind{\Delta, u:\kappa', \Delta'} = 
+                       \restrictkind{\Delta}, u:\kappa, \restrictkind{\Delta'}$ \\
+        \oooooo Thus $D_2 :: \judgeWK[\restrictkind{\Delta}, u:\kappa', \restrictkind{\Delta'}]
+                                   {\tau}{\kappa}$ \\
+        \oooooo Since $u$ does not occur in $\tau$, and kinds have no free variables, \\
+        \ooooox we have $D'_2 :: \judgeWK[\restrictkind{\Delta}, \restrictkind{\Delta'}]{\tau}{\kappa}$ \\
+        \oooooo Since $\restrictkind{\Delta'}$ has no free variables in kinds, 
+                 $\restrictkind{\Delta'} = \restrictkind{[\tau'/u]\Delta'}$ \\
+        \oooooo Hence $D'_2 :: \judgeWK[\restrictkind{\Delta}, \restrictkind{[\tau'/u]\Delta'}]
+                                  {\tau}{\kappa}$ \\
+        \oooooo Since $u$ does not occur in $\tau$, $\tau = [\tau'/u]\tau$ \\
+        \oooooo Hence $D'_2 :: \judgeWK[\restrictkind{\Delta}, \restrictkind{[\tau'/u]\Delta'}]
+                                  {[\tau'/u]\tau}{\kappa}$ \\
+        \oooooo Hence $D'_2 :: \judgeWK[\restrictkind{\Delta}, \restrictkind{[p/u]\Delta'}]
+                                  {[p/u]\tau}{\kappa}$ \\
+        \oooooo By rule \textsc{TermType} on $D'_1, D'_2$, we have 
+                  $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]\tau}{\kappa}$  \\
+        \oooooo Since $[p/u]\kappa = \kappa$, we have 
+                  $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]\tau}{[p/u]\kappa}$ \\
+        \oooo If $\omega \not=\kappa'$: \\
+        \ooooo Then $\restrictkind{\Delta, u:\kappa', \Delta'} = 
+                       \restrictkind{\Delta}, \restrictkind{\Delta'}$ \\
+        \ooooo Then $D_2 :: \judgeWK[\restrictkind{\Delta}, \restrictkind{\Delta'}]
+                                   {\tau}{\kappa}$ \\
+        \ooooo So $u \not \in FV(\tau)$ \\
+        \ooooo Hence $[p/u]\tau = \tau$ \\
+        \ooooo So $D_2 :: \judgeWK[\restrictkind{\Delta}, \restrictkind{\Delta'}]
+                                   {[p/u]\tau}{\kappa}$ \\
+        \ooooo Since $\restrictkind{\Delta'}$ has no free variables in kinds, 
+                 $\restrictkind{\Delta'} = \restrictkind{[\tau'/u]\Delta'}$ \\
+        \ooooo So $D_2 :: \judgeWK[\restrictkind{\Delta}, \restrictkind{[p/u]\Delta'}]
+                                   {[p/u]\tau}{\kappa}$ \\
+        \ooooo Since $[p/u]\kappa = \kappa$,
+               $D_2 :: \judgeWK[\restrictkind{\Delta}, \restrictkind{[p/u]\Delta'}]
+                                   {[p/u]\tau}{[p/u]\kappa}$ \\
+        \ooooo By rule \textsc{TermType} on $D'_1, D_2$, we have 
+                  $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]\tau}{[p/u]\kappa}$  \\
+      \end{tabbedproof}
 
+    \item Case \textsc{TermExpr}:
+      \begin{tabbedproof}
+      \oo Assume $D :: \judgeA[\Delta, u:\omega, \Delta']{e}{A}$, 
+           where $q = e$ and $\omega' = A$ \\
+      \oo Assume $u$ does not occur in a type or program expression in $\Delta'$, $q$ or $\omega'$, \\
+      \ox or $\omega$ is a sort $\kappa$ and $p = \tau$, or $\omega$ is a sort $A$ and $p = e$ \\
+      \ooo By inversion on $D$, we have $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'}$ \\
+      \ooo By inversion on $D$, we have 
+           $D_2 :: \judgeE[\restrictkind{\Delta, u:\omega, \Delta'}]
+                          {\restricttype{\Delta, u:\omega, \Delta'}}{e}{A}$ \\
+      \ooo By substitution on $D_1$, we have $D'_1 :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
+      \ooo Case analyze $\omega$: \\
+      \oooo If $\omega = \kappa$: \\
+      \ooooo So either $u$ does not occur in a type or program expression in $e$, \\
+      \oooox or $p = \tau$ \\
+      \ooooo If $p = \tau:$ \\
+      \oooooo We have $D_0 :: \judgeA{\tau}{\kappa}$ where $p = \tau$ \\
+      \oooooo By inversion on $D_0$, 
+             we have $D'_0 :: \judgeWK[\restrictkind{\Delta}]{\tau}{\kappa}$ \\
+      \oooooo We have $D_2 :: \judgeE[\restrictkind{\Delta, u:\kappa, \Delta'}]
+                                    {\restricttype{\Delta, u:\kappa, \Delta'}}
+                                    {e}{A}$ \\ 
+      \oooooo Note $\restricttype{\Delta, u:\kappa, \Delta'} = \restricttype{\Delta, \Delta'}$ \\
+      \oooooo Therefore $D_2 :: \judgeE[\restrictkind{\Delta, u:\kappa, \Delta'}]
+                                    {\restricttype{\Delta, \Delta'}}
+                                    {e}{A}$ \\ 
+      \oooooo By type substitution, 
+                 $D'_2 :: \judgeE[\restrictkind{\Delta, \Delta'}]
+                                 {\restricttype{[\tau/u]\Delta, [\tau/u]\Delta'}}
+                                 {[\tau/u]e}{[\tau/u]A}$ \\
+      \oooooo Since no kind has free variables,  we have
+                $\restrictkind{\Delta, \Delta'} = \restrictkind{\Delta, [\tau/u]\Delta'}$ \\
+      \oooooo Since $u \not\in FV(\Delta)$, we have
+                $\restricttype{[\tau/u]\Delta, [\tau/u]\Delta'} = 
+                 \restricttype{\Delta, [\tau/u]\Delta'}$ \\
+      \oooooo Therefore 
+               $D'_2 :: \judgeE[\restrictkind{\Delta, [\tau/u]\Delta'}]
+                                 {\restricttype{\Delta, [\tau/u]\Delta'}}
+                                 {[\tau/u]e}{[\tau/u]A}$ \\
+      \oooooo Therefore 
+               $D'_2 :: \judgeE[\restrictkind{\Delta, [p/u]\Delta'}]
+                                 {\restricttype{\Delta, [p/u]\Delta'}}
+                                 {[p/u]e}{[p/u]A}$ \\
+      \ooooo If $u$ does not occur in $e$: \\
+      \oooooo We have $D_2 :: \judgeE[\restrictkind{\Delta, u:\kappa, \Delta'}]
+                                    {\restricttype{\Delta, u:\kappa, \Delta'}}
+                                    {e}{A}$ \\
+      \oooooo Hence we have $D_2 :: \judgeE[\restrictkind{\Delta}, u:\kappa, \restrictkind{\Delta'}]
+                                           {\restricttype{\Delta}, \restricttype{Delta'}}
+                                           {e}{A}$ \\
+      \oooooo Since $u$ does not occur, we can find \\
+      \ooooox $D'_2 :: \judgeE[\restrictkind{\Delta}, \restrictkind{\Delta'}]
+                                           {\restricttype{\Delta}, \Delta''}
+                                           {e}{A}$ \\
+      \ooooox where $\Delta'' \subseteq \restricttype{\Delta'}$ and $u$ does not occur in $\Delta''$\\
+      \oooooo Since no kind has free type variables, $\restrictkind{\Delta'} = \restrictkind{[p/u]\Delta'}$ \\
+      \oooooo Since $u$ does not occur in $\Delta''$, we have $\Delta'' = \restrictkind{[p/u]\Delta''}$ \\
+      \oooooo Since $u$ does not occur in $A$ or $e$, $A = [p/u]A$ and $e = [p/u]e$ \\
+      \oooooo Hence by weakening,  \\ 
+      \ooooox $D''_2 :: \judgeE[\restrictkind{\Delta}, \restrictkind{\Delta'}]
+                                                    {\restricttype{\Delta}, \restricttype{[p/u]\Delta'}}
+                                                    {[p/u]e}{[p/u]A}$ \\
+       
+      \oooo If $\omega = B$: \\
+      \ooooo So either $u$ does not occur in $e$ or $A$, or $p = e'$\\
+      \ooooo Suppose $p = e'$:\\
+      \oooooo We have $D_0 :: \judgeA[\Delta]{e'}{A}$, where $p = e'$ \\
+      \oooooo By inversion on $D_0$, we have 
+               $D'_0 :: \judgeE[\restrictkind{\Delta}]
+                               {\restricttype{\Delta}}{e}{A}$ \\
+      \oooooo By weakening, we have 
+               $D''_0 :: \judgeE[\restrictkind{\Delta, u:B, \Delta'}]
+                               {\restricttype{\Delta}}{e}{A}$ \\
+      \oooooo We also have
+              $D_2 :: \judgeE[\restrictkind{\Delta, u:B, \Delta'}]
+                             {\restrictkind{\Delta, u:B, \Delta'}}
+                             {e}{A}$ \\
+      \oooooo By substitution on $D''_0$ into $D'_2$, we have \\
+      \oooooo \;\;
+              $D'_2 :: \judgeE[\restrictkind{\Delta, u:B, \Delta'}]
+                              {\restricttype{\Delta}, \restricttype{\Delta}}
+                              {[e'/u]e}{A}$ \\
+      \oooooo So $\restrictkind{\Delta, u:B, \Delta'} = \restrictkind{\Delta, \Delta'}$ \\
+      \oooooo Since $u:B$ not free in kinds, 
+             $\restrictkind{\Delta, \Delta'} = \restrictkind{\Delta, [e'/u]\Delta'}$ \\
+      \oooooo Since $u:B$ not free in types, 
+             $\restricttype{\Delta, \Delta'} = \restricttype{\Delta, [e'/u]\Delta'}$ \\
+      \oooooo Since $u:B$ not free in types, 
+             $[e'/u]A = A$ \\
+      \oooooo Therefore 
+               $D'_2 :: \judgeE[\restrictkind{\Delta, [e'/u]\Delta'}]
+                               {\restricttype{\Delta, [e'/u]\Delta}}
+                               {[e'/u]e}{[e'/u]A}$ \\
+      \oooooo Therefore 
+               $D'_2 :: \judgeE[\restrictkind{\Delta, [p/u]\Delta'}]
+                               {\restricttype{\Delta, [p/u]\Delta}}
+                               {[p/u]e}{[p/u]A}$ \\
+      \ooooo Suppose $u$ does not occur in $e$ or $A$: \\
+      \oooooo We have $D_2 :: \judgeE[\restrictkind{\Delta, u:B, \Delta'}]
+                                     {\restricttype{\Delta, u:B, \Delta'}}
+                                     {e}{A}$ \\
+      \oooooo We know $\restrictkind{\Delta, u:B, \Delta'} = \restrictkind{\Delta}, \restrictkind{\Delta'}$\\
+      \oooooo Since kinds have no free vars, $\restrictkind{\Delta'} = \restrictkind{[p/u]\Delta'}$ \\
+      \oooooo We know $\restricttype{\Delta, u:B, \Delta'} = \restricttype{\Delta}, u:B, \restricttype{\Delta'}$\\
+      \oooooo Since types are non-dependent, $\restricttype{\Delta'} = \restricttype{[p/u]\Delta'}$ \\
+      \oooooo Since $u$ does not occur in $e$, we know $e = [p/u]e$ \\
+      \oooooo Since $u$ does not occur in $A$, we know $A = [p/u]A$ \\
+      \oooooo Hence $D_2 :: \judgeE[\restrictkind{\Delta, [p/u]\Delta'}]
+                                   {\restricttype{\Delta, u:B, [p/u]\Delta'}}
+                                   {[p/u]e}{[p/u]A}$ \\
+      \oooooo Since $u$ does not occur, we can strengthen $D_2$ to derive \\
+      \ooooox $D'_2 :: \judgeE[\restrictkind{\Delta, [p/u]\Delta'}]
+                              {\restricttype{\Delta, [p/u]\Delta'}}
+                              {[p/u]e}{[p/u]A}$ \\
+      \oooo Otherwise $\omega \not\in \setof{A, \kappa}$:  \\
+      \ooooo Since $\omega$ is not a kind, 
+               $\restrictkind{\Delta, u:\omega, \Delta'} = \restrictkind{\Delta, \Delta'}$\\
+      \ooooo Since $\omega$ is not a type, 
+               $\restricttype{\Delta, u:\omega, \Delta'} = \restricttype{\Delta, \Delta'}$ \\
+      \ooooo Since kinds have no free variables, 
+               $\restrictkind{\Delta, \Delta'} = \restrictkind{\Delta, [p/u]\Delta'}$  \\
+      \ooooo Since types have no non-kinded variables, 
+               $\restricttype{\Delta, \Delta'} = \restricttype{\Delta, [p/u]\Delta'}$ \\
+      \ooooo Since $u \not\in FV(e)$, $[p/u]e = e$ \\
+      \ooooo Since $u \not\in FV(A)$, $[p/u]A = A$ \\
+      \ooooo Therefore $D_2 :: \judgeE[\restrictkind{\Delta, [p/u]\Delta'}]
+                                      {\restricttype{\Delta, [p/u]\Delta'}}
+                                      {[p/u]e}{[p/u]A}$ \\
+      \ooooo Take this to be $D'_2$ \\
+      \ooo Therefore $D'_2 :: \judgeE[\restrictkind{\Delta, [p/u]\Delta'}]
+                                      {\restricttype{\Delta, [p/u]\Delta'}}
+                                      {[p/u]e}{[p/u]A}$ \\
+      \ooo By rule \textsc{TermExpr} on $D'_1, D'_2$, we have
+            $\judgeA[{\Delta, [p/u]\Delta'}]{[p/u]e}{[p/u]A}$ \\
+      \ooo Therefore, 
+            $\judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{[p/u]\omega'}$ \\
+      \end{tabbedproof}
+    
+    \item Case \textsc{TermHyp}: 
+      \begin{tabbedproof}
+        \oo Assume $D :: \judgeA[\Delta, u:\omega, \Delta']{u}{\omega}$ \\
+        \oo Assume $u$ does not occur in a type or program expression in $\Delta'$, $q$ or $\omega'$, \\
+        \ox or $\omega$ is a sort $\kappa$ and $p = \tau$, or $\omega$ is a sort $A$ and $p = e$ \\
+        \ooo By inversion on $D$, we have $m :: \omega = \assert \vee \omega = \omega' \To \omega''$\\
+        \ooo By inversion on $D$, we have $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'}$ \\
+        \ooo By mutual induction on $D_1$, $D'_1 :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
+        \ooo By iterated weakening on $D_0$, we have $D'_0 :: \judgeA[{\Delta, [p/u]\Delta'}]{p}{\omega}$ \\
+        \ooo By definition of substitution, $[p/u]u = p$ \\
+        \ooo Since $u \not\in FV(\omega)$, we have $[p/u]\omega = \omega$ \\
+        \ooo Therefore $D'_0 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]u}{\omega}$ \\
+      \end{tabbedproof}
+      
+    \item Case \textsc{TermAbs}:
+      \begin{tabbedproof}
+        \oo Assume $D :: \judgeA[\Delta, u:\omega, \Delta']{\pfun{u_1}{\omega_1}{q}}{\omega_1 \To \omega_2}$ \\
+        \oo Assume $u$ does not occur in a type or program expression in $\Delta'$, $q$ or $\omega'$, \\
+        \ox or $\omega$ is a sort $\kappa$ and $p = \tau$, or $\omega$ is a sort $A$ and $p = e$ \\
+        \ooo By inversion on $D$, we have $D_1 :: \judgeA[\Delta, u:\omega, \Delta', u_1:\omega_1]{q}{\omega_2}$ \\
+        \ooo By induction on $D_1$, we have 
+             $D'_1 :: \judgeA[{\Delta, [p/u]\Delta', u_1:[p/u]\omega_1}]{[p/u]q}{[p/u]\omega_2}$ \\
+        \ooo By rule \textsc{TermAbs}, 
+             $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{\pfun{u_1}{[p/u]\omega_1}{[p/u]q}}{[p/u]\omega_1 \To [p/u]\omega_2}$ \\
+        \ooo By substitution definition, $[p/u]\omega_1 \To [p/u]\omega_2 = [p/u](\omega_1 \To \omega_2)$ \\
+        \ooo By substitution definition, $\pfun{u_1}{[p/u]\omega_1}{[p/u]q} = [p/u](\pfun{u_1}{\omega_1}{q})$ \\
+        \ooo Therefore 
+           $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u](\pfun{u_1}{\omega_1}{q})}{[p/u](\omega_1 \To \omega_2)}$ \\
+      \end{tabbedproof}
+
+    \item Case \textsc{TermApp}
+      \begin{tabbedproof}
+        \oo Assume $D :: \judgeA[\Delta, u:\omega, \Delta']{q'\;q''}{\omega'}$ \\
+        \oo Assume $u$ does not occur in a type or program expression in $\Delta'$, $q$ or $\omega'$, \\
+        \ox or $\omega$ is a sort $\kappa$ and $p = \tau$, or $\omega$ is a sort $A$ and $p = e$ \\
+        \ooo By inversion on $D$, we have $D_1 :: \judgeA[\Delta, u:\omega, \Delta']{q'}{\omega'' \To \omega'}$ \\
+        \ooo By inversion on $D$, we have $D_2 :: \judgeA[\Delta, u:\omega, \Delta']{q''}{\omega''}$ \\
+        \ooo By induction on $D_1$, we have $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q'}{[p/u](\omega'' \To \omega')}$ \\
+        \ooo By induction on $D_2$, we have $D'_2 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q''}{[p/u]\omega''}$ \\
+        \ooo By definition of substitution, $[p/u](\omega'' \To \omega') = [p/u]\omega'' \To [p/u]\omega'$ \\
+        \ooo Therefore, $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q'}{[p/u]\omega'' \To [p/u]\omega'}$ \\
+        \ooo By rule \textsc{TermApp}, we have 
+           $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{([p/u]q')\;([p/u]q'')}{[p/u]\omega'}$ \\
+        \ooo By definition of substitution, $([p/u]q')\;([p/u]q'') = [p/u](q'\;q'')$ \\
+        \ooo Therefore $D' :: \judgeA{\Delta, [p/u]\Delta'}{[p/u](q'\;q'')}{[p/u]\omega'}$ \\
+      \end{tabbedproof}
+
+    \item Case \textsc{TermPropConst}:
+      \begin{tabbedproof}
+        \oo Assume $D :: \judgeA[\Delta, u:\omega, \Delta']{c}{\assert}$ \\
+        \oo Assume $u$ does not occur in a type or program expression in $\Delta'$, $q$ or $\omega'$, \\
+        \ox or $\omega$ is a sort $\kappa$ and $p = \tau$, or $\omega$ is a sort $A$ and $p = e$ \\
+        \ooo By inversion on $D$, we have $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'}$ \\
+        \ooo By inversion on $D$, we have $c \in \setof{\top, \bot, \emp}$ \\
+        \ooo By mutual induction on $D_1$, we have $D'_1 :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
+        \ooo By rule \textsc{TermPropConst} on $D_1$ and line 3, we have
+            $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{c}{\assert}$ \\
+        \ooo By definition of substitution, $[p/u]c = c$ \\
+        \ooo By definition of substitution, $[p/u]\assert = \assert$ \\
+        \ooo Therefore $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]c}{[p/u]\assert}$ \\
+      \end{tabbedproof}
+
+    \item Case \textsc{TermPropBinary}: 
+      \begin{tabbedproof}
+        \oo Assume $D :: \judgeA[\Delta, u:\omega, \Delta']{q_1 \oplus q_2}{\assert}$ \\
+        \oo Assume $u$ does not occur in a type or program expression in $\Delta'$, $q$ or $\omega'$, \\
+        \ox or $\omega$ is a sort $\kappa$ and $p = \tau$, or $\omega$ is a sort $A$ and $p = e$ \\
+        \ooo By inversion on $D$, we have $D_1 :: \judgeA[\Delta, u:\omega, \Delta']{q_1}{\assert}$ \\
+        \ooo By inversion on $D$, we have $D_2 :: \judgeA[\Delta, u:\omega, \Delta']{q_2}{\assert}$ \\
+        \ooo By inversion on $D$, we have $\oplus \in \setof{\land, \implies, \vee, *, \wand}$ \\
+        \ooo By induction on $D_1$, we have 
+             $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q_1}{[p/u]\assert}$ \\
+        \ooo By induction on $D_2$, we have 
+             $D'_2 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q_2}{[p/u]\assert}$ \\
+        \ooo By definition of substitution, $[p/u]\assert = \assert$ \\
+        \ooo Therefore $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q_1}{\assert}$ \\
+        \ooo Therefore $D'_2 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q_2}{\assert}$ \\
+        \ooo By rule \textsc{TermPropBinary} on $D'_1, D'_2$, and line 4, we have: \\
+        \oox \;\; $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q_1 \oplus [p/u]q_2}{\assert}$ \\
+        \ooo By definition of substitution, $[p/u](q_1 \oplus q_2) = [p/u]q_1 \oplus [p/u]q_2$ \\
+        \ooo Therefore $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u](q_1 \oplus q_2)}{[p/u]\assert}$ \\
+      \end{tabbedproof}
+
+    \item Case \textsc{TermPropQuantify}: 
+      \begin{tabbedproof}
+        \oo Assume $D :: \judgeA[\Delta, u:\omega, \Delta']{Q u_1:\omega_1.\; q}{\assert}$ \\
+        \oo Assume $u$ does not occur in a type or program expression in $\Delta'$, $q$ or $\omega'$, \\
+        \ox or $\omega$ is a sort $\kappa$ and $p = \tau$, or $\omega$ is a sort $A$ and $p = e$ \\
+        \ooo By inversion on $D$, we have 
+             $D_1 :: \judgeA[\Delta, u:\omega, \Delta', u_1:\omega_1]{q}{\assert}$ \\
+        \ooo By inversion on $D$, we have $Q \in \setof{\forall, \exists}$ \\
+        \ooo By induction on $D_1$, we have 
+             $D'_1 :: \judgeA[\Delta, [p/u]\Delta', u_1:[p/u]\omega_1]{[p/u]q}{[p/u]\assert}$ \\
+        \ooo By definition of substitution, $[p/u]\assert = \assert$ \\
+        \ooo Therefore $D'_1 :: \judgeA[{\Delta, [p/u]\Delta', u_1:[p/u]\omega_1}]{[p/u]q}{\assert}$ \\
+        \ooo By rule \textsc{TermPropQuantify} on $D'_1$ and line 3, we have \\
+        \oox $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{Q u_1:[p/u]\omega_1.\;[p/u]q}{\assert}$ \\
+        \ooo By definition of substitution, $Q u_1:[p/u]\omega_1.\;[p/u]q = [p/u](Q u:\omega_1.\; q)$ \\
+        \ooo Therefore $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u](Q u_1:\omega_1.\;q)}{[p/u]\assert}$ \\
+      \end{tabbedproof}
+
+    \item case \textsc{TermPointsTo}
+      \begin{tabbedproof}
+        \oo Assume $D :: \judgeA[\Delta, u:\omega, \Delta]{e \pointsto_A e'}{\assert}$ \\
+        \oo Assume $u$ does not occur in a type or program expression in $\Delta'$, $q$ or $\omega'$, \\
+        \ox or $\omega$ is a sort $\kappa$ and $p = \tau$, or $\omega$ is a sort $A$ and $p = e$ \\
+        \ooo By inversion on $D$, we have 
+             $D_1 :: \judgeA[\Delta, u:\omega, \Delta]{e}{\reftype{A}}$ \\
+        \ooo By inversion on $D$, we have 
+             $D_2 :: \judgeA[\Delta, u:\omega, \Delta]{e'}{A}$ \\
+        \ooo By induction on $D_1$, we have
+             $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]e}{[p/u]\reftype{A}}$ \\
+        \ooo By induction on $D_2$, we have
+             $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]e'}{[p/u]A}$ \\
+        \ooo By definition of substitution, $[p/u]\reftype{A} = \reftype{([p/u]A)}$ \\
+        \ooo Therefore, 
+             $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]e}{\reftype{([p/u]A)}}$ \\
+        \ooo By rule \textsc{TermPointsTo}, 
+             $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]e \pointsto_{[p/u]A} [p/u]e'}{\assert}$ \\
+        \ooo By definition of substitution, $[p/u]e \pointsto_{[p/u]A} e' = [p/u](e \pointsto_A e')$ \\
+        \ooo By definition of substitution, $[p/u]\assert = \assert$ \\
+        \ooo Therefore 
+             $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u](e \pointsto_A e')}{[p/u]\assert}$ \\
+      \end{tabbedproof}
+
+    \item Case \textsc{TermEqual}: 
+      \begin{tabbedproof}
+        \oo Assume $D :: \judgeA[{\Delta, u:\omega, \Delta'}]{q =_{\omega'} q'}{\assert}$ \\
+        \oo Assume $u$ does not occur in a type or program expression in $\Delta'$, $q$ or $\omega'$, \\
+        \ox or $\omega$ is a sort $\kappa$ and $p = \tau$, or $\omega$ is a sort $A$ and $p = e$ \\
+        \ooo By inversion on $D$, we have 
+             $D_1 :: \judgeA[{\Delta, u:\omega, \Delta'}]{q}{\omega}$ \\
+        \ooo By inversion on $D$, we have 
+             $D_2 :: \judgeA[{\Delta, u:\omega, \Delta'}]{q'}{\omega}$ \\
+        \ooo By induction on $D_1$, we have 
+             $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{[p/u]\omega}$ \\
+        \ooo By induction on $D_2$, we have 
+             $D'_2 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q'}{[p/u]\omega}$ \\
+        \ooo By rule \textsc{TermEqual}, we have 
+             $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q =_{[p/u]\omega} [p/u]q'}{\assert}$ \\
+        \ooo By definition of substitution, $[p/u]q =_{[p/u]\omega} [p/u]q' = [p/u](q =_\omega q')$\\
+        \ooo By definition of substitution, $[p/u]\assert = \assert$ \\
+        \ooo Therefore 
+             $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u](q =_\omega q')}{[p/u]\assert}$ \\
+      \end{tabbedproof}
+
+    \item Case \textsc{TermEqSort}:
+      \begin{tabbedproof}
+        \oo Assume $D :: \judgeA[{\Delta, u:\omega, \Delta'}]{q}{\omega'}$ \\
+        \oo Assume $u$ does not occur in a type or program expression in $\Delta'$, $q$ or $\omega'$, \\
+        \ox or $\omega$ is a sort $\kappa$ and $p = \tau$, or $\omega$ is a sort $A$ and $p = e$ \\
+        \ooo By inversion on $D$, we have 
+             $D_1 :: \judgeA[{\Delta, u:\omega, \Delta'}]{q}{\omega''}$ \\
+        \ooo By inversion on $D$, we have 
+             $D_2 :: \judgeSortEq[{\Delta, u:\omega, \Delta'}]{\omega'}{\omega''}$ \\
+        \ooo By induction, we have 
+             $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{[p/u]\omega''}$ \\
+        \ooo By equality sort substitution, 
+             $D'_2 :: \judgeSortEq[{\Delta, [p/u]\Delta'}]{[p/u]\omega'}{[p/u]\omega''}$ \\
+        \ooo By rule \textsc{TermEqSort}, 
+             $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{[p/u]\omega'}$ \\
+      \end{tabbedproof}
+
+    \item Case \textsc{TermSpec}: 
+      \begin{tabbedproof}
+        \oo Assume $D :: \judgeA[{\Delta, u:\omega, \Delta'}]{\validprop{S}}{\assert}$ \\
+        \oo Assume $u$ does not occur in a type or program expression in $\Delta'$, $q$ or $\omega'$, \\
+        \ox or $\omega$ is a sort $\kappa$ and $p = \tau$, or $\omega$ is a sort $A$ and $p = e$ \\
+        \ooo By inversion on $D$, we have
+             $D_1 :: \judgeS[{\Delta, u:\omega, \Delta'}]{S}$ \\
+        \ooo By mutual induction on $D_1$, we have 
+             $D'_1 :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u]S}$ \\
+        \ooo By rule \textsc{TermSpec}, we have 
+             $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{\validprop{([p/u]S)}}{\assert}$ \\
+        \ooo By definition of substitution, $\validprop{([p/u]S)} = [p/u](\validprop{S})$ \\
+        \ooo By definition of substitution, $[p/u]\assert = \assert$ \\
+        \ooo Therefore 
+             $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u](\validprop{S})}{[p/u]\assert}$ \\
+      \end{tabbedproof}
+    \end{itemize}
+
+  \item We want to show if $D :: \judgeS[{\Delta, u:\omega, \Delta'}]{S}$, 
+        and either $u$ does not occur in a type or program expression in $\Delta'$, $q$ or $\omega'$, 
+        or $\omega$ is a sort $\kappa$ and $p = \tau$, or $\omega$ is a sort $A$ and $p = e$,
+        then 
+         $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u]S}$. 
+    \begin{itemize}
+    \item Case \textsc{SpecTriple}
+      \begin{tabbedproof}
+        \oo Assume $D :: \judgeS[{\Delta, u:\omega, \Delta'}]{\spec{q}{c}{a:A}{r}}$ \\
+        \oo Assume $u$ does not occur in a type or program expression in $\Delta'$, $q$ or $\omega'$, \\
+        \ox or $\omega$ is a sort $\kappa$ and $p = \tau$, or $\omega$ is a sort $A$ and $p = e$ \\
+        \ooo By inversion on $D$, we have \\
+        \oooo $D_1 :: \judgeA[{\Delta, u:\omega, \Delta'}]{q}{\assert}$ \\
+        \oooo $D_2 :: \judgeA[{\Delta, u:\omega, \Delta'}]{\comp{c}}{\monad{A}}$ \\
+        \oooo $D_3 :: \judgeA[{\Delta, u:\omega, \Delta', a:A}]{r}{\assert}$ \\
+        \ooo By mutual induction on $D_1$, we have 
+             $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{[p/u]\assert}$ \\
+        \ooo By mutual induction on $D_2$, we have 
+             $D'_2 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]\comp{c}}{[p/u]\monad{A}}$ \\
+        \ooo By mutual induction on $D_1$, we have 
+             $D'_3 :: \judgeA[{\Delta, [p/u]\Delta', a:[p/u]A}]{[p/u]r}{[p/u]\assert}$ \\
+        \ooo By definition of substitution, $[p/u]\assert = \assert$ \\
+        \ooo By definition of substitution, $[p/u]\comp{c} = \comp{[p/u]c}$ \\
+        \ooo By definition of substitution, $[p/u]\monad{A} = \monad{([p/u]A)}$ \\
+        \ooo Therefore we have:\\
+        \oooo $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{\assert}$ \\
+        \oooo $D'_2 :: \judgeA[{\Delta, [p/u]\Delta'}]{\comp{[p/u]c}}{\monad{([p/u]A)}}$ \\
+        \oooo $D'_3 :: \judgeA[{\Delta, [p/u]\Delta', a:[p/u]A}]{[p/u]q}{\assert}$ \\
+        \ooo By rule \textsc{SpecTriple} on $D'_1, D'_2, D'_3$, we have \\
+        \oox $D' :: \judgeS[{\Delta, [p/u]\Delta'}]
+                            {\spec{[p/u]q}{[p/u]c}{a:[p/u]A}{[p/u]r}}$ \\
+        \ooo By definition of substitution, we have \\
+        \oox $\spec{[p/u]q}{[p/u]c}{a:[p/u]A}{[p/u]r} = [p/u]\spec{q}{c}{a:A}{r}$ \\
+        \ooo Therefore $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u]\spec{q}{c}{a:A}{r}}$ \\
+      \end{tabbedproof}
+
+    \item case \textsc{SpecMTriple}:
+      \begin{tabbedproof}
+        \oo Assume $D :: \judgeS[{\Delta, u:\omega, \Delta'}]{\mspec{q}{c}{a:A}{r}}$ \\
+        \oo Assume $u$ does not occur in a type or program expression in $\Delta'$, $q$ or $\omega'$, \\
+        \ox or $\omega$ is a sort $\kappa$ and $p = \tau$, or $\omega$ is a sort $A$ and $p = e$ \\
+        \ooo By inversion on $D$, we have \\
+        \oooo $D_1 :: \judgeA[{\Delta, u:\omega, \Delta'}]{q}{\assert}$ \\
+        \oooo $D_2 :: \judgeA[{\Delta, u:\omega, \Delta'}]{e}{\monad{A}}$ \\
+        \oooo $D_3 :: \judgeA[{\Delta, u:\omega, \Delta', a:A}]{r}{\assert}$ \\
+        \ooo By mutual induction on $D_1$, we have 
+             $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{[p/u]\assert}$ \\
+        \ooo By mutual induction on $D_2$, we have 
+             $D'_2 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]e}{[p/u]\monad{A}}$ \\
+        \ooo By mutual induction on $D_1$, we have 
+             $D'_3 :: \judgeA[{\Delta, [p/u]\Delta', a:[p/u]A}]{[p/u]r}{[p/u]\assert}$ \\
+        \ooo By definition of substitution, $[p/u]\assert = \assert$ \\
+        \ooo By definition of substitution, $[p/u]\monad{A} = \monad{([p/u]A)}$ \\
+        \ooo Therefore we have:\\
+        \oooo $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{\assert}$ \\
+        \oooo $D'_2 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]e}{\monad{([p/u]A)}}$ \\
+        \oooo $D'_3 :: \judgeA[{\Delta, [p/u]\Delta', a:[p/u]A}]{[p/u]q}{\assert}$ \\
+        \ooo By rule \textsc{SpecTriple} on $D'_1, D'_2, D'_3$, we have \\
+        \oox $D' :: \judgeS[{\Delta, [p/u]\Delta'}]
+                            {\mspec{[p/u]q}{[p/u]e}{a:[p/u]A}{[p/u]r}}$ \\
+        \ooo By definition of substitution, we have \\
+        \oox $\mspec{[p/u]q}{[p/u]e}{a:[p/u]A}{[p/u]r} = [p/u]\mspec{q}{e}{a:A}{r}$ \\
+        \ooo Therefore $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u]\mspec{q}{e}{a:A}{r}}$ \\
+      \end{tabbedproof}
+
+    \item Case \textsc{SpecAssert}:
+      \begin{tabbedproof}
+        \oo Assume $D :: \judgeS[{\Delta, u:\omega, \Delta'}]{\setof{q}}$ \\
+        \oo Assume $u$ does not occur in a type or program expression in $\Delta'$, $q$ or $\omega'$, \\
+        \ox or $\omega$ is a sort $\kappa$ and $p = \tau$, or $\omega$ is a sort $A$ and $p = e$ \\
+        \ooo By inversion on $D$, we have $D_1 :: \judgeA[{\Delta, u:\omega, \Delta'}]{q}{\assert}$ \\
+        \ooo By mutual induction on $D_1$, we have 
+              $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{[p/u]\assert}$ \\
+        \ooo By definition of substitution, $[p/u]\assert = \assert$ \\
+        \ooo Therefore $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{\assert}$ \\
+        \ooo By rule \textsc{SpecAssert}, 
+              $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{\validprop{([p/u]q)}}$ \\
+        \ooo By definition of substitution, $\validprop{([p/u]q)} = [p/u](\validprop{S})$ \\
+        \ooo Therefore 
+             $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u](\validprop{q})}$ \\
+      \end{tabbedproof}
+
+    \item Case \textsc{SpecBinary}:
+      \begin{tabbedproof}
+        \oo Assume $D :: \judgeS[{\Delta, u:\omega, \Delta'}]{S_1 \oplus S_2}$ \\
+        \oo Assume $u$ does not occur in a type or program expression in $\Delta'$, $q$ or $\omega'$, \\
+        \ox or $\omega$ is a sort $\kappa$ and $p = \tau$, or $\omega$ is a sort $A$ and $p = e$ \\
+        \ooo By inversion on $D$, we have \\
+        \oooo $D_1 :: \judgeS[{\Delta, u:\omega, \Delta'}]{S_1}$ \\
+        \oooo $D_2 :: \judgeS[{\Delta, u:\omega, \Delta'}]{S_2}$ \\
+        \oooo $\oplus \in \setof{\specand, \specor, \specimp}$ \\
+        \ooo By induction on $D_1$, we have 
+               $D'_1 :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u]S_1}$ \\
+        \ooo By induction on $D_2$, we have 
+               $D'_2 :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u]S_2}$ \\
+        \ooo By rule \textsc{SpecBinary} on $D'_1, D'_2$ and line 5, we have \\
+        \ooox $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u]S_1 \oplus [p/u]S_2}$ \\
+        \ooo By definition of substitution, $[p/u]S_1 \oplus [p/u]S_2 = [p/u](S_1 \oplus S_2)$ \\
+        \ooo Therefore $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u](S_1 \oplus S_2)}$ \\
+      \end{tabbedproof}
+
+    \item Case \textsc{SpecQuantify}:
+      \begin{tabbedproof}
+        \oo Assume $D :: \judgeS[{\Delta, u:\omega, \Delta'}]{Q u':\omega'.\; S}$ \\
+        \oo Assume $u$ does not occur in a type or program expression in $\Delta'$, $q$ or $\omega'$, \\
+        \ox or $\omega$ is a sort $\kappa$ and $p = \tau$, or $\omega$ is a sort $A$ and $p = e$ \\
+        \ooo By inversion on $D$, we have \\
+        \oooo $D_1 :: \judgeS[{\Delta, u:\omega, \Delta', u':\omega'}]{S}$ \\
+        \oooo $Q \in \setof{\forall, \exists}$ \\
+        \ooo By induction on $D_1$, we have $D'_1 :: \judgeS[{\Delta, [p/u]\Delta', u':[p/u]\omega'}]{[p/u]S}$ \\
+        \ooo By rule \textsc{SpecQuantify}, 
+              $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{Q u':[p/u]\omega'.\; [p/u]S}$ \\
+        \ooo By definition of substitution, $Q u':[p/u]\omega'.\; [p/u]S = [p/u](Q u':\omega'.\; S)$ \\
+        \ooo Therefore $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u](Q u':\omega'.\; S)}$ \\
+      \end{tabbedproof}
+    \end{itemize}
+  \end{enumerate}
+\end{proof}
+  
 
 
 \section{Semantics}
 
-Now, we'll consider the interpretation of the syntax. 
+Now, we will consider the interpretation of the syntax. To do this,
+we'll proceed in stages. First, we'll show how to interpret sorts and
+contexts by sets, and show that the equality judgement for sorts is
+sound. Using this, we will then give interpretation of terms and
+specifications, and show that the interpretation is sound with respect
+to substitution.
 
 \subsection{Interpretation of Sorts}
 
@@ -1962,7 +2511,7 @@ need to give an indexed, recursive definition in order to make
 everything work properly.
 
 Therefore, we'll need to give a mutually-recursive definition between
-the interpretation the two judgements $\judgeACtx{\Delta}$,
+the interpretation the two judgements $\judgeACtx{\Delta}$ and 
 $\judgeA{\Delta}{\omega}$.
 
 \begin{displaymath}
@@ -1982,6 +2531,13 @@ $\judgeA{\Delta}{\omega}$.
        \interp{\judgeSort{\omega}}\;\delta \to \interp{\judgeSort{\omega}}\;\delta \\
   \end{array}
 \end{displaymath}
+
+The semantic brackets are slightly overloaded in this definition. To
+interpret a type $A$, we take it to be the set of the elements of the
+domain-theoretic interpretation of $A$, and to interpret a kind
+$\kappa$, we take it to be the set of closed canonical forms of that
+type. Both of these use the interpretations given in the previous
+chapter. 
 
 In order to establish that this actually defines a function, we'll
 need to prove some supporting lemmas. First, we need to establish that
@@ -2582,13 +3138,15 @@ As before, we proceed by induction on $\judgeACtx{\Delta}$.
 \subsubsection{Semantics of Sort Substitution}
 
 \begin{lemma}{(Substitution Preserves Meaning)}
-If we have that $\judgeA{p}{\omega}$, then 
+Suppose we have that $\judgeA{p}{\omega}$.
 
 \begin{enumerate}
-\item If $(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') \in \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$, 
-      then $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$
+\item If $\judgeACtx{\Delta, u:\omega, \Delta'}$ and either $u$ does not occur in any subterm of sort type in $\Delta'$, or  $\omega = \kappa$ and $p = \tau$, then  $(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') \in \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$ if and only if $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$
 
-\item  $\interp{\judgeSort[{\Delta, u:\omega, \Delta'}]{\omega'}}\;(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = \interp{\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega'}}\;(\delta, \delta')$. 
+\item  If $\judgeSort[\Delta, u:\omega, \Delta']{\omega'}$ and and either $u$ does not occur in any subterm of sort type in $\Delta'$ or $\omega'$, or $\omega = \kappa$ and $p = \tau$, then for all $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$, we have 
+\begin{displaymath}
+\interp{\judgeSort[{\Delta, u:\omega, \Delta'}]{\omega'}}\;(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = \interp{\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega'}}\;(\delta, \delta')
+\end{displaymath}
 \end{enumerate}
 \end{lemma}
 
@@ -2606,9 +3164,9 @@ If we have that $\judgeA{p}{\omega}$, then
   \noindent Assume $D_0 :: \judgeA{p}{\omega}$ \\
 
   \begin{enumerate}
-  \item First, we want to show if $(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') \in 
+  \item First, we want to show $(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') \in 
                                    \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$, 
-      then $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$
+      if and only if $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$
       
       \begin{itemize}
       \item Case \textsc{CtxNil}:
@@ -2621,41 +3179,63 @@ If we have that $\judgeA{p}{\omega}$, then
       \item Case \textsc{CtxCons}: 
         \begin{tabbedproof}
           \oo Assume $D :: \judgeACtx{\Delta_1, u_1:\omega_1}$ \\
-          \oo Assume $(\delta, \interp{\judgeA[\Delta]{p}{\omega}}\;\delta, \delta') \in 
+          \oo Assume either $u$ does not occur in any subterm of sort type in $\Delta'$, \\
+          \ox or $\omega = \kappa$ and $p = \tau$ \\
+          \oo Therefore $\Delta, u:\omega, \Delta' = \Delta_1, u_1:\omega_1$ \\
+          \oo $\Rightarrow$ direction:\\
+          \ooo Assume $(\delta, \interp{\judgeA[\Delta]{p}{\omega}}\;\delta, \delta') \in 
                        \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$ \\
-          \ooo Therefore $\Delta, u:\omega, \Delta' = \Delta_1, u_1:\omega_1$ \\
+          \oooo Case analyze $\Delta'$: \\
+          \ooooo If $\Delta' = \cdot$: \\
+          \oooooo Then $\delta' = \unit$ \\
+          \oooooo Then $\Delta = \Delta_1$ and $u = u_1$ and $\omega = \omega_1$ \\
+          \oooooo By inversion on $D :: \judgeACtx{\Delta_1, u:\omega}$, we get:\\
+          \ooooooo $D_1 :: \judgeACtx{\Delta}$ \\
+          \ooooooo $D_2 :: \judgeSort[\Delta]{\omega}$ \\
+          \oooooo By definition, $\delta \in \interp{\judgeACtx{\Delta}}$ \\
+          \oooooo By definition $[p/u]\cdot = \cdot$, and $\Delta, \cdot = \Delta$ \\
+          \oooooo Since $\delta' = \unit$, we have $(\delta, \delta') \simeq \delta$ \\
+          \oooooo Therefore $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$ \\
+          \ooooo If $\Delta' = \Delta'', u'':\omega''$: \\
+          \oooooo Then $\Delta, u:\omega, \Delta' = \Delta, u:\omega, \Delta'', u'':\omega''$ \\
+          \oooooo Then $\delta' = (\delta'', v'')$ \\
+          \oooooo By inversion on $D$, we get: \\
+          \ooooooo $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'', u'':\omega''}$ \\
+          \ooooooo $D_2 :: \judgeSort[{\Delta, u:\omega, \Delta''}]{\omega''}$ \\
+          \oooooo Therefore, $(\delta, \interp{p}{\omega}\;\delta, \delta'') \in 
+                             \interp{\Delta, u:\omega, \Delta''}$ \\
+          \oooooo Therefore, $v'' \in 
+                  \interp{\judgeSort[{\Delta, u:\omega, \Delta''}]{\omega''}}\;
+                     (\delta, \interp{p}{\omega}\;\delta, \delta'')$ \\
+          \oooooo Then, by induction on $D_1$, we have $(\delta, \delta'') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$ \\
+          \oooooo Then, by mutual induction on $D_2$, we have \\ 
+          \ooooox  $\interp{\judgeSort[{\Delta, u:\omega, \Delta''}]{\omega''}} 
+                      \;(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta'') 
+                   $ \\
+          \ooooox equals $\interp{\judgeSort[{\Delta, [p/u]\Delta''}]{[p/u]\omega''}}\;(\delta,\delta'')$ \\
+          \oooooo Therefore, $v'' \in \interp{\judgeSort[{\Delta, [p/u]\Delta''}]{[p/u]\omega''}}\;(\delta,\delta'')$ \\ 
+          \oooooo Therefore, 
+                   $(\delta, \delta'', v'') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'', [p/u]\omega''}}$ \\
+          \oooooo Therefore $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$ \\
+          \oo $\Leftarrow$ direction:\\
+          \ooo Assume $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$ \\
           \ooo Case analyze $\Delta'$: \\
           \oooo If $\Delta' = \cdot$: \\
           \ooooo Then $\delta' = \unit$ \\
-          \ooooo Then $\Delta = \Delta_1$ and $u = u_1$ and $\omega = \omega_1$ \\
-          \ooooo By inversion on $D :: \judgeACtx{\Delta_1, u:\omega}$, we get:\\
-          \oooooo $D_1 :: \judgeACtx{\Delta}$ \\
-          \oooooo $D_2 :: \judgeSort[\Delta]{\omega}$ \\
-          \ooooo By definition, $\delta \in \interp{\judgeACtx{\Delta}}$ \\
-          \ooooo By definition $[p/u]\cdot = \cdot$, and $\Delta, \cdot = \Delta$ \\
-          \ooooo Since $\delta' = \unit$, we have $(\delta, \delta') = \delta$ \\
-          \ooooo Therefore $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$ \\
-          \oooo If $\Delta' = \Delta'', u'':\omega''$: \\
-          \ooooo Then $\Delta, u:\omega, \Delta' = \Delta, u:\omega, \Delta'', u'':\omega''$ \\
-          \ooooo Then $\delta' = (\delta'', v'')$ \\
-          \ooooo By inversion on $D$, we get: \\
-          \oooooo $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'', u'':\omega''}$ \\
-          \oooooo $D_2 :: \judgeSort[{\Delta, u:\omega, \Delta''}]{\omega''}$ \\
-          \ooooo Therefore, $(\delta, \interp{p}{\omega}\;\delta, \delta'') \in 
-                             \interp{\Delta, u:\omega, \Delta''}$ \\
-          \ooooo Therefore, $v'' \in 
-                  \interp{\judgeSort[{\Delta, u:\omega, \Delta''}]{\omega''}}\;
-                     (\delta, \interp{p}{\omega}\;\delta, \delta'')$ \\
-          \ooooo Then, by induction on $D_1$, we have $(\delta, \delta'') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$ \\
-          \ooooo Then, by mutual induction on $D_2$, we have \\ 
-          \oooox  $\interp{\judgeSort[{\Delta, u:\omega, \Delta''}]{\omega''}} 
-                      \;(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta'') 
-                    = 
-                    \interp{\judgeSort[{\Delta, [p/u]\Delta''}]{[p/u]\omega''}}\;(\delta,\delta'')$ \\
-          \ooooo Therefore, $v'' \in \interp{\judgeSort[{\Delta, [p/u]\Delta''}]{[p/u]\omega''}}\;(\delta,\delta'')$ \\ 
-          \ooooo Therefore, by definition of semantics, 
-                   $(\delta, \delta'', v'') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'', [p/u]\omega''}}$ \\
-          \ooooo Therefore $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$ \\
+          \ooooo Hence $\delta \in \interp{D_1 :: \judgeACtx{\Delta}}$ \\
+          \ooooo Hence $(\delta, \interp{\judgeA{p}{\omega}}\;\delta) \in \interp{\judgeACtx{\Delta, u:\omega}}$ \\
+          \oooo If $\Delta' = \Delta'', u'':[p/u]\omega''$: \\
+          \ooooo Then $\delta' =\delta'', v$ \\
+          \ooooo Hence $(\delta, \delta'') \in \interp{\judgeACtx{\Delta, u:\omega, \Delta''}}$ \\
+          \ooooo Hence $v \in \interp{\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega''}}$ \\
+          \ooooo By inversion on $D$, we have \\
+          \ooooox $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta''}$ \\
+          \ooooox $D_2 :: \judgeSort[{\Delta, u:\omega, \Delta''}]{\omega''}$ \\
+          \ooooo By induction, we know that $(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta'') \in \interp{\judgeACtx{\Delta, u:\omega, \Delta''}}$ \\
+          \ooooo By induction, we know that $\interp{\judgeSort[{\Delta,[p/u]\Delta''}]{[p/u]\omega''}}(\delta,\delta'')$ \\
+          \oooox equals $\interp{\judgeSort[\Delta, u:\omega, \Delta'']{\omega''}}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta'')$ \\
+          \ooooo Hence $v \in \interp{\judgeSort[\Delta, u:\omega, \Delta'']{\omega''}}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta'')$ \\
+          \ooooo Hence $(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta'', v) \in \interp{\judgeACtx{\Delta, u:\omega, \Delta'', u'':\omega''}}$ \\
         \end{tabbedproof}
       \end{itemize}
 
@@ -2668,115 +3248,142 @@ If we have that $\judgeA{p}{\omega}$, then
     \item Case \textsc{SortKind}: 
       \begin{tabbedproof}
         \oo Assume we have $D :: \judgeSort[{\Delta, u:\omega, \Delta'}]{\kappa}$ \\
-        \ooo Then $\interp{\judgeSort[{\Delta, u:\omega, \Delta'}]{\kappa}}\;
+        \oo By substitution we have $D_1 :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\kappa}$ \\
+        \oo Assume we have $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$ \\
+        \oo Therefore we know $\judgeACtx{\Delta, u:\omega, \Delta'}$ \\
+        \oo Therefore we know $\judgeACtx{\Delta, [p/u]\Delta'}$ \\
+        \oo By induction $(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') \in \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$ \\
+        \oo Then $\interp{\judgeSort[{\Delta, u:\omega, \Delta'}]{\kappa}}\;
                      (\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = \interp{\kappa}$ \\
-        \ooo By syntactic substitution, we have $\judgeACtx{\Delta, [p/u]\Delta'}$ \\
-        \ooo By rule \textsc{SortKind}, we have $D' :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\kappa}$ \\
-        \ooo Since $[p/u]\kappa = \kappa$, we have $D' :: \judgeSort[{\Delta, [p/u]\Delta'}]{\kappa}$ \\
-        \ooo Then $\interp{\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\kappa}}\;(\delta, \delta') = 
-                \interp{\kappa}$ \\
-        \ooo So we have: \\
-        \ooox $\interp{\judgeSort[{\Delta, u:\omega, \Delta'}]{\kappa}}\;(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') =$ \\
-        \ooox $\interp{\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\kappa}}\;(\delta, \delta')$ \\
+        \oo Then $\interp{\judgeSort[{\Delta, [p/u]\Delta'}]{\kappa}}\;
+                     (\delta, \delta') = \interp{[p/u]\kappa}$ \\
+        \oo However, $[p/u]\kappa = \kappa$ \\
+        \oo Hence $\interp{\kappa} = \interp{[p/u]\kappa}$ \\
+        \oo Hence $\interp{\judgeSort[{\Delta, u:\omega, \Delta'}]{\kappa}}\;
+                     (\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') $ \\
+        \ox equals $\interp{\judgeSort[{\Delta, [p/u]\Delta'}]{\kappa}}\;
+                     (\delta, \delta')$ \\
       \end{tabbedproof}
 
     \item Case \textsc{SortProp}: 
       \begin{tabbedproof}
         \oo Assume we have $D :: \judgeSort[{\Delta, u:\omega, \Delta'}]{\assert}$ \\
+        \oo Assume we have $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$ \\
+        \ooo By substitution,  $D_1 :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\assert}$ \\
+        \ooo Therefore we know $\judgeACtx{\Delta, u:\omega, \Delta'}$ \\
+        \ooo Therefore we know $\judgeACtx{\Delta, [p/u]\Delta'}$ \\
+        \ooo By induction $(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') \in \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$ \\
         \ooo Then $\interp{\judgeSort[{\Delta, u:\omega, \Delta'}]{\assert}}\;
-                     (\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = \powerset{H}$ \\
-        \ooo By syntactic substitution, we have $\judgeACtx{\Delta, [p/u]\Delta'}$ \\
-        \ooo By rule \textsc{SortProp}, we have $D' :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\assert}$ \\
-        \ooo Since $[p/u]\assert = \assert$, we have $D' :: \judgeSort[{\Delta, [p/u]\Delta'}]{\assert}$ \\
-        \ooo Then $\interp{\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\assert}}\;(\delta, \delta') = 
-                \powerset{H}$ \\
-        \ooo So we have: \\
-        \ooox $\interp{\judgeSort[{\Delta, u:\omega, \Delta'}]{\assert}}\;(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') =$ \\
-        \ooox $\interp{\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\assert}}\;(\delta, \delta')$ \\
+                     (\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = \interp{\assert}$ \\
+        \ooo Then $\interp{\judgeSort[{\Delta, [p/u]\Delta'}]{\assert}}\;
+                     (\delta, \delta') = \interp{[p/u]\assert}$ \\
+        \ooo However, $[p/u]\assert = \assert$ \\
+        \ooo Hence $\interp{\assert} = \interp{[p/u]\assert} = \powerset{H}$ \\
+        \ooo Hence $\interp{\judgeSort[{\Delta, u:\omega, \Delta'}]{\assert}}\;
+                     (\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') $ \\
+        \oox equals $\interp{\judgeSort[{\Delta, [p/u]\Delta'}]{\assert}}\;
+                     (\delta, \delta')$ \\
       \end{tabbedproof}
 
     \item Case \textsc{SortImp}: 
       \begin{tabbedproof}
         \oo Assume we have $D :: \judgeSort[{\Delta, u:\omega, \Delta'}]{\omega_1 \To \omega_2}$ \\
-        \ooo Then by inversion on $D$ we have:\\
-        \oooo $D_1 :: \judgeSort[{\Delta, u:\omega, \Delta'}]{\omega_1}$ \\
-        \oooo $D_2 :: \judgeSort[{\Delta, u:\omega, \Delta'}]{\omega_2}$ \\
-        \ooo By semantics, $\interp{D}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta')$\\
-        \ooox $= \interp{D_1}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta')
+        \oo Assume we have $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$ \\
+        \oo By substitution we have $E :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u](\omega_1 \To \omega_2)}$ \\
+        \oo Then by inversion on $D$ we have:\\
+        \ooo $D_1 :: \judgeSort[{\Delta, u:\omega, \Delta'}]{\omega_1}$ \\
+        \ooo $D_2 :: \judgeSort[{\Delta, u:\omega, \Delta'}]{\omega_2}$ \\
+        \oo Then by inversion on $E$ we have:\\
+        \ooo $E_1 :: \judgeSort[{\Delta ,[p/u]\Delta'}]{[p/u]\omega_1}$ \\
+        \ooo $E_2 :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega_2}$ \\
+        \oo Therefore we know $\judgeACtx{\Delta, u:\omega, \Delta'}$ \\
+        \oo By induction we know $(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') \in \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$ \\
+        \oo By semantics, $\interp{D}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta')$\\
+        \oox $= \interp{D_1}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta')
                  \to
                   \interp{D_2}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta')$\\
-        \ooo By syntactic substitution on $D_1$, we have
-               $D'_1 :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega_1}$ \\
-        \ooo By syntactic substitution on $D_2$, we have
-               $D'_2 :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega_2}$ \\
-        \ooo By induction on $D'_1$, we have 
+        \oo By semantics, $\interp{E}(\delta, \delta')$\\
+        \oox $= \interp{E_1}(\delta, \delta')
+                 \to
+                  \interp{E_2}(\delta, \delta')$\\
+        \oo By induction, we have 
               $\interp{D_1}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = 
-               \interp{D'_1}(\delta, \delta')$ \\
-        \ooo By induction on $D'_2$, we have 
+               \interp{E_1}(\delta, \delta')$ \\
+        \oo By induction, we have 
               $\interp{D_2}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = 
-               \interp{D'_2}(\delta, \delta')$ \\
-        \ooo Therefore $\interp{D}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = 
-                         \interp{D'_1}(\delta, \delta') \to 
-                         \interp{D'_2}(\delta, \delta')$ \\
-        \ooo By rule \textsc{SortImp} on $D'_1, D'_2$, we have 
-              $D' :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega_1 \To [p/u]\omega_2}$ \\
-        \ooo By definition of substitution, $[p/u]\omega_1 \To [p/u]\omega_2 = [p/u](\omega_1 \To \omega_2)$ \\
-        \ooo Therefore $D' :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u](\omega_1 \To \omega_2)}$ \\
-        \ooo By semantics, 
-              $\interp{D'}(\delta, \delta') = \interp{D'_1}(\delta, \delta') \to 
-                                              \interp{D'_2}(\delta, \delta')$ \\
-        \ooo Therefore $\interp{D}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') 
-                        = \interp{D'}(\delta,\delta')$ \\
+               \interp{E_2}(\delta, \delta')$ \\
+        \oo Therefore $\interp{D}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = 
+                        \interp{E}(\delta, \delta')$ \\
       \end{tabbedproof}
+
+
 
     \item Case \textsc{SortType}: 
       \begin{tabbedproof}
         \oo Assume $D :: \judgeSort[{\Delta, u:\omega, \Delta'}]{A}$ \\
-        \ooo By inversion on $D$, we have: \\
-        \oooo $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'}$ \\
-        \oooo $D_2 :: \judgeWK[\restrictkind{\Delta, u:\omega, \Delta'}]{A}{\bigstar}$ \\
-        \ooo By mutual induction on $D_1$, we have $D'_1 :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
-        \ooo By semantics, 
+        \oo By substitution, we have $D' :: \judgeSort[{\Delta, u:\omega, \Delta'}]{[p/u]A}$ \\
+        \oo By inversion on $D$, we have: \\
+        \ooo $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'}$ \\
+        \ooo $D_2 :: \judgeWK[\restrictkind{\Delta, u:\omega, \Delta'}]{A}{\bigstar}$ \\
+        \oo By inversion on $D'$ and the fact that $u$ either does not occur in $A$ \\
+        \ox or $\omega = \kappa$ and $p = \tau$, together with substitution, we have: \\
+        \ooo $D'_1 :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
+        \ooo $D'_2 :: \judgeWK[\restrictkind{\Delta, [p/u]\Delta'}]{[p/u]A}{\bigstar}$ \\
+        \oo By semantics, 
              $\interp{D}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = 
               \interp{D_2}\;(\restricttyenv{\Delta, u:\omega, \Delta'}
              {(\delta, \interp{\judgeA{p}{\omega}}, \delta')})$ \\
-        \ooo Case-analyze $\omega$:\\
-        \oooo If $\omega = \kappa$:\\
-        \ooooo Then $D_0 :: \judgeA{\tau}{\kappa}$, where $p = \tau$ \\
-        \ooooo Then  $D_2 :: \judgeWK[\restrictkind{\Delta, u:\kappa, \Delta'}]{A}{\bigstar}$ \\
-        \ooooo By inversion on $D_0$, we have $D'_0 :: \judgeWK[\restrictkind{\Delta}]{\tau}{\kappa}$ \\
-        \ooooo By semantics, $\interp{D_0}\;\delta = \interp{D'_0}\;(\restricttyenv{\Delta}{\delta})$\\
-        \ooooo Let $\theta$ = $\restricttyenv{\Delta}{\delta}$ \\
-        \ooooo Then $\interp{D'_0}\;\theta$ = $\theta(\tau)$ \\ 
-        \ooooo Likewise, $\interp{D_2}(\delta,\theta(\tau), \delta') = \interp{\judgeWK[\restrictkind{\Delta,u:\omega,\Delta'}]{A}{\bigstar}}\;(\restricttyenv{\Delta,u:\kappa,\Delta'}{[\delta, \theta(\tau), \delta']})$ \\
-        \ooooo Hence $\interp{D_2}(\delta,\theta(\tau),\delta) = (\theta, u:\theta(\tau), \restricttyenv{\Delta'}{\delta'})(A)$\\
-        \ooooo By definition of substitutions, 
-                 $\interp{D_2} = (\theta, \restricttyenv{\Delta'}{\delta'})([\tau/u]A)$\\
-        \ooooo By weakening on $D'_0$, we have $D'_0 :: \judgeWK[\Delta, \Delta']{\tau}{\kappa}$\\
-        \ooooo By substitution of $D'_0$ into $D'_2$, we get
+        \oo Case-analyze $\omega$:\\
+        \ooo If $\omega = \kappa$ and $u$ occurs:\\
+        \oooo Then $D_0 :: \judgeA{\tau}{\kappa}$, where $p = \tau$ \\
+        \oooo Then  $D_2 :: \judgeWK[\restrictkind{\Delta, u:\kappa, \Delta'}]{A}{\bigstar}$ \\
+        \oooo By inversion on $D_0$, we have $D'_0 :: \judgeWK[\restrictkind{\Delta}]{\tau}{\kappa}$ \\
+        \oooo By semantics, $\interp{D_0}\;\delta = \interp{D'_0}\;(\restricttyenv{\Delta}{\delta})$\\
+        \oooo Let $\theta$ = $\restricttyenv{\Delta}{\delta}$ \\
+        \oooo Then $\interp{D'_0}\;\theta$ = $\theta(\tau)$ \\ 
+        \oooo Likewise, $\interp{D_2}(\delta,\theta(\tau), \delta') = \interp{\judgeWK[\restrictkind{\Delta,u:\omega,\Delta'}]{A}{\bigstar}}\;(\restricttyenv{\Delta,u:\kappa,\Delta'}{[\delta, \theta(\tau), \delta']})$ \\
+        \oooo Hence $\interp{D_2}(\delta,\theta(\tau),\delta) = (\theta, u:\theta(\tau), \restricttyenv{\Delta'}{\delta'})(A)$\\
+        \oooo By definition of substitutions, 
+                 $\interp{D_2}(\delta,\theta(\tau),\delta) = (\theta, \restricttyenv{\Delta'}{\delta'})([\tau/u]A)$\\
+        \oooo By weakening on $D'_0$, we have $D'_0 :: \judgeWK[\Delta, \Delta']{\tau}{\kappa}$\\
+        \oooo By substitution of $D'_0$ into $D'_2$, we get
                $D'_3 :: \judgeWK[\restrictkind{\Delta, \Delta'}]{[\tau/u]A}{\bigstar}$ \\
-        \ooooo Since kinds have no free variables, 
+        \oooo Since kinds have no free variables, 
                $D'_3 :: \judgeWK[\restrictkind{\Delta, [\tau/u]\Delta'}]{[\tau/u]A}{\bigstar}$ \\
-        \ooooo By definition, $\interp{D'_3}\;(\theta, \restricttyenv{\Delta'}{\delta'}) = 
+        \oooo By definition, $\interp{D'_3}\;(\theta, \restricttyenv{\Delta'}{\delta'}) = 
                                (\theta, \restricttyenv{\Delta'}{\delta'})([\tau/u]A)$ \\
-        \ooooo By rule \textsc{SortType} on $D'_3$ and $D'_1$, we have 
-                 $D' :: \judgeSort[{\Delta, [\tau/u]\Delta'}]{[\tau/u]A}$ \\
-        \ooooo By semantics, $\interp{D'}(\delta,\delta') = \interp{D'_3}\;(\theta, \restricttyenv{\Delta'}{\delta'})$ \\
-        \ooooo Therefore $\interp{D}(\delta, \interp{\judgeA{\tau}{\kappa}}\;\delta, \delta') = 
+        \oooo Therefore $\interp{D'_3}\;(\theta, \restricttyenv{\Delta'}{\delta'}) = 
+                         \interp{D_2}\;(\theta, \restricttyenv{\Delta'}{\delta'})$ \\
+        \oooo By semantics, $\interp{D'}(\delta,\delta') = \interp{D'_3}\;(\theta, \restricttyenv{\Delta'}{\delta'})$ \\
+        \oooo Therefore $\interp{D}(\delta, \interp{\judgeA{\tau}{\kappa}}\;\delta, \delta') = 
                           \interp{D'}(\delta,\delta')$ \\
-        \oooo If $\omega \not= \kappa$: \\
-        \ooooo Then  $D_2 :: \judgeWK[\restrictkind{\Delta, u:\omega, \Delta'}]{A}{\bigstar}$ \\
-        \ooooo Because $\omega \not= \kappa$, 
+        \ooo If $\omega \not= \kappa$: \\
+        \oooo Then  $D_2 :: \judgeWK[\restrictkind{\Delta, u:\omega, \Delta'}]{A}{\bigstar}$ \\
+        \oooo Because $\omega \not= \kappa$, 
                  $\restrictkind{\Delta, u:\omega, \Delta'} = \restrictkind{\Delta, \Delta'}$ \\
-        \ooooo Because kinds have no variables, 
+        \oooo Because kinds have no variables, 
                  $\restrictkind{\Delta, \Delta'} = \restrictkind{\Delta, [p/u]\Delta'}$ \\
-        \ooooo Therefore $(\delta, \delta') \in \restrictkind{\Delta, [p/u]\Delta'}$ \\
-        \ooooo Because $u \not\in FV(A)$, $A = [p/u]A$ \\
-        \ooooo Thus $D_2 :: \judgeWK[\restrictkind{\Delta, [p/u]\Delta'}]{[p/u]A}{\bigstar}$ \\
-        \ooooo Then by rule \textsc{SortType}, we have $D' :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]A}$ \\
-        \ooooo So $\interp{D'}(\delta, \delta') = \interp{D_2}(\restricttyenv{\Delta,[p/u]\Delta'}{\delta, \delta'})$ \\
-        \ooooo But then, $\interp{D}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = 
+        \oooo Therefore $(\delta, \delta') \in \restrictkind{\Delta, [p/u]\Delta'}$ \\
+        \oooo Because $u \not\in FV(A)$, $A = [p/u]A$ \\
+        \oooo Thus $D_2 :: \judgeWK[\restrictkind{\Delta, [p/u]\Delta'}]{[p/u]A}{\bigstar}$ \\
+        \oooo Then by rule \textsc{SortType}, we have $D' :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]A}$ \\
+        \oooo So $\interp{D'}(\delta, \delta') = \interp{D_2}(\restricttyenv{\Delta,[p/u]\Delta'}{\delta, \delta'})$ \\
+        \oooo But then, $\interp{D}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = 
                           \interp{D'}(\delta, \delta')$ \\
+        \ooo If $u$ does not occur in $A$: \\
+        \oooo Then  $D_2 :: \judgeWK[\restrictkind{\Delta, u:\omega, \Delta'}]{A}{\bigstar}$ \\
+        \oooo We know $\restrictkind{\Delta, u:\omega, \Delta'} = \restrictkind{\Delta}, u:\omega, \restrictkind{\Delta'}$ \\
+        \oooo Since $u$ does not occur, we can strengthen to $D'_2 :: \judgeWK[\restrictkind{\Delta}, \restrictkind{\Delta'}]{A}{\bigstar}$ \\
+        \oooo Because kinds have no variables, 
+                 $\restrictkind{\Delta, \Delta'} = \restrictkind{\Delta, [p/u]\Delta'}$ \\
+        \oooo Therefore $(\delta, \delta') \in \restrictkind{\Delta, [p/u]\Delta'}$ \\
+        \oooo Because $u \not\in FV(A)$, $A = [p/u]A$ \\
+        \oooo Thus $D_2 :: \judgeWK[\restrictkind{\Delta, [p/u]\Delta'}]{[p/u]A}{\bigstar}$ \\
+        \oooo Then by rule \textsc{SortType}, we have $D' :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]A}$ \\
+        \oooo So $\interp{D'}(\delta, \delta') = \interp{D_2}(\restricttyenv{\Delta,[p/u]\Delta'}{\delta, \delta'})$ \\
+        \oooo But then, $\interp{D}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = 
+                          \interp{D'}(\delta, \delta')$ \\
+
       \end{tabbedproof}
     \end{itemize}
   \end{enumerate}
@@ -2865,448 +3472,25 @@ Now we'll proceed by structural induction on the equality judgement.
 
 \subsection{Substitution for Terms and Specifications}
 
-\subsubsection{Syntactic Substitution}
-
-\begin{lemma}{(Syntactic Substitution for Terms and Specifications)}
-Suppose that $D_0 :: \judgeA{p}{\omega}$. Then
-\begin{enumerate}
-\item If $D :: \judgeA[{\Delta, u:\omega, \Delta'}]{q}{\omega'}$, then 
-         $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{[p/u]\omega'}$. 
-\item If $D :: \judgeS[{\Delta, u:\omega, \Delta'}]{S}$, then 
-         $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u]S}$. 
-\end{enumerate}
-\end{lemma}
-\begin{proof}
-  Assume $D_0 :: \judgeA{p}{\omega}$.
-  \begin{enumerate}
-  \item We want to show if $D :: \judgeA[{\Delta, u:\omega, \Delta'}]{q}{\omega'}$, then 
-         $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{[p/u]\omega'}$.
-    \begin{itemize}
-    \item Case \textsc{TermType}: 
-      \begin{tabbedproof}
-        \oo Assume $D :: \judgeA[{\Delta, u:\omega, \Delta'}]{\tau}{\kappa}$, 
-            where $q = \tau$ and $\omega' = \kappa$ \\
-        \ooo By inversion on $D$, we have $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'}$ \\
-        \ooo By mutual induction on $D_1$, we have $D'_1 :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
-        \ooo By inversion on $D$, we have 
-                 $D_2 :: \judgeWK[\restrictkind{\Delta, u:\omega, \Delta'}]
-                                 {\tau}{\kappa}$ \\
-        \ooo Case analysis on $\omega$:\\
-        \oooo If $\omega = \kappa'$: \\
-        \ooooo Then $D_0 :: \judgeA[\Delta]{\tau'}{\kappa'}$, with $p = \tau'$ \\
-        \ooooo By inversion on $D_0$, we have 
-                $D'_0 :: \judgeWK[\restrictkind{\Delta}]{\tau'}{\kappa'}$ \\
-        \ooooo Then $\restrictkind{\Delta, u:\kappa', \Delta'} = 
-                       \restrictkind{\Delta}, u:\kappa, \restrictkind{\Delta'}$ \\
-        \ooooo Thus $D_2 :: \judgeWK[\restrictkind{\Delta}, u:\kappa', \restrictkind{\Delta'}]
-                                   {\tau}{\kappa}$ \\
-        \ooooo By type substitution, 
-                 $D'_2 :: \judgeWK[\restrictkind{\Delta}, \restrictkind{\Delta'}]
-                                  {[\tau'/u]\tau}{\kappa}$ \\
-        \ooooo Since $\restrictkind{\Delta'}$ has no free variables in kinds, 
-                 $\restrictkind{\Delta'} = \restrictkind{[\tau'/u]\Delta'}$ \\
-        \ooooo Hence $D'_2 :: \judgeWK[\restrictkind{\Delta}, \restrictkind{[\tau'/u]\Delta'}]
-                                  {[\tau'/u]\tau}{\kappa}$ \\
-        \ooooo Hence $D'_2 :: \judgeWK[\restrictkind{\Delta}, \restrictkind{[p/u]\Delta'}]
-                                  {[p/u]\tau}{\kappa}$ \\
-        \ooooo By rule \textsc{TermType} on $D'_1, D'_2$, we have 
-                  $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]\tau}{\kappa}$  \\
-        \ooooo Since $[p/u]\kappa = \kappa$, we have 
-                  $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]\tau}{[p/u]\kappa}$ \\
-        \oooo If $\omega \not=\kappa'$: \\
-        \ooooo Then $\restrictkind{\Delta, u:\kappa', \Delta'} = 
-                       \restrictkind{\Delta}, \restrictkind{\Delta'}$ \\
-        \ooooo Then $D_2 :: \judgeWK[\restrictkind{\Delta}, \restrictkind{\Delta'}]
-                                   {\tau}{\kappa}$ \\
-        \ooooo So $u \not \in FV(\tau)$ \\
-        \ooooo Hence $[p/u]\tau = \tau$ \\
-        \ooooo So $D_2 :: \judgeWK[\restrictkind{\Delta}, \restrictkind{\Delta'}]
-                                   {[p/u]\tau}{\kappa}$ \\
-        \ooooo Since $\restrictkind{\Delta'}$ has no free variables in kinds, 
-                 $\restrictkind{\Delta'} = \restrictkind{[\tau'/u]\Delta'}$ \\
-        \ooooo So $D_2 :: \judgeWK[\restrictkind{\Delta}, \restrictkind{[p/u]\Delta'}]
-                                   {[p/u]\tau}{\kappa}$ \\
-        \ooooo Since $[p/u]\kappa = \kappa$,
-               $D_2 :: \judgeWK[\restrictkind{\Delta}, \restrictkind{[p/u]\Delta'}]
-                                   {[p/u]\tau}{[p/u]\kappa}$ \\
-        \ooooo By rule \textsc{TermType} on $D'_1, D_2$, we have 
-                  $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]\tau}{[p/u]\kappa}$  \\
-      \end{tabbedproof}
-
-    \item Case \textsc{TermExpr}:
-      \begin{tabbedproof}
-      \oo Assume $D :: \judgeA[\Delta, u:\omega, \Delta']{e}{A}$, 
-           where $q = e$ and $\omega' = A$ \\
-      \ooo By inversion on $D$, we have $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'}$ \\
-      \ooo By mutual induction on $D_1$, we have 
-             $D'_1 :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
-      \ooo By inversion on $D$, we have 
-           $D_2 :: \judgeE[\restrictkind{\Delta, u:\omega, \Delta'}]
-                          {\restricttype{\Delta, u:\omega, \Delta'}}{e}{A}$ \\
-      \ooo Case analyze $\omega$: \\
-      \oooo If $\omega = \kappa$: \\
-      \ooooo We have $D_0 :: \judgeA{\tau}{\kappa}$ where $p = \tau$ \\
-      \ooooo By inversion on $D_0$, 
-             we have $D'_0 :: \judgeWK[\restrictkind{\Delta}]{\tau}{\kappa}$ \\
-      \ooooo We have $D_2 :: \judgeE[\restrictkind{\Delta, u:\kappa, \Delta'}]
-                                    {\restricttype{\Delta, u:\kappa, \Delta'}}
-                                    {e}{A}$ \\ 
-      \ooooo Note $\restricttype{\Delta, u:\kappa, \Delta'} = \restricttype{\Delta, \Delta'}$ \\
-      \ooooo Therefore $D_2 :: \judgeE[\restrictkind{\Delta, u:\kappa, \Delta'}]
-                                    {\restricttype{\Delta, \Delta'}}
-                                    {e}{A}$ \\ 
-      \ooooo By type substitution, 
-                 $D'_2 :: \judgeE[\restrictkind{\Delta, \Delta'}]
-                                 {\restricttype{[\tau/u]\Delta, [\tau/u]\Delta'}}
-                                 {[\tau/u]e}{[\tau/u]A}$ \\
-      \ooooo Since no kind has free variables,  we have
-                $\restrictkind{\Delta, \Delta'} = \restrictkind{\Delta, [\tau/u]\Delta'}$ \\
-      \ooooo Since $u \not\in FV(\Delta)$, we have
-                $\restricttype{[\tau/u]\Delta, [\tau/u]\Delta'} = 
-                 \restricttype{\Delta, [\tau/u]\Delta'}$ \\
-      \ooooo Therefore 
-               $D'_2 :: \judgeE[\restrictkind{\Delta, [\tau/u]\Delta'}]
-                                 {\restricttype{\Delta, [\tau/u]\Delta'}}
-                                 {[\tau/u]e}{[\tau/u]A}$ \\
-      \ooooo Therefore 
-               $D'_2 :: \judgeE[\restrictkind{\Delta, [p/u]\Delta'}]
-                                 {\restricttype{\Delta, [p/u]\Delta'}}
-                                 {[p/u]e}{[p/u]A}$ \\
-      \oooo If $\omega = B$: \\
-      \ooooo We have $D_0 :: \judgeA[\Delta]{e'}{A}$, where $p = e'$ \\
-      \ooooo By inversion on $D_0$, we have 
-               $D'_0 :: \judgeE[\restrictkind{\Delta}]
-                               {\restricttype{\Delta}}{e}{A}$ \\
-      \ooooo By weakening, we have 
-               $D''_0 :: \judgeE[\restrictkind{\Delta, u:B, \Delta'}]
-                               {\restricttype{\Delta}}{e}{A}$ \\
-      \ooooo We also have
-              $D_2 :: \judgeE[\restrictkind{\Delta, u:B, \Delta'}]
-                             {\restrictkind{\Delta, u:B, \Delta'}}
-                             {e}{A}$ \\
-      \ooooo By substitution on $D''_0$ into $D'_2$, we have \\
-      \ooooo \;\;
-              $D'_2 :: \judgeE[\restrictkind{\Delta, u:B, \Delta'}]
-                              {\restricttype{\Delta}, \restricttype{\Delta}}
-                              {[e'/u]e}{A}$ \\
-      \ooooo So $\restrictkind{\Delta, u:B, \Delta'} = \restrictkind{\Delta, \Delta'}$ \\
-      \ooooo Since $u:B$ not free in kinds, 
-             $\restrictkind{\Delta, \Delta'} = \restrictkind{\Delta, [e'/u]\Delta'}$ \\
-      \ooooo Since $u:B$ not free in types, 
-             $\restricttype{\Delta, \Delta'} = \restricttype{\Delta, [e'/u]\Delta'}$ \\
-      \ooooo Since $u:B$ not free in types, 
-             $[e'/u]A = A$ \\
-      \ooooo Therefore 
-               $D'_2 :: \judgeE[\restrictkind{\Delta, [e'/u]\Delta'}]
-                               {\restricttype{\Delta, [e'/u]\Delta}}
-                               {[e'/u]e}{[e'/u]A}$ \\
-      \ooooo Therefore 
-               $D'_2 :: \judgeE[\restrictkind{\Delta, [p/u]\Delta'}]
-                               {\restricttype{\Delta, [p/u]\Delta}}
-                               {[p/u]e}{[p/u]A}$ \\
-      \oooo Otherwise $\omega \not\in \setof{A, \kappa}$:  \\
-      \ooooo Since $\omega$ is not a kind, 
-               $\restrictkind{\Delta, u:\omega, \Delta'} = \restrictkind{\Delta, \Delta'}$\\
-      \ooooo Since $\omega$ is not a type, 
-               $\restricttype{\Delta, u:\omega, \Delta'} = \restricttype{\Delta, \Delta'}$ \\
-      \ooooo Since kinds have no free variables, 
-               $\restrictkind{\Delta, \Delta'} = \restrictkind{\Delta, [p/u]\Delta'}$  \\
-      \ooooo Since types have no non-kinded variables, 
-               $\restricttype{\Delta, \Delta'} = \restricttype{\Delta, [p/u]\Delta'}$ \\
-      \ooooo Since $u \not\in FV(e)$, $[p/u]e = e$ \\
-      \ooooo Since $u \not\in FV(A)$, $[p/u]A = A$ \\
-      \ooooo Therefore $D_2 :: \judgeE[\restrictkind{\Delta, [p/u]\Delta'}]
-                                      {\restricttype{\Delta, [p/u]\Delta'}}
-                                      {[p/u]e}{[p/u]A}$ \\
-      \ooo Therefore $D'_2 :: \judgeE[\restrictkind{\Delta, [p/u]\Delta'}]
-                                      {\restricttype{\Delta, [p/u]\Delta'}}
-                                      {[p/u]e}{[p/u]A}$ \\
-      \ooo By rule \textsc{TermExpr} on $D'_1, D'_2$, we have
-            $\judgeA[{\Delta, [p/u]\Delta'}]{[p/u]e}{[p/u]A}$ \\
-      \ooo Therefore, 
-            $\judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{[p/u]\omega'}$ \\
-      \end{tabbedproof}
-    
-    \item Case \textsc{TermHyp}: 
-      \begin{tabbedproof}
-        \oo Assume $D :: \judgeA[\Delta, u:\omega, \Delta']{u}{\omega}$ \\
-        \ooo By inversion on $D$, we have $m :: \omega = \assert \vee \omega = \omega' \To \omega''$\\
-        \ooo By inversion on $D$, we have $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'}$ \\
-        \ooo By mutual induction on $D_1$, $D'_1 :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
-        \ooo By iterated weakening on $D_0$, we have $D'_0 :: \judgeA[{\Delta, [p/u]\Delta'}]{p}{\omega}$ \\
-        \ooo By definition of substitution, $[p/u]u = p$ \\
-        \ooo Since $u \not\in FV(\omega)$, we have $[p/u]\omega = \omega$ \\
-        \ooo Therefore $D'_0 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]u}{\omega}$ \\
-      \end{tabbedproof}
-      
-    \item Case \textsc{TermAbs}:
-      \begin{tabbedproof}
-        \oo Assume $D :: \judgeA[\Delta, u:\omega, \Delta']{\pfun{u_1}{\omega_1}{q}}{\omega_1 \To \omega_2}$ \\
-        \ooo By inversion on $D$, we have $D_1 :: \judgeA[\Delta, u:\omega, \Delta', u_1:\omega_1]{q}{\omega_2}$ \\
-        \ooo By induction on $D_1$, we have 
-             $D'_1 :: \judgeA[{\Delta, [p/u]\Delta', u_1:[p/u]\omega_1}]{[p/u]q}{[p/u]\omega_2}$ \\
-        \ooo By rule \textsc{TermAbs}, 
-             $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{\pfun{u_1}{[p/u]\omega_1}{[p/u]q}}{[p/u]\omega_1 \To [p/u]\omega_2}$ \\
-        \ooo By substitution definition, $[p/u]\omega_1 \To [p/u]\omega_2 = [p/u](\omega_1 \To \omega_2)$ \\
-        \ooo By substitution definition, $\pfun{u_1}{[p/u]\omega_1}{[p/u]q} = [p/u](\pfun{u_1}{\omega_1}{q})$ \\
-        \ooo Therefore 
-           $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u](\pfun{u_1}{\omega_1}{q})}{[p/u](\omega_1 \To \omega_2)}$ \\
-      \end{tabbedproof}
-
-    \item Case \textsc{TermApp}
-      \begin{tabbedproof}
-        \oo Assume $D :: \judgeA[\Delta, u:\omega, \Delta']{q'\;q''}{\omega'}$ \\
-        \ooo By inversion on $D$, we have $D_1 :: \judgeA[\Delta, u:\omega, \Delta']{q'}{\omega'' \To \omega'}$ \\
-        \ooo By inversion on $D$, we have $D_2 :: \judgeA[\Delta, u:\omega, \Delta']{q''}{\omega''}$ \\
-        \ooo By induction on $D_1$, we have $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q'}{[p/u](\omega'' \To \omega')}$ \\
-        \ooo By induction on $D_2$, we have $D'_2 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q''}{[p/u]\omega''}$ \\
-        \ooo By definition of substitution, $[p/u](\omega'' \To \omega') = [p/u]\omega'' \To [p/u]\omega'$ \\
-        \ooo Therefore, $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q'}{[p/u]\omega'' \To [p/u]\omega'}$ \\
-        \ooo By rule \textsc{TermApp}, we have 
-           $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{([p/u]q')\;([p/u]q'')}{[p/u]\omega'}$ \\
-        \ooo By definition of substitution, $([p/u]q')\;([p/u]q'') = [p/u](q'\;q'')$ \\
-        \ooo Therefore $D' :: \judgeA{\Delta, [p/u]\Delta'}{[p/u](q'\;q'')}{[p/u]\omega'}$ \\
-      \end{tabbedproof}
-
-    \item Case \textsc{TermPropConst}:
-      \begin{tabbedproof}
-        \oo Assume $D :: \judgeA[\Delta, u:\omega, \Delta']{c}{\assert}$ \\
-        \ooo By inversion on $D$, we have $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'}$ \\
-        \ooo By inversion on $D$, we have $c \in \setof{\top, \bot, \emp}$ \\
-        \ooo By mutual induction on $D_1$, we have $D'_1 :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
-        \ooo By rule \textsc{TermPropConst} on $D_1$ and line 3, we have
-            $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{c}{\assert}$ \\
-        \ooo By definition of substitution, $[p/u]c = c$ \\
-        \ooo By definition of substitution, $[p/u]\assert = \assert$ \\
-        \ooo Therefore $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]c}{[p/u]\assert}$ \\
-      \end{tabbedproof}
-
-    \item Case \textsc{TermPropBinary}: 
-      \begin{tabbedproof}
-        \oo Assume $D :: \judgeA[\Delta, u:\omega, \Delta']{q_1 \oplus q_2}{\assert}$ \\
-        \ooo By inversion on $D$, we have $D_1 :: \judgeA[\Delta, u:\omega, \Delta']{q_1}{\assert}$ \\
-        \ooo By inversion on $D$, we have $D_2 :: \judgeA[\Delta, u:\omega, \Delta']{q_2}{\assert}$ \\
-        \ooo By inversion on $D$, we have $\oplus \in \setof{\land, \implies, \vee, *, \wand}$ \\
-        \ooo By induction on $D_1$, we have 
-             $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q_1}{[p/u]\assert}$ \\
-        \ooo By induction on $D_2$, we have 
-             $D'_2 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q_2}{[p/u]\assert}$ \\
-        \ooo By definition of substitution, $[p/u]\assert = \assert$ \\
-        \ooo Therefore $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q_1}{\assert}$ \\
-        \ooo Therefore $D'_2 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q_2}{\assert}$ \\
-        \ooo By rule \textsc{TermPropBinary} on $D'_1, D'_2$, and line 4, we have: \\
-        \oox \;\; $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q_1 \oplus [p/u]q_2}{\assert}$ \\
-        \ooo By definition of substitution, $[p/u](q_1 \oplus q_2) = [p/u]q_1 \oplus [p/u]q_2$ \\
-        \ooo Therefore $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u](q_1 \oplus q_2)}{[p/u]\assert}$ \\
-      \end{tabbedproof}
-
-    \item Case \textsc{TermPropQuantify}: 
-      \begin{tabbedproof}
-        \oo Assume $D :: \judgeA[\Delta, u:\omega, \Delta']{Q u_1:\omega_1.\; q}{\assert}$ \\
-        \ooo By inversion on $D$, we have 
-             $D_1 :: \judgeA[\Delta, u:\omega, \Delta', u_1:\omega_1]{q}{\assert}$ \\
-        \ooo By inversion on $D$, we have $Q \in \setof{\forall, \exists}$ \\
-        \ooo By induction on $D_1$, we have 
-             $D'_1 :: \judgeA[\Delta, [p/u]\Delta', u_1:[p/u]\omega_1]{[p/u]q}{[p/u]\assert}$ \\
-        \ooo By definition of substitution, $[p/u]\assert = \assert$ \\
-        \ooo Therefore $D'_1 :: \judgeA[{\Delta, [p/u]\Delta', u_1:[p/u]\omega_1}]{[p/u]q}{\assert}$ \\
-        \ooo By rule \textsc{TermPropQuantify} on $D'_1$ and line 3, we have \\
-        \oox $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{Q u_1:[p/u]\omega_1.\;[p/u]q}{\assert}$ \\
-        \ooo By definition of substitution, $Q u_1:[p/u]\omega_1.\;[p/u]q = [p/u](Q u:\omega_1.\; q)$ \\
-        \ooo Therefore $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u](Q u_1:\omega_1.\;q)}{[p/u]\assert}$ \\
-      \end{tabbedproof}
-
-    \item case \textsc{TermPointsTo}
-      \begin{tabbedproof}
-        \oo Assume $D :: \judgeA[\Delta, u:\omega, \Delta]{e \pointsto_A e'}{\assert}$ \\
-        \ooo By inversion on $D$, we have 
-             $D_1 :: \judgeA[\Delta, u:\omega, \Delta]{e}{\reftype{A}}$ \\
-        \ooo By inversion on $D$, we have 
-             $D_2 :: \judgeA[\Delta, u:\omega, \Delta]{e'}{A}$ \\
-        \ooo By induction on $D_1$, we have
-             $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]e}{[p/u]\reftype{A}}$ \\
-        \ooo By induction on $D_2$, we have
-             $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]e'}{[p/u]A}$ \\
-        \ooo By definition of substitution, $[p/u]\reftype{A} = \reftype{([p/u]A)}$ \\
-        \ooo Therefore, 
-             $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]e}{\reftype{([p/u]A)}}$ \\
-        \ooo By rule \textsc{TermPointsTo}, 
-             $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]e \pointsto_{[p/u]A} [p/u]e'}{\assert}$ \\
-        \ooo By definition of substitution, $[p/u]e \pointsto_{[p/u]A} e' = [p/u](e \pointsto_A e')$ \\
-        \ooo By definition of substitution, $[p/u]\assert = \assert$ \\
-        \ooo Therefore 
-             $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u](e \pointsto_A e')}{[p/u]\assert}$ \\
-      \end{tabbedproof}
-
-    \item Case \textsc{TermEqual}: 
-      \begin{tabbedproof}
-        \oo Assume $D :: \judgeA[{\Delta, u:\omega, \Delta'}]{q =_{\omega'} q'}{\assert}$ \\
-        \ooo By inversion on $D$, we have 
-             $D_1 :: \judgeA[{\Delta, u:\omega, \Delta'}]{q}{\omega}$ \\
-        \ooo By inversion on $D$, we have 
-             $D_2 :: \judgeA[{\Delta, u:\omega, \Delta'}]{q'}{\omega}$ \\
-        \ooo By induction on $D_1$, we have 
-             $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{[p/u]\omega}$ \\
-        \ooo By induction on $D_2$, we have 
-             $D'_2 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q'}{[p/u]\omega}$ \\
-        \ooo By rule \textsc{TermEqual}, we have 
-             $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q =_{[p/u]\omega} [p/u]q'}{\assert}$ \\
-        \ooo By definition of substitution, $[p/u]q =_{[p/u]\omega} [p/u]q' = [p/u](q =_\omega q')$\\
-        \ooo By definition of substitution, $[p/u]\assert = \assert$ \\
-        \ooo Therefore 
-             $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u](q =_\omega q')}{[p/u]\assert}$ \\
-      \end{tabbedproof}
-
-    \item Case \textsc{TermEqSort}:
-      \begin{tabbedproof}
-        \oo Assume $D :: \judgeA[{\Delta, u:\omega, \Delta'}]{q}{\omega'}$ \\
-        \ooo By inversion on $D$, we have 
-             $D_1 :: \judgeA[{\Delta, u:\omega, \Delta'}]{q}{\omega''}$ \\
-        \ooo By inversion on $D$, we have 
-             $D_2 :: \judgeSortEq[{\Delta, u:\omega, \Delta'}]{\omega'}{\omega''}$ \\
-        \ooo By induction, we have 
-             $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{[p/u]\omega''}$ \\
-        \ooo By equality sort substitution, 
-             $D'_2 :: \judgeSortEq[{\Delta, [p/u]\Delta'}]{[p/u]\omega'}{[p/u]\omega''}$ \\
-        \ooo By rule \textsc{TermEqSort}, 
-             $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{[p/u]\omega'}$ \\
-      \end{tabbedproof}
-
-    \item Case \textsc{TermSpec}: 
-      \begin{tabbedproof}
-        \oo Assume $D :: \judgeA[{\Delta, u:\omega, \Delta'}]{\validprop{S}}{\assert}$ \\
-        \ooo By inversion on $D$, we have
-             $D_1 :: \judgeS[{\Delta, u:\omega, \Delta'}]{S}$ \\
-        \ooo By mutual induction on $D_1$, we have 
-             $D'_1 :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u]S}$ \\
-        \ooo By rule \textsc{TermSpec}, we have 
-             $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{\validprop{([p/u]S)}}{\assert}$ \\
-        \ooo By definition of substitution, $\validprop{([p/u]S)} = [p/u](\validprop{S})$ \\
-        \ooo By definition of substitution, $[p/u]\assert = \assert$ \\
-        \ooo Therefore 
-             $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u](\validprop{S})}{[p/u]\assert}$ \\
-      \end{tabbedproof}
-    \end{itemize}
-
-  \item We want to show if $D :: \judgeS[{\Delta, u:\omega, \Delta'}]{S}$, then 
-         $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u]S}$. 
-    \begin{itemize}
-    \item Case \textsc{SpecTriple}
-      \begin{tabbedproof}
-        \oo Assume $D :: \judgeS[{\Delta, u:\omega, \Delta'}]{\spec{q}{c}{a:A}{r}}$ \\
-        \ooo By inversion on $D$, we have \\
-        \oooo $D_1 :: \judgeA[{\Delta, u:\omega, \Delta'}]{q}{\assert}$ \\
-        \oooo $D_2 :: \judgeA[{\Delta, u:\omega, \Delta'}]{\comp{c}}{\monad{A}}$ \\
-        \oooo $D_3 :: \judgeA[{\Delta, u:\omega, \Delta', a:A}]{r}{\assert}$ \\
-        \ooo By mutual induction on $D_1$, we have 
-             $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{[p/u]\assert}$ \\
-        \ooo By mutual induction on $D_2$, we have 
-             $D'_2 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]\comp{c}}{[p/u]\monad{A}}$ \\
-        \ooo By mutual induction on $D_1$, we have 
-             $D'_3 :: \judgeA[{\Delta, [p/u]\Delta', a:[p/u]A}]{[p/u]r}{[p/u]\assert}$ \\
-        \ooo By definition of substitution, $[p/u]\assert = \assert$ \\
-        \ooo By definition of substitution, $[p/u]\comp{c} = \comp{[p/u]c}$ \\
-        \ooo By definition of substitution, $[p/u]\monad{A} = \monad{([p/u]A)}$ \\
-        \ooo Therefore we have:\\
-        \oooo $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{\assert}$ \\
-        \oooo $D'_2 :: \judgeA[{\Delta, [p/u]\Delta'}]{\comp{[p/u]c}}{\monad{([p/u]A)}}$ \\
-        \oooo $D'_3 :: \judgeA[{\Delta, [p/u]\Delta', a:[p/u]A}]{[p/u]q}{\assert}$ \\
-        \ooo By rule \textsc{SpecTriple} on $D'_1, D'_2, D'_3$, we have \\
-        \oox $D' :: \judgeS[{\Delta, [p/u]\Delta'}]
-                            {\spec{[p/u]q}{[p/u]c}{a:[p/u]A}{[p/u]r}}$ \\
-        \ooo By definition of substitution, we have \\
-        \oox $\spec{[p/u]q}{[p/u]c}{a:[p/u]A}{[p/u]r} = [p/u]\spec{q}{c}{a:A}{r}$ \\
-        \ooo Therefore $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u]\spec{q}{c}{a:A}{r}}$ \\
-      \end{tabbedproof}
-
-    \item case \textsc{SpecMTriple}:
-      \begin{tabbedproof}
-        \oo Assume $D :: \judgeS[{\Delta, u:\omega, \Delta'}]{\mspec{q}{c}{a:A}{r}}$ \\
-        \ooo By inversion on $D$, we have \\
-        \oooo $D_1 :: \judgeA[{\Delta, u:\omega, \Delta'}]{q}{\assert}$ \\
-        \oooo $D_2 :: \judgeA[{\Delta, u:\omega, \Delta'}]{e}{\monad{A}}$ \\
-        \oooo $D_3 :: \judgeA[{\Delta, u:\omega, \Delta', a:A}]{r}{\assert}$ \\
-        \ooo By mutual induction on $D_1$, we have 
-             $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{[p/u]\assert}$ \\
-        \ooo By mutual induction on $D_2$, we have 
-             $D'_2 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]e}{[p/u]\monad{A}}$ \\
-        \ooo By mutual induction on $D_1$, we have 
-             $D'_3 :: \judgeA[{\Delta, [p/u]\Delta', a:[p/u]A}]{[p/u]r}{[p/u]\assert}$ \\
-        \ooo By definition of substitution, $[p/u]\assert = \assert$ \\
-        \ooo By definition of substitution, $[p/u]\monad{A} = \monad{([p/u]A)}$ \\
-        \ooo Therefore we have:\\
-        \oooo $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{\assert}$ \\
-        \oooo $D'_2 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]e}{\monad{([p/u]A)}}$ \\
-        \oooo $D'_3 :: \judgeA[{\Delta, [p/u]\Delta', a:[p/u]A}]{[p/u]q}{\assert}$ \\
-        \ooo By rule \textsc{SpecTriple} on $D'_1, D'_2, D'_3$, we have \\
-        \oox $D' :: \judgeS[{\Delta, [p/u]\Delta'}]
-                            {\mspec{[p/u]q}{[p/u]e}{a:[p/u]A}{[p/u]r}}$ \\
-        \ooo By definition of substitution, we have \\
-        \oox $\mspec{[p/u]q}{[p/u]e}{a:[p/u]A}{[p/u]r} = [p/u]\mspec{q}{e}{a:A}{r}$ \\
-        \ooo Therefore $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u]\mspec{q}{e}{a:A}{r}}$ \\
-      \end{tabbedproof}
-
-    \item Case \textsc{SpecAssert}:
-      \begin{tabbedproof}
-        \oo Assume $D :: \judgeS[{\Delta, u:\omega, \Delta'}]{\setof{q}}$ \\
-        \ooo By inversion on $D$, we have $D_1 :: \judgeA[{\Delta, u:\omega, \Delta'}]{q}{\assert}$ \\
-        \ooo By mutual induction on $D_1$, we have 
-              $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{[p/u]\assert}$ \\
-        \ooo By definition of substitution, $[p/u]\assert = \assert$ \\
-        \ooo Therefore $D'_1 :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{\assert}$ \\
-        \ooo By rule \textsc{SpecAssert}, 
-              $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{\validprop{([p/u]q)}}$ \\
-        \ooo By definition of substitution, $\validprop{([p/u]q)} = [p/u](\validprop{S})$ \\
-        \ooo Therefore 
-             $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u](\validprop{q})}$ \\
-      \end{tabbedproof}
-
-    \item Case \textsc{SpecBinary}:
-      \begin{tabbedproof}
-        \oo Assume $D :: \judgeS[{\Delta, u:\omega, \Delta'}]{S_1 \oplus S_2}$ \\
-        \ooo By inversion on $D$, we have \\
-        \oooo $D_1 :: \judgeS[{\Delta, u:\omega, \Delta'}]{S_1}$ \\
-        \oooo $D_2 :: \judgeS[{\Delta, u:\omega, \Delta'}]{S_2}$ \\
-        \oooo $\oplus \in \setof{\specand, \specor, \specimp}$ \\
-        \ooo By induction on $D_1$, we have 
-               $D'_1 :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u]S_1}$ \\
-        \ooo By induction on $D_2$, we have 
-               $D'_2 :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u]S_2}$ \\
-        \ooo By rule \textsc{SpecBinary} on $D'_1, D'_2$ and line 5, we have \\
-        \ooox $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u]S_1 \oplus [p/u]S_2}$ \\
-        \ooo By definition of substitution, $[p/u]S_1 \oplus [p/u]S_2 = [p/u](S_1 \oplus S_2)$ \\
-        \ooo Therefore $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u](S_1 \oplus S_2)}$ \\
-      \end{tabbedproof}
-
-    \item Case \textsc{SpecQuantify}:
-      \begin{tabbedproof}
-        \oo Assume $D :: \judgeS[{\Delta, u:\omega, \Delta'}]{Q u':\omega'.\; S}$ \\
-        \ooo By inversion on $D$, we have \\
-        \oooo $D_1 :: \judgeS[{\Delta, u:\omega, \Delta', u':\omega'}]{S}$ \\
-        \oooo $Q \in \setof{\forall, \exists}$ \\
-        \ooo By induction on $D_1$, we have $D'_1 :: \judgeS[{\Delta, [p/u]\Delta', u':[p/u]\omega'}]{[p/u]S}$ \\
-        \ooo By rule \textsc{SpecQuantify}, 
-              $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{Q u':[p/u]\omega'.\; [p/u]S}$ \\
-        \ooo By definition of substitution, $Q u':[p/u]\omega'.\; [p/u]S = [p/u](Q u':\omega'.\; S)$ \\
-        \ooo Therefore $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u](Q u':\omega'.\; S)}$ \\
-      \end{tabbedproof}
-    \end{itemize}
-  \end{enumerate}
-\end{proof}
-  
 \subsubsection{Semantics of Substitution}
 
 \begin{lemma}{(Substitution Preserves Meaning)}
 If $D_0 :: \judgeA{p}{\omega}$, then we have 
 
 \begin{enumerate}
-\item If $D :: \judgeA[{\Delta, u:\omega, \Delta'}]{q}{\omega'}$, then
+\item If $D :: \judgeA[{\Delta, u:\omega, \Delta'}]{q}{\omega'}$, and either 
+  $u$ does not occur in a type or program expression in $\Delta'$, $q$ or $\omega'$,  
+  or $\omega$ is a sort $\kappa$ and $p = \tau$, 
+  or $\omega$ is a sort $A$ and $p = e$,
   then there is a $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{[p/u]\omega'}$ such
   that for all $(\delta, \interp{D_0}\;\delta, \delta') \in 
                 \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$, 
   we have that $\interp{D}\;(\delta, \interp{D_0}\;\delta, \delta') = \interp{D'}\;(\delta, \delta')$ 
 
-\item If $D :: \judgeS[{\Delta, u:\omega, \Delta'}]{S}$, then
+\item If $D :: \judgeS[{\Delta, u:\omega, \Delta'}]{S}$, and either 
+  $u$ does not occur in a type or program expression in $\Delta'$, $q$ or $\omega'$,  
+  or $\omega$ is a sort $\kappa$ and $p = \tau$, 
+  or $\omega$ is a sort $A$ and $p = e$, 
   then there is a $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u]S}$ such
   that for all $(\delta, \interp{D_0}\;\delta, \delta') \in 
                 \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$, 
@@ -3342,7 +3526,7 @@ If $D_0 :: \judgeA{p}{\omega}$, then we have
       \oo We want to show 
           $\interp{D_1}\;\restricttyenv{\Delta, u:\omega, \Delta'}{(\delta, \interp{D_0}\;\delta, \delta')} = \interp{D'_1}\;\restricttyenv{\Delta, [p/u]\Delta'}{(\delta, \delta')}$ \\
       \oo Case analyze $\omega$:\\
-      \ooo If $\omega = \kappa'$:\\
+      \ooo If $\omega = \kappa'$ and $p = \tau'$:\\
       \oooo Then $D_0 :: \judgeA{\tau'}{\kappa'}$, where $p = \tau'$ \\
       \oooo By inversion, we have $D'_0 :: \judgeWK[\restrictkind{\Delta}]{\tau'}{\omega'}$ \\
       \oooo By definition, $\interp{D_0}\;\delta = \interp{D'_0}\;\restricttyenv{\Delta}{\delta'}$\\
@@ -3368,6 +3552,14 @@ If $D_0 :: \judgeA{p}{\omega}$, then we have
       \oooo By coherence, $\interp{D_1} = \interp{D'_1}$ \\
       \oooo Therefore 
             $\interp{D_1}\;\restricttyenv{\Delta, u:\omega, \Delta'}{(\delta, \interp{D_0}\;\delta, \delta')} = \interp{D'_1}\;\restricttyenv{\Delta, [p/u]\Delta'}{(\delta, \delta')}$ \\
+      \ooo If $\omega = \kappa'$ and $u$ does not occur in $\Delta'$ or $\tau$:\\
+      \oooo Since $u$ does not occur, we can strengthen $D_1$ to get \\
+      \ooox $D'_1 :: \judgeWK[\restrictkind{\Delta}, \restrictkind{\Delta'}]{\tau}{\kappa}$ \\
+      \oooo Furthermore, we know $\interp{D_1}\;(\restricttyenv{\Delta, u:\omega, \Delta'}{(\delta, \interp{D_0}\;\delta, \delta')}) = \interp{D'_1}\;(\restricttyenv{\Delta, \Delta'}{(\delta, \delta')})$ \\
+      \oooo We know $[p/u]\Delta' = \Delta'$, and $[p/u]\tau = \tau$ and $[p/u]\kappa = \kappa$ \\
+      \ooox so $D'_1 :: \judgeWK[\restrictkind{\Delta}, \restrictkind{[p/u]\Delta'}]{[p/u]\tau}{[p/u]\kappa}$ \\
+      \oooo Hence $D'_1 :: \judgeWK[\restrictkind{\Delta, [p/u]\Delta'}]{[p/u]\tau}{[p/u]\kappa}$ \\
+      \oooo Hence $\interp{D}(\delta, \interp{D_0}\delta, \delta') = \interp{D'}(\delta, \delta')$ \\
     \end{tabbedproof}
 
 
@@ -3401,7 +3593,7 @@ If $D_0 :: \judgeA{p}{\omega}$, then we have
              \;\restrictvals{\Delta, [p/u]\Delta'}{(\delta, \delta')}$\\
 
       \oo Case on $\omega$: \\
-      \ooo If $\omega = \kappa$: \\
+      \ooo If $\omega = \kappa$ and $p = \tau$: \\
       \oooo Then $D_0 :: \judgeA{\tau}{\kappa}$, where $p = \tau$ \\
       \oooo Then by inversion on $D_0$, we have 
             $D'_0 :: \judgeWK[\restrictkind{\Delta, u:\kappa, \Delta'}]{\tau}{\kappa}$ \\
@@ -3433,7 +3625,7 @@ If $D_0 :: \judgeA{p}{\omega}$, then we have
                                            {(\delta, \delta')})
              \;\restrictvals{\Delta, [p/u]\Delta'}{(\delta, \delta')}$\\
 
-      \ooo If $\omega = B$: \\
+      \ooo If $\omega = B$ and $p = e'$: \\
       \oooo Therefore $D_0 :: \judgeA{e'}{B}$, where $p = e'$ \\
       \oooo By inversion on $D_0$, we have 
             $D'_0 :: \judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}{e'}{B}$ \\
@@ -3515,6 +3707,12 @@ If $D_0 :: \judgeA{p}{\omega}$, then we have
       \ooox $U(\interp{D_2}\;\restricttyenv{\Delta, [p/u]\Delta'}
                                            {(\delta, \delta')})
              \;\restrictvals{\Delta, [p/u]\Delta'}{(\delta, \delta')}$\\
+      \ooo If $u$ does not occur in $\Delta'$, $q$ or $\omega'$: \\
+      \oooo Then we can strengthen $D$ to derive a fresh $E :: \judgeA[\Delta, \Delta']{q}{\omega'}$\\
+      \ooox such that $\interp{D}(\delta, \interp{D_0}\delta, \delta') = \interp{E}(\delta, \delta')$ \\
+      \oooo Since $u$ does not occur, $[p/u]\Delta' = \Delta$ and $[p/u]q = q$ and $[p/u]\omega' = \omega'$\\
+      \oooo Hence $E :: \judgeA[\Delta, [p/u]\Delta']{[p/u]q}{[p/u]\omega'}$\\
+      \oooo This is the conclusion we want. \\
     \end{tabbedproof}
 
   \item Case \textsc{TermHyp}:
@@ -4135,6 +4333,71 @@ $\delta \in \interp{\judgeACtx{\Delta}}$, $\interp{\judgeS{S}}\;\delta = \top$.
 
 This says that for any assignment of the free variables, the valid
 specification $S$ is true.
+
+\begin{figure}[h]
+\begin{mathpar}
+  \inferrule*{ }
+             {\judgeS{\spec{p}{c}{a:A}{q} \specimp \mspec{p}{\monad{c}}{a:A}{q}}} 
+\and 
+  \inferrule*{ }
+    {\judgeS{\mspec{p}{c}{a:A}{q} \specimp \spec{p}{\monad{c}}{a:A}{q}}} 
+\and
+
+  \inferrule*{ }
+    {\judgeS{\spec{P}{e}{a:A}{P \land a = e}}}
+\and
+
+  \inferrule*{ }
+    {\judgeS{\spec{e \pointsto_A -}{e := e'}{a:\unittype}{e \pointsto_A e'}}}
+\and
+
+  \inferrule*{ }
+    {\judgeS{\spec{\emp}{\newref{A}{e}}{a:\reftype{A}}{a \pointsto e}}}
+\and
+
+  \inferrule*{ }
+    {\judgeS{\spec{e \pointsto_A e'}{!e}{a:A}{e \pointsto_A e' \land a = e'}}}
+\and
+
+  \inferrule*
+            {\judgeS{\mspec{p}{e}{x:A}{q}} \\
+             \judgeS[\Delta,x:A]{\spec{q}{c}{a:B}{r}}}
+            {\judgeS{\spec{p}{\letv{x}{e}{c}}{a:B}{r}}}
+\and
+
+  \inferrule*
+            {\judgeS{(\forall x:\monad{A}.\; \mspec{p}x{a:A}{q(a)} \specimp \mspec{p}{e}{a:A}{q})}}
+            {\judgeS{\mspec{p}{\fix{x:\monad{A}}{e}}{a:A}{q}}}
+\and
+
+  \inferrule*{\judgeS{\setof{r} \specimp \spec{p}{c}{a:A}{q}} \\
+              \mbox{$r$ is a pure formula} \\
+              \entailsP{\Delta}{p}{r}}
+             {\judgeS{\spec{p}{c}{a:A}{q}}}
+\and
+
+  \inferrule*{\judgeS{\setof{r} \specimp \spec{p \land r}{c}{a:A}{q}}}
+             {\judgeS{\setof{r} \specimp \spec{p}{c}{a:A}{q}}}
+\and
+
+  \inferrule*{ }
+             {\judgeS{\setof{\validprop{S}} \specimp S}}
+\and
+
+  \inferrule*{\judgeS{\spec{\exists u:\omega.\;p}{c}{a:A}{q}}}
+             {\judgeS[\Delta, u:\omega]{\spec{p}{c}{a:A}{q}}}
+
+\and
+
+  \inferrule*{\judgeS{\spec{p}{c}{a:A}{q}} \\
+              \judgeS{\spec{p'}{c}{a:A}{q'}}}
+             {\judgeS{\spec{p \vee p'}{c}{a:A}{q \vee q'}}}
+
+\end{mathpar}
+\caption{Axioms of the Program Logic}
+\label{spec-logic-axioms}
+\end{figure}
+
 
 \subsection{Soundness of Axioms}
 
