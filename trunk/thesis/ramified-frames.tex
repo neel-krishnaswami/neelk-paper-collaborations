@@ -2123,7 +2123,7 @@ to maintain the acyclicity of the dataflow graph.
 
 \begin{specification}
 \nextline $\mathit{Realize}(\mathsf{\hat{f}}, f) = $ 
-\nextline\;\;\= $\forall \psi, vs.\; \spec{G(\psi)}{\mathsf{\hat{f}}\;i}{a}{\exists \phi.\;G(\psi \otimes \phi_0) \land \mathit{Transduce}(vs, i, \phi, a, f\;vs)}$
+\nextline\;\;\= $\forall \psi, i.\; \spec{G(\psi)}{\mathsf{\hat{f}}\;i}{a}{\exists \phi.\;G(\psi \otimes R(\setof{i}, \phi_0)) \land \forall vs.\;\mathit{Transduce}(vs, i, \phi, a, f\;vs)}$
 \end{specification}
 
 \subsection{Correctness Proofs}
@@ -2213,12 +2213,21 @@ $\mathit{Transduce}(vs, i, \phi \otimes \sigma, o, g\;(f\;vs))$ holds.
   $\ready{\theta \otimes \phi_{n+1} \otimes
     \sigma_{n+1}}{o}{(g\;(f\;vs))_n}$.
 
-\item Third we want to show that $o \in \domain{\phi_n \otimes \sigma_n}$. Since $o \in \domain{\sigma_n}$,
-  it follows immediately that $o \in \domain{\phi_n \otimes \sigma_n}$. 
+\item Third, we want to show that $\unready{R(\setof{i}, \phi_n \otimes \sigma_n)}{o}$. 
+
+  By hypothesis, we know that $\unready{R(\setof{i},
+    \phi_n)}{m}$. Hence $\unready{R(\setof{i}, \phi_n) \otimes
+    \sigma_n}{o}$, and hence $\unready{R(\setof{i}, \phi_n \otimes
+    \sigma_n)}{o}$, since $\sigma$ is closed with respect to $i$. 
 
 \item Fourth, we want to show that $\closed{\phi_n \otimes \sigma_n}{\domain{\phi_n \otimes \sigma_n} \cup \setof{i}}$. We know that  $\closed{\phi_n}{\domain{\phi_n} \cup \setof{i}}$ and 
 $\closed{\sigma_n}{\domain{\sigma_n} \cup \setof{m}}$. So we know that $\closed{\phi_n \otimes \sigma_n}{\domain{\phi_n \otimes \sigma_n} \cup \setof{i,m}}$. Since $m \in \domain{\phi_n}$, we have that
 $\closed{\phi_n \otimes \sigma_n}{\domain{\phi_n \otimes \sigma_n} \cup \setof{i}}$
+
+\item Finally we want to show that $o \in \domain{\phi_n \otimes \sigma_n}$. Since $o \in \domain{\sigma_n}$,
+  it follows immediately that $o \in \domain{\phi_n \otimes \sigma_n}$. 
+
+
 \end{itemize}
 
 Now, let's prove the entailment of specifications. 
@@ -2311,8 +2320,18 @@ where
   But $b \in \domain{\phi_n}$ and $c \in \domain{\sigma_n}$, so 
    $\closed{\phi_n \otimes \sigma_n \otimes \omega_n}{\domain{\phi_n \otimes \sigma_n \otimes \omega_n} \cup \setof{i}}$. 
 
+\item We want to show that $\unready{R(\setof{i}, \phi_n \otimes \sigma_n \otimes \omega_n)}{o}$ 
+
+  We know by hypothesis that $\unready{R(\setof{i}, \phi_n)}{b}$
+  holds. This lets us conclude that $\unready{R(\setof{i}, \phi_n
+    \otimes \omega_n)}{o}$ holds. From this, it follows that
+  $\unready{R(\setof{i}, \phi_n \otimes \sigma_n \otimes
+    \omega_n)}{o}$.
+
 \item We want to show that $o \in \domain{\omega_n}$. This is immediate. 
 \end{itemize}
+
+\noindent Now we will show the implication over triples holds.
 
 \begin{tabbedproof}
 \oo Assume we have $\theta, \theta', n$, and $u$. \\
@@ -2360,8 +2379,7 @@ where
 \subsubsection{Correctness of $\mathsf{switch}$}
 
 \begin{lemma}{(The $\mathsf{par}$ network)}
-If it is the case that for all $v$, $\mathit{Transduce}(v, i, \phi, b,
-f\;v)$ holds, and that for all $v$,
+If it is the case that $\mathit{Transduce}(v, i, \phi, b,f\;v)$ holds, and that 
 $\mathit{Transduce}(\mathit{drop}\;k\;v, i, \sigma, c, g\;v)$ holds,
 then it is the case that $\mathit{Transduce}(v, i, \omega, o,
 \mathit{switch}\;k\;f\;g\;v)$ holds, where
@@ -2393,13 +2411,11 @@ then it is the case that $\mathit{Transduce}(v, i, \omega, o,
     \oo If $n < k$:\\
     \ooo Then $\omega_n = \localref{r}{n} \otimes \phi_n \otimes R(\setof{i}, \sigma_0) \otimes \delta_n$ \\
     \ooo So we know that $\unready{\theta \otimes \phi_n}{b}$ holds \\
-    \ooo So we know that $\unready{\theta \otimes \omega_n}{b}$ holds \\
     \ooo Since $\delta_n = \cellpos{o}{e}{(\mathit{switch}\;f\;g\;v)_n}{\setof{b}}$, we can see that \\
     \ooo $\unready{\theta \otimes \omega_n}{b}$ \\
     \oo If $n \geq k$: \\
     \ooo Then $\omega_n = \localref{r}{n} \otimes R(\setof{i}, \phi_k) \otimes \sigma_{n-k} \otimes \delta_n$ \\
     \ooo So we know that $\unready{\theta \otimes \sigma_{n-k}}{c}$ holds \\
-    \ooo So we know that $\unready{\theta \otimes \omega_n}{c}$ holds \\
     \ooo Since $\delta_n = \cellpos{o}{e}{(\mathit{switch}\;f\;g\;v)_n}{\setof{c}}$, we can see that \\
     \ooo $\unready{\theta \otimes \omega_n}{c}$ \\
   \end{tabbedproof}
@@ -2411,14 +2427,12 @@ then it is the case that $\mathit{Transduce}(v, i, \omega, o,
     \oo If $n < k$:\\
     \ooo Then $\omega_n = \localref{r}{n} \otimes \phi_n \otimes R(\setof{i}, \sigma_0) \otimes \delta_n$ \\
     \ooo So we know that $\ready{\theta \otimes \phi_n}{b}{(f\;v)_n}$ holds \\
-    \ooo So we know that $\ready{\theta \otimes \omega_n}{b}{(f\;v)_n}$ holds \\
     \ooo Since $\delta_n = \cellpos{o}{e}{(\mathit{switch}\;f\;g\;v)_n}{\setof{b}}$, we can see that \\
     \ooo $\ready{\theta \otimes \omega_n}{b}{(\mathit{switch}\;f\;g\;v)_n}$ \\
     \oo If $n \geq k$: \\
     \ooo Then $\omega_n = \localref{r}{n} \otimes R(\setof{i}, \phi_k) \otimes \sigma_{n-k} \otimes \delta_n$ \\
     \ooo So we know that $\ready{\theta}{i}{(\mathit{drop}\;k\;v)_{n-k}}$ \\
     \ooo So we know that $\ready{\theta \otimes \sigma_{n-k}}{c}{(g\;v)_{n-k}}$ holds \\
-    \ooo So we know that $\ready{\theta \otimes \omega_n}{c}{(g\;v)_{n-k}}$ holds \\
     \ooo Since $\delta_n = \cellpos{o}{e}{(\mathit{switch}\;f\;g\;v)_n}{\setof{c}}$, we can see that \\
     \ooo $\ready{\theta \otimes \omega_n}{b}{(\mathit{switch}\;f\;g\;v)_n}$ \\
   \end{tabbedproof}
@@ -2438,6 +2452,23 @@ then it is the case that $\mathit{Transduce}(v, i, \omega, o,
     \ooox $\closed{\phi_k}{\domain{\phi_k} \cup \setof{i}}$ so $\closed{R(\setof{i}, \phi_k)}{\domain{R(\setof{i}, \phi_k)} \cup \setof{i}}$ and \\
     \ooox $\closed{\delta_n}{\setof{c}}$ \\
     \ooo Since $c \in \domain{\sigma_{n-k}}$, it follows that $\closed{\omega_n}{\domain{\omega_n} \cup \setof{i}}$  \end{tabbedproof}
+
+\item Next, we want to show that $\unready{R(\setof{i}, \omega_n)}{o}$
+
+  \begin{tabbedproof}
+    \oo To prove this, consider whether $n < k$:\\
+    \oo If $n < k$:\\
+    \ooo Then $\omega_n = \localref{r}{n} \otimes \phi_n \otimes R(\setof{i}, \sigma_0) \otimes \delta_n$ \\
+    \ooo So we know that $\unready{\theta \otimes \phi_n}{b}$ holds \\
+    \ooo Since $\delta_n = \cellpos{o}{e}{(\mathit{switch}\;f\;g\;v)_n}{\setof{b}}$, we can see that \\
+    \ooo $\unready{\theta \otimes \omega_n}{b}$ \\
+    \oo If $n \geq k$: \\
+    \ooo Then $\omega_n = \localref{r}{n} \otimes R(\setof{i}, \phi_k) \otimes \sigma_{n-k} \otimes \delta_n$ \\
+    \ooo So we know that $\unready{\theta \otimes \sigma_{n-k}}{c}$ holds \\
+    \ooo Since $\delta_n = \cellpos{o}{e}{(\mathit{switch}\;f\;g\;v)_n}{\setof{c}}$, we can see that \\
+    \ooo $\unready{\theta \otimes \omega_n}{c}$ \\
+  \end{tabbedproof}
+
 
 \item Next, we want to show that $o \in \domain{\omega_n}$, which is immediate. 
 \end{itemize}
@@ -2548,12 +2579,46 @@ Now we will show the implication over triples.
 
 \begin{proof}
   \begin{itemize}
-  \item 
-  \item 
-  \item 
-  \item 
-  \item 
-  \item 
+  \item First, we want to prove that if $\unready{\theta}{i}$ then $\unready{\theta \otimes \sigma_n}{o}$ 
+
+    \begin{tabbedproof}
+      \oo Assume $\unready{\theta}{i}$ \\
+      \oo Hence $\unready{\theta \otimes \iota_n}{s}$ \\
+      \oo Hence $\unready{\theta \otimes \iota_n \otimes \phi_n}{t}$ \\
+      \oo Hence $\unready{\theta \otimes \iota_n \otimes \phi_n \otimes \delta_n}{t}$ \\
+    \end{tabbedproof}
+
+  \item Now, we want to show that if $\ready{\theta}{i}{ys_n}$, then $\ready{\theta \otimes \sigma_{n+1}}{o}{(\mathit{loop}\;x\;f\;ys)_n}$ 
+    \begin{tabbedproof}
+      \oo Assume $\ready{\theta}{i}{ys_n}$ \\
+      \oo Hence $\ready{\theta \otimes \iota_n}{s}{((\mathit{map}\;\pi_1\;(\mathit{cycle}\;x\;f\;ys))_n, ys_n)}$ \\
+      \oo Hence $\ready{\theta \otimes \iota_n \otimes \phi_n}{t}{(f\;(\mathit{zip}\;(\mathit{map}\;\pi_1\;(\mathit{cycle}\;x\;f\;ys))\;ys))_n}$ \\
+      \oo Hence $\ready{\theta \otimes \iota_n \otimes \phi_n \otimes \delta_n}{t}{(\mathit{loop}\;x\;f\;ys)_n}$ \\
+    \end{tabbedproof}
+
+  \item Now, we want to show that $\closed{\sigma_n}{\domain{\sigma_n} \cup \setof{i}}$ 
+
+    \begin{tabbedproof}
+      \oo First, observe that $\closed{\iota_n}{\setof{i} \cup \domain{\iota_n}}$\\
+      \oo Next, by hypothesis $\closed{\phi_n}{\domain{\phi_n} \cup \setof{s}}$ \\
+      \oo Note that $s \in \domain{\iota_n}$ \\
+      \oo Next, note that $closed{\delta_n}{\setof{t} \cup \domain{\delta_n}}$ \\
+      \oo Note that $t \in \domain{\phi_n}$ \\
+      \oo Hence $\closed{\sigma_n}{\setof{i} \cup \domain{\sigma_n}}$
+    \end{tabbedproof}
+  \item Next, we want to show that $o \in \domain{\sigma_n}$. This is obvious, since $\delta_n$ is part 
+    of $\sigma_n$. 
+  \item Next, we want to show that $\unready{R(\setof{i}, \sigma_n)}{o}$
+    
+    \begin{tabbedproof}
+      \oo $R(\setof{i}, \iota_n) = \cellneg{s}{e_1}$, so $\unready{R(\setof{i}, \iota_n)}{s}$ \\
+      \oo Hence by hypothesis, we know $\unready{R(\setof{i}, \iota_n) \otimes R(\setof{i}, \phi_n)}{t}$ \\
+      \oo So we know that $\unready{R(\setof{i}, \iota_n) \otimes R(\setof{i}, \phi_n) \otimes \delta_n}{o}$ \\
+      \oo But $R(\setof{i}, \delta_n) = \delta_n$ \\
+      \oo Furthermore, $R(\setof{i}, \localref{r}{\ldots}) = \localref{r}{\ldots}$ \\
+      \oo Hence $\unready{R(\setof{i}, \sigma_n)}{o}$ 
+    \end{tabbedproof}
+
   \end{itemize}
 
 Now, we'll prove the entailment of implications. 
@@ -2611,6 +2676,33 @@ Now, we'll prove the entailment of implications.
 \oox $\land\; a = (z, \setof{t})$\\
 \oo using the closure properties of $\phi, \theta, \delta,$ and $\iota$, which is what we want.
 \end{tabbedproof}
+\end{proof}
+
+\subsubsection{Correctness of Realizability}
+
+\begin{prop*}{(FRP Correctness)}
+Then, the following specifications are provable: 
+\begin{enumerate}
+\item $\forall f:A\to B.\; \mathit{Realize}(\liftop f, \mathit{lift}\;f)$
+\item $\forall p, f, q, g.\;\mathit{Realize}(p, f) \specand \mathit{Realize}(q, g) \specimp \mathit{Realize}(\composeop p\;q, \mathit{compose}\;f\;g)$
+\item $\forall p, f, q, g.\;\mathit{Realize}(p, f) \specand \mathit{Realize}(q, g)
+                       \specimp \mathit{Realize}(\parop p\;q, par\;f\;g)$
+\item $\forall k, p, f, q, g.\;\mathit{Realize}(p, f) \specand \mathit{Realize}(q, g)
+                          \specimp \mathit{Realize}(\switchop k\;p\;q, switch\;k\;f\;g)$
+\item $\forall a_0, p, f.\; \mathit{Realize}(p, f) \specimp \mathit{Realize}(\loopop\;a_0\;p, loop\;a_0\;f)$
+\end{enumerate}
+\end{prop*}
+
+\begin{proof}
+  Since each of these combinators are straight line code, the
+  correctness proof consists of nothing but building the dataflow
+  graph and observing that the resulting graph matches the state
+  posited in the transduction lemmas we just proved.
+
+  The only even marginally interesting part of these proofs comes in
+  the use of the rule of consequence to take newly-created cells (whose
+  predicates are of the form $\cellneg{c}{e}$), and turn them into
+  $\cellpos{c}{e}{\mathit{dummy}}{rs}$.
 \end{proof}
 
 \section{Future Work}

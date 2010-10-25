@@ -25,7 +25,7 @@ continuations. Its syntax is given in figure~\ref{lang-type-syntax}.
          \N \bnfalt \\
      &&& \reftype{A} \bnfalt
          \monad{\tau} \bnfalt 
-         \cont{\tau} \\
+         \\ % \cont{\tau} \\
      &&& \alpha \bnfalt
          \tau\;\tau \bnfalt 
          \fun{\alpha}{\kappa}{\tau} 
@@ -39,7 +39,7 @@ continuations. Its syntax is given in figure~\ref{lang-type-syntax}.
          \N \bnfalt  \\
     &&&  \reftype{A} \bnfalt
          \monad{A} \bnfalt 
-         \cont{A} \\
+         \\ % \cont{A} \\
     &&&  \alpha \bnfalt
          \tau\;\tau \bnfalt \\
     &&&  \forall \alpha:\kappa.\; A \bnfalt 
@@ -126,10 +126,10 @@ in figure~\ref{polytype-kinding}.
 \inferrule*[right=KComp]
           {\judgeWK{\tau}{\star}}
           {\judgeWK{\monad{\tau}}{\star}}
-\and
-\inferrule*[right=KCont]
-          {\judgeWK{\tau}{\star}}
-          {\judgeWK{\cont{\tau}}{\star}}
+% \and
+% \inferrule*[right=KCont]
+%           {\judgeWK{\tau}{\star}}
+%           {\judgeWK{\cont{\tau}}{\star}}
 \\
 \inferrule*[right=KHyp]
           { \alpha:\kappa \in \Theta }
@@ -180,10 +180,10 @@ in figure~\ref{polytype-kinding}.
 \inferrule*[right=KComp]
           {\judgeWK{A}{\bigstar}}
           {\judgeWK{\monad{A}}{\bigstar}}
-\and
-\inferrule*[right=KCont]
-          {\judgeWK{A}{\bigstar}}
-          {\judgeWK{\cont{A}}{\bigstar}}
+% \and
+% \inferrule*[right=KCont]
+%           {\judgeWK{A}{\bigstar}}
+%           {\judgeWK{\cont{A}}{\bigstar}}
 \\
 \inferrule*[right=KHyp]
           { \alpha:\star \in \Theta }
@@ -251,10 +251,10 @@ equality judgment whenever we need to compare monotyped terms.
           { \judgeKeq{\tau}{\tau'}{\star} }
           { \judgeKeq{\monad{\tau}}{\monad{\tau'}}{\star} }
 \and
-\inferrule[]
-          { \judgeKeq{\tau}{\tau'}{\star} }
-          { \judgeKeq{\cont{\tau}}{\cont{\tau'}}{\star} }
-\and
+% \inferrule[]
+%           { \judgeKeq{\tau}{\tau'}{\star} }
+%           { \judgeKeq{\cont{\tau}}{\cont{\tau'}}{\star} }
+% \and
 \inferrule[]
           { \alpha:\kappa \in \Theta }
           { \judgeKeq{\alpha}{\alpha}{\kappa} }
@@ -337,10 +337,10 @@ equality judgment whenever we need to compare monotyped terms.
           { \judgeKeq{A}{A'}{\bigstar} }
           { \judgeKeq{\monad{A}}{\monad{A'}}{\bigstar} }
 \and
-\inferrule[]
-          { \judgeKeq{A}{A'}{\bigstar} }
-          { \judgeKeq{\cont{A}}{\cont{A'}}{\bigstar} }
-\and
+% \inferrule[]
+%           { \judgeKeq{A}{A'}{\bigstar} }
+%           { \judgeKeq{\cont{A}}{\cont{A'}}{\bigstar} }
+% \and
 \inferrule[]
           { \alpha:\star \in \Theta }
           { \judgeKeq{\alpha}{\alpha}{\bigstar} }
@@ -523,8 +523,8 @@ Loc    & = & \bigcup \setof{X \;|\; \exists A.\; (\judgeWK[\cdot]{A}{\bigstar}) 
 
 \interpmono{\judgeWK[\cdot]{\reftype{A}}{\star}}(K_+, K_-) & = & Loc(A) \\
 
-\interpmono{\judgeWK[\cdot]{\cont{\tau}}{\star}}(K_+, K_-) & = & 
-    \interpmono{\judgeWK[\cdot]{\tau}{\star}}(K_-,K_+) \to K_+ \\
+% \interpmono{\judgeWK[\cdot]{\cont{\tau}}{\star}}(K_+, K_-) & = & 
+%     \interpmono{\judgeWK[\cdot]{\tau}{\star}}(K_-,K_+) \to K_+ \\
 
 \interpmono{\judgeWK[\cdot]{\monad{\tau}}{\star}}(K_+, K_-) & = & 
    (\interpmono{\judgeWK[\cdot]{\tau}{\star}}(K_+, K_-) \to K_-) \to K_+ \\[1em]
@@ -570,15 +570,15 @@ label. This is because we have no interpretation function that can
 interpret the quantifiers yet; the current definition interprets only
 the monotypes. 
 
-The first time we use $K$ is when we interpret the type $\cont{\tau}$.
-Now, the $K_+$ and $K_-$ arguments are revealed as the positive and
-negative occurrences of the ``answer type'' of a continuation. That is,
-we interpret $\cont{\tau}$ as the function space
-$\interpmono{\tau}(K_-, K_+) \to K_+$.  Notice that the positive and
-negative occurrences trade places on the recursive call, because it
-occurs on the left-hand-side of a function space. Likewise, the
-monadic type $\monad{\tau}$ is interpreted as a sort of
-double-negation: $(\interpmono{\tau}(K_+, K_-) \to K_-) \to K_+$.
+The first time we use $K$ is when we interpret the type
+$\monad{\tau}$.  The monadic type $\monad{\tau}$ is interpreted as a
+sort of double-negation: $(\interpmono{\tau}(K_+, K_-) \to K_-) \to
+K_+$.  So the $K_+$ and $K_-$ arguments are revealed as the positive
+and negative occurrences of the ``answer type'' of a continuation.
+One thing worth pointing out is that the positive and negative
+occurrences do \emph{not} trade places on the recursive call, because
+it occurs on the left-hand-side of the left-hand-side of a function
+space (which is hence a positive occurrence). 
 
 However, a careful reader will have noticed that so far our
 definitions do not mention state at all. What will ultimately happen
@@ -628,9 +628,9 @@ continuation arguments, and again define a functor.
 
 \interp{\judgeWK{\N}{\bigstar}}\;\theta\;(K_+, K_-) & = &  \N 
 \\
-\interp{\judgeWK{\cont{A}}{\bigstar}}\;\theta\;(K_+,K_-) & = & 
-   \interp{\judgeWK{A}{\bigstar}}\;\theta\;(K_-,K_+) \to K_+
-\\
+% \interp{\judgeWK{\cont{A}}{\bigstar}}\;\theta\;(K_+,K_-) & = & 
+%    \interp{\judgeWK{A}{\bigstar}}\;\theta\;(K_-,K_+) \to K_+
+% \\
 \interp{\judgeWK{\monad{A}}{\bigstar}}\;\theta\;(K_+,K_-) & = & 
    (\interp{\judgeWK{A}{\bigstar}}\;\theta\;(K_+,K_-) \to K_-) \to K_+
 \\
@@ -691,12 +691,12 @@ itself a domain. So if we can solve the equation $K = \mathcal{K}(K,
 K)$, then we can plug $K$ into all our other definitions to interpret
 all of the types in our language.
 
-Filling this in, we can understand how continuations of type
-$\cont{\tau}$ work: they receive a value of type $\tau$ and a heap,
-and then either loop or terminate. The monadic type $\monad{\tau}$ now
-can be seen as the state-and-continuation monad, which combines the
-effects of the continuation monad and the state monad via a domain 
-which looks a bit like $(\tau \to H \to O) \to H \to O$. 
+Filling this in, we can understand how continuations of type $\tau$
+work: they receive a value of type $\tau$ and a heap, and then either
+loop or terminate. The monadic type $\monad{\tau}$ now can be seen as
+the state-and-continuation monad, which combines the effects of the
+continuation monad and the state monad via a domain which looks a bit
+like $(\tau \to H \to O) \to H \to O$.
 
 To show that this equation actually has a solution, it suffices to 
 show that $F$ is a locally-continuous functor. We'll prove this by 
@@ -1707,7 +1707,7 @@ terms is given in figure~\ref{lang-syntax}.
 \\[1em]
   \mbox{Pointed Types} & 
      D & ::= & \monad{A} \bnfalt A \to D \bnfalt \forall \alpha:\kappa.\; D 
-               \bnfalt \unittype \bnfalt D \times D \bnfalt \cont{A} 
+               \bnfalt \unittype \bnfalt D \times D % \bnfalt \cont{A} 
 \\[1em] 
   \end{array}
 \end{displaymath}
