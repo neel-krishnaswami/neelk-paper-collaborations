@@ -2,12 +2,12 @@
 
 \section{Syntax of Types and Kinds}
 
-In this section, I will describe the type structure of the 
-programming language I will use for this thesis. The language is a
-pure, total, predicatively polymorphic programming language (with
+In this section, I will describe the type structure of the programming
+language I will use in this dissertation. The language is a pure,
+total, predicatively polymorphic programming language (with
 quantification over higher kinds), augmented with a monadic type
-constructor that permits nontermination, higher-order state, and
-continuations. Its syntax is given in figure~\ref{lang-type-syntax}. 
+constructor that permits nontermination and higher-order state. Its
+syntax is given in figure~\ref{lang-type-syntax}.
 
 
 \begin{figure}[h]
@@ -40,8 +40,7 @@ continuations. Its syntax is given in figure~\ref{lang-type-syntax}.
     &&&  \reftype{A} \bnfalt
          \monad{A} \bnfalt 
          \\ % \cont{A} \\
-    &&&  \alpha \bnfalt
-         \tau\;\tau \bnfalt \\
+    &&&  \tau \bnfalt \\
     &&&  \forall \alpha:\kappa.\; A \bnfalt 
          \exists \alpha:\kappa.\; A \\[1em]
     \mbox{Type Contexts} & 
@@ -74,7 +73,7 @@ denotational semantics of references will rely upon this intuition.
 The polytypes $A$ themselves extend the monotypes with universal
 quantification $\forall \alpha:\kappa.\;A$ as well as existential
 types $\exists \alpha:\kappa.\;A$. Each of the simple type
-constructors -- sums, products, functions, computations -- also may
+constructors --- sums, products, functions, computations --- also may
 contain polymorphic types as subexpressions within it. Though it may
 not look like it at first glance, this is actually only a fairly
 modest generalization of the type schemes of ML. Because the universal
@@ -85,7 +84,7 @@ predicative polymorphism.
 The kinding judgments $\judgeWK{\tau}{\kappa}$ and
 $\judgeWK{A}{\bigstar}$ determine well-formedness of monotypes and
 polytypes, respectively. Notice that we use two judgments, because we
-do not give polytypes their own first-class kind $\bigstar$ -- this
+do not give polytypes their own first-class kind $\bigstar$ --- this
 means that we can syntactically enforce the restriction that the
 context $\Theta$, which is a collection of type variables and their
 kinds, can only range over kinds which can contain only monotypes.
@@ -185,14 +184,9 @@ in figure~\ref{polytype-kinding}.
 %           {\judgeWK{A}{\bigstar}}
 %           {\judgeWK{\cont{A}}{\bigstar}}
 \\
-\inferrule*[right=KHyp]
-          { \alpha:\star \in \Theta }
-          { \judgeWK{\alpha}{\bigstar} }
-\and
-\inferrule*[right=KApp]
-          { \judgeWK{\tau}{\kappa' \to \star} \\
-            \judgeWK{\tau'}{\kappa'} }
-          { \judgeWK{\tau\;\tau'}{\bigstar} }
+\inferrule*[right=KMono]
+          { \judgeWK{\tau}{\star} }
+          { \judgeWK{\tau}{\bigstar} }
 \\
 \inferrule*[right=KForall]
            { \judgeWK[\Theta, \alpha:\kappa]{A}{\bigstar} }
@@ -342,12 +336,8 @@ equality judgment whenever we need to compare monotyped terms.
 %           { \judgeKeq{\cont{A}}{\cont{A'}}{\bigstar} }
 % \and
 \inferrule[]
-          { \alpha:\star \in \Theta }
-          { \judgeKeq{\alpha}{\alpha}{\bigstar} }
-\and
-\inferrule[]
-          { \judgeKeq{\tau \; \sigma}{\tau' \; \sigma'}{\star} }
-          { \judgeKeq{\tau \; \sigma}{\tau' \; \sigma'}{\bigstar} }
+          { \judgeKeq{\tau}{\tau'}{\star} }
+          { \judgeKeq{\tau}{\tau'}{\bigstar} }
 \and
 \inferrule[]
           { \judgeKeq[\Theta, \alpha:\kappa]{A}{B}{\bigstar} }
@@ -360,10 +350,31 @@ equality judgment whenever we need to compare monotyped terms.
           { \judgeKeq{\exists \alpha:\kappa.\;A}
                      {\exists \alpha:\kappa.\;B}
                      {\bigstar} }
+\\
+\inferrule[]
+          {\judgeWK{A}{\bigstar}}
+          {\judgeKeq{A}{A}{\bigstar}}
+\and
+\inferrule[]
+          {\judgeKeq{A}{B}{\bigstar} \\ \judgeKeq{B}{C}{\bigstar}}
+          {\judgeKeq{A}{C}{\bigstar}}
+\and
+\inferrule[]
+          {\judgeKeq{A}{B}{\bigstar}}
+          {\judgeKeq{B}{A}{\bigstar}}
 \end{mathpar}
 \caption{Equality Rules for Polytypes}
 \label{polytype-equality}
 \end{figure}
+
+\begin{prop}{(Weakening)}
+If $\judgeWK[\Theta]{\tau}{\kappa}$  then $\judgeWK[\Theta, \alpha:\kappa']{\tau}{\kappa}$. 
+\end{prop}
+\begin{proof}
+This follows from structural induction on the derivation of 
+$\judgeWK[\Theta]{\tau}{\kappa}$. 
+\end{proof}\\
+
 
 \begin{prop}{(Substitution)}
 If we have that $\judgeWK[\Theta, \alpha:\kappa']{\tau}{\kappa}$ and 
@@ -372,7 +383,7 @@ $\judgeWK{\tau'}{\kappa'}$, then $\judgeWK{[\tau'/\alpha]\tau}{\kappa}$.
 \begin{proof}
 This follows from structural induction on the derivation of 
 $\judgeWK[\Theta, \alpha:\kappa']{\tau}{\kappa}$. 
-\end{proof}
+\end{proof}\\
 
 
 \begin{prop}{(Well-Kindedness of Equality)}
@@ -382,7 +393,7 @@ $\judgeWK{\tau}{\kappa}$ and $\judgeWK{\sigma}{\kappa}$.
 \begin{proof}
 This follows from structural induction on the derivation of   
 $\judgeKeq{\tau}{\sigma}{\kappa}$.
-\end{proof}
+\end{proof}\\
 
 \begin{prop}{(Substitution into Equality)}
   If we have that $\judgeKeq{\sigma}{\sigma'}{\kappa_1}$, then 
@@ -471,19 +482,19 @@ below:
 \end{itemize}
 
 The purpose of this choice is twofold. First, it will give us a rich
-subset of the language which is total and pure, which will be convenient
-when writing assertions about programs -- we will be able to use any pure 
-function directly in an assertion, without having to worry about any 
-side effects it might have. Second, purity means that we will get a 
-very rich equality theory for the language -- both the $\beta$ \emph{and}
-$\eta$ laws will hold for all of the types of the programming language,
-which will facilitate equational reasoning about the pure part of the 
-programming language. 
+subset of the language which is total and pure, which will be
+convenient when writing assertions about programs --- we will be able
+to use any pure function directly in assertions, without having to
+worry about side effects in predicates. Second, purity means that we
+will get a very rich equality theory for the language --- both the
+$\beta$ and $\eta$ laws will hold for all of the types of the
+programming language, which will facilitate equational reasoning about
+the pure part of the programming language.
 
 Because we count nontermination as an effect, our denotational
 semantics is in CPO, the category of complete partial orders and
 continuous functions between them. In particular, we do not demand
-that all domains have least elements -- that is, we only require that
+that all domains have least elements --- that is, we only require that
 the objects of this category be \emph{predomains}, rather than
 domains. This permits us to model pure types as predomains lacking a
 bottom element.
@@ -563,11 +574,11 @@ the exponentials of $CPO$.
 Reference types $\reftype{A}$ are interpreted as pairs consisting of
 natural numbers and the syntactic object $A$. The intuition is that a
 reference is just a number, together with a type tag saying what type
-of value the reference will point to. It's important that we do
+of value the reference will point to. It is important that we do
 \emph{not} interpret the type tag $A$ in this definition --- a ref
 cell is a number plus the purely syntactic object $A$, acting as a
 label. This is because we have no interpretation function that can 
-interpret the quantifiers yet; the current definition interprets only
+interpret the quantifiers yet: the current definition interprets only
 the monotypes. 
 
 The first time we use $K$ is when we interpret the type
@@ -580,14 +591,14 @@ occurrences do \emph{not} trade places on the recursive call, because
 it occurs on the left-hand-side of the left-hand-side of a function
 space (which is hence a positive occurrence). 
 
-However, a careful reader will have noticed that so far our
-definitions do not mention state at all. What will ultimately happen
-is that we will interpret continuations as functions from heaps to the
-two-point Sierpinski lattice $O = \setof{\top, \bot}$. However, since
-heaps can contain references to values of polymorphic type, and since
-we have not yet defined how the semantics of polymorphic types work, we
-have carefully parametrized our functorial semantics of monotypes so
-that we do not needed to mention them explicitly. 
+The careful reader will have noticed that so far our definitions do
+not mention state at all. What will ultimately happen is that we will
+interpret continuations as functions from heaps to the two-point
+Sierpinski lattice $O = \setof{\top, \bot}$. However, since heaps can
+contain references to values of polymorphic type, and since we have
+not yet defined how the semantics of polymorphic types work, we have
+carefully parametrized our functorial semantics of monotypes so that
+we do not needed to mention them explicitly.
 
 To close this gap, we will give an interpretation of polymorphic types
 as an indexed function from a context of closed mono-kinded type
@@ -597,11 +608,8 @@ continuation arguments, and again define a functor.
 \begin{displaymath}
 \begin{array}{lcl}\interp{\judgeWK{A}{\bigstar}} &\in& \interp{\Theta} \to (CPO_\bot \times CPO^{op}_\bot) \to CPO 
 \\[1em]
-\interp{\judgeWK{\alpha}{\bigstar}}\;\theta\;(K_+,K_-) & = & 
-    \interpmono{\judgeWK[\cdot]{\theta(\alpha)}{\star}}(K_+, K_-) 
-\\
-\interp{\judgeWK{\tau\;\tau'}{\bigstar}}\;\theta\;(K_+,K_-) & = & 
-    \interpmono{\judgeWK[\cdot]{\normalize{\theta(\tau\;\tau')}}{\star}}(K_+, K_-) 
+\interp{\judgeWK{\tau}{\bigstar}}\;\theta\;(K_+,K_-) & = & 
+    \interpmono{\judgeWK[\cdot]{\theta(\tau)}{\star}}(K_+, K_-) 
 \\
 \interp{\judgeWK{\forall \alpha:\kappa.\;A}{\bigstar}}\;\theta\;(K_+,K_-) & = & 
     \Pi \tau:\kappa.\; 
@@ -664,7 +672,25 @@ for monotypes, to allow for the possibility that there may be
 sub-components of pairs/sums/functions/etc that contain universal or
 existential types.
 
-Now we are finally in a position to define the recursive domain equation we 
+This does mean we need to verify that this definition is coherent,
+however. For example, a type like $\N + \N : \bigstar$ can be derived
+two ways, depending on whether the ``$+$'' is viewed as constructor
+combining polytypes or monotypes. Fortunately, the lack of interesting
+structure on polytypes makes this easy.
+
+\begin{prop}{(Coherence of Polymorphic Type Interpretation)}
+  For any two derivations of $D, D' :: \judgeWK{A}{\bigstar}$, we have that 
+  $\interp{D} = \interp{D'}$. 
+\end{prop}
+
+\begin{proof}
+  This follows via induction on $A$. For each $A$, there are at most two
+rules from which it can be derived. 
+\end{proof}
+
+\ \\
+
+\noindent Now we are finally in a position to define the recursive domain equation we 
 would like to solve:
 
 \begin{displaymath}
@@ -695,7 +721,7 @@ Filling this in, we can understand how continuations of type $\tau$
 work: they receive a value of type $\tau$ and a heap, and then either
 loop or terminate. The monadic type $\monad{\tau}$ now can be seen as
 the state-and-continuation monad, which combines the effects of the
-continuation monad and the state monad via a domain which looks a bit
+continuation monad and the state monad via a domain which looks 
 like $(\tau \to H \to O) \to H \to O$.
 
 To show that this equation actually has a solution, it suffices to 
@@ -715,8 +741,9 @@ That is, it must be monotone --- if $f \sqsubseteq f'$ and $g
 must also preserve limits --- given a pair of chains $f_i, g_i$, 
 $\bigsqcup_i F(f_i, g_i) = F(\bigsqcup_i f_i, \bigsqcup_i g_i)$. 
 
-Now, we'll show that the functors we used earlier are all locally 
-continuous. 
+Now, we'll show that the functors we used earlier are all locally
+continuous. All of this is standard, but I give the proofs to make the
+presentation self-contained.
 
 \begin{lemma}{Local Continuity}
 \begin{enumerate}
@@ -856,17 +883,17 @@ dependent function space $\Pi x:X.\; F(x)(A,B)$, with elements $u
 \sqsubseteq v$ if and only if for all $x \in X$, $u(x)
 \sqsubseteq_{F(x)(A,B)} v(x)$. 
 
-It's worth noting that this object is a true product over $X$. Given
-$\Pi x:X.\; F(x)(A,B)$, we can define the $x$-th projection as $\pi_x
-= \lambda f.\; f(x)$. Then, it's clear that given a family of 
-morphisms $f_x : Y \to F(x)(A,B)$, we can define a function 
-$\left<f_x\right> : Y \to \Pi x:X.\;F(x)(A,B) = \lambda y.\; \lambda x.\; f_x(y)$, 
-which means that for all $x$, and that $\pi_x \circ \left<f_x\right> = f_x$. 
+This object is a true product over $X$. Given $\Pi x:X.\; F(x)(A,B)$,
+we can define the $x$-th projection as $\pi_x = \lambda f.\;
+f(x)$. Then, it's clear that given a family of morphisms $f_{x\in X} : Y \to
+F(x)(A,B)$, we can define a function $\left<f_{x\in X}\right> : Y \to \Pi
+x:X.\;F(x)(A,B) = \lambda y.\; \lambda x.\; f_x(y)$, which means that
+for all $x$, and that $\pi_x \circ \left<f_{x\in X}\right> = f_x$.
 
 We show uniqueness by supposing that that there is some $g$ such
 that $\pi_x \circ g = f_x$. Then, we know that 
-$g = \lambda x.\; pi_x \circ g$, which means that $g = \lambda x.\; f_x$,
-which is exactly $\left<f_x\right>$. 
+$g = \lambda x.\; \pi_x \circ g$, which means that $g = \lambda x.\; f_x$,
+which is exactly $\left<f_{x\in X}\right>$. 
 
 
 Next, given morphisms $f \in A \to C$ and $g \in D \to B$, we have
@@ -921,17 +948,17 @@ given pairwise, equipping the set $X$ with the trivial ordering.
 That is $(x,o) \sqsubseteq (x', o')$ if and only if $x = x'$ and 
 $o \sqsubseteq_{F(x)(A,B)} o'$. 
 
-It's worth noting that this is a true coproduct over $X$. Given
-$\Sigma x:X.\; F(x)(A,B)$, we can define the injections $\inj{x} \in
-F(x)(A,B) \to \Sigma x:X.\; F(x)(A,B)$ as $\lambda v. (x,v)$. 
-Next, suppose we have a family of functions $f_x : F(x)(A,B) \to Y$. 
-We can define a function $[f_x] \in (\Sigma x:X.\; F(x)(A,B)) \to Y$ as
-$\lambda (x,v).\; (f_x\;v)$. It's clear that $[f_x]\circ \inj{i} = f_i$. 
+This is a true coproduct over $X$. Given $\Sigma x:X.\; F(x)(A,B)$, we
+can define the injections $\inj{x} \in F(x)(A,B) \to \Sigma x:X.\;
+F(x)(A,B)$ as $\lambda v. (x,v)$.  Next, suppose we have a family of
+functions $f_x : F(x)(A,B) \to Y$.  We can define a function $[f_{x\in X}]
+\in (\Sigma x:X.\; F(x)(A,B)) \to Y$ as $\lambda (x,v).\;
+(f_x\;v)$. It's clear that $[f_{x\in X}]\circ \inj{i} = f_i$.
 
 Finally, we can establish uniqueness as follows. Suppose that there 
 is a $g$ such that $g \circ \inj{i} = f_i$. Next, we know that 
 $g = \lambda (x,v).\;g (x, v) = \lambda (x,v).\;(g\circ\inj{x})(v)$,
-which is clearly $\lambda (x,v).\; (f_x\;v)$, which is just $[f_x]$
+which is clearly $\lambda (x,v).\; (f_x\;v)$, which is just $[f_{x \in X}]$
 
 
 Next, given morphisms $f \in A \to C$ and $g \in D \to B$, we have
@@ -976,7 +1003,7 @@ and that the mediating morphism is unique.
 
 \subsection{The Inverse Limit Construction}
 
-Once we have a locally continuous functor, we'd like to find a
+Once we have a locally continuous functor, we would like to find a
 solution to the fixed point equation it defines.
 
 \begin{prop}{(Smyth and Plotkin)}
@@ -987,9 +1014,10 @@ is also a \emph{minimal} isomorphism solving this equation.
 
 The existence of a solution follows from Scott's inverse limit
 construction, together with Smyth and Plotkin's characterization of
-such solution. We give the details in the sequel, in which we will
-always take $F$ to be a locally-continuous functor of the type
-mentioned above.
+such solution~\cite{smyth-plotkin}. We give an explicit construction
+of their solution in the following subsection, in which we will always
+take $F$ to be a locally-continuous functor of the type mentioned
+above.
 
 \subsubsection{Embeddings and Projections}
 
@@ -1682,8 +1710,8 @@ terms is given in figure~\ref{lang-syntax}.
          \fst{e} \bnfalt
          \snd{e} \bnfalt 
 \\
-     &&& \inl{e} \bnfalt
-         \inr{e} \bnfalt
+     &&& \inl{\;e} \bnfalt
+         \inr{\;e} \bnfalt
          \Case{e_0}{x_1}{e_1}{x_2}{e_2} \bnfalt
 \\
      &&& \z \bnfalt 
@@ -1721,7 +1749,7 @@ terms is given in figure~\ref{lang-syntax}.
 \inferrule*[right=EUnit]
           { }
           {\judgeE{\Gamma}{\unit}{\unittype}}
-\\
+\and
 \inferrule*[right=EPair]
           {\judgeE{\Gamma}{e_1}{A} \\ 
            \judgeE{\Gamma}{e_2}{B}}
@@ -1737,11 +1765,11 @@ terms is given in figure~\ref{lang-syntax}.
 \\
 \inferrule*[right=EInl]
           {\judgeE{\Gamma}{e}{A}}
-          {\judgeE{\Gamma}{\inl{e}}{A + B}}
+          {\judgeE{\Gamma}{\inl{\;e}}{A + B}}
 \and
 \inferrule*[right=EInr]
           {\judgeE{\Gamma}{e}{B}}
-          {\judgeE{\Gamma}{\inr{e}}{A + B}}
+          {\judgeE{\Gamma}{\inr{\;e}}{A + B}}
 \and
 \inferrule*[right=ECase]
           {\judgeE{\Gamma}{e}{A+B} \\
@@ -1818,7 +1846,7 @@ terms is given in figure~\ref{lang-syntax}.
 
 The pure terms of the language include the unit value $\unit$; pairs
 $\pair{e}{e'}$ and projections $\fst{e}$ and $\snd{e}$; injections
-into sum types $\inl{e}$ and $\inr{e}$, and a case form
+into sum types $\inl{\;e}$ and $\inr{\;e}$, and a case form
 $\Case{e}{x}{e'}{y}{e''}$; zero $\z$, successor $\s{e}$, and primitive
 iteration $\iter{e}{e_0}{x}{e_1}$; lambda abstractions $\fun{x}{A}{e}$
 and applications $e\;e'$; type abstraction $\Fun{\alpha}{\kappa}{e}$
@@ -1827,15 +1855,14 @@ $\pack{\tau}{e}$ and unpacking $\unpack{\alpha}{x}{e}{e'}$. Suspended
 monadic computations $\comp{c}$ are terms of the type $\monad{A}$.
 
 Finally, we have a term-level fixed point operator, $\fix{x:D}{e}$. It
-is not defined over all types; it is only permitted to use this over
+is not defined over all types; it is only permitted to range over
 \emph{well-pointed} types. That is, fixed points are only defined over
 types whose interpretations are domains with least elements. This
 ensures that the semantic fixed point operation is well-defined, and
 hence we can give a semantics of fixed points at this type. The typing
-rules for all of these forms are given in figure~\ref{lang-typing-pure}. 
-
-I give the computation forms of the language in
-figure~\ref{lang-typing-monadic}. 
+rules for all of these forms are given in
+figure~\ref{lang-typing-pure}, and the computation forms of the
+language are given in figure~\ref{lang-typing-monadic}.
 
 
 \begin{figure}
@@ -1868,7 +1895,7 @@ figure~\ref{lang-typing-monadic}.
 
 \section{Denotational Semantics}
 
-Now, we give the semantics of the expression and command languages,
+We give the semantics of the expression and command languages
 with functions $\interpE{\judgeE{\Gamma}{e}{A}}$ and
 $\interpC{\judgeE{\Gamma}{c}{A}}$. Since we have two contexts, we will
 need two environments, one a type environment (as before, a tuple of
@@ -1880,12 +1907,26 @@ morphisms in $CPO$.
 We give the interpetation of contexts in
 Figure~\ref{lang-context-interp}. In this definition, we take the
 usual liberties in not explicitly giving the isomorphisms necessary to
-implement structural rules like Exchange. There are two
-mutually-recursive interpretation functions, $\interpE{\Gamma}{e}{A}$
-and $\interpC{\Gamma}{c}{A}$, which interpret pure expressions and
-computations, whose definitions are given in
-figure~\ref{lang-pure-interp} and figure~\ref{lang-monadic-interp},
-respectively.
+implement structural rules like Exchange. The definitions of the two
+mutually-recursive interpretation functions, $\interpE{\judgeE{\Gamma}{e}{A}}$
+and $\interpC{\judgeC{\Gamma}{c}{A}}$, which interpret pure expressions and
+computations respectively, are given in
+figure~\ref{lang-pure-interp} and figure~\ref{lang-monadic-interp}.
+
+We also give a set of rules for deriving equalities between program
+expressions, in the figures from \ref{lang-pure-eq-1} to
+\ref{lang-cong-eq}. These rules include the $\beta$- and
+$\eta$-equalities of the lambda calculus, for sums, products, and
+function spaces, the monad laws for computation types, as well as the
+$\beta$- and $\eta$-equalities for numbers, existentials and
+universals. The $\eta$-rule for numbers justifies reasoning about
+iterative programs via induction on the natural numbers. The
+$\eta$-rule for universals and existentials arises from simple
+extensionality over types: since our model is not parametric, it
+does not justify parametricic principles of reasoning.
+
+Below, we collect the theorems describing the properties of this judgment,
+and give their proofs in the following subsection. 
 
 \begin{figure}
 \begin{displaymath}
@@ -2270,72 +2311,37 @@ respectively.
 \label{lang-cong-eq}
 \end{figure}
 
+\begin{lemma}{(Soundness of Weakening)}
+  Suppose $\judgeE[\Theta]{\Gamma}{e}{A}$. 
+  \begin{enumerate}
+   \item It is the case that 
+    $\interpE{\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e}{A}}\;(\theta, \tau)\;\gamma$ is equal to \\
+    $\interpE{\judgeE[\Theta]{\Gamma}{e}{A}}\;\theta\;\gamma$. 
+   \item It is the case that 
+    $\interpE{\judgeE[\Theta]{\Gamma, x:B}{e}{A}}\;\theta\;(\gamma,v)$ is equal to \\
+    $\interpE{\judgeE[\Theta]{\Gamma}{e}{A}}\;\theta\;\gamma$. 
+  \end{enumerate}
+\end{lemma}\\
+
+
 \begin{lemma}{(Soundness of Type Substitution)}
 If we know that $\judgeWK{\tau}{\kappa}$, then 
 \begin{itemize}
 \item If $\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e}{A}$, then 
-       $\interpE{\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e}{A}}\;(\theta,[\theta(\tau)])\;\gamma$ =
-       $\interpE{\judgeE{[\tau/\alpha]\Gamma}{[\tau/\alpha]e}{[\tau/\alpha]A}}\;\theta\;\gamma$
-\item If $\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e}{A}$, then 
-       $\interpC{\judgeC[\Theta, \alpha:\kappa]{\Gamma}{c}{A}}\;(\theta,[\theta(\tau)])\;\gamma$ =
-       $\interpC{\judgeC{[\tau/\alpha]\Gamma}{[\tau/\alpha]c}{[\tau/\alpha]A}}\;\theta\;\gamma$
+       $\interpE{\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e}{A}}\;(\theta,[\theta(\tau)])\;\gamma$ is
+       equal to \\ $\interpE{\judgeE{[\tau/\alpha]\Gamma}{[\tau/\alpha]e}{[\tau/\alpha]A}}\;\theta\;\gamma$
+\item If $\judgeC[\Theta, \alpha:\kappa]{\Gamma}{c}{A}$, then 
+       $\interpC{\judgeC[\Theta, \alpha:\kappa]{\Gamma}{c}{A}}\;(\theta,[\theta(\tau)])\;\gamma$ 
+       is equal to \\ $\interpC{\judgeC{[\tau/\alpha]\Gamma}{[\tau/\alpha]c}{[\tau/\alpha]A}}\;\theta\;\gamma$
 \end{itemize}
-\end{lemma}
+\end{lemma}\\
 
-\begin{proof}
-  The proof is by induction on the structure of the typing derivation. The
-interesting case is: 
-
-\begin{itemize}
-\item case EHyp: 
-
-  \begin{eqnproof}
-        [\interpE{\judgeE[\Theta, \alpha:\kappa]
-                         {\Gamma}
-                         {x_i}{A_i}}\;(\theta, {[\theta(\tau)]})\;\gamma =]
-    \eline{\pi_i(\gamma)}
-          {Semantics}
-  \end{eqnproof}
-
-  Now, observe that the tuple $\gamma$ is an element of $\interp{\Theta,\alpha:\kappa \vdash \Gamma}\;(\theta, [\theta(\tau)])$.
-
-  \begin{eqnproof}[\interp{\Theta,\alpha:\kappa \vdash \Gamma}\;(\theta, {[\theta(\tau)]}) =]
-     \eline{\interp{\interp{\judgeWK[\Theta,\alpha:\kappa]{A_1}{\bigstar}}\;
-                       (\theta, [\theta(\tau)]) 
-                    \times \ldots \times 
-                    \interp{\judgeWK[\Theta,\alpha:\kappa]{A_n}{\bigstar}}\;
-                       (\theta, [\theta(\tau)])}}
-           {Definition}
-     \eline{\interp{\judgeWK{[\tau/\alpha]A_1}{\bigstar}}\;\theta 
-            \times \ldots \times 
-            \interp{\judgeWK{[\tau/\alpha]A_n}{\bigstar}}\;\theta}
-           {Simplifying}
-     \eline{\interp{\Theta \vdash [\tau/\alpha]\Gamma}\;\theta}
-           {Definition}
-  \end{eqnproof}
-
-So $\gamma$ is also an element of $\interp{\Theta \vdash [\tau/\alpha]\Gamma}\;\theta$ as well, and so 
-
-  \begin{eqnproof}[\interpE{\judgeE{[\tau/\alpha]\Gamma}{x_i}{[\tau/\alpha]A_i}}\;\theta\;\gamma=]
-    \eline{\pi_i(\gamma)}
-          {Semantics}
-    \eline{\interpE{\judgeE[\Theta, \alpha:\kappa]
-                         {\Gamma}
-                         {x_i}{A_i}}\;(\theta, \left<\theta(\tau)\right>)\;\gamma}
-          {}
-  \end{eqnproof}
-
-\item other cases: 
-
-These all follow the structure of the derivation. 
-\end{itemize}
-\end{proof}
 
 \begin{lemma}{(Soundness of Substitution)}
 \begin{enumerate}
 \item If we know that $\judgeE{\Gamma, y:A, \Gamma'}{e}{B}$ and $\judgeE{\Gamma}{e'}{A}$
   and $\Theta \vdash \theta$, 
-  then $\interpE{\judgeE{\Gamma}{[e'/y]e}{B}}\;\theta\;(\gamma,\gamma') = 
+  then \\ $\interpE{\judgeE{\Gamma}{[e'/y]e}{B}}\;\theta\;(\gamma,\gamma') = 
         \interpE{\judgeE{\Gamma, y:A}{e}{B}}\;\theta 
                 \;\left(\gamma, 
                         \interpE{\judgeE{\Gamma}{e'}{A}}\;\theta\;\gamma,
@@ -2344,14 +2350,70 @@ These all follow the structure of the derivation.
 
 \item If we know that $\judgeC{\Gamma, y:A, \Gamma'}{c}{B}$ and $\judgeE{\Gamma}{e'}{A}$
   and $\Theta \vdash \theta$, 
-  then $\interpC{\judgeE{\Gamma}{[e'/y]c}{B}}\;\theta\;(\gamma,\gamma') = 
+  then \\ $\interpC{\judgeE{\Gamma}{[e'/y]c}{B}}\;\theta\;(\gamma,\gamma') = 
         \interpC{\judgeC{\Gamma, y:A}{c}{B}}\;\theta \;
                 \left(\gamma,
                       \interpE{\judgeE{\Gamma}{e'}{A}}\;\theta\;\gamma,
                       \gamma'
                 \right)$
 \end{enumerate}
-\end{lemma}
+\end{lemma}\\
+
+\begin{lemma}{(Soundness of Equality Rules)}
+We have that:
+\begin{enumerate}
+\item If $\judgeEq{\Gamma}{e}{e'}{A}$, then $\judgeE{\Gamma}{e}{A}$ and 
+$\judgeE{\Gamma}{e'}{A}$ and 
+$\interpE{\judgeE{\Gamma}{e}{A}} = \interpE{\judgeE{\Gamma}{e'}{A}}$.
+
+\item If $\judgeEqC{\Gamma}{c}{c'}{A}$, then $\judgeC{\Gamma}{c}{A}$ and 
+$\judgeC{\Gamma}{c'}{A}$ and 
+$\interpC{\judgeE{\Gamma}{c}{A}} = \interpC{\judgeC{\Gamma}{c'}{A}}$.
+\end{enumerate}
+\end{lemma}\\
+
+
+
+\subsection{Proofs}
+
+\begin{lemma*}{(Soundness of Weakening)}
+  Suppose $\judgeE[\Theta]{\Gamma}{e}{A}$. 
+  \begin{enumerate}
+   \item It is the case that 
+    $\interpE{\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e}{A}}\;(\theta, \tau)\;\gamma$ is equal to \\
+    $\interpE{\judgeE[\Theta]{\Gamma}{e}{A}}\;\theta\;\gamma$. 
+   \item It is the case that 
+    $\interpE{\judgeE[\Theta]{\Gamma, x:B}{e}{A}}\;\theta\;(\gamma,v)$ is equal to \\
+    $\interpE{\judgeE[\Theta]{\Gamma}{e}{A}}\;\theta\;\gamma$. 
+  \end{enumerate}
+\end{lemma*}
+
+\begin{proof}
+  The proof is by induction on the typing derivation of $\judgeE[\Theta]{\Gamma}{e}{A}$. 
+\end{proof}\\
+
+
+\begin{lemma*}{(Soundness of Substitution)}
+\begin{enumerate}
+\item If we know that $\judgeE{\Gamma, y:A, \Gamma'}{e}{B}$ and $\judgeE{\Gamma}{e'}{A}$
+  and $\Theta \vdash \theta$, 
+  then \\ $\interpE{\judgeE{\Gamma}{[e'/y]e}{B}}\;\theta\;(\gamma,\gamma') = 
+        \interpE{\judgeE{\Gamma, y:A}{e}{B}}\;\theta 
+                \;\left(\gamma, 
+                        \interpE{\judgeE{\Gamma}{e'}{A}}\;\theta\;\gamma,
+                        \gamma'
+                \right)$
+
+\item If we know that $\judgeC{\Gamma, y:A, \Gamma'}{c}{B}$ and $\judgeE{\Gamma}{e'}{A}$
+  and $\Theta \vdash \theta$, 
+  then \\ $\interpC{\judgeE{\Gamma}{[e'/y]c}{B}}\;\theta\;(\gamma,\gamma') = 
+        \interpC{\judgeC{\Gamma, y:A}{c}{B}}\;\theta \;
+                \left(\gamma,
+                      \interpE{\judgeE{\Gamma}{e'}{A}}\;\theta\;\gamma,
+                      \gamma'
+                \right)$
+\end{enumerate}
+\end{lemma*}
 
 \begin{proof}
 This property follows by a mutual structural induction on the derivations 
@@ -3016,8 +3078,69 @@ Now, the cases for the computation terms follow.
 \end{proof}
 
 
+\begin{lemma*}{(Soundness of Type Substitution)}
+If we know that $\judgeWK{\tau}{\kappa}$, then 
+\begin{itemize}
+\item If $\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e}{A}$, then 
+       $\interpE{\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e}{A}}\;(\theta,[\theta(\tau)])\;\gamma$ is
+       equal to \\ $\interpE{\judgeE{[\tau/\alpha]\Gamma}{[\tau/\alpha]e}{[\tau/\alpha]A}}\;\theta\;\gamma$
+\item If $\judgeC[\Theta, \alpha:\kappa]{\Gamma}{c}{A}$, then 
+       $\interpC{\judgeC[\Theta, \alpha:\kappa]{\Gamma}{c}{A}}\;(\theta,[\theta(\tau)])\;\gamma$ 
+       is equal to \\ $\interpC{\judgeC{[\tau/\alpha]\Gamma}{[\tau/\alpha]c}{[\tau/\alpha]A}}\;\theta\;\gamma$
+\end{itemize}
+\end{lemma*}
 
-\begin{lemma}{(Soundness of Equality Rules)}
+\begin{proof}
+  The proof is by induction on the structure of the typing derivation. The
+interesting case is: 
+
+\begin{itemize}
+\item case EHyp: 
+
+  \begin{eqnproof}
+        [\interpE{\judgeE[\Theta, \alpha:\kappa]
+                         {\Gamma}
+                         {x_i}{A_i}}\;(\theta, {[\theta(\tau)]})\;\gamma]
+    \eline{\pi_i(\gamma)}
+          {Semantics}
+  \end{eqnproof}
+
+\noindent Now, observe that the tuple $\gamma$ is an element of $\interp{\Theta,\alpha:\kappa \vdash \Gamma}\;(\theta, [\theta(\tau)])$.
+
+  \begin{eqnproof}[\interp{\Theta,\alpha:\kappa \vdash \Gamma}\;(\theta, {[\theta(\tau)]}) =]
+     \eline{\interp{\interp{\judgeWK[\Theta,\alpha:\kappa]{A_1}{\bigstar}}\;
+                       (\theta, [\theta(\tau)]) 
+                    \times \ldots \times 
+                    \interp{\judgeWK[\Theta,\alpha:\kappa]{A_n}{\bigstar}}\;
+                       (\theta, [\theta(\tau)])}}
+           {}
+     \eline{\interp{\judgeWK{[\tau/\alpha]A_1}{\bigstar}}\;\theta 
+            \times \ldots \times 
+            \interp{\judgeWK{[\tau/\alpha]A_n}{\bigstar}}\;\theta}
+           {}
+     \eline{\interp{\Theta \vdash [\tau/\alpha]\Gamma}\;\theta}
+           {}
+  \end{eqnproof}
+
+So $\gamma$ is also an element of $\interp{\Theta \vdash [\tau/\alpha]\Gamma}\;\theta$ as well, and so 
+
+  \begin{eqnproof}[\interpE{\judgeE{[\tau/\alpha]\Gamma}{x_i}{[\tau/\alpha]A_i}}\;\theta\;\gamma=]
+    \eline{\pi_i(\gamma)}
+          {Semantics}
+    \eline{\interpE{\judgeE[\Theta, \alpha:\kappa]
+                         {\Gamma}
+                         {x_i}{A_i}}\;(\theta, \left<\theta(\tau)\right>)\;\gamma}
+          {}
+  \end{eqnproof}
+
+\item other cases: 
+These all follow the structure of the derivation. 
+\end{itemize}
+\end{proof}\\
+
+
+
+\begin{lemma*}{(Soundness of Equality Rules)}
 We have that:
 \begin{enumerate}
 \item If $\judgeEq{\Gamma}{e}{e'}{A}$, then $\judgeE{\Gamma}{e}{A}$ and 
@@ -3028,7 +3151,7 @@ $\interpE{\judgeE{\Gamma}{e}{A}} = \interpE{\judgeE{\Gamma}{e'}{A}}$.
 $\judgeC{\Gamma}{c'}{A}$ and 
 $\interpC{\judgeE{\Gamma}{c}{A}} = \interpC{\judgeC{\Gamma}{c'}{A}}$.
 \end{enumerate}
-\end{lemma}
+\end{lemma*}
 
 
 \begin{proof}

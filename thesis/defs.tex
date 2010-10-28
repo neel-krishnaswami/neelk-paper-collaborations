@@ -157,9 +157,10 @@
 \renewenvironment{proof}{\noindent\textbf{Proof.}}{\noindent\ensuremath{\Box}}
 
 \newcounter{prooflinenum}
+
 \newenvironment{tabbedproof}
    {\setcounter{prooflinenum}{0}
-    \begin{tabbing}\;\;\=\;\;\;\;\;\=\;\;\;\;\=\;\;\;\;\=\;\;\;\;\=\;\;\;\;\=\;\;\;\;\=\;\;\;\;\=\;\;\;\;\=\\[-1em]}
+    \begin{tabbing}\;\;\=\;\;\;\;\;\=\;\;\;\;\=\;\;\;\;\=\;\;\;\;\=\;\;\;\;\=\;\;\;\;\=\;\;\;\;\=\;\;\;\;\=\\}
    {\end{tabbing}}
 
 \newcommand{\oo}{\addtocounter{prooflinenum}{1}\arabic{prooflinenum}\>\>}

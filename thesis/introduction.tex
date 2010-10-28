@@ -9,62 +9,92 @@ separation logic.
 It is more difficult to reason about programs that use aliasing than
 ones that do not use mutable shared data. It is more difficult to
 reason about programs that use higher order features than first order
-programs. Put both together, and the problems become both challenging
-and interesting for formal verification.
+programs. Put both together, and matters become both challenging and
+interesting for formal verification, since the combination yields
+languages more complex than the sum of their parts. 
 
-The challenge arises from the fact that combining aliased mutable
-state with higher order programming yields a language that is more
-difficult than the sum of its parts. Techniques to reason about purely
-functional programs, which extensively use higher-order methods but
-eschew mutable state, are an extremely well-developed branch of
-programming language theory, with a long and successful history.
+Techniques to reason about purely functional programs, which
+extensively use higher-order methods but eschew mutable state, are an
+extremely well-developed branch of programming language theory, with a
+long and successful history.
 
 Historically, techniques to reason about mutable state have lagged
-behind, but some years ago O'Hearn and Reynolds proposed separation
+behind, but some years ago O'Hearn and Reynolds introduced separation
 logic~\citep{sep-logic}, which has proven extremely successful at
-enabling reasoning about even such intricate imperative programs as
-garbage collectors~\citep{gc-proof}. However, separation logic has
+enabling correctness proofs of even such intricate imperative programs
+as garbage collectors~\citep{gc-proof}. However, separation logic has
 historically focused on low-level programming languages that lack a
 strong type discipline and allow the use of techniques such as casting
 pointers to integers.
 
 However, even high level languages that allow the use of state are
 prone to aliasing errors, since (with a few exceptions) type systems
-do not track interference properties. Some languages, such as Haskell,
-isolate all side-effects within a particular family of monadic types:
-but while this preserves reasoning principles for functional code, we
-still face the problem that reasoning about monadic code remains as
-difficult as ever. Monadic type disciplines imprison mutation and
-state, but they have not been rehabilitated.
+do not track interference properties. Some languages, such as
+Haskell~\cite{haskell-report}, isolate all side-effects within a
+particular family of monadic types. While this preserves reasoning
+principles for functional code, we still face the problem that
+reasoning about monadic code remains as difficult as ever. Haskell's
+type discipline imprisons mutation and state, but does not
+rehabilitate them.
 
-If this combination only posed challenges, but had no applications,
-then it would be only of theoretical interest. However, it is widely
-used in many common kinds of programs. For example, graphical user
-interfaces are typically structured as families of callbacks that
-operate over the shared data structures representing the interface and
-program. These callbacks are structured using the subject-observer
-pattern, which use collections of callbacks to implicitly synchronize
-mutable data structures across a program.
+Of course, we can combine language features combinatorially, and if
+this particular combination had no applications, then it would be only
+of technical interest. In fact, though, higher-order state pervades
+the design of many common programs. For example, graphical user
+interfaces (GUIs) are typically structured as families of callbacks
+that operate over the shared data structures representing the
+interface and program. These callbacks are structured using the
+subject-observer pattern~\cite{gof}, which uses collections of
+callbacks to implicitly synchronize mutable data structures across a
+program. So higher-order state not only poses a technical challenge,
+but also offers a tantalizingly concrete example to motivate the
+technical development.
+
+In this dissertation, I develop a model higher-order imperative
+programming language, and develop a program logic for it. I
+demonstrate the power of my program logic by verifying many
+interesting examples, culminating in the correctness proof of a
+library for event-driven programming, which despite an extremely
+imperative (and higher-order) implementation, nevertheless permits
+clients to reason about it using simple and powerful equational
+reasoning principles.
+
+\section{Programming Language}
+
+The first contribution of my dissertation is to give a denotational
+semantics for a predicative version of System
+$F^\omega$~\cite{girard-thesis}, extended with a monadic type constructor for
+state in Pfenning-Davies~\cite{pfenning-davies} style. This language
+can be considered an instance of Moggi's~\cite{moggi-monads} monadicf
+metalanguage, as all heap effects and nontermination are encapsulated
+within the monadic type constructor.
+
+Higher-order imperative programs usually contain a very substantial
+functional part in addition to whatever imperative operations they
+perform. As a result, it is very convenient to be able to reason
+equationally about programs when possible (including induction
+principles for inductive types), and by giving a denotational
+semantics, I can easily show the soundness of these equational
+properties.
+
+Ths semantics of this language is the focus of Chapter 2. In
+particular, I show that a programming language including references to
+polymorphic values, still gives rise to domain equations which can
+still be solved using the classical techniques of Smyth and
+Plotkin~\cite{smyth-plotkin}.
 
 \section{Higher Order Separation Logic}
 
 The main tool I develop to prove programs correct is a higher order
-separation logic for a simple higher-order imperative programming
-language. The details of the language and the specification logic are
-given in the following chapters, but I will say a few words about them
-here to set the stage for what follows.
+separation logic for a higher-order imperative programming
+language. The details of the logic are given in Chapter 3, but 
+I will say a few words to set the stage now. 
 
-The programming language I consider is a predicative version of System
-$F^\omega$, extended with a monadic type constructor for state in
-Pfenning-Davies~\cite{pfenning-davies} style. This language can be
-considered an instance of Moggi's~\cite{moggi} monadic metalanguage,
-as all heap effects and nontermination are encapsulated within the
-monadic type constructor.
-
-We can reason about the functional part of programs using the standard
-$\beta\eta$-theory of the lambda calculus, but to reason about
-imperative computations, we introduce a specification logic, in the
-style of Reynolds' specification logic for Algol~\citep{spec-logic}.
+As I mentioned earlier, we can reason about the functional part of
+programs using the standard $\beta\eta$-theory of the lambda calculus,
+but to reason about imperative computations, I introduce a
+specification logic, in the style of Reynolds' specification logic for
+Algol~\citep{spec-logic}.
 
 In this logic, the basic form of specification is the Hoare triple
 over an imperative computation $\spec{P}{c}{a:A}{Q}$. Here, $P$ is the
@@ -130,42 +160,49 @@ counter & \equiv & \lambda (r, n).\; (r \pointsto n + 7) \\[0.5em]
 \end{displaymath}
 
 So in our program logic, the implementations of modules consist of the
-witnesses to the existential formulas. As described above, this is
-essentially an application of Mitchell and Plotkin's identification of
-data abstraction and existential types. However, note that instead of
-abstracting only over types, we also abstracting over the
-\emph{heap}. So linking a module with a client is nothing but an
-application of the existential elimination rule in logic.
-
-
-\section{Modular Verification}
+witnesses to the existential formulas. This is morally an application
+of Mitchell and Plotkin's identification of data abstraction and
+existential types~\cite{mitchell-plotkin} --- in this view, linking a
+module with a client is nothing but an application of the existential
+elimination rule of ordinary logic.  However, note that instead of
+abstracting only over types (as, we also abstract over the \emph{heap}.
 
 In order for a verification methodology to scale up to even modestly-
 sized programs, it must be modular. There are three informal senses in
 which I use the word ``modular'', each of which is supported by
-different features of our logic.
+different features of this logic, and are (mostly) illustrated in this
+example. 
 
 \begin{enumerate}
 \item First, we should be able to verify programs library by
   library. That is, we should be able to give the specification of a
   library, and prove both that implementations satisfy the
-  specification without knowing anything about the clients that
-  use it, and likewise prove the correctness of a client program
-  without knowing anything about the details of the implementation
-  (beyond what is promised by the specification). We will handle this
-  problem by making use of the fact that the presence of existential
-  specifications in our specification logic lets  use the Mitchell-
-  Plotkin encoding of modules as existentials. 
+  specification without knowing anything about the clients that use
+  it, and likewise prove the correctness of a client program without
+  knowing anything about the details of the implementation (beyond
+  what is promised by the specification). 
+
+  In the example above, I tackle this problem by making use of the
+  fact that the presence of existential specifications in our
+  specification logic lets use the Mitchell-Plotkin encoding of
+  modules as existentials. So once I prove a client against this
+  specification, I can swap between implementations without having
+  to re-verify the client. 
 
 \item Related to this is a modular treatment of aliasing. Ordinary
   Hoare logic becomes non-modular when asked to treat mutable, shared
   state, because we must explicitly specify the aliasing or
-  non-alsiasing of every variable and mutable data structure in our
+  non-aliasing of every variable and mutable data structure in our
   pre- and post-conditions. Besides the quadratic dependence on the
   size of the program, the relevant set of variables grows whenever a
   subprogram is embedded in a larger. Separation logic resolves this
   problem by introducing via the frame rule, a feature which we carry
   forward in our logic.
+
+  In our example, counters have state, and so the predicates for
+  distinct counters need to held distinct. So even in the simplest
+  possible example, it is useful to be able to have the power of 
+  separation logic available. 
 
 \item Finally, it is important to ensure that the abstractions we
   introduce compose. Benton\cite{benton-modularity} described a
@@ -176,333 +213,411 @@ different features of our logic.
   share the resources and responsibility for upholding the contract
   with the allocator.
 
-  While we introduce no specific technical devices to enable this kind
-  of reasoning, I exploit the expressiveness of this program logic to
-  introduce several specification patterns for verifying these kinds
-  of programs. For example, in Chapters 5 and 6 of this thesis, I make
-  use of the expressiveness of higher-order logic to introduce
-  \emph{domain-specific logics} to verify particular program
-  libraries.
-  
-  This lets me give modular specifications for programs such as the 
-  union-find~\citep{union-find} and event-driven programs, even though
-  the programs themselves rely on global, nonmodular invariants. The 
-  key technique here is to introduce the 
+  While the previous example was too simple to illustrate these kinds
+  of problems, I do exploit the expressiveness of my program logic to
+  introduce several new \emph{specification patterns} for verifying
+  these kinds of programs. In the following section, I will describe
+  some of the patterns I discovered.
 \end{enumerate}
 
+\section{Verifying Programs}
 
+The final test of a program logic is what we can prove with it, and so
+accordingly I have devoted a great deal of effort to not only prove
+metatheorems \emph{about} the logic, but also theorems \emph{in} my
+logic.
 
-\subsection{Imperative Modularity}
+\subsection{Design Patterns}
 
-While separating modules and clients in this way is obviously useful,
-for imperative programs it is not entirely a sufficient mechanism on
-its own.
+One prominent source of examples of higher-order state arises in
+object-oriented programs. One way of translating objects into
+functional language is by viewing objects as records of functions
+(methods) accessing common hidden state (fields). As a result, common
+programming idioms in object-oriented languages can be viewed as
+patterns of higher-order imperative programs.
 
-In a purely functional program, all communication between an
-implementation and a client of a module is mediated by the signature
-of the module. The addition of state makes it possible to create an
-extra channel of communication through the heap, and in our formalism
-this is captured by adding pre- and post-conditions to the
-specifications of imperative actions.
+Over the years, object-oriented programmers have documented many of
+idioms which repeatedly arise in practice, calling them \emph{design
+  patterns}~\cite{gof}. While originally intended to help practitioners
+communicate with each other, design patterns also offer a nice collection 
+of small, but realistic and widely-occurring, programs to study for
+verification purposes. 
 
-However, suppose we have a client program with specification $C$,
-which makes use of a particular module implementation with a
-specification $S$. Furthermore, suppose that \emph{both} the client
-program implemeting $C$, and the module implementing the $S$
-interface, rely upon yet another module with interface $F$. As an
-example, imagine an $F$ that has a purely functional interface, but
-which makes use of an imperative cache for efficiency reasons (for
-example, to implement memoization). Now, even though there is aliased
-state between $C$ and $I$, they cannot interfere with one one another
-through it.
+In Chapter 4, I translate many common design patterns into my
+programming language\footnote{Unsurprisingly, they turn into idioms
+  that many ML programmers will find familiar.} and then give
+specifications and correctness proofs for these programs. I want to
+emphasize that I view the specifications as even more important a
+contribution as the correctness proofs themselves: programmers have
+informal reasons for believing in the correctness of their programs,
+which are often surprisingly subtle to formalize. 
 
-Therefore, a properly modular specification \emph{should not require}
-$S$ to mention the use of the caching module. Otherwise we will be
-forced to mention more and more extraneous details, as we layer
-modules on top of one another, with the total size of the
-specifications growing with the size of the reachable module graph.
+\subsection{The Union-Find Algorithm}
 
-The language I am proposing is able to properly describe this
-situation, thanks to our ability to use the frame rule. Concretely,
-suppose we have the following interface for our third module.
+One of the reasons for the success of separation logic (and related
+substructural logics like linear logic) in program verification is the
+fact that aliasing turns out to be only used lightly in many
+programs. 
 
-\begin{tabbing}
-$\forall n:\N.\; \spec{cache}{\mathtt{fib}(n)}{a:\N}{cache \land a = fibonacci(n)}$ \\
-\end{tabbing} 
+In Chapter 5 of my dissertation, I study the
+union-find~\cite{union-find} algorithm. This algorithm is very
+challenging to verify, because its correctness and efficiency relies
+intimately upon the ability to use shared mutable data to broadcast
+updates to the whole program.
 
-Here, we can imagine \texttt{fib} produces fibonacci numbers using the
-naive exponential-time recursive implementation, but adds caching to
-``optimize'' it to linear time. The $cache$ predicate appears in the
-pre- and post-conditions of $\mathtt{fib}$, so at first it would seem
-that a $C$ and $S$ that used this function would have to mention that
-they require the heap associated with $cache$.
+To deal with this problem, I make use of the expressive power of
+higher-order separation logic, and introduce a \emph{domain-specific
+  logic} to describe the interface between a union-find library and
+its clients. This allows the implementation to keep a global view of
+the union-find data structure, while still permitting clients to be
+proved via local reasoning.
 
-However, note that $cache$ is the same in both the pre- and
-post-condition. This means that we can prove $C$ and $I$ using a
-specification 
-$$F \equiv \spec{\emp}{\mathtt{fib}(n)}{a:\N}{\emp \land a =
-  fibonacci(n)}$$
-and then we can frame $cache$ on at the very end, after
-completing the proofs of $C$ and $I$. Concretely, the proof tree 
-looks like this:
+Furthermore, those operations which have genuinely global effects
+(such as taking the union of two disjoint sets) can be specified using
+custom modal operators I call \emph{ramifications}. These operators
+commute with the custom separating conjunction, and so allow local
+reasoning even when global effects are in play.
 
-\begin{mathpar}
-\inferrule*[right=Cut]
-           {\vdash F \otimes cache \\ 
-            \inferrule*[right=Frame]
-                       {\inferrule*{F \vdash S \\
-                                  F, S \vdash C}
-                                 {F \vdash C}}
-                      {F \otimes cache \vdash C}
-          }
-          {\vdash C \otimes cache}
-\end{mathpar}
+\subsection{Verifying Event-Driven Programs}
 
-Here, I write $R \otimes p$ to suggest that $p$ is framed onto the
-triples in the specification $R$. Note that in the subderivation above
-the use of the Frame rule, we do not need to carry around $cache$ in
-our specification of $\mathtt{fib}$, which means that when we
-introduce $S$, we will not need to mention $cache$ in its specification.
+In Chapter 6, I give the culminating examples of the proof methodology
+I have developed in support of my thesis. This chapter divides into 
+two main parts. 
 
-Simple caching schemes are very easy to hide -- all we need is to make
-use of the frame rule~\cite{sep-inf}. A stronger test of our ability
-to hide irrelevant detail will be if we can hide Liskov and Wing's
-\emph{monotonic constraints}~\cite{liskov-wing}.
+In the first part, I implement and prove the correctness of an
+imperative dataflow graph implementation. In a dataflow graph, we have
+a collection of cells, which each contain a piece of code, which is
+executed when the cell is asked for a value. Cells memoize their
+values and remember their dependencies, so that when they are asked
+again for a value, they will not unnecessarily recompute a
+value. Conversely, if a cell is modified, it will invalidate its
+memoized value and transitively invalidate anything that dependend on
+that value.  The specification of the dataflow graph relies crucially
+on ramifications in order to modularly specify dependencies and the
+effects of modifications to the graph.
 
-Monotonic invariants are program invariants that hold monotonically
-throughout a program's execution. Suppose we have a partial order $(S,
-\sqsubseteq)$ and a predicate $P$, such that if $s' \sqsubseteq s$
-then $P(s') \implies P(s)$. Now, if we then ensure that any triples
-that mention $P$ are of the form $\spec{P(s)}{c}{a:\tau}{\exists s'.\;
-  P(s') \land s' \sqsubseteq s}$, then we know that no unknown uses of
-this module can break our invariant, since they can only make $P$ ``more
-true''. 
+Then, in the second part, I use this dataflow graph implementation to
+in turn implement a library for functional reactive
+programming~\cite{frp}. I prove the correctness of the imperative
+implementation relative to a mathematically simple (but unusably
+inefficient) semantics somewhat in the style of realizability, which
+allows programmers to reason about the imperative implementation as if
+it were a pure one. 
 
-This property is used in several verification methodologies to prove
-programs with potentially unknown calls~\cite{boogie-sub-obs}, but 
-using it for information hiding purposes may be novel. 
+Furthermore, this correctness proof relies only on the interface to
+the the dataflow graph library, and not to its implementation. This
+demonstrates that very sophisticated libraries can still be factored
+into modular parts, and moreover that the correctness proofs can be
+cleanly factored as well. 
 
-Related to monotonic effects are \emph{commutative effects}~\cite{idioms}. 
-These are side-effects in which the order they happen in does not affect
-correctness. For example, a gensym operation is a commutative effect, since 
-all we care about is the fact that two different invocations return distinct
-symbols. 
+% \subsection{Imperative Modularity}
+% 
+% While separating modules and clients in this way is obviously useful,
+% for imperative programs it is not entirely a sufficient mechanism on
+% its own.
+% 
+% In a purely functional program, all communication between an
+% implementation and a client of a module is mediated by the signature
+% of the module. The addition of state makes it possible to create an
+% extra channel of communication through the heap, and in our formalism
+% this is captured by adding pre- and post-conditions to the
+% specifications of imperative actions.
+% 
+% However, suppose we have a client program with specification $C$,
+% which makes use of a particular module implementation with a
+% specification $S$. Furthermore, suppose that \emph{both} the client
+% program implemeting $C$, and the module implementing the $S$
+% interface, rely upon yet another module with interface $F$. As an
+% example, imagine an $F$ that has a purely functional interface, but
+% which makes use of an imperative cache for efficiency reasons (for
+% example, to implement memoization). Now, even though there is aliased
+% state between $C$ and $I$, they cannot interfere with one one another
+% through it.
+% 
+% Therefore, a properly modular specification \emph{should not require}
+% $S$ to mention the use of the caching module. Otherwise we will be
+% forced to mention more and more extraneous details, as we layer
+% modules on top of one another, with the total size of the
+% specifications growing with the size of the reachable module graph.
+% 
+% The language I am proposing is able to properly describe this
+% situation, thanks to our ability to use the frame rule. Concretely,
+% suppose we have the following interface for our third module.
+% 
+% \begin{tabbing}
+% $\forall n:\N.\; \spec{cache}{\mathtt{fib}(n)}{a:\N}{cache \land a = fibonacci(n)}$ \\
+% \end{tabbing} 
+% 
+% Here, we can imagine \texttt{fib} produces fibonacci numbers using the
+% naive exponential-time recursive implementation, but adds caching to
+% ``optimize'' it to linear time. The $cache$ predicate appears in the
+% pre- and post-conditions of $\mathtt{fib}$, so at first it would seem
+% that a $C$ and $S$ that used this function would have to mention that
+% they require the heap associated with $cache$.
+% 
+% However, note that $cache$ is the same in both the pre- and
+% post-condition. This means that we can prove $C$ and $I$ using a
+% specification 
+% $$F \equiv \spec{\emp}{\mathtt{fib}(n)}{a:\N}{\emp \land a =
+%   fibonacci(n)}$$
+% and then we can frame $cache$ on at the very end, after
+% completing the proofs of $C$ and $I$. Concretely, the proof tree 
+% looks like this:
+% 
+% \begin{mathpar}
+% \inferrule*[right=Cut]
+%            {\vdash F \otimes cache \\ 
+%             \inferrule*[right=Frame]
+%                        {\inferrule*{F \vdash S \\
+%                                   F, S \vdash C}
+%                                  {F \vdash C}}
+%                       {F \otimes cache \vdash C}
+%           }
+%           {\vdash C \otimes cache}
+% \end{mathpar}
+% 
+% Here, I write $R \otimes p$ to suggest that $p$ is framed onto the
+% triples in the specification $R$. Note that in the subderivation above
+% the use of the Frame rule, we do not need to carry around $cache$ in
+% our specification of $\mathtt{fib}$, which means that when we
+% introduce $S$, we will not need to mention $cache$ in its specification.
+% 
+% Simple caching schemes are very easy to hide -- all we need is to make
+% use of the frame rule~\cite{sep-inf}. A stronger test of our ability
+% to hide irrelevant detail will be if we can hide Liskov and Wing's
+% \emph{monotonic constraints}~\cite{liskov-wing}.
+% 
+% Monotonic invariants are program invariants that hold monotonically
+% throughout a program's execution. Suppose we have a partial order $(S,
+% \sqsubseteq)$ and a predicate $P$, such that if $s' \sqsubseteq s$
+% then $P(s') \implies P(s)$. Now, if we then ensure that any triples
+% that mention $P$ are of the form $\spec{P(s)}{c}{a:\tau}{\exists s'.\;
+%   P(s') \land s' \sqsubseteq s}$, then we know that no unknown uses of
+% this module can break our invariant, since they can only make $P$ ``more
+% true''. 
+% 
+% This property is used in several verification methodologies to prove
+% programs with potentially unknown calls~\cite{boogie-sub-obs}, but 
+% using it for information hiding purposes may be novel. 
+% 
+% Related to monotonic effects are \emph{commutative effects}~\cite{idioms}. 
+% These are side-effects in which the order they happen in does not affect
+% correctness. For example, a gensym operation is a commutative effect, since 
+% all we care about is the fact that two different invocations return distinct
+% symbols. 
 
-
-
-
-\section{Interesting Higher-Order Imperative Programs}
-
-Validating my thesis means that I have to demonstrate that it will
-work on interesting imperative programs. So what do I mean with the
-word ``interesting''? There are several senses in which I use it:
-
-\begin{itemize}
-\item One kind of interesting program are programs that pose
-  particular difficulties for verification, such as ``Landin's knot'',
-  which implements recursion by backpatching a function pointer. These
-  kinds of procedures are typically small, and may not be found in
-  actual software very often\footnote{Recently, I found a natural use
-    of this technique in a real program, so I do not mean ``not very
-    often'' as a polite way of saying ``never''.}, but help
-  demonstrate the capabilities and limits of a verification
-  methodology.
-
-\item A second kind of interesting program are example programs that
-  capture a particular stylized patterns of use that arise frequently
-  in practice. Design patterns~\cite{gof} are a good example of this
-  kind of program -- they represent what might be called engineering
-  wisdom, and formalizing these patterns can help demonstrate that our
-  verification methodology can accomodate typical good design, and
-  moreover its formal version is not overly cumbersome to use. 
-
-\item A third kind of interesting program are big programs. Even if a
-  verification methodology works successfully on small examples, it
-  remains to be seen whether it will work on larger examples, because
-  in a larger example we will have to show that the different patterns
-  of use can coexist peacefully, and that they compose gracefully. 
-
-  Also, I only mean ``big'' relative to the size of typical examples
-  (which are usually in the tens of lines of code). I will be happy
-  with verifying a program that is on the order of high hundreds to
-  low thousands of lines of code. This is, of course, very small by
-  industrial standards, but it is large enough to learn whether or
-  not the different pieces of this methodology fit together. 
-\end{itemize}
-
-
-\subsubsection{Design Patterns}
-
-I will begin by analyzing individual design patterns, giving a
-specification, an implementation, and a small client program for each
-of the design patterns with a substantially stateful part.
-
-The intuition here is that 1) object-oriented software is the biggest
-repository of higher-order imperative code out there, and 2) the Gang
-of Four design patterns are well-respected engineering wisdom about
-how to manage such designs. So if I can show that I can formalize that
-practice, I'll have taken a big step towards showing I can formally
-capture the sorts of reasoning that software engineers use to manage
-such programs.
-
-Furthermore, there's also a \emph{negative} component here. I want to
-figure out what patterns of reasoning are difficult to capture in my
-framework, and systematically analyzing the design patterns should
-help me search the design space.
-
-One further thing that's worth noting is that a design pattern
-\emph{isn't} a particular formula of specification logic. Any
-specification we write represent particular balances between
-generality (that is, more possible implementations) and specificity
-(that is, more invariants for a client to use). For example, suppose
-we have an iterator specification which supports deletion. For some
-collection types (such as stretchable arrays), deleting an element
-invalidates only those iterators that have are further along the array
-than the one that did the deletion. If we put this fact into the
-specification, then clients can use this fact to not invalidate some
-iterators. But the price is that this specification rules out
-collection implementations such as binary trees, where any deletion
-will invalidate all other iterators.\footnote{This means that any spec
-will be criticized by both those who think it is too liberal, and
-those who think it is too restrictive. I think this is a feature,
-not a bug -- making assumptions explicit in a way that permits
-detailed argument is a big win!}
-
-
-\begin{itemize}
-\item[Iterator]
-\item[Subject Observer]
-
-These two I have written about extensively. I need to pull in the text
-from those here.
-
-\item[Flyweight]
-
-The basic idea here is similar to memoization: cache the construction
-of (immutable) objects, and on an object request only return a new one
-if a satisfactory one is not in the cache. The cache, of course, is a
-global mutable data structure that \emph{we don't want to see} in the
-proof of any clients. This makes it a good use case for the frame
-rule, and the issues that arise here will be a good test of whether we
-can actually scale proofs.
-
-\item[Memento]
-
-This pattern is commonly used to support undo. It's basically an
-opaque token representing an object's old state, and the object has a
-method that the client can use (with the memento) to reset the state.
-We can implement this with higher-order state -- the token can be a
-command the user can invoke, and there are some nice sequencing issues
-in when you can invoke the undo operation or not. We should also look
-at multilevel undo, and compare this to an internal undo operation.
-
-\item[Chain of Responsibility]
-
-The Chain of Responsibility pattern is a pattern for composing
-commands from other commands. Rather than building a monolithic
-command, we break it up into processing units that take a message and
-handle the parts of the update they can, delegating the rest to the
-rest of the chain. This doesn't have to be a strict chain, so you can
-have a ``tree of responsibility'' as well.
-
-There's probably a very slick specification of this in terms of state
-transformers, and I think there might be a nice ownership transfer
-idiom lurking in here that's worth unearthing. Then again, maybe not
--- I've had trouble finding any really complex uses of aliasing yet.
-
-\item[State]
-
-This is a pattern in which an object is made from other objects which
-provide abstract state -- it does not know the precise implementation
-of its components. In fact, it's okay for the implementation of the
-concrete state to \emph{change} as the program runs. Verifying this
-example is primarily useful as a diagnostic test; of course we can
-handle it, but even the slightest hint of ugliness in our development
-indicates trouble in the logic.
-
-\item[Composite]
-
-At first, I thought that the Composite pattern didn't have any
-interesting issues, but then I realized I was wrong, because we are
-often composing \emph{stateful} objects. For example, consider an
-iterator library (such as the \texttt{itertools} library in Python)
-which constructs new iterators out of existing ones.
-
-Concretely, suppose we have \texttt{PairIterator} that takes two
-iterators and returns a new one that produces pairs of values,
-iterating over the two arguments in lockstep. This seems
-straightforward, until you think that this implies certain sharing
-constraints -- in particular, the arguments have to be two
-\emph{different} iterators.
-
-So we need to be able to say something about sharing here. This may be
-easiest if we use multiple specifications for the same function (for
-example, if the two iterators come from the same underlying
-collection, or not).
-
-\item[Proxy] 
-
-The Proxy pattern does not have very much complexity in its
-implementation; it's essentially just a (possibly-imperative) wrapper
-function -- its ML type could be \texttt{proxy : (a -> b) -> (a -> b)}.
-However, analyzing it will still offer some interesting evidence for 
-or against my thesis. That's because at heart a Proxy transforms 
-the specification of its argument, and we can examine how hard it is
-to model that. 
-
-Note that state can play an important in implementing a real
-Proxy, because it provides us with a ``back channel'' for
-communication.  For example, a security Proxy that checks to see
-whether the owner of a piece of data is authorized before invoking a
-method might have a data structure it consults for that authorization
-information.
-
-The Decorator pattern is similar to this, only we can add methods
-to our input in addition to transforming old ones. 
-
-\item[Strategy]
-
-In a language with first-class functions, there's not much to the
-Strategy pattern -- we just need a pointer to a function. But the very
-simplicity of this pattern means that we ought to be able to prove
-some fun programs, like showing the correctness of a program that
-updates its strategy as it runs.
-
-
-\item[Facade]
-
-The Facade pattern takes some existing modules and presents a nice
-abstraction of them to the programmer. The way I conceptualize it, we
-want to compose imperative modules in a way that turns their state
-into a single new predicate. This is pretty straightforward in easy
-cases, but I'm interesting in finding out if there's a way to make
-this \emph{hard} I'd like to stress-test our ability to abstract over
-state.
-
-In particular, the test of whether this works will be seeing how big
-the predicates grow. If I composing two modules with $n$-place
-predicates describing their heap yields a Facade with a $2n$-place
-predicate, it's pretty clear that information hiding isn't genuinely
-happening. This contrasts with the Flyweight, where the test of
-modularity is seeing how many starred subformulas show up in the
-pre- and post-conditions. 
-
-\end{itemize}
-
-\section{Contributions}
-
-To demonstrate my thesis, I make a number of concrete contributions.
-In Chapter 2, I define a higher-order imperative programming language
-based on a predicate variant of $F_\omega$~\citep{fomega}, augmented
-with reference types which uses a monadic language to encapsulate its
-side-effects (including both modification of the heap, and
-nontermination). I give this language a domain-theoretic denotational
-semantics based on the techniques of \citet{smyth-plotkin}, which lets
-me validate strong equational reasoning principles --- including both
-the $\beta-$ and $\eta$-rules of the lambda calculus ---
-
-Equational reasoning is less helpful for imperative programs, and to
-support reasoning about this part of the programming language, I
-define and prove the soundness of a program logic in Chapter 3. The
-program logic combines ideas from specification logic and higher-order
-separation logic to give an expressive program logic 
+% \section{Interesting Higher-Order Imperative Programs}
+% 
+% Validating my thesis means that I have to demonstrate that it will
+% work on interesting imperative programs. So what do I mean with the
+% word ``interesting''? There are several senses in which I use it:
+% 
+% \begin{itemize}
+% \item One kind of interesting program are programs that pose
+%   particular difficulties for verification, such as ``Landin's knot'',
+%   which implements recursion by backpatching a function pointer. These
+%   kinds of procedures are typically small, and may not be found in
+%   actual software very often\footnote{Recently, I found a natural use
+%     of this technique in a real program, so I do not mean ``not very
+%     often'' as a polite way of saying ``never''.}, but help
+%   demonstrate the capabilities and limits of a verification
+%   methodology.
+% 
+% \item A second kind of interesting program are example programs that
+%   capture a particular stylized patterns of use that arise frequently
+%   in practice. Design patterns~\cite{gof} are a good example of this
+%   kind of program -- they represent what might be called engineering
+%   wisdom, and formalizing these patterns can help demonstrate that our
+%   verification methodology can accomodate typical good design, and
+%   moreover its formal version is not overly cumbersome to use. 
+% 
+% \item A third kind of interesting program are big programs. Even if a
+%   verification methodology works successfully on small examples, it
+%   remains to be seen whether it will work on larger examples, because
+%   in a larger example we will have to show that the different patterns
+%   of use can coexist peacefully, and that they compose gracefully. 
+% 
+%   Also, I only mean ``big'' relative to the size of typical examples
+%   (which are usually in the tens of lines of code). I will be happy
+%   with verifying a program that is on the order of high hundreds to
+%   low thousands of lines of code. This is, of course, very small by
+%   industrial standards, but it is large enough to learn whether or
+%   not the different pieces of this methodology fit together. 
+% \end{itemize}
+% 
+% 
+% \subsubsection{Design Patterns}
+% 
+% I will begin by analyzing individual design patterns, giving a
+% specification, an implementation, and a small client program for each
+% of the design patterns with a substantially stateful part.
+% 
+% The intuition here is that 1) object-oriented software is the biggest
+% repository of higher-order imperative code out there, and 2) the Gang
+% of Four design patterns are well-respected engineering wisdom about
+% how to manage such designs. So if I can show that I can formalize that
+% practice, I'll have taken a big step towards showing I can formally
+% capture the sorts of reasoning that software engineers use to manage
+% such programs.
+% 
+% Furthermore, there's also a \emph{negative} component here. I want to
+% figure out what patterns of reasoning are difficult to capture in my
+% framework, and systematically analyzing the design patterns should
+% help me search the design space.
+% 
+% One further thing that's worth noting is that a design pattern
+% \emph{isn't} a particular formula of specification logic. Any
+% specification we write represent particular balances between
+% generality (that is, more possible implementations) and specificity
+% (that is, more invariants for a client to use). For example, suppose
+% we have an iterator specification which supports deletion. For some
+% collection types (such as stretchable arrays), deleting an element
+% invalidates only those iterators that have are further along the array
+% than the one that did the deletion. If we put this fact into the
+% specification, then clients can use this fact to not invalidate some
+% iterators. But the price is that this specification rules out
+% collection implementations such as binary trees, where any deletion
+% will invalidate all other iterators.\footnote{This means that any spec
+% will be criticized by both those who think it is too liberal, and
+% those who think it is too restrictive. I think this is a feature,
+% not a bug -- making assumptions explicit in a way that permits
+% detailed argument is a big win!}
+% 
+% 
+% \begin{itemize}
+% \item[Iterator]
+% \item[Subject Observer]
+% 
+% These two I have written about extensively. I need to pull in the text
+% from those here.
+% 
+% \item[Flyweight]
+% 
+% The basic idea here is similar to memoization: cache the construction
+% of (immutable) objects, and on an object request only return a new one
+% if a satisfactory one is not in the cache. The cache, of course, is a
+% global mutable data structure that \emph{we don't want to see} in the
+% proof of any clients. This makes it a good use case for the frame
+% rule, and the issues that arise here will be a good test of whether we
+% can actually scale proofs.
+% 
+% \item[Memento]
+% 
+% This pattern is commonly used to support undo. It's basically an
+% opaque token representing an object's old state, and the object has a
+% method that the client can use (with the memento) to reset the state.
+% We can implement this with higher-order state -- the token can be a
+% command the user can invoke, and there are some nice sequencing issues
+% in when you can invoke the undo operation or not. We should also look
+% at multilevel undo, and compare this to an internal undo operation.
+% 
+% \item[Chain of Responsibility]
+% 
+% The Chain of Responsibility pattern is a pattern for composing
+% commands from other commands. Rather than building a monolithic
+% command, we break it up into processing units that take a message and
+% handle the parts of the update they can, delegating the rest to the
+% rest of the chain. This doesn't have to be a strict chain, so you can
+% have a ``tree of responsibility'' as well.
+% 
+% There's probably a very slick specification of this in terms of state
+% transformers, and I think there might be a nice ownership transfer
+% idiom lurking in here that's worth unearthing. Then again, maybe not
+% -- I've had trouble finding any really complex uses of aliasing yet.
+% 
+% \item[State]
+% 
+% This is a pattern in which an object is made from other objects which
+% provide abstract state -- it does not know the precise implementation
+% of its components. In fact, it's okay for the implementation of the
+% concrete state to \emph{change} as the program runs. Verifying this
+% example is primarily useful as a diagnostic test; of course we can
+% handle it, but even the slightest hint of ugliness in our development
+% indicates trouble in the logic.
+% 
+% \item[Composite]
+% 
+% At first, I thought that the Composite pattern didn't have any
+% interesting issues, but then I realized I was wrong, because we are
+% often composing \emph{stateful} objects. For example, consider an
+% iterator library (such as the \texttt{itertools} library in Python)
+% which constructs new iterators out of existing ones.
+% 
+% Concretely, suppose we have \texttt{PairIterator} that takes two
+% iterators and returns a new one that produces pairs of values,
+% iterating over the two arguments in lockstep. This seems
+% straightforward, until you think that this implies certain sharing
+% constraints -- in particular, the arguments have to be two
+% \emph{different} iterators.
+% 
+% So we need to be able to say something about sharing here. This may be
+% easiest if we use multiple specifications for the same function (for
+% example, if the two iterators come from the same underlying
+% collection, or not).
+% 
+% \item[Proxy] 
+% 
+% The Proxy pattern does not have very much complexity in its
+% implementation; it's essentially just a (possibly-imperative) wrapper
+% function -- its ML type could be \texttt{proxy : (a -> b) -> (a -> b)}.
+% However, analyzing it will still offer some interesting evidence for 
+% or against my thesis. That's because at heart a Proxy transforms 
+% the specification of its argument, and we can examine how hard it is
+% to model that. 
+% 
+% Note that state can play an important in implementing a real
+% Proxy, because it provides us with a ``back channel'' for
+% communication.  For example, a security Proxy that checks to see
+% whether the owner of a piece of data is authorized before invoking a
+% method might have a data structure it consults for that authorization
+% information.
+% 
+% The Decorator pattern is similar to this, only we can add methods
+% to our input in addition to transforming old ones. 
+% 
+% \item[Strategy]
+% 
+% In a language with first-class functions, there's not much to the
+% Strategy pattern -- we just need a pointer to a function. But the very
+% simplicity of this pattern means that we ought to be able to prove
+% some fun programs, like showing the correctness of a program that
+% updates its strategy as it runs.
+% 
+% 
+% \item[Facade]
+% 
+% The Facade pattern takes some existing modules and presents a nice
+% abstraction of them to the programmer. The way I conceptualize it, we
+% want to compose imperative modules in a way that turns their state
+% into a single new predicate. This is pretty straightforward in easy
+% cases, but I'm interesting in finding out if there's a way to make
+% this \emph{hard} I'd like to stress-test our ability to abstract over
+% state.
+% 
+% In particular, the test of whether this works will be seeing how big
+% the predicates grow. If I composing two modules with $n$-place
+% predicates describing their heap yields a Facade with a $2n$-place
+% predicate, it's pretty clear that information hiding isn't genuinely
+% happening. This contrasts with the Flyweight, where the test of
+% modularity is seeing how many starred subformulas show up in the
+% pre- and post-conditions. 
+% 
+% \end{itemize}
+% 
+% \section{Contributions}
+% 
+% To demonstrate my thesis, I make a number of concrete contributions.
+% In Chapter 2, I define a higher-order imperative programming language
+% based on a predicate variant of $F_\omega$~\citep{fomega}, augmented
+% with reference types which uses a monadic language to encapsulate its
+% side-effects (including both modification of the heap, and
+% nontermination). I give this language a domain-theoretic denotational
+% semantics based on the techniques of \citet{smyth-plotkin}, which lets
+% me validate strong equational reasoning principles --- including both
+% the $\beta-$ and $\eta$-rules of the lambda calculus ---
+% 
+% Equational reasoning is less helpful for imperative programs, and to
+% support reasoning about this part of the programming language, I
+% define and prove the soundness of a program logic in Chapter 3. The
+% program logic combines ideas from specification logic and higher-order
+% separation logic to give an expressive program logic 
