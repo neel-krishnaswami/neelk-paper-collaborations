@@ -104,6 +104,7 @@
 
 
 
+
 %% semantic operations
 
 \newcommand{\worldleq}{\preceq}
@@ -133,6 +134,9 @@
 \newcommand{\entailsP}[3]{{#1} \vartriangleright {#2} \vdash {#3}}
 \newcommand{\entailsS}[3]{{#1}; {#2} \vdash {#3} \ok}
 
+\newcommand{\validS}[2][\Delta]{{#1} \vartriangleright {#2} : \spectype \;\mathsf{valid}}
+\newcommand{\validP}[2][\Delta]{{#1} \vartriangleright {#2} : \assert \;\mathsf{valid}}
+
 \newcommand{\chartp}{\ctext{char}}
 \newcommand{\fonttp}{\ctext{font}}
 
@@ -148,6 +152,8 @@
 \newtheorem*{prop*}{Proposition}
 \newtheorem{lemma}{Lemma}
 \newtheorem*{lemma*}{Lemma}
+\newtheorem{theorem}{Theorem}
+\newtheorem*{theorem*}{Theorem}
 
 \newcommand{\comprehend}[2]{\setof{{#1}\;|\;{#2}}}
 
@@ -206,6 +212,7 @@
 \newcommand{\judgeA}[3][\Delta]{{#1} \vartriangleright {#2} : {#3}}
 \newcommand{\judgeSort}[2][\Delta]{\judgeA[{#1}]{{#2}}{\ctext{sort}}}
 \newcommand{\judgeSortEq}[3][\Delta]{{#1} \vartriangleright {#2} \equiv {#3} : \ctext{sort}}
+\newcommand{\judgeEqA}[4][\Delta]{{#1} \vartriangleright {#2} \equiv {#3} : {#4}}
 
 \newcommand{\ms}[1]{\mathcal{#1}}
 \newcommand{\Frame}[2]{{#1} \otimes {#2}}
