@@ -1,14 +1,14 @@
 \chapter{The Semantics of Separation Logic}
 
-In this chapter, we will describe the semantics of our separation
+In this chapter, I will describe the semantics of our separation
 logic. Rather than working directly with the heap model of separation
 logic, we will approach the semantics in a somewhat more modular
 style.
 
-First, we'll define what we mean by ``semantics of separation logic''
+First, we will define what we mean by ``semantics of separation logic''
 in terms of \emph{BI algebras}, which give an algebraic semantics of
 separation logic in the same way that the Heyting algebras give
-semantics to intuitionistic logics. Then, we'll look at how we can
+semantics to intuitionistic logics. Then, we will look at how we can
 construct a BI-algebra from sets of elements of an arbitrary partial
 commutative monoid, proving that we can satisfy each of the axioms of
 a BI algebra.
@@ -17,6 +17,15 @@ Then, we will show that our predomain of heaps actually forms a
 partial commutative monoid, which means that we can now apply the
 theorems and definitions of the previous sections to immediately get
 the heap model we want.
+
+With a semantic definition of assertions in hand, we will then move on
+to the semantics of specifications. We will again play the algebraic
+game, and give a Kripke semantics for specifications. We will also
+give a semantic interpretation of Hoare triples which validates the
+frame rule and fixed point induction.
+
+After defining the semantics of assertions and specifications, I will
+give their syntax.
 
 \section{BI Algebras}
 
@@ -33,7 +42,7 @@ $(\top, \land, \implies, \bot, \vee, I, *, \wand)$ satisfying:
       $p \land q \leq p$ and $p \land q \leq q$
 \item $\forall p,q,r \in B.$ if $p \leq r$ and $q \leq r$, then
       $p \vee q \leq r$ and
-      $p \vee q \leq p$ and $p \vee q \leq q$.
+      $p \leq p \vee q$ and $q \leq p \vee q$.
 \item $\forall p, q, r.\; p \land q \leq r \iff p \leq q \implies r$
 \item $\forall p.\; p * I = p$
 \item $\forall p, q.\; p * q = q * p$
@@ -50,7 +59,7 @@ the existence of a wand that is adjoint to the separating conjunction
 the same way that the implication is adjoint to the ordinary
 conjunction.
 
-In addition, we'll also ask that this algebra be \emph{complete},
+In addition, we will also ask that this algebra be \emph{complete},
 which means that meets and joins of arbitrary sets of elements be
 well-defined.
 
@@ -63,7 +72,7 @@ well-defined.
       $\forall p \in P.\; p \leq \bigvee P$
 \end{enumerate}
 
-We'll eventually use completeness in order to interpret quantifiers as 
+We will eventually use completeness in order to interpret quantifiers as 
 possibly-infinitary conjunctions or disjunctions.
  
 \subsection{Partial Commutative Monoids}
@@ -76,7 +85,7 @@ Furthermore, the following properties must hold:
 
 \begin{itemize}
 \item $e$ is a unit, so that $e \cdot m = m$ and $e \# m$. 
-\item $(\cdot)$ is commutative. If $m_1 \# m_2$, then $m_2 \# m_1$ and $m_1 \cdot m_2 = m_1 \cdot m_2$. 
+\item $(\cdot)$ is commutative. If $m_1 \# m_2$, then $m_2 \# m_1$ and $m_1 \cdot m_2 = m_2 \cdot m_1$. 
 \item $(\cdot)$ is associative. 
   \begin{itemize}
   \item If $m_1 \# m_2$ and $(m_1 \cdot m_2) \# m_3$, then $m_2 \# m_3$ and $m_1 \# (m_2 \cdot m_3)$ and $(m_1 \cdot m_2) \cdot m_3 = m_1 \cdot (m_2 \cdot m_3)$.
@@ -86,7 +95,7 @@ Furthermore, the following properties must hold:
   
 \end{itemize}
 
-\subsubsection{BI-Algebras over Partial Commutative Monoids}
+\subsection{BI-Algebras over Partial Commutative Monoids}
 
 Given a partial commutative monoid, we can show that the powerset $\powerset{M}$ 
 forms a BI-algebra. 
@@ -206,7 +215,8 @@ with the following operations:
     \ooo Assume $m \in M$ \\
     \oooo $\To$ direction: \\
     \ooooo Assume $m \in p * I$ \\
-    \ooooo Therefore $\exists m_1, m_2 \in M$ such that $m_1 \# m_2$ and $m_1 \in p$ and $m_2 \in I$ and $m = m_1 \cdot m_2$\\
+    \ooooo Therefore $\exists m_1, m_2 \in M$ such that \\
+    \ooooox $m_1 \# m_2$ and $m_1 \in p$ and $m_2 \in I$ and $m = m_1 \cdot m_2$\\
     \ooooo Let $m_1, m_2$ be witnesses, so that \\
     \oooooo $m_1 \# m_2$ and $m_1 \in p$ and $m_2 \in I$ and $m = m_1 \cdot m_2$\\
     \oooooo Since $I = \setof{e}$, we know $m_2 = e$ \\
@@ -247,7 +257,8 @@ with the following operations:
   \begin{tabbedproof}
     \oo Assume $p, q, r \in \powerset{M}$ \\
     \oo We want to show $(p * q) * r = p * (q * r)$ \\
-    \oo This is equivalent to showing for all $m \in M$, that $m \in (p * q) * r$ if and only if $ m \in p * (q * r)$ \\
+    \oo This is equivalent to showing for all $m \in M$, that \\
+    \ox $m \in (p * q) * r$ if and only if $ m \in p * (q * r)$ \\
     \oo Assume $m \in M$ \\
     \ooo $\To$ direction: \\
     \oooo Assume $m \in (p * q) * r$ \\
@@ -261,8 +272,8 @@ with the following operations:
             $m = (m_p \cdot m_q) \cdot m_r = m_p \cdot (m_q \cdot m_r)$ \\
     \ooooo Since $m_q \# m_r$ and $m_q \cdot m_r = m_q \cdot m_r$ and $m_q \in q$ and $m_r \in r$, \\
     \ooooox we know $m_q \cdot m_r \in q * r$ \\
-    \ooooo Since $m_p \# (m_q \cdot m_r)$ and $m_p \cdot (m_q \cdot m_r) = m_p \cdot (m_q \cdot m_r)$ and $m_p \in p$ and $m_q \cdot m_r \in q * r$ \\
-    \ooooox we know $m_p \cdot (m_q \cdot m_r) \in p * (q * r)$ \\
+    \ooooo Since $m_p \# (m_q \cdot m_r)$ and $m_p \cdot (m_q \cdot m_r) = m_p \cdot (m_q \cdot m_r)$ \\
+    \ooooox and $m_p \in p$ and $m_q \cdot m_r \in q * r$,  we know $m_p \cdot (m_q \cdot m_r) \in p * (q * r)$ \\
     \ooooo Therefore $m \in p * (q * r)$ \\
     \ooo $\From$ direction: \\
     \oooo Assume we have $m_p, m_{qr}$ such that \\
@@ -286,36 +297,36 @@ only if $p \leq q \wand r$.
 
   \begin{tabbedproof}
     Assume $p, q, r \in \powerset{M}$. \\
-    \oo First, we'll give the $\To$ direction. \\
-    \ooo Assume $p * q \leq r$ \\
-    \ooo So we know 
+    \oo First, we will give the $\To$ direction. \\
+    \oo Assume $p * q \leq r$ \\
+    \oo So we know 
           $\comprehend{m}{\exists m_1, m_2.\; m_1 \# m_2 \mbox{ and } m_1 \in p \mbox{ and } m_2 \in q 
                                              \mbox{ and } m_1 \cdot m_2 = m}
            \subseteq r$ \\
-    \ooo Thus, $\forall m.\; (\exists m_1, m_2.\; m_1 \# m_2 \mbox{ and } m_1 \in p \mbox{ and } m_2 \in q 
+    \oo Thus, $\forall m.\; (\exists m_1, m_2.\; m_1 \# m_2 \mbox{ and } m_1 \in p \mbox{ and } m_2 \in q 
                                              \mbox{ and } m_1 \cdot m_2 = m)$ implies $m \in r$. \\
-    \ooo By turning existentials on the left into universals, and instantiating $m$, \\
-    \oooo
+    \oo By turning existentials on the left into universals, and instantiating $m$, \\
+    \ooo
              $\forall m_1, m_2.\; (m_1 \# m_2 \mbox{ and } m_1 \in p \mbox{ and } m_2 \in q) \mbox{ implies } (m_1 \cdot m_2) \in r$ [HYP1] \\
-    \ooo Now, to show $p \leq q \wand r$, we must show
+    \oo Now, to show $p \leq q \wand r$, we must show
          for all $m$, if $m \in p$, that $m \in q \wand r$. \\
-    \ooo Assume $m$, $m \in p$. [HYP2] \\
-    \oooo Now, we want to show $m \in \comprehend{m}{\forall m' \in q.\; m\# m' \mbox{ and } m' \mbox{ implies } (m \cdot m') \in r}$ \\
-    \oooo This is equivalent to showing $\forall m' \in q.\; m\# m' \mbox{ and } m' \mbox{ implies } (m \cdot m') \in r$ \\
-    \oooo Assume $m'$, $m' \in q$, $m \# m'$. [HYP3] \\ 
-    \ooooo Instantiating [HYP1] with $m$ and $m'$ and the hypotheses in [HYP2] and [HYP3], \\
-    \ooooo we can conclude $(m \cdot m') \in r$.  \\
+    \oo Assume $m$, $m \in p$. [HYP2] \\
+    \ooo Now, we want to show $m \in \comprehend{m}{\forall m' \in q.\; m\# m' \mbox{ and } m' \mbox{ implies } (m \cdot m') \in r}$ \\
+    \ooo This is equivalent to showing $\forall m' \in q.\; m\# m' \mbox{ and } m' \mbox{ implies } (m \cdot m') \in r$ \\
+    \ooo Assume $m'$, $m' \in q$, $m \# m'$. [HYP3] \\ 
+    \oooo Instantiating [HYP1] with $m$ and $m'$ and the hypotheses in [HYP2] and [HYP3], \\
+    \oooo we can conclude $(m \cdot m') \in r$.  \\[1em]
 
-    \oo Now, we'll show the $\Leftarrow$ direction. \\
-    \ooo Assume $p \leq q \wand r$. \\
-    \oooo So we know, $p \subseteq \comprehend{m}{\forall m' \in q. m \# m' \mbox{ and } m' \in q \mbox{ implies } (m \cdot m') \in r}$ \\
-    \oooo Therefore $\forall m. m \in p \mbox{ implies } \forall m' \in q.\; m \# m' \mbox{ and } m' \in q \mbox{ implies } (m \cdot m') \in r$.  \\
-    \oooo Therefore $\forall m, m'.\; m \in p \mbox{ and } m' \in q \mbox{ and } m \# m' \mbox{ implies } (m \cdot m') \in r$ \\
-    \oooo Therefore $\forall m_o, m, m'.\; m \in p \mbox{ and } m' \in q \mbox{ and } m \# m' \mbox{ and } m_o = m\cdot m' \mbox{ implies } m_o \in r$ \\
-    \oooo Therefore $\forall m_o, (\exists m, m'.\; m \in p \mbox{ and } m' \in q \mbox{ and } m \# m' \mbox{ and } m_o = m\cdot m') \mbox{ implies } m_o \in r$ \\
-    \oooo Therefore $\forall m_o, m_o \in (p * q) \mbox{ implies } m_o \in r$ \\
-    \oooo Therefore $p * q \subseteq r$ \\
-    \oooo Therefore $p * q \leq r$ \\
+    \oo Now, we will show the $\Leftarrow$ direction. \\
+    \oo Assume $p \leq q \wand r$. \\
+    \oo So we know, $p \subseteq \comprehend{m}{\forall m' \in q. m \# m' \mbox{ and } m' \in q \mbox{ implies } (m \cdot m') \in r}$ \\
+    \oo Therefore $\forall m. m \in p \mbox{ implies } \forall m' \in q.\; m \# m' \mbox{ and } m' \in q \mbox{ implies } (m \cdot m') \in r$.  \\
+    \oo Therefore $\forall m, m'.\; m \in p \mbox{ and } m' \in q \mbox{ and } m \# m' \mbox{ implies } (m \cdot m') \in r$ \\
+    \oo Therefore $\forall m_o, m, m'.\; m \in p \mbox{ and } m' \in q \mbox{ and } m \# m' \mbox{ and } m_o = m\cdot m' \mbox{ implies } m_o \in r$ \\
+    \oo Therefore $\forall m_o, (\exists m, m'.\; m \in p \mbox{ and } m' \in q \mbox{ and } m \# m' \mbox{ and } m_o = m\cdot m') \mbox{ implies } m_o \in r$ \\
+    \oo Therefore $\forall m_o, m_o \in (p * q) \mbox{ implies } m_o \in r$ \\
+    \oo Therefore $p * q \subseteq r$ \\
+    \oo Therefore $p * q \leq r$ \\
 
   \end{tabbedproof}
 
@@ -378,7 +389,7 @@ $\bigvee P \leq r$ and $\forall p \in P.\; p \leq \bigvee P$.
 
 \subsection{Sets of Heaps form a BI algebra}
 
-Now, we'll take our predomain $H$ and form a BI algebra from it. To do so, we will
+Now, we will take our predomain $H$ and form a BI algebra from it. To do so, we will
 map it with the forgetful functor $U$, so that we forget the partial order structure 
 and let $U(H)$ be an ordinary set. 
 
@@ -413,7 +424,7 @@ Now, we can check the properties.
 
 \begin{itemize}
 
-\item First, we'll check that $e$ is a unit. Suppose we have $m = (L, f) \in H$. 
+\item First, we will check that $e$ is a unit. Suppose we have $m = (L, f) \in H$. 
 
 \begin{eqnproof}
   \eline[(\emptyset, \emptyset) \cdot (L, f)]
@@ -431,7 +442,9 @@ Now, we can check the properties.
         {Simplification}
 \end{eqnproof}
 
-\item Second, we'll check commutativity. Suppose we have $(L,f) \in H$ and $(L',g) \in H$. 
+\item Second, we will check commutativity. Suppose we have $(L,f) \in H$ and $(L',g) \in H$. 
+
+  First, it's obviously the case that if $L \cap L' = \emptyset$, then $L' \cap L = \emptyset$. 
 
   \begin{eqnproof}
     \eline[(L,f) \cdot (L',g)] 
@@ -457,7 +470,15 @@ Now, we can check the properties.
           {Definition}
   \end{eqnproof}
 
-\item Now, we'll check associativity. Suppose $(L,f)$, $(L',g)$, and $(L'',h)$ are in $H$. 
+\item Now, we will check associativity. Suppose $(L,f)$, $(L',g)$, and $(L'',h)$ are in $H$. 
+
+  First, assume that $L \cap L' = \emptyset$ and that $(L \cup L') \cap L'' = \emptyset$. 
+  Then we know that $L \cap L'' = \emptyset$ and $L' \cap L'' = \emptyset$, so we can 
+  conclude that $L \cap (L' \cup L'') = \emptyset$. 
+
+  Second, assume that $L' \cap L'' = \emptyset$ and that $L \cap (L' \cup L'') = \emptyset$. 
+  Then we know that $L \cap L' = \emptyset$ and $L \cap L'' = \emptyset$, so we can 
+  conclude that $(L \cup L') \cap L'' = \emptyset$. 
 
   \begin{eqnproof}
     \eline[(L,f)\cdot((L',g)\cdot(L'',h))]
@@ -500,7 +521,7 @@ Therefore, we can conclude that sets of heaps form a complete BI algebra.
 
 \section{Semantics of Specifications}
 
-Before we can give the semantics of specifications, we're going to run
+Before we can give the semantics of specifications, we are going to run
 into a very sticky issue: our denotational semantics does not validate
 the frame property. The formal semantics of the $\newref{A}{e}$
 command allocates a new reference by finding the largest numeric id of
@@ -517,10 +538,10 @@ On the other hand, we do not actually want to prove the correctness of
 any of these pathological programs: all the programs we actually want
 to write and prove correct are actually well-behaved.
 
-To do this, we will adopt an idea of Birkedal and Yang's. They
-proposed changing the interpretation of program specifications from a
-boolean semantics (in which each specification is either true or
-false) into a Kripke interpretation.
+To do this, we will adapt an idea of Birkedal and
+Yang~\cite{birkedal-yang}. They proposed changing the interpretation
+of program specifications from a boolean semantics (in which each
+specification is either true or false) into a Kripke interpretation.
 
 The modal frame they proposed was one in which worlds are sets of
 assertions of separation logic (i.e., elements of a BI algebra).
@@ -529,8 +550,8 @@ that can be safely framed onto this specification''. A specification
 is then true when all assertions can be framed onto it, which is how
 we will end up justifying the frame rule.
 
-As we did for assertions, we'll give this semantics in a modular
-way. We'll first define a preorder on elements of a BI algebra --- the
+As we did for assertions, we will give this semantics in a modular
+way. We will first define a preorder on elements of a BI algebra --- the
 extension ordering --- and then use this ordering to give the truth
 values as upwards-closed sets of assertions.
 
@@ -602,7 +623,7 @@ Heyting algebra, whose elements will become the semantics of specifications.
 To show that these operations actually form a Heyting algebra, we need
 to show that they satisfy the Heyting algebra axioms. First, we need
 to show that the meet and join are the greatest lower bounds and least
-upper bounds respectively. To do this, we'll just show that arbitrary
+upper bounds respectively. To do this, we will just show that arbitrary
 meets and joins exist, and then the nullary and binary meets and joins
 will fall out as a special case.
 
@@ -611,8 +632,8 @@ If $X \subseteq \upset{P}$, then $\bigwedge X$ defines a meet.
 \end{lemma}
 
 \begin{proof}
-So, first, we need to show that if for all $i \in I$, $S_i \in \upset{P}$, 
-then $\bigwedge_{i \in I} S_i \in \upset{P}$. First, we need to show that 
+We need to show that if for all $i \in I$, $S_i \in \upset{P}$, 
+then $\bigwedge_{i \in I} S_i \in \upset{P}$. First, we will verify that 
 the intersection of a family of upwards-closed subsets is itself an
 upwards-closed subset. 
 
@@ -656,7 +677,7 @@ this is $\forall S \in \upset{P}$, if $X \subseteq
 \ooooo Therefore, we know $\forall S' \in X.\; p \in S'$ \\
 \ooooo Instantiate the quantifier with $S'$ to conclude $p \in S'$ \\
 \oooo Therefore $\bigwedge X \leq S'$ \\
-\ooo Therefore $\forall S' \in X.\; \bigwedge X \leq S'$ \\
+\ooo Therefore $\forall S' \in X.\; \bigwedge X \leq S'$ 
 \end{tabbedproof}
 \end{proof}
 
@@ -666,8 +687,8 @@ this is $\forall S \in \upset{P}$, if $X \subseteq
 If $X \subseteq \upset{P}$, then $\bigvee X$ defines an arbitrary join. 
 \end{lemma}
 \begin{proof}
-First, we need to verify the join we defined actually gives us an upward closed set.
-So we first need to show that if $X \subseteq \upset{P}$, then $\bigvee{X} \in \upset{P}$
+First, we need to verify the join we defined actually gives us an upward closed set ---
+that is, if $X \subseteq \upset{P}$, then $\bigvee{X} \in \upset{P}$
 
 \vspace{0.5em}
 
@@ -723,7 +744,7 @@ $S_1 \implies S_2 \in \upset{P}$.
 \end{lemma}
 
 \begin{proof}
-First, we'll check that the definition gives us an upward closed set.
+First, we will check that the definition gives us an upward closed set.
 
 \vspace{0.5em}
 
@@ -846,10 +867,10 @@ These lemmas establish that $\upset{P}$ forms a complete Heyting algebra.
 
 \section{Semantic Hoare Triples}
 
-In this section, we'll define \emph{semantics Hoare triples}, which will be the basic
-elements we'll use to define our specification logic. As always, the definition
-will come in a piece-wise fashion. We'll start by defining ``basic Hoare triples'',
-which will be given semantics in a relatively familiar boolean fashion. We'll then
+In this section, we will define \emph{semantic Hoare triples}, which will be the basic
+elements we will use to define our specification logic. As always, the definition
+will come in a piece-wise fashion. We will start by defining ``basic Hoare triples'',
+which will be given semantics in a relatively familiar boolean fashion. We will then
 use these to define our true Kripke-style semantic Hoare triples. 
 
 \subsection{Basic Hoare Triples}
@@ -867,10 +888,11 @@ Given a $Q \in \interp{A} \to \powerset{H}$, we define $Approx(Q)$ as the set:
 
 These define a set of continuations which ``continuously approximate''
 the postcondition $Q$ -- they are the set of continuations which run
-forever when given a value and heap in $Q$.
-
-Now, from this set we'll define the function $Best(Q)$, which will be the
-``best continuous approximation'' to Q. 
+forever when given a value and heap in $Q$.  From this set we will
+define the function $Best(Q)$, which will be the ``best continuous
+approximation'' to Q. (Intuitively, think of this as being like a
+closure operator from topology, which finds the smallest open set
+containing the given set.)
 
 \begin{displaymath}
   Best(Q) \triangleq \lambda v \in \interp{A}.\; \lambda h \in H.\; 
@@ -880,7 +902,6 @@ Now, from this set we'll define the function $Best(Q)$, which will be the
            \end{array}
     \right.
 \end{displaymath}
-
 Of course, we have to verify that $Best(Q)$ is actually a continuous function. 
 
 \begin{itemize}
@@ -934,7 +955,7 @@ implies $v_i \sqsubseteq v_j$ and $h_i \sqsubseteq h_j$. \\
 \end{itemize}
 This establishes that $Best(Q)$ is a continuous function. 
 
-Now we'll prove a minor lemma about this function, which shows that we
+Now we will prove a minor lemma about this function, which shows that we
 are interpreting the Sierpinski lattice such that the bottom element
 is truth, and the top element is falsehood.
 
@@ -945,7 +966,7 @@ for all $a \in \interp{A}$, $Q(a) \subseteq Q'(a)$. Then $\mathit{Best}(Q') \sqs
 
 \begin{tabbedproof}
 \oo We want to show $\mathit{Best}(Q') \sqsubseteq \mathit{Best}(Q)$ \\
-\oo First, we'll observe that $\mathit{Approx}(Q') \subseteq \mathit{Approx}(Q)$ \\
+\oo First, we will observe that $\mathit{Approx}(Q') \subseteq \mathit{Approx}(Q)$ \\
 \oo So, suppose that $k \in \mathit{Approx}(Q')$. We want to show $k \in \mathit{Approx}(Q)$. \\
 \ooo We want to show that for all $a \in \interp{A}$ and $h \in Q(a)$, $k\;a\;h = \bot$.  \\
 \ooo Assume that $a \in \interp{A}$ and $h \in Q(a)$. \\ 
@@ -1101,7 +1122,7 @@ $\spec{p}{\sqcup_i c_i}{a:A}{q(a)}$.
 \end{proof}
 
 \begin{lemma}{(Semantic Fixed Point Induction)}
-If we know that for all $x$, $\spec{p}{x}{a:A}{q(a)} = \powerset{H}$ implies $\spec{p}{f(x)}{a:A}{q(a)}) = \powerset{H}$, then we know that $\spec{p}{fix(f)}{a:A}{q(a)} = \powerset{H}$
+If we know that for all $x$, $\spec{p}{x}{a:A}{q(a)} = \powerset{H}$ implies $\spec{p}{f(x)}{a:A}{q(a)}) = \powerset{H}$, then we know that $\spec{p}{\mathit{fix}(f)}{a:A}{q(a)} = \powerset{H}$
 \end{lemma}
 
 \begin{proof}
@@ -1120,7 +1141,7 @@ First, observe that $f^n(\bot)$ forms a chain -- that is, for all $i$, $f^i(\bot
 \oo Therefore $\forall i$, $f^i(\bot) \sqsubseteq f^{i+1}(\bot)$ \\
 \end{tabbedproof}
 
-\noindent Now, observe that for every $n$, $f^n(\bot) \in \spec{p}{-}{a:A}{q}$. \\
+\noindent Now, observe that for every $n$, $f^n(\bot) \in \spec{p}{-}{a:A}{q}$. 
 
 \begin{tabbedproof}
 \oo Assume for all $x$, $\spec{p}{x}{a:A}{q(a)} = \powerset{H}$ implies $\spec{p}{f(x)}{a:A}{q(a)}) = \powerset{H}$ \\
@@ -1142,7 +1163,7 @@ First, observe that $f^n(\bot)$ forms a chain -- that is, for all $i$, $f^i(\bot
 \end{tabbedproof}
 Finally, by the admissibility of $\spec{p}{-}{a:A}{q(a)}$, we know that
 $\sqcup f^n(\bot) \in \spec{p}{-}{a:A}{q(a)}$. Since $\sqcup f^n(\bot) = fix(f)$, we 
-know that $\spec{p}{fix(f)}{a:A}{q(a)} = \powerset{H}$. 
+know that $\spec{p}{\mathit{fix}(f)}{a:A}{q(a)} = \powerset{H}$. 
 \end{proof}
 
 
@@ -1150,26 +1171,32 @@ know that $\spec{p}{fix(f)}{a:A}{q(a)} = \powerset{H}$.
 \section{The Framing Operator}
 
 One nice feature of the Kripke-style interpretation of specifications
-is that it naturally validates higher-order frame rules.
-
-We will define, define an operation $S \otimes p$, where $S \in \upset{W(\powerset{H})}$ and
+is that it naturally validates higher-order frame rules.  We define
+the operation $S \otimes p$, where $S \in \upset{W(\powerset{H})}$ and
 $p \in W(\powerset{H})$:
-
 \begin{displaymath}
 S \otimes p = \comprehend{ r \in W(\powerset{H}) }{ r * p \in S }
 \end{displaymath}
+%
+The way to understand this is that $S \otimes p$ restricts $S$ to only those
+elements which can be extended by $p$. That is, if we think of $S$ as the
+set of propositions that can be framed on to a basic triple, then we want
+$S \otimes p$ to be only the frames in $S$, such that if we added $p$ to
+them we continue to have a frame in $S$. So this operation gives a semantic
+interpretation of the frame rule. 
 
-Now, we can show that $S \otimes p$ is in $\upset{W(\powerset{H}})$, and that 
-$S \subseteq S \otimes p $. The reason to do this is to give a semantics
-to the frame rule. Intuitively, if $S$ is a specification, then $S \otimes p$ 
-will be that specification with $p$ framed on to it. So we need to show that
-first, $S \otimes p$ actually is an element of our Heyting algebra of 
-specification truth values, and second, we want the frame rule to be 
-sound -- we want $S$ to always imply $S \otimes p$. 
+So we need to show that first, $S \otimes p$ actually is an element of
+our Heyting algebra of specification truth values, and second, we want
+the frame rule to be sound -- we want $S$ to always imply $S \otimes
+p$.
 
+\begin{lemma}{(Framing is a Lattice Operation)}
+For all $S$ and $p$, we have that $S \otimes p$ is in $\upset{W(\powerset{H}})$,
+and that $S \subseteq S \otimes p $.
+\end{lemma}
+\begin{proof}
 To show that $S \otimes p \in \upset{W(\powerset{H})}$, we need to show that for all 
 $x,y$, if $x \in S \otimes p$ and $y \sqsupseteq x$, then $y \in S \otimes p$. 
-\\
 
 \begin{tabbedproof}
 \oo We want to show for all $x,y$, if $x \in S \otimes p$ and $y \sqsupseteq x$, then $y \in S \otimes p$ \\
@@ -1182,14 +1209,14 @@ $x,y$, if $x \in S \otimes p$ and $y \sqsupseteq x$, then $y \in S \otimes p$.
 \oooo Therefore $y \in S \otimes p$ \\
 \end{tabbedproof}
 
-To show $S \subseteq S \otimes p$, we need to show that if $x \in S$, then $x \in S \otimes p$. 
-
+\noindent To show $S \subseteq S \otimes p$, we need to show that if $x \in S$, then $x \in S \otimes p$. 
 \begin{tabbedproof}
 \oo Assume $x \in S$ \\
 \ooo Since $\sqsubseteq$ is the extension ordering, $x \sqsubseteq x * p$ \\   
 \ooo Since $S$ is upward closed, $x * p \in S$\\
-\ooo Therefore $x \in S \otimes p$ \\
+\ooo Therefore $x \in S \otimes p$ 
 \end{tabbedproof}
+\end{proof}
 
 \subsection{Framing Commutes With Logical Operators}
 
@@ -1370,8 +1397,8 @@ only if $r \in [(S_1 \otimes p) \implies (S_2 \otimes p)]$.
 
 \section{Syntax of Assertions and Specifications}
 
-In this section, we'll give the syntax of specifications and
-assertions, and then we'll give their semantics.
+In this section, we will give the syntax of specifications and
+assertions, and then we will give their semantics.
 
 The syntactic categories are given in Figure~\ref{logic-syntax}. The
 sorts $\omega$ include $\assert$, the sort of propositions in
@@ -1379,7 +1406,7 @@ separation logic, the kinds $\kappa$, the polytypes $A$, and
 implications over these sorts $\omega \To \omega'$. Note that both
 types and kinds are counted as sorts of our logic, which mean that
 assertions in separation logic will be permitted to quantify over both
-terms and types.  We'll need this ability in order to reason properly
+terms and types.  We will need this ability in order to reason properly
 about polymorphic programs -- for example, to specify the behavior of
 a polymorphic length function on lists.
 
@@ -2495,7 +2522,7 @@ Suppose that $D_0 :: \judgeA{p}{\omega}$. Then
 \section{Semantics}
 
 Now, we will consider the interpretation of the syntax. To do this,
-we'll proceed in stages. First, we'll show how to interpret sorts and
+we will proceed in stages. First, we will show how to interpret sorts and
 contexts by sets, and show that the equality judgement for sorts is
 sound. Using this, we will then give interpretation of terms and
 specifications, and show that the interpretation is sound with respect
@@ -2503,14 +2530,14 @@ to substitution.
 
 \subsection{Interpretation of Sorts}
 
-We'll start by explaining how to interpret the sorts. Ultimately,
-we're going to define assertions to be the powerset of heaps, and
+We will start by explaining how to interpret the sorts. Ultimately,
+we are going to define assertions to be the powerset of heaps, and
 specifications to be upward closed sets of assertions, but because we
 allow types as sorts, and types may have free type variables, we will
 need to give an indexed, recursive definition in order to make
 everything work properly.
 
-Therefore, we'll need to give a mutually-recursive definition between
+Therefore, we will need to give a mutually-recursive definition between
 the interpretation the two judgements $\judgeACtx{\Delta}$ and 
 $\judgeA{\Delta}{\omega}$.
 
@@ -2539,7 +2566,7 @@ $\kappa$, we take it to be the set of closed canonical forms of that
 type. Both of these use the interpretations given in the previous
 chapter. 
 
-In order to establish that this actually defines a function, we'll
+In order to establish that this actually defines a function, we will
 need to prove some supporting lemmas. First, we need to establish that
 we an also prove that the context $\Delta$ is well-formed is
 $\judgeSort{\omega}$ is derivable:
@@ -2707,7 +2734,7 @@ We proceed by mutual induction on the size of the derivation $\mathcal{D}_1$
 
 \subsection{Interpretation of Equality Judgement on Sorts}
 
-Now, we'll show that our equality judgement on sorts $\judgeSortEq{\omega}{\omega'}$ is
+Now, we will show that our equality judgement on sorts $\judgeSortEq{\omega}{\omega'}$ is
 sound. 
 
 \begin{lemma}{(Soundness of Sort Equality)}
@@ -2958,7 +2985,7 @@ partial order structure that predomains come with.
 
 In general, this is not possible, since every set can have potentially
 many different partial orders upon it, and \emph{a priori} we don't
-know which one we'll need. However, in our specific situation, we can
+know which one we will need. However, in our specific situation, we can
 recover the correct partial order. This is because all of the domains
 we are interested in arise as interpretations of types. So, if we have
 the type, we can just re-compute the appropriate predomain. Furtheremore, the
@@ -3402,7 +3429,7 @@ then $\judgeSortEq[{\Delta, [p/u]\Delta'}]{[p/u]\omega'}{[p/u]\omega''}$.
 
 \begin{proof}
 Assume $D_0 :: \judgeA{p}{\omega}$, and $D_C :: \judgeACtx{\Delta, u:\omega, \Delta'}$.  
-Now we'll proceed by structural induction on the equality judgement. 
+Now we will proceed by structural induction on the equality judgement. 
 \begin{itemize}
 \item Case \textsc{SortEqProp}:
   \begin{tabbedproof}
@@ -4328,78 +4355,272 @@ If $D_0 :: \judgeA{p}{\omega}$, then we have
 
 \section{The Program Logic}
 
-A specification $\judgeS{S}$ is \emph{valid} if and only if, for all
-$\delta \in \interp{\judgeACtx{\Delta}}$, $\interp{\judgeS{S}}\;\delta = \top$. 
-
-This says that for any assignment of the free variables, the valid
-specification $S$ is true.
-
 \begin{figure}[h]
 \begin{mathpar}
-  \inferrule*{ }
-             {\judgeS{\spec{p}{c}{a:A}{q} \specimp \mspec{p}{\monad{c}}{a:A}{q}}} 
+  \inferrule*{\judgeS{\spec{p}{c}{a:A}{q} \specimp \mspec{p}{\comp{c}}{a:A}{q}}} 
+             {\validS{\spec{p}{c}{a:A}{q} \specimp \mspec{p}{\comp{c}}{a:A}{q}}} 
 \and 
-  \inferrule*{ }
-    {\judgeS{\mspec{p}{c}{a:A}{q} \specimp \spec{p}{\monad{c}}{a:A}{q}}} 
+  \inferrule*
+    {\judgeS{\mspec{p}{c}{a:A}{q} \specimp \spec{p}{\comp{c}}{a:A}{q}}} 
+    {\validS{\mspec{p}{c}{a:A}{q} \specimp \spec{p}{\comp{c}}{a:A}{q}}} 
 \and
 
-  \inferrule*{ }
+  \inferrule*
     {\judgeS{\spec{P}{e}{a:A}{P \land a = e}}}
+    {\validS{\spec{P}{e}{a:A}{P \land a = e}}}
 \and
 
-  \inferrule*{ }
+  \inferrule*
     {\judgeS{\spec{e \pointsto_A -}{e := e'}{a:\unittype}{e \pointsto_A e'}}}
+    {\validS{\spec{e \pointsto_A -}{e := e'}{a:\unittype}{e \pointsto_A e'}}}
 \and
 
-  \inferrule*{ }
+  \inferrule*
     {\judgeS{\spec{\emp}{\newref{A}{e}}{a:\reftype{A}}{a \pointsto e}}}
+    {\validS{\spec{\emp}{\newref{A}{e}}{a:\reftype{A}}{a \pointsto e}}}
 \and
 
-  \inferrule*{ }
+  \inferrule*
     {\judgeS{\spec{e \pointsto_A e'}{!e}{a:A}{e \pointsto_A e' \land a = e'}}}
+    {\validS{\spec{e \pointsto_A e'}{!e}{a:A}{e \pointsto_A e' \land a = e'}}}
 \and
 
   \inferrule*
-            {\judgeS{\mspec{p}{e}{x:A}{q}} \\
-             \judgeS[\Delta,x:A]{\spec{q}{c}{a:B}{r}}}
-            {\judgeS{\spec{p}{\letv{x}{e}{c}}{a:B}{r}}}
+            {\validS{\mspec{p}{e}{x:A}{q}} \\
+             \validS[\Delta,x:A]{\spec{q}{c}{a:B}{r}}}
+            {\validS{\spec{p}{\letv{x}{e}{c}}{a:B}{r}}}
 \and
 
   \inferrule*
-            {\judgeS{(\forall x:\monad{A}.\; \mspec{p}x{a:A}{q(a)} \specimp \mspec{p}{e}{a:A}{q})}}
-            {\judgeS{\mspec{p}{\fix{x:\monad{A}}{e}}{a:A}{q}}}
+            {\validS{(\forall x:\monad{A}.\; \mspec{p}x{a:A}{q(a)} \specimp \mspec{p}{e}{a:A}{q})}}
+            {\validS{\mspec{p}{\fix{x:\monad{A}}{e}}{a:A}{q}}}
 \and
 
-  \inferrule*{\judgeS{\setof{r} \specimp \spec{p}{c}{a:A}{q}} \\
+  \inferrule*{\validS{\setof{r} \specimp \spec{p}{c}{a:A}{q}} \\
               \mbox{$r$ is a pure formula} \\
-              \entailsP{\Delta}{p}{r}}
-             {\judgeS{\spec{p}{c}{a:A}{q}}}
+              \validP{p \implies r}}
+             {\validS{\spec{p}{c}{a:A}{q}}}
 \and
 
-  \inferrule*{\judgeS{\setof{r} \specimp \spec{p \land r}{c}{a:A}{q}}}
-             {\judgeS{\setof{r} \specimp \spec{p}{c}{a:A}{q}}}
+  \inferrule*{\validS{\setof{r} \specimp \spec{p \land r}{c}{a:A}{q}}}
+             {\validS{\setof{r} \specimp \spec{p}{c}{a:A}{q}}}
 \and
 
   \inferrule*{ }
-             {\judgeS{\setof{\validprop{S}} \specimp S}}
+             {\validS{\setof{\validprop{S}} \specimp S}}
 \and
 
-  \inferrule*{\judgeS{\spec{\exists u:\omega.\;p}{c}{a:A}{q}}}
-             {\judgeS[\Delta, u:\omega]{\spec{p}{c}{a:A}{q}}}
-
+  \inferrule*{\validS[\Delta, u:\omega]{\spec{p}{c}{a:A}{q}}}
+             {\validS{\spec{\exists u:\omega.\;p}{c}{a:A}{q}}}
 \and
 
-  \inferrule*{\judgeS{\spec{p}{c}{a:A}{q}} \\
-              \judgeS{\spec{p'}{c}{a:A}{q'}}}
-             {\judgeS{\spec{p \vee p'}{c}{a:A}{q \vee q'}}}
+  \inferrule*{\validS{\spec{p}{c}{a:A}{q}} \\
+              \validS{\spec{p'}{c}{a:A}{q'}}}
+             {\validS{\spec{p \vee p'}{c}{a:A}{q \vee q'}}}
+\and
+
+  \inferrule*{\validP{p}}
+             {\validS{\setof{p}}}
+
+\and
+\inferrule*[]
+          {\judgeS{S} \\ \judgeA{r}{\assert} }
+          {\validS{S \specimp S \otimes r}}
 
 \end{mathpar}
 \caption{Axioms of the Program Logic}
 \label{spec-logic-axioms}
 \end{figure}
 
+\begin{figure}
+\begin{mathpar}
+  \inferrule*{\validS{S}}
+             {\validP{\validprop{S}}}
+\and
+  \inferrule*{\judgeP{\Delta}{p}{\assert}}
+             {\validP{\validprop{\setof{p}} \implies p}}
+\and 
+  \inferrule*{\judgeEqA{p}{q}{\omega}}
+             {\validP{p =_\omega q}}
+\\
+  \mbox{(plus axioms of higher-order separation logic)}
+\end{mathpar}
+\caption{Axioms of Assertion Logic}
+\label{assertion-logic-axioms}  
+\end{figure}
 
-\subsection{Soundness of Axioms}
+\begin{figure}
+\begin{mathpar}
+\inferrule*[]
+          {\judgeA{p}{\omega}}
+          {\judgeEqA{p}{p}{\omega}}
+\and
+\inferrule*[]
+          {\judgeEqA{p}{q}{\omega}}
+          {\judgeEqA{q}{p}{\omega}}
+\and
+\inferrule*[]
+          {\judgeEqA{p}{q}{\omega} \\ \judgeEqA{q}{r}{\omega}}
+          {\judgeEqA{p}{r}{\omega}}
+\and
+\inferrule*[]
+          {\judgeA{(\fun{x}{\omega}{p})\;q}{\omega'} \\
+           \judgeA{[q/x]p}{\omega'}}
+          {\judgeEqA{(\fun{x}{\omega}{p})\;q}{[q/x]p}{\omega'}}
+\and
+\inferrule*[]
+          {\judgeEqA[\Delta, x:\omega]{p\;x}{p'\;x}{\omega'}}
+          {\judgeEqA{\fun{x}{\omega}{p}}{\fun{x}{\omega}{p'}}{\omega \To \omega'}}
+\and 
+\inferrule*[]
+          {\judgeEqA{p}{p'}{\omega \To \omega'} \\
+           \judgeEqA{q}{q'}{\omega}}
+          {\judgeEqA{p\;q}{p'\;q'}{\omega'}}
+\and
+\inferrule*[]
+          {x:\omega \in \Delta}
+          {\judgeEqA{x}{x}{\omega}}
+\and
+\inferrule*[]
+          {\judgeKeq[\restrictkind{\Delta}]{\tau}{\tau'}{\kappa}}
+          {\judgeEqA{\tau}{\tau'}{\kappa}}
+\and
+\inferrule*[]
+          {\judgeEq[\restrictkind{\Delta}]{\restricttype{\Delta}}{e}{e'}{A}}
+          {\judgeEqA{e}{e'}{A}}
+\and 
+\inferrule*[]
+          {\validP{p \iff q}}
+          {\judgeEqA{p}{q}{\assert}}
+\and
+\inferrule*[]
+          {\judgeEqA{p}{q}{\omega} \\ \judgeSortEq{\omega}{\omega'}}
+          {\judgeEqA{p}{q}{\omega'}}
+\end{mathpar}
+\caption{Equality Judgement for Assertions}
+\label{assertion-equality}  
+\end{figure}
+
+
+My program logic consists of three judgments:
+
+\begin{enumerate}
+\item $\validP{p}$, which asserts that a proposition $p$ is valid.
+
+\item $\validS{S}$, which asserts that a specification $S$ is valid.
+
+\item $\judgeEqA{p}{q}{\omega}$, which asserts that $p$ and $q$ are validly equal.
+\end{enumerate}
+%
+
+The semantics of these three judgments is given as follows:
+\begin{enumerate}
+\item An assertion $\judgeP{\Delta}{p}{\assert}$ is valid, if and only if
+for all $\delta \in \interp{\judgeACtx{\Delta}}$,
+$\interp{\judgeP{\Delta}{p}{\assert}}\;\delta = \top$.
+
+\item Similarly, a specification $\judgeS{S}$ is valid if and only
+if, for all $\delta \in \interp{\judgeACtx{\Delta}}$,
+$\interp{\judgeS{S}}\;\delta = \top$.
+
+\item Finally, two assertion terms $\judgeA{p}{\omega}$ and
+$\judgeA{q}{\omega}$ are validly equal, if and only if for all $\delta
+\in \interp{\judgeACtx{\Delta}}$,
+$\interp{\judgeP{\Delta}{p}{\assert}}\;\delta$ is equal to
+$\interp{\judgeP{\Delta}{p}{\assert}}\;\delta$
+\end{enumerate}
+
+So this says that for any assignment of the free variables, a valid
+assertion $p$ must be true, and similarly a valid specification $S$
+must be true. Likewise, two syntactic terms $p$ and $q$ are validly
+equal if their interpretations are equal under all environments. 
+
+The program logic consists of a set of three mutually-recursive
+judgments for deriving valid assertions, specifications, and
+equalities. In Figure~\ref{spec-logic-axioms}, I give the rules for
+deriving valid specifications. In Figure~\ref{assertion-logic-axioms},
+I give some of the rules for deriving valid assertions, and in
+Figure~\ref{assertion-equality}, I give rules for deriving equalities
+between terms.
+
+In Figures \ref{spec-logic-axioms} and \ref{assertion-logic-axioms}, I
+do not give a complete list of the axioms: in particular, I have not
+given axioms corresponding to the axioms of intuitionistic logic or
+separation logic. The soundness of these axioms is immediate from the
+semantics, and instead I have focused on the distinctive rules of the
+program logic.
+
+\begin{theorem}{(Soundness of the Program Logic)}
+  \begin{enumerate}
+  \item If $\validP{p}$, then $\judgeA{p}{\assert}$ is valid.
+
+  \item If $\validS{S}$, the $\judgeS{S}$ is valid.
+
+  \item If $\judgeEqA{p}{q}{\omega}$, then $p$ and $q$ are validly equal.
+  \end{enumerate}
+\end{theorem}
+
+\begin{proof}
+  The proof of these three theorems follows from a mutual structural
+  induction.  The soundness of each atomic rule for the two validity
+  judgements is proven in the next section. The soundness of the rules
+  for equality are a consequence of the equality rules we have already
+  proven, and the cartesian closure of Set.  
+\end{proof}
+
+
+\subsection{Soundness of Assertion Logic Axioms}
+
+\begin{lemma}{(Getting Specs Into Assertions)} 
+  If $\judgeS{S}$ is valid, then $\judgeA{\validprop{S}}{\assert}$ is valid. 
+\end{lemma}
+\begin{proof}
+  Assume we have a suitable environment $\delta$. By hypothesis we know
+$\interp{\judgeS{S}}\;\delta$ $=$ $\top$ in the specification lattice. However,
+we know the interpretation of $\interp{\judgeA{\validprop{S}}{\assert}}\;\delta$ is 
+equal to $\IfThenElse{\interp{\judgeS{S}}\;\delta = \top}{\top}{\bot}$, so it 
+follows that $\interp{\judgeA{\validprop{S}}{\assert}}\;\delta = \top$ in the assertion
+lattice. Hence it is true for all substitutions, and is therefore valid. 
+\end{proof}\\
+
+\begin{lemma}{(Getting Assertions out of Specs)}
+If $\judgeA{p}{\assert}$, then $\judgeA{\validprop{\setof{p}} \implies p}{\assert}$ is valid. 
+\end{lemma}
+\begin{proof}
+\begin{tabbedproof}
+\oo Assume we have $\judgeA{p}{\assert}$ and a suitable $\delta$. \\ 
+\oo We want to show that $\interp{\judgeA{\validprop{\setof{p}} \implies
+    p}{\assert}}\;\delta$ is equal to $\top$.  \\
+\oo This is equivalent to every $h \in H$ being in 
+    $\interp{\judgeA{\validprop{\setof{p}} \implies p}{\assert}}\;\delta$ \\
+\oo From the semantics of implication, we want to show that \\ 
+\ooo if $h \in \interp{\judgeA{\validprop{\setof{p}}}{\assert}}\;\delta$, 
+     then  $h \in \interp{\judgeA{p}{\assert}}\;\delta$. \\
+\oo Assume we have an $h \in \interp{\judgeA{\validprop{\setof{p}}}{\assert}}\;\delta$. \\
+\ooo We know  $\IfThenElse{\interp{\judgeS{\setof{p}}}\;\delta = \top}{\top}{\bot}$ \\
+\ooo Since we have an $h$ in this set,  $\interp{\judgeS{\setof{p}}}\;\delta = \top$. \\
+\ooo However,  $\interp{\judgeS{\setof{p}}}\;\delta = \IfThenElse{\interp{\judgeA{p}{\assert}}\;\delta = \top}{\top}{\bot}$ \\
+\ooo So $\interp{\judgeA{p}{\assert}}\;\delta = \top$. \\ 
+\ooo Since this is the full set of heaps $H$, it follows that $h \in \interp{\judgeA{p}{\assert}}\;\delta$. 
+\end{tabbedproof}
+\end{proof}
+
+
+\begin{lemma}{(Soundness of Equality)}
+  If $\judgeEqA{p}{q}{\omega}$ is a valid equality, then $\judgeA{p =_\omega q}{\assert}$ is valid.
+\end{lemma}
+\begin{proof}
+\begin{tabbedproof}
+\oo Assume $\judgeEqA{p}{q}{\omega}$ is a valid equality \\
+\oo Assume we have a suitable $\delta$. \\ 
+\ooo Then we know that $\interp{\judgeA{p}{\assert}}\;\delta = \interp{\judgeA{q}{\omega}}\;\delta$. \\
+\ooo By semantics $\interp{\judgeA{p =_\omega q}{\assert}}\;\delta = \IfThenElse{\interp{\judgeA{p}{\omega}}\;\delta = \interp{\judgeA{q}{\omega}}\;\delta}{\top}{\bot}$ \\
+\ooo Therefore $\interp{\judgeA{p =_\omega q}{\assert}}\;\delta = \top$ \\
+\oo Therefore $\judgeA{p =_\omega q}{\assert}$ is valid.
+\end{tabbedproof}
+\end{proof}
+
+\subsection{Soundness of Program Logic Axioms}
 
 \begin{lemma}{(Validity and Classical and Intuitionistic Implication)}
 The statement that $\judgeS{S_1 \specimp S_2}$ is valid is logically equivalent to: if
@@ -4495,7 +4716,7 @@ The schema $\judgeS{\spec{P}{e}{a:A}{P \land a = e}}$ is valid.
 \ooooo Note that $\interp{a = e}\;(\delta,E) = \top$ if $E = E$, which is true \\
 \ooooo Hence $P = (P \land \interp{a = e}\;(\delta,E))$ \\
 \ooooo Hence we need to show $h \in P * R$ \\
-\ooooo This is a hypothesis, so we're done \\
+\ooooo This is a hypothesis, so we are done \\
 \end{tabbedproof}
 \end{proof}
 
@@ -4543,7 +4764,7 @@ $\judgeS{\spec{e \pointsto_A -}{e := e'}{a:\unittype}{e \pointsto_A e'}}$ is val
     \ooooooo Now, $k \in Approx(\semfun{a}{Q(a) * s})$ means $\forall v, h \in (Q(v) * s)\; k\;v\;h = \bot$ \\
     \ooooooo Now, instantiate the quantifier with $\unit$ and $[E:E']\cdot h_2$ \\
     \ooooooo Now we must check $[E:E']\cdot h_2 \in Q(\unit) * s$ \\
-    \ooooooo We'll check that $[E:E'] \in Q(\unit)$ and $h_2 \in s$ \\
+    \ooooooo We will check that $[E:E'] \in Q(\unit)$ and $h_2 \in s$ \\
     \ooooooo By semantics of assertions $Q(\unit) = \setof{[E:E']}$, so $[E:E'] \in Q(\unit)$ \\
     \ooooooo From line 19, $h_2 \in s$ \\
     \ooooooo Since $[E:E']$ has the same domain as $h_1$, we know $[E:E'] \# h_2$ \\
@@ -5102,7 +5323,7 @@ $\interp{\judgeS{\Frame{S}{r}}}\;\delta =
         \oo So we also know that $\Frame{\setof{p}}{r} = \setof{p}$ \\
         \oo Therefore, $\interp{\judgeS{\setof{p}}}\;\delta$ is either $\top$ or $\bot$, depending on
             whether $\interp{\judgeA{p}{\assert}}\;\delta$ is $H$ or $\emptyset$ \\
-        \oo Now, we'll do a case analysis on the meaning of $\setof{p}$ \\
+        \oo Now, we will do a case analysis on the meaning of $\setof{p}$ \\
         \ooo If $\interp{\judgeS{\setof{p}}}\;\delta = \top$ \\
         \oooo Then, since $S \subseteq \Frame{S}{R}$ for all $S$ and $R$, and $\top$ is maximal, we know that \\
         \oooox $\top = \Frame{\top}{(\interp{\judgeA{r}{\assert}}\;\delta)}$ \\
@@ -5162,5 +5383,7 @@ $\interp{\judgeS{\Frame{S}{r}}}\;\delta =
       \end{tabbedproof}
   \end{itemize}
 \end{proof}
+
+
 
 
