@@ -1413,14 +1413,16 @@ a polymorphic length function on lists.
 The terms (for which we will use $p$ $q$ as metavariables) which are
 categorized by our sorts are also given in Figure~\ref{logic-syntax}.
 They include lambda-abstraction and application for the exponential
-sort $\omega \To \omega'$, terms $e$ for the sorts $A$, type
-expressions $\tau$ for the sorts $\kappa$, and the assertions of
-separation logic for the sort $\assert$. These include the usual
-propositional logical connectives --- $\top, p \land q, p \implies q,
-\bot, p \vee q$ -- as well as the spatial connectives $\emp, p * q, p
-\wand q$, and $e \pointsto_A e'$. Note that the points-to proposition
-is typed; it indicates that $e$ is a reference of type $\reftype{A}$
-with contents $e'$ of type $A$. 
+sort $\omega \To \omega'$, terms $e$ for the sorts $A$,
+type expressions $\tau$ for the sorts $\kappa$. 
+
+Finally, we also have the assertions of separation logic for the sort
+$\assert$.  These include the usual propositional logical connectives
+--- $\top, p \land q, p \implies q, \bot, p \vee q$ -- as well as the
+spatial connectives $\emp, p * q, p \wand q$, and $e \pointsto_A
+e'$. Note that the points-to proposition is typed; it indicates that
+$e$ is a reference of type $\reftype{A}$ with contents $e'$ of type
+$A$.
 
 The quantifiers $\forall u:\omega.\; p$ and $\exists u:\omega.\; p$
 are higher-order quantifiers. They can range over all sorts, including
@@ -1457,7 +1459,7 @@ A \bnfalt \assert \\[1em]
 \mbox{Terms} & 
 p,q & ::= & u \bnfalt \pfun{u}{\omega}{p} \bnfalt p\;q \bnfalt \tau \bnfalt e \\
 &   &  |  & \top \bnfalt p \land q \bnfalt p \implies q \bnfalt \bot \bnfalt p \vee q \\
-&   &  |  & \emp \bnfalt p * q \bnfalt p \wand q \bnfalt e \pointsto_A e' \\
+&   &  |  & \emp \bnfalt p * q \bnfalt p \wand q \bnfalt p \pointsto_{A} q \\
 &   &  |  & \forall u:\omega.\; p \bnfalt \exists u:\omega.\; p \bnfalt p =_\omega q \bnfalt
             \validprop{S} \\[1em]
 
@@ -4413,6 +4415,10 @@ If $D_0 :: \judgeA{p}{\omega}$, then we have
   \inferrule*{\validS[\Delta, u:\omega]{\spec{p}{c}{a:A}{q}}}
              {\validS{\spec{\exists u:\omega.\;p}{c}{a:A}{q}}}
 \and
+  \inferrule*{\validS{\spec{p'}{c}{a:A}{q'}} \\ \validP{p \implies p'} \\ \validP{q' \implies q}}
+             {\validS{\spec{p}{c}{a:A}{q}}}
+  
+\and
 
   \inferrule*{\validS{\spec{p}{c}{a:A}{q}} \\
               \validS{\spec{p'}{c}{a:A}{q'}}}
@@ -4465,7 +4471,7 @@ If $D_0 :: \judgeA{p}{\omega}$, then we have
 \and
 \inferrule*[]
           {\judgeA{(\fun{x}{\omega}{p})\;q}{\omega'} \\
-           \judgeA{[q/x]p}{\omega'}}
+           \mbox{$q$ satisfies conditions of substitution theorem}}
           {\judgeEqA{(\fun{x}{\omega}{p})\;q}{[q/x]p}{\omega'}}
 \and
 \inferrule*[]
@@ -4702,7 +4708,7 @@ The schema $\judgeS{\spec{P}{e}{a:A}{P \land a = e}}$ is valid.
 \oo We want to show that $\spec{P}{C}{a}{Q(a)} = \top$ \\
 \oo So we want to show that for all $R$, we have $R \in \spec{P}{C}{a}{Q(a)}$ \\
 \oo Hence it suffices to show that $\basicspec{P * R}{C}{v}{P \land \interp{a = e}\;(\delta,v) * R}$ \\
-\oo So we want to show that for all $h \in P * R$, we have $C\;\mathit{Best}(\semfun{v}{P \land \interp{a = e * R}\;(delta,v)})\;h = \bot$ \\
+\oo So we want to show that for all $h \in P * R$, we have $C\;\mathit{Best}(\semfun{v}{P \land \interp{a = e * R}\;(\delta,v)})\;h = \bot$ \\
 \oo Assume we have $h \in P * R$ \\
 \ooo Next, observe that $C\;k\;h = k\;E\;h$ \\
 \ooo To show that $\mathit{Best}(\semfun{a}{P \land a = e * R})\;E\;h = \bot$, \\
@@ -5167,7 +5173,7 @@ then $\judgeS{\spec{p \vee p'}{c}{a:A}{q \vee q'}}$ is valid.
 
 \begin{lemma}{(Equality Substitution)}
 If $\judgeS{\setof{r} \specimp \spec{p}{c[e/x]}{a:A}{q}}$ is valid and
-$\judgeA{r \vdash e =_A e'}{\assert}$, then $\judgeS{\setof{r} \specimp \spec{p}{c[e'/x]}{a:A}{q}}$ is valid.
+$\validP{r implies e =_A e'}$ is valid, then $\judgeS{\setof{r} \specimp \spec{p}{c[e'/x]}{a:A}{q}}$ is valid.
 \end{lemma}
 
 \begin{proof}
@@ -5235,6 +5241,47 @@ Then $\judgeS{\mspec{p}{\Case{e}{x}{e_A}{y}{e_B}}{a:C}{q}}$ is valid.
 \end{tabbedproof}
 \end{proof}
 
+\begin{lemma}{(The Rule of Consequence)}
+If $\judgeS{\spec{p}{c}{a:A}{q}}$ is valid and $\judgeA{p' \implies p}{\assert}$ is valid
+and $\judgeA{q \implies q'}{\assert}$ is valid, then $\judgeS{\spec{p'}{c}{a:A}{q'}}$ is valid.
+\end{lemma}
+\begin{proof}
+\begin{tabbedproof}
+\oo Assume $\judgeS{\spec{p}{c}{a:A}{q}}$ is valid \\
+\oo Assume $\judgeA{p' \implies p}{\assert}$ is valid \\
+\oo Assume $\judgeA{q \implies q'}{\assert}$ is valid \\
+\oo Assume $\delta \in \interp{\judgeACtx{\Delta}}$ \\
+\ooo We want to show $\forall r.\; r \in \judgeS{\spec{p'}{c}{a:A}{q'}}$ \\
+\ooo Assume $r$, and let \\
+\ooox $\Theta = \restrictkind{\Delta}$ \\
+\ooox $\theta = \restricttyenv{\Delta}{\delta}$ \\
+\ooox $\Gamma = \restricttype{\Delta}$ \\
+\ooox $\gamma = \restrictvals{\Delta}{\delta}$ \\
+\ooox $P = \interp{\judgeA{p}{\assert}}\delta$ \\
+\ooox $P' = \interp{\judgeA{p'}{\assert}}\delta$ \\
+\ooox $C = \interp{\judgeC{\Gamma}{c}{A}}\;\theta\;\gamma$ \\
+\ooox $Q = \semfun{v}{\interp{\judgeA[\Delta,a:A]{q}{\assert}}\;(\delta,v)}$ \\
+\ooox $Q' = \semfun{v}{\interp{\judgeA[\Delta,a:A]{q}{\assert}}\;(\delta,v)}$ \\
+\ooo We know $\interp{\judgeA{p' \implies p}{\assert}}\;\delta = P' \implies P$. \\
+\ooo We know $\interp{\judgeA{q \implies q'}{\assert}}\;\delta = Q \implies Q'$. \\
+\ooo So we want to show that $\forall s \sqsupseteq r.\; \basicspec{P' * s}{C}{a:A}{Q'(a) * s}$ \\
+\ooo Assume $s \sqsupseteq r$, and $h \in P' * s$ \\
+\oooo Hence $\exists$ $h_1$ and $h_2$ such that $h_1 \# h_2$ and $h = h_1 \cdot h_2$ 
+     and $h_1 \in P'$ and $h_2 \in s$ \\
+\oooo Since $P'$ is a subset of $P$, $h_1 \in P$. So $h \in P * s$ \\
+\oooo Therefore $C\;\mathit{Best}(\semfun{a}{Q(a) * s})\;h = \bot$ \\
+\oooo For any $a$, we know that $Q(a) \subseteq Q'(a)$ \\
+\oooo Hence  we know that $\mathit{Best}(\semfun{a}{Q'(a) * s}) \sqsupseteq \mathit{Best}(\semfun{a}{Q(a) * s})$ \\
+\oooo Hence by continuity, $C\;\mathit{Best}(\semfun{a}{Q'(a) * s})\;h = \bot$ \\
+\ooo Hence $\forall s \sqsupseteq r.\; \basicspec{P' * s}{C}{a:A}{Q'(a) * s}$ \\
+\ooo Hence $\forall r.\; r \in \interp{\judgeS{\spec{p'}{c}{a:A}{q'}}}\;\delta$ \\
+
+
+
+\end{tabbedproof}
+\end{proof}
+
+
 \subsection{The Syntactic Frame Property}
 
 Now, we can define a \emph{syntactic} frame operator $\Frame{S}{r}$
@@ -5292,8 +5339,8 @@ $\interp{\judgeS{\Frame{S}{r}}}\;\delta =
       \ox where $R = \interp{\judgeA{r}{\assert}}\;\delta$ \\
       \oo By lemma we know that $\spec{P * R}{C}{a}{Q(a) * R} = \Frame{\spec{P}{C}{a}{Q(a)}}{R}$ 
           semantically \\
-      \oo Therefore $\interp{\judgeS{\Frame{\spec{p}{c}{a:A}{q}}{r}}}\;\delta = 
-                     \Frame{\interp{\judgeS{\spec{p}{c}{a:A}{q}}}\;\delta}{(\interp{\judgeA{r}{\assert}}\;\delta)}$
+      \oo Therefore $\interp{\judgeS{\Frame{\spec{p}{c}{a:A}{q}}{r}}}\;\delta = $ \\
+      \oox $\Frame{\interp{\judgeS{\spec{p}{c}{a:A}{q}}}\;\delta}{(\interp{\judgeA{r}{\assert}}\;\delta)}$
     \end{tabbedproof}
 
   \item Case \textsc{SpecMTriple}
