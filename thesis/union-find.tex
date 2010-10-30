@@ -62,9 +62,30 @@ two equivalence classes, a single update allows efficiently
 \emph{broadcasting} the change to every element of both classes in
 almost constant time.  So we need a specification technique should also
 let us specify global interference in a clean, well-structured way. We
-achieve this by introducing a ramification operator in our
+achieve this by introducing a \emph{ramification operator} in our
 specification, which gives us an abstract way of characterizing the
 information propagated globally.
+
+To understand the idea of ramifications, we look back to McCarthy's
+original paper introducing the frame problem~\cite{mccarthy}. There,
+he described the frame problem as the problem of how to specify what
+parts of a state were \emph{unaffected} by the action of a command,
+which inspired the name of the frame rule in separation logic. In that
+paper, he also described the \emph{qualification problem}. He observed
+that many commands (such as a flipping a light switch turning on a
+light bulb) have numerous implicit preconditions (such as there being
+a bulb in the light socket), and dubbed the problem of identifying
+these implicit preconditions the qualification problem.
+
+Some years later, \citet{finger} observed that the qualification
+problem has a dual: actions can have indirect effects that are not
+explicitly stated in their specification (e.g., turning on the light can
+startle the cat). He called the problem of deducing these implicit
+consequences the ``ramification problem'' --- is there a simple way to
+represent all of the indirect consequences of an action? If so, then 
+we have a way of modularly specifying \emph{global} effects. This is
+the idea we will adopt to deal with the broadcast nature of \textsf{union}
+in the union-find algorithm. 
 
 \section{The Specification}
 

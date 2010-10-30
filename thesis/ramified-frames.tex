@@ -1048,35 +1048,21 @@ Clearly, we cannot expect to be able simply copy the same frame formula into
 the pre- and the post-condition states in the specification of commands like 
 $\readcell a$. 
 
-To deal with this problem, we look back to McCarthy's original paper
-introducing the frame problem~\cite{mccarthy}. There, he described the
-frame problem as the problem of how to specify what parts of a state
-were \emph{unaffected} by the action of a command, which inspired the
-name of the frame rule in separation logic. In that paper, he also
-described the \emph{qualification problem}. He observed that many
-commands (such as a flipping a light switch turning on a light bulb)
-have numerous implicit preconditions (such as there being a bulb in
-the light socket), and dubbed the problem of identifying these
-implicit preconditions the qualification problem. 
+To deal with this problem, we will return to the idea of
+ramifications, introduced in the previous chapter. We can understand
+our difficulty as an instance of the ramification problem as
+follows. 
 
-Some years later, \citet{finger} observed that the qualification
-problem has a dual: actions can have indirect effects that are not
-explicitly stated in their specification (e.g., turning on the light can
-startle the cat). He called the problem of deducing these implicit
-consequences the ``ramification problem'' --- is there a simple way to
-represent all of the indirect consequences of an action?
-
-We can understand our difficulty as an instance of the ramification
-problem. When we evaluate a code expression, we may read some unready
-cells and send them from an unready state in the precondition to a ready
-state in the postcondition. However, we may have had some cell formulas in
+When we evaluate a code expression, we may read some unready cells and
+send them from an unready state in the precondition to a ready state
+in the postcondition. However, we may have had some cell formulas in
 our frame which claimed their corresponding cells were unready purely
 because one of the cells in our footprint was unready. Therefore, when
 we update the footprint, we must modify the frame formula to account
 for the ramifications of our update in the footprint. So even though
-the actual physical storage representing the frame doesn't change at all, 
-we need to modify our abstract formula to reflect our updated state
-of knowledge. 
+the actual physical storage representing the frame doesn't change at
+all, we need to modify our abstract formula to reflect our updated
+state of knowledge.
 
 In our case, \emph{all} of the effects on the frame will arise from
 the cells we flip from unready to ready. Thus, given the set of cells
@@ -2707,62 +2693,47 @@ Then, the following specifications are provable:
 
 \section{Future Work}
 
-Now that we have introduced the idea of ramifications, we see many
-possible applications for them. 
-
-First, there are numerous algorithms --- such as unification, the
-union-find algorithm, and the chaotic iteration constraint propagation
-algorithm used in dataflow analysis --- which rely on using mutation
-and assignment as a way of globally broadcasting information to the
-rest of the program state. These algorithms have all been naturally
-resistant to modular proofs, because of the apparent need to know
-``the rest of the world'' in the program invariant. It would be
-interesting to see if ramifications can help.
-
-Second, we would like to investigate the relationship between
+Now that we have introduced the idea of ramifications and seen two
+different applications for them we see many possible further uses.  It
+would be interesting to investigate the relationship between
 ramification operators and methods based on
 rely-guarantee~\cite{rely-guarantee-jones}. Rely-guarantee works by
 imposing a mutual contract between a piece of code and the rest of the
 world, which is at least conceptually similar to the idea of a
 ramification, though we see no obvious direct relationship.
 
-Third, in this work we have presented ramifications as a style of
-specification useful for verifying a particular library. Might it be
+Third, so far we have presented ramifications as a style of
+specification useful for verifying a particular library.  Might it be
 sensible or useful to bake ramification operators into the basic
-logical framework? If so, what are their logical properties --- $R(u,
-\phi)$ looks like a family of modal operators on the formula $\phi$, but
-even in our first example we needed a number of auxiliary interaction
-lemmas to make them truly useful.
+logical framework?  If so, what are their logical properties --- $R(u,
+\phi)$ looks like a family of modal operators on the formula $\phi$.
+However, our first two examples exhibited a number of different
+auxiliary interaction lemmas, which is what made them truly useful, 
+and the common features are still unclear. 
 
 \section{Related Work}
 
-Versions of separation logic~\cite{sep-logic} supporting higher-order
-languages and quantification over predicates have been proposed by
-\citet{htt} with Hoare Type Theory, and by
-\citet{parkinson-bierman}. It would be interesting to study how the
-proof techniques in this paper could be adapted to their setting.
+Prior work on verifying callbacks using separation logic includes both
+\citet{tldi09,ftfjp07} work as well as by
+\citet{parkinson-iwaco-07}. The approach in these papers was similar;
+each subject predicate was equipped with a list of observers, rather
+than maintaining them implicitly in the invariant. These approaches
+were not modular, because the observers had to be explicitly
+named. Worse still, this approach broke down when faced with chains of
+subjects and observers, because separation logic is a resource-based
+logic, and the existence of multiple paths to an object meant that
+ownership of observer state became ambiguous.
 
-Prior work on verifying callbacks using separation logic includes work
-by \citet{tldi09,ftfjp07} work by
-\citet{parkinson-iwaco-07}. The approach in both of these
-papers was similar; each subject predicate was equipped with a list of
-observers, rather than maintaining them implicitly in the
-invariant. These approaches were not modular, because the observers
-had to be explicitly named. Worse still, this approach broke down when
-faced with chains of subjects and observers, because separation logic
-is a resource-based logic, and the existence of multiple paths to an
-object meant that ownership of observer state became ambiguous.
-
-citet{shaner-leavens-naumann} studied using gray-box model
-programs to model higher-order method calls (which can be understood
-as a a variant of refinement calculus-based methods) in JML, and 
-\citet{history-invariants} have applied Liskov and Wing's
-idea of history invariants~\cite{liskov-wing} to model observers. As
-before, both of these methods are also non-modular, since they require
-knowing what all of the observers are, and furthermore both of these
-methods sharply restrict the kinds of invariants that can be used,
-making it very difficult to model the code-update-based protocol seen
-in our FRP example.
+\citet{shaner-leavens-naumann} studied using gray-box model programs
+to model higher-order method calls (which can be understood as a a
+variant of refinement calculus-based methods) in JML, and
+\citet{history-invariants} have applied Liskov and Wing's idea of
+history invariants~\cite{liskov-wing} to model observers. As before,
+both of these methods are also non-modular, since they require knowing
+what all of the observers are, and furthermore both of these methods
+sharply restrict the kinds of invariants that can be used, making it
+very difficult to model the code-update-based protocol seen in our FRP
+example.
 
 \citet{self-adjusting} have proposed
 \emph{self-adjusting computation} as a technique for using change
@@ -2883,6 +2854,6 @@ $iterseq\; f\; (v :: vs)$\>$= \comp{\letv{\unit}{f\;v}{\ctext{run}\;iterseq\;f\;
 
 \paragraph{Acknowledgements}
 
-We would like to thank Peter O'Hearn for pointing out the connection
+I would like to thank Peter O'Hearn for pointing out the connection
 of our work with the ramification problem of AI.
 
