@@ -1820,6 +1820,873 @@ If $\judgeA{p}{\omega}$, then we have that:
          $\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega'}$. 
 \end{enumerate}
 \end{lemma}
+
+\begin{lemma}{(Syntactic Substitution for Terms and Specifications)}
+Suppose that $D_0 :: \judgeA{p}{\omega}$. Then
+\begin{enumerate}
+\item If $D :: \judgeA[{\Delta, u:\omega, \Delta'}]{q}{\omega'}$, 
+         and either $u$ does not occur in a type or program expression in $\Delta'$, $q$ or $\omega'$,
+                or $\omega$ is a sort $\kappa$ and $p = \tau$,
+                or $\omega$ is a sort $A$ and $p = e$, 
+         then 
+         $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{[p/u]\omega'}$. 
+\item If $D :: \judgeS[{\Delta, u:\omega, \Delta'}]{S}$, 
+         and either $u$ does not occur in a type or program expression in $\Delta'$, $q$, or $\omega'$,
+                or $\omega$ is a sort $\kappa$ and $p = \tau$,
+                or $\omega$ is a sort $A$ and $p = e$, 
+         then 
+         $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u]S}$. 
+\end{enumerate}
+\end{lemma}
+
+\begin{lemma}{(Syntactic Substitution for Sort Equality Judgement)}
+If we have that $\judgeSortEq[{\Delta, u:\omega, \Delta'}]{\omega_1}{\omega_2}$, 
+         and either $u$ does not occur in a type or program expression in $\Delta'$, $q$ or $\omega'$,
+                or $\omega$ is a sort $\kappa$ and $p = \tau$,
+                or $\omega$ is a sort $A$ and $p = e$, 
+then $\judgeSortEq[{\Delta, [p/u]\Delta'}]{[p/u]\omega'}{[p/u]\omega''}$. 
+\end{lemma}
+
+
+\begin{proof}
+The proofs are at the end of the chapter.  
+\end{proof}\\
+
+\section{Semantics}
+
+Now, we will consider the interpretation of the syntax. To do this,
+we will proceed in stages. First, we will show how to interpret sorts and
+contexts by sets, and show that the equality judgement for sorts is
+sound. Using this, we will then give interpretation of terms and
+specifications, and show that the interpretation is sound with respect
+to substitution.
+
+\subsection{Interpretation of Sorts}
+
+We will start by explaining how to interpret the sorts. Ultimately,
+we are going to define assertions to be the powerset of heaps, and
+specifications to be upward closed sets of assertions, but because we
+allow types as sorts, and types may have free type variables, we will
+need to give an indexed, recursive definition in order to make
+everything work properly.
+
+Therefore, we will need to give a mutually-recursive definition between
+the interpretation the two judgements $\judgeACtx{\Delta}$ and 
+$\judgeA{\Delta}{\omega}$.
+
+\begin{displaymath}
+  \begin{array}{lcl}
+    \interp{\judgeACtx{\Delta}} & \in & \mbox{Set} \\
+    \interp{\judgeSort{\omega}} & \in & \interp{\judgeACtx{\Delta}} \to \mbox{Set} \\[1em]
+
+    \interp{\judgeACtx{\cdot}} & = & \unittype \\
+    \interp{\judgeACtx{\Delta, u:\omega}} & = & \sum \delta \in \interp{\judgeACtx{\Delta}}.\; 
+                                                  (\interp{\judgeSort{\omega}}\;\delta) \\[1em]
+ 
+    \interp{\judgeSort{\kappa}}\;\delta & = & \interp{\kappa} \\
+    \interp{\judgeSort{A}}\;\delta & = & 
+       U(\interp{\judgeWK[\restrictkind{\Delta}]{A}{\bigstar}}\;(\restricttyenv{\Delta}{\delta})) \\
+    \interp{\judgeSort{\assert}}\;\delta & = & \powerset{H} \\
+    \interp{\judgeSort{\omega \To \omega'}}\;\delta & = &  
+       \interp{\judgeSort{\omega}}\;\delta \to \interp{\judgeSort{\omega}}\;\delta \\
+  \end{array}
+\end{displaymath}
+
+The semantic brackets are slightly overloaded in this definition. To
+interpret a type $A$, we take it to be the set of the elements of the
+domain-theoretic interpretation of $A$, and to interpret a kind
+$\kappa$, we take it to be the set of closed canonical forms of that
+type. Both of these use the interpretations given in the previous
+chapter. 
+
+In order to establish that this actually defines a function, we will
+need to prove some supporting lemmas. First, we need to establish that
+we an also prove that the context $\Delta$ is well-formed is
+$\judgeSort{\omega}$ is derivable:
+
+\begin{lemma}{(Well-sortedness implies well-formed contexts)}
+If it is the case that $\judgeSort{\omega}$, then $\judgeACtx{\Delta}$.
+\end{lemma}
+\begin{proof}
+The proof is by a trivial structural induction over the derivation $\judgeSort{\omega}$. 
+\end{proof}
+
+Now, this means that the domain of the interpretation function
+$\interp{\judgeACtx{\Delta}}$ is always well-defined, given a $\judgeSort{\omega}$. Next,
+we need to establish that we get the same result, regardless of \emph{which} derivation
+of this judgement we found. 
+
+\begin{lemma}{(Uniqueness of Interpretations)}
+We have that:
+\begin{enumerate}
+\item If we have two derivations $\mathcal{D}_1 :: \judgeACtx{\Delta}$
+      and $\mathcal{D}_2 :: \judgeACtx{\Delta}$, 
+      then $\interp{\mathcal{D}_1} = \interp{\mathcal{D}_2}$
+\item If we have two derivations $\mathcal{D}_1 ::\; \judgeSort{\omega}$
+      and $\mathcal{D}_2 ::\; \judgeSort{\omega}$, 
+      then $\interp{\mathcal{D}_1} = \interp{\mathcal{D}_2}$
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+  The proof is at the end of the chapter.
+\end{proof}
+
+\subsubsection{Interpretation of Equality Judgement on Sorts}
+
+Now, we will show that our equality judgement on sorts $\judgeSortEq{\omega}{\omega'}$ is
+sound. 
+
+\begin{lemma}{(Soundness of Sort Equality)}
+If $\judgeACtx{\Delta}$, $\judgeSort{\omega}$, and $\judgeSort{\omega'}$ are derivable, then if 
+$\judgeSortEq{\omega}{\omega'}$ is derivable, then $\interp{\judgeSort{\omega}} = \interp{\judgeSort{\omega'}}$. 
+\end{lemma}
+\begin{proof}
+  The proof is at the end of the chapter. 
+\end{proof}
+
+\subsection{Interpretation of Terms and Specifications}
+
+The term judgement $\judgeA{p}{\omega}$ is mutually recursively
+defined with the specification judgement $\judgeS{S}$. Therefore, when
+we give the semantics of these judgements, we need to define them
+together. The definition of the interpretation of these two judgments
+is given in Figures~\ref{term-interpretation} and \ref{spec-interpretation}.
+
+\begin{figure}
+\begin{displaymath}
+\begin{array}{lcl}
+\interp{\judgeA{p}{\omega}} & \in & \prod \delta \in \interp{\judgeACtx{\Delta}}.\; \interp{\judgeSort{\omega}}\;\delta \\
+\interp{\judgeS{S}} & \in & \interp{\judgeACtx{\Delta}} \to \upset{W(\powerset{H})} \\[1em]
+
+\interp{\judgeA{\tau}{\kappa}}\;\delta & = & 
+   \interp{\judgeWK[\restrictkind{\Delta}]{\tau}{\kappa}}\; (\restricttyenv{\Delta}{\delta}) \\
+\interp{\judgeA{e}{A}}\;\delta & = & 
+   U(\interp{\judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}{e}{A}}\;
+       (\restricttyenv{\Delta}{\delta})\; (K,K))\;
+       (\restrictvals{\Delta}{\delta}) \\
+\interp{\judgeA{\pfun{u}{\omega'}{p}}{\omega' \To \omega}}\;\delta & = & 
+   \semfun{v \in \interp{\judgeSort{\omega'}}}{\interp{\judgeA[\Delta,u:\omega']{p}{\omega}}\;(\delta, v)} \\
+\interp{\judgeA{p\;q}{\omega}}\;\delta & = & 
+   (\interp{\judgeA{p}{\omega' \To \omega}}\;\delta)\;(\interp{\judgeA{q}{\omega'}}\;\delta) \\
+\interp{\judgeA{u}{\omega}}\;\delta & = & \delta(u) \\
+
+\interp{\judgeA{c}{\assert}}\;\delta & = & \interp{c}^0 \\
+
+\interp{\judgeA{p \oplus q}{\assert}}\;\delta & = & 
+    \interp{\judgeA{p}{\assert}}\;\delta \;\;\interp{\oplus}^2\;\;
+    \interp{\judgeA{q}{\assert}}\;\delta \\
+
+\interp{\judgeA{Q u:\omega.\; q}{\assert}}\;\delta & = & 
+    \interp{Q}_{v \in \interp{\judgeSort{\omega}}\;\delta} 
+        \interp{\judgeA[\Delta, u:\omega]{p}{\assert}}\;\delta \\
+
+\interp{\judgeA{e \pointsto_A e'}{\assert}}\;\delta & = & 
+    \mbox{let } l = \interp{\judgeA{e}{\reftype{A}}}\;\delta \mbox{ in}\\
+& & \mbox{let } v = \interp{\judgeA{e'}{A}}\;\delta \mbox{ in} \\
+
+% U(\interp{\judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}{e}{\reftype{A}}}\;(\restricttyenv{\Delta}{\delta}))\;(\restrictvals{\Delta}{\delta}) \\
+% & &  \mbox{let }v = U(\interp{\judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}{e'}{A}}\;(\restricttyenv{\Delta}{\delta}))\;(\restrictvals{\Delta}{\delta}) \\
+& & \setof{(\setof{l}, \semfun{loc}{v \mbox{ when } loc = l})} \\
+
+
+\interp{\judgeA{e =_\omega e'}{\assert}}\;\delta & = & 
+   \mbox{if }\interp{\judgeA{e}{\omega}}\;\delta = \interp{\judgeA{e'}{\omega}}\;\delta 
+   \mbox{ then } \top \mbox{ else} \bot \\
+
+\interp{\judgeA{Q u:\omega.\; p}{\assert}}\;\delta & = & 
+  \interp{Q}^\infty_{v \in \interp{\judgeSort{\omega}}\;\delta}
+    \interp{\judgeA[\Delta, u:\omega]{p}{\assert}}\;(\delta, v) \\
+
+\interp{\judgeA{\validprop{S}}{\assert}}\;\delta & = & 
+   \mbox{if } \interp{\judgeS{S}}\;\delta = \top_{\upset{W(\powerset{H})}}
+   \mbox{ then } \top
+   \mbox{ else } \bot \\
+
+\interp{\judgeA{p}{\omega}}\;\delta & = & 
+   \interp{\judgeA{p}{\omega'}}\;\delta \mbox{ when } \judgeSortEq{\omega}{\omega'} \\[1em]
+
+
+\interp{\top}^0 & = & \top \\
+\interp{\bot}^0 & = & \bot \\
+\interp{\emp}^0 & = & I \\[1em]
+
+\interp{\land}^2    & = & \land \\
+\interp{\implies}^2 & = & \implies \\
+\interp{\vee}^2     & = & \vee \\
+\interp{*}^2        & = & * \\
+\interp{\wand}^2    & = & \wand \\[1em]
+
+\interp{\forall}^\infty & = & \bigwedge \\
+\interp{\exists}^\infty & = & \bigvee \\
+\end{array}
+\end{displaymath}
+\caption{ Interpretation of Terms }
+\label{term-interpretation}  
+\end{figure}
+
+\begin{figure}
+\begin{displaymath}
+\begin{array}{lcl}
+\interp{\judgeS{S}} & = & \interp{\judgeACtx{\Delta}} \to \upset{W(\powerset{H})} \\ [1em]
+
+\interp{\judgeS{\spec{p}{c}{a:A}{q}}}\;\delta & = & 
+   \begin{array}{l}
+     \setof{\interp{\judgeA{p}{\assert}}\;\delta} \\
+      \interp{\judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}
+                       {\comp{c}}{A}}\;(\restricttyenv{\Delta}{\delta})\;
+       (\restrictvals{\Delta}{\delta}) \\
+     \setof{v.\; \interp{\judgeA[\Delta, a:A]{q}{\assert}}\;(\delta,v)} \\
+   \end{array} 
+\\[2em]
+
+\interp{\judgeS{\mspec{p}{e}{a:A}{q}}}\;\delta & = & 
+   \begin{array}{l}
+     \setof{\interp{\judgeA{p}{\assert}}\;\delta} \\
+       \interp{\judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}
+                       {e}{A}}\;(\restricttyenv{\Delta}{\delta})\;
+       (\restrictvals{\Delta}{\delta}) \\
+     \setof{v.\; \interp{\judgeA[\Delta, a:A]{q}{\assert}}\;(\delta,v)} \\
+   \end{array} 
+\\[2em]
+
+\interp{\judgeS{\setof{p}}}\;\delta & = & 
+  \mbox{if } \interp{\judgeA{p}{\assert}}\;\delta = \top_{\powerset{H}}
+  \mbox{ then } \top 
+  \mbox{ else } \bot \\
+
+\interp{\judgeS{S_1 \oplus S_2}}\;\delta & = & 
+  \interp{\judgeS{S_1}}\;\delta \;\;\interp{\oplus}\;\; 
+  \interp{\judgeS{S_2}}\;\delta \\
+
+\interp{\judgeS{Q u:\omega.\; S}}\;\delta & = & 
+  \interp{Q}_{v \in \interp{\judgeSort{\omega}}\;\delta} 
+     \interp{\judgeS[\Delta, u:\omega]{S}}\;(\delta, v) \\[1em]
+
+\interp{\specand} & = & \land \\
+\interp{\specor}  & = & \vee  \\
+\interp{\specimp} & = & \implies \\[1em]
+
+\interp{\forall} & = & \bigwedge \\
+\interp{\exists} & = & \bigvee \\
+
+\end{array}
+\end{displaymath}
+\caption{Interpretation of Specifications}
+\label{spec-interpretation}  
+\end{figure}
+
+\subsubsection{Do the Restriction Operations Make Sense?}
+
+As the rule \textsc{TermExpr} shows, program expressions can occur
+inside within terms, and in type checking them, we only allow
+variables of sort type and kind to occur within them. In
+Figure~\ref{term-interpretation}, we take advantage of this fact to
+interpret expressions in terms by means of 1) taking the denotational
+interpretation of the term, and 2) applying the values from the
+context to it.
+
+However, there is something a little fishy about this definition.  The
+interpretation of sorts goes into Set, and so environments are
+products in Set. But the interpretation of a term is a predomain, and
+so it wants an environment that is a production in CPO -- so we seem
+to have a type error, unless we can find a way to ``unforget'' the
+partial order structure that predomains come with. 
+
+In general, this is not possible, since every set can have potentially
+many different partial orders upon it, and \emph{a priori} we don't
+know which one we will need. However, in our specific situation, we can
+recover the correct partial order. This is because all of the domains
+we are interested in arise as interpretations of types. So, if we have
+the type, we can just re-compute the appropriate predomain. Furtheremore, the
+interpretation of sorts tells us that the elements will all lie in the
+correct set, since we chose the interpreting sets in the first place by 
+taking that predomain and forgetting the partial order structure. Therefore,
+we will prove the following two lemmas to ensure that our notation is
+well-defined, and not an abuse. 
+
+\begin{lemma}{(Restriction on Kinds Makes Sense)}
+If $D :: \judgeACtx{\Delta}$ and $\delta \in \interp{D}$, then 
+$\restricttyenv{\Delta}{\delta} \in \interp{\restrictkind{\Delta}}$. 
+\end{lemma}
+\begin{proof}
+  The proof is at the end of the chapter.
+\end{proof}
+
+
+\begin{lemma}{(Restriction for Values Makes Sense)}
+\label{value-restriction}
+If $\judgeACtx{\Delta}$ and $\delta \in \interp{\judgeACtx{\Delta}}$, 
+then $\restrictvals{\Delta}{\delta} \in U(\interp{\restrictkind{\Delta} \vdash \restricttype{\Delta}}\;
+            \restricttyenv{\Delta}{\delta}\;(K,K))$
+\end{lemma}
+\begin{proof}
+  The proof is at the end of the chapter.
+\end{proof}
+
+% \subsection{Substitution for Sorts}
+
+\subsubsection{Semantics of Sort Substitution}
+
+\begin{lemma}{(Substitution Preserves Meaning)}
+Suppose we have that $\judgeA{p}{\omega}$.
+
+\begin{enumerate}
+\item If $\judgeACtx{\Delta, u:\omega, \Delta'}$ and either $u$ does not occur in any subterm of sort type in $\Delta'$, or  $\omega = \kappa$ and $p = \tau$, then  $(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') \in \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$ if and only if $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$
+
+\item  If $\judgeSort[\Delta, u:\omega, \Delta']{\omega'}$ and and either $u$ does not occur in any subterm of sort type in $\Delta'$ or $\omega'$, or $\omega = \kappa$ and $p = \tau$, then for all $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$, we have 
+\begin{displaymath}
+\interp{\judgeSort[{\Delta, u:\omega, \Delta'}]{\omega'}}\;(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = \interp{\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega'}}\;(\delta, \delta')
+\end{displaymath}
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+  The proof is at the end of the chapter.
+\end{proof}
+  
+\subsubsection{Semantics of Term and Spec Substitution}
+
+\begin{lemma}{(Substitution Preserves Meaning)}
+If $D_0 :: \judgeA{p}{\omega}$, then we have 
+
+\begin{enumerate}
+\item If $D :: \judgeA[{\Delta, u:\omega, \Delta'}]{q}{\omega'}$, and either 
+  $u$ does not occur in a type or program expression in $\Delta'$, $q$ or $\omega'$,  
+  or $\omega$ is a sort $\kappa$ and $p = \tau$, 
+  or $\omega$ is a sort $A$ and $p = e$,
+  then there is a $D' :: \judgeA[{\Delta, [p/u]\Delta'}]{[p/u]q}{[p/u]\omega'}$ such
+  that for all $(\delta, \interp{D_0}\;\delta, \delta') \in 
+                \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$, 
+  we have that $\interp{D}\;(\delta, \interp{D_0}\;\delta, \delta') = \interp{D'}\;(\delta, \delta')$ 
+
+\item If $D :: \judgeS[{\Delta, u:\omega, \Delta'}]{S}$, and either 
+  $u$ does not occur in a type or program expression in $\Delta'$, $q$ or $\omega'$,  
+  or $\omega$ is a sort $\kappa$ and $p = \tau$, 
+  or $\omega$ is a sort $A$ and $p = e$, 
+  then there is a $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u]S}$ such
+  that for all $(\delta, \interp{D_0}\;\delta, \delta') \in 
+                \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$, 
+  we have that $\interp{D}\;(\delta, \interp{D_0}\;\delta, \delta') = \interp{D'}\;(\delta, \delta')$ 
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+  The proof is at the end of the chapter.
+\end{proof}
+
+
+
+
+\section{The Program Logic}
+
+\begin{figure}
+\begin{mathpar}
+  \inferrule*[right=AxEquiv1]
+         {\judgeS{\spec{p}{c}{a:A}{q} \specimp \mspec{p}{\comp{c}}{a:A}{q}}} 
+         {\validS{\spec{p}{c}{a:A}{q} \specimp \mspec{p}{\comp{c}}{a:A}{q}}} 
+\and 
+  \inferrule*[right=AxEquiv2]
+    {\judgeS{\mspec{p}{c}{a:A}{q} \specimp \spec{p}{\comp{c}}{a:A}{q}}} 
+    {\validS{\mspec{p}{c}{a:A}{q} \specimp \spec{p}{\comp{c}}{a:A}{q}}} 
+\and
+
+  \inferrule*[right=AxReturn]
+    {\judgeS{\spec{P}{e}{a:A}{P \land a = e}}}
+    {\validS{\spec{P}{e}{a:A}{P \land a = e}}}
+\and
+
+  \inferrule*[right=AxAssign]
+    {\judgeS{\spec{e \pointsto_A -}{e := e'}{a:\unittype}{e \pointsto_A e'}}}
+    {\validS{\spec{e \pointsto_A -}{e := e'}{a:\unittype}{e \pointsto_A e'}}}
+\and
+
+  \inferrule*[right=AxAlloc]
+    {\judgeS{\spec{\emp}{\newref{A}{e}}{a:\reftype{A}}{a \pointsto e}}}
+    {\validS{\spec{\emp}{\newref{A}{e}}{a:\reftype{A}}{a \pointsto e}}}
+\and
+
+  \inferrule*[right=AxDeref]
+    {\judgeS{\spec{e \pointsto_A e'}{!e}{a:A}{e \pointsto_A e' \land a = e'}}}
+    {\validS{\spec{e \pointsto_A e'}{!e}{a:A}{e \pointsto_A e' \land a = e'}}}
+\and
+
+  \inferrule*[right=AxBind]
+            {\validS{\mspec{p}{e}{x:A}{q}} \\
+             \validS[\Delta,x:A]{\spec{q}{c}{a:B}{r}} \\
+             \judgeA[\Delta,a:A]{q}{\assert}}
+            {\validS{\spec{p}{\letv{x}{e}{c}}{a:B}{r}}}
+\and
+
+  \inferrule*[right=AxFix]
+            {\validS{(\forall x:\monad{A}.\; \mspec{p}x{a:A}{q(a)} \specimp \mspec{p}{e}{a:A}{q})}}
+            {\validS{\mspec{p}{\fix{x:\monad{A}}{e}}{a:A}{q}}}
+\end{mathpar}
+\caption{Basic Axioms of Specification Logic}
+\label{spec-logic-axioms-basic}
+\end{figure}
+
+\begin{figure}
+\begin{mathpar}
+  \inferrule*[right=AxExtract]
+             {\validS{\setof{r} \specimp \spec{p}{c}{a:A}{q}} \\
+              \mbox{$r$ is a pure formula} \\
+              \validP{p \implies r}}
+             {\validS{\spec{p}{c}{a:A}{q}}}
+\and
+
+  \inferrule*[right=AxEmbed]
+             {\validS{\setof{r} \specimp \spec{p \land r}{c}{a:A}{q}}}
+             {\validS{\setof{r} \specimp \spec{p}{c}{a:A}{q}}}
+\and
+
+  \inferrule*[right=AxUseValid]
+             { }
+             {\validS{\setof{\validprop{S}} \specimp S}}
+\and
+
+  \inferrule*[right=AxForgetEx]
+             {\validS[\Delta, u:\omega]{\spec{p}{c}{a:A}{q}} \\ u\not\in\mathrm{FV}(c) \\ u\not\in\mathrm{FV}(q)}
+             {\validS{\spec{\exists u:\omega.\;p}{c}{a:A}{q}}}
+\and
+  \inferrule*[right=AxEquality]
+             {\validS{\setof{r} \specimp \spec{p}{c[e/x]}{a:A}{q}} \\
+              \validP{r \implies e =_A e'} }
+             {\judgeS{\setof{r} \specimp \spec{p}{c[e'/x]}{a:A}{q}}}
+
+\and
+  \inferrule*[right=AxConsequence]
+             {\validS{\spec{p'}{c}{a:A}{q'}} \\ \validP{p \implies p'} \\ \validP{q' \implies q}}
+             {\validS{\spec{p}{c}{a:A}{q}}}
+  
+\and
+
+  \inferrule*[right=AxDisjunction]
+             {\validS{\spec{p}{c}{a:A}{q}} \\
+              \validS{\spec{p'}{c}{a:A}{q'}}}
+             {\validS{\spec{p \vee p'}{c}{a:A}{q \vee q'}}}
+\and
+
+  \inferrule*[right=AxEmbedAssert]
+             {\validP{p}}
+             {\validS{\setof{p}}}
+
+\and
+\inferrule*[right=AxFrame]
+          {\judgeS{S} \\ \judgeA{r}{\assert} }
+          {\validS{S \specimp S \otimes r}}
+\and
+\mbox{(+ all of the axioms of intuitionistic logic)}
+\end{mathpar}
+\caption{Structural Axioms of the Program Logic}
+\label{spec-logic-axioms-structural}
+\end{figure}
+
+\begin{figure}
+\begin{mathpar}
+  \inferrule*{\validS{S}}
+             {\validP{\validprop{S}}}
+\and
+  \inferrule*{\judgeP{\Delta}{p}{\assert}}
+             {\validP{\validprop{\setof{p}} \implies p}}
+\and 
+  \inferrule*{\judgeEqA{p}{q}{\omega}}
+             {\validP{p =_\omega q}}
+\\
+  \mbox{(plus axioms of higher-order separation logic)}
+\end{mathpar}
+\caption{Axioms of Assertion Logic}
+\label{assertion-logic-axioms}  
+\end{figure}
+
+\begin{figure}
+\begin{mathpar}
+\inferrule*[]
+          {\judgeA{p}{\omega}}
+          {\judgeEqA{p}{p}{\omega}}
+\and
+\inferrule*[]
+          {\judgeEqA{p}{q}{\omega}}
+          {\judgeEqA{q}{p}{\omega}}
+\and
+\inferrule*[]
+          {\judgeEqA{p}{q}{\omega} \\ \judgeEqA{q}{r}{\omega}}
+          {\judgeEqA{p}{r}{\omega}}
+\and
+\inferrule*[]
+          {\judgeA{(\fun{x}{\omega}{p})\;q}{\omega'} \\
+           \mbox{$q$ satisfies conditions of substitution theorem}}
+          {\judgeEqA{(\fun{x}{\omega}{p})\;q}{[q/x]p}{\omega'}}
+\and
+\inferrule*[]
+          {\judgeEqA[\Delta, x:\omega]{p\;x}{p'\;x}{\omega'}}
+          {\judgeEqA{\fun{x}{\omega}{p}}{\fun{x}{\omega}{p'}}{\omega \To \omega'}}
+\and 
+\inferrule*[]
+          {\judgeEqA{p}{p'}{\omega \To \omega'} \\
+           \judgeEqA{q}{q'}{\omega}}
+          {\judgeEqA{p\;q}{p'\;q'}{\omega'}}
+\and
+\inferrule*[]
+          {x:\omega \in \Delta}
+          {\judgeEqA{x}{x}{\omega}}
+\and
+\inferrule*[]
+          {\judgeKeq[\restrictkind{\Delta}]{\tau}{\tau'}{\kappa}}
+          {\judgeEqA{\tau}{\tau'}{\kappa}}
+\and
+\inferrule*[]
+          {\judgeEq[\restrictkind{\Delta}]{\restricttype{\Delta}}{e}{e'}{A}}
+          {\judgeEqA{e}{e'}{A}}
+\and 
+\inferrule*[]
+          {\validP{p \iff q}}
+          {\judgeEqA{p}{q}{\assert}}
+\and
+\inferrule*[]
+          {\judgeEqA{p}{q}{\omega} \\ \judgeSortEq{\omega}{\omega'}}
+          {\judgeEqA{p}{q}{\omega'}}
+\end{mathpar}
+\caption{Equality Judgement for Assertions}
+\label{assertion-equality}  
+\end{figure}
+
+
+My program logic consists of three judgments:
+
+\begin{enumerate}
+\item $\validP{p}$, which asserts that a proposition $p$ is valid.
+
+\item $\validS{S}$, which asserts that a specification $S$ is valid.
+
+\item $\judgeEqA{p}{q}{\omega}$, which asserts that $p$ and $q$ are validly equal.
+\end{enumerate}
+%
+
+\noindent The semantics of these three judgments is given as follows:
+\begin{enumerate}
+\item An assertion $\judgeP{\Delta}{p}{\assert}$ is valid, if and only if
+for all $\delta \in \interp{\judgeACtx{\Delta}}$,
+$\interp{\judgeP{\Delta}{p}{\assert}}\;\delta = \top$.
+
+\item Similarly, a specification $\judgeS{S}$ is valid if and only
+if, for all $\delta \in \interp{\judgeACtx{\Delta}}$,
+$\interp{\judgeS{S}}\;\delta = \top$.
+
+\item Finally, two assertion terms $\judgeA{p}{\omega}$ and
+$\judgeA{q}{\omega}$ are validly equal, if and only if for all $\delta
+\in \interp{\judgeACtx{\Delta}}$,
+$\interp{\judgeP{\Delta}{p}{\assert}}\;\delta$ is equal to
+$\interp{\judgeP{\Delta}{p}{\assert}}\;\delta$
+\end{enumerate}
+
+So this says that for any assignment of the free variables, a valid
+assertion $p$ must be true, and similarly a valid specification $S$
+must be true. Likewise, two syntactic terms $p$ and $q$ are validly
+equal if their interpretations are equal under all environments. 
+
+The program logic consists of a set of three mutually-recursive
+judgments for deriving valid assertions, specifications, and
+equalities. In Figure~\ref{spec-logic-axioms-basic}, I give the
+primitive rules for deriving valid specifications of commands, and
+Figure~\ref{spec-logic-axioms-structural}, I give a collection of
+structural axioms.  In Figure~\ref{assertion-logic-axioms}, I give
+some of the rules for deriving valid assertions, and in
+Figure~\ref{assertion-equality}, I give rules for deriving equalities
+between terms.
+
+In Figure~\ref{spec-logic-axioms-basic}, the \textsc{AxEquiv1} and
+\textsc{AxEquiv2} axioms assert the equivalence of Hoare triples over
+commands and monadic expressions.  The \textsc{AxReturn} axiom asserts
+that when we return a value $e$, we can strengthen the postcondition
+with the assertion that the return value is $e$. The \textsc{AxAssign}
+axiom asserts that if $e$ points to something in the precondition, the
+command $e := e'$ ensures that in the postcondition $e \pointsto
+e'$. The \textsc{AxAlloc} axiom asserts that allocating a new
+reference $\newref{A}{e}$ will allocate a new pointer which is the
+return value $a$, and that $a \pointsto e$ will be star'd onto the
+postcondition. The \textsc{AxDeref} rule asserts that if $e \pointsto
+e'$ in the precondition, then in the postcondition $e \pointsto e'$
+will continue to hold, and that the return value $a = e'$.
+
+The \textsc{AxBind} rule is the sequential composition rule of this
+logic.  Because of the monadic nature of our programming language, we
+can name and bind intermediate results, but of course there is a side-condition
+to ensure that variables do not escape their scopes. 
+
+Finally the \textsc{AxFix} rule is a fixed point induction rule for
+this calculus. As in LCF, this rule looks like an induction without a
+base case, which makes sense since this program logic is a partial
+correctness calculus. This rule generalizes to all the pointed types,
+but the syntactic overhead for stating the rules gets higher as the
+types get larger.
+
+In Figure~\ref{spec-logic-axioms-structural}, the \textsc{AxExtract}
+rule takes a pure consequence of a precondition, and lifts it to
+hypothetical assertion of the validity of an assertion. The intuition
+for this rule is that to show the Hoare triple, we must assume $p$,
+and so this means we might as well assume $r$ generally while proving
+this triple. Conversely, The \textsc{AxEmbed} rule says that if we
+have assumed the validity of an assertion, it does no harm to assume
+it while proving a Hoare triple. The \textsc{AxUseValid} axiom states
+that if we know that the assertion $\validprop{S}$ is valid, then we
+may as well assume that $S$ is valid, and the \textsc{AxEmbedAssert}
+says that valid assertions can be embedded in specifications. 
+
+The \textsc{AxEquality} rule lets us rewrite programs using equational
+reasoning, and the \textsc{AxForgetEx} axiom lets us drop existentials
+from preconditions. The \textsc{AxConsequence} rule is just the rule
+of consequence, and the \textsc{AxDisjunction} rule is just the rule
+of disjunction, both familiar from Hoare logic. However, it is worth
+pointing out that my language does \emph{not} validate the rule of
+conjunction, as a consequence of having a language with a continuation
+semantics.
+
+Finally, the \textsc{AxFrame} schema gives the frame rule. My logic
+supports the higher-order frame rule, and so we need to define a
+syntactic frame operator $\Frame{S}{r}$ to act on arbitrary
+specifications.
+\begin{displaymath}
+  \begin{array}{lcl}
+    \Frame{\spec{p}{c}{a:A}{q}}{r}    & = & \spec{p * r}{c}{a:A}{q * r} \\
+    \Frame{\mspec{p}{c}{a:A}{q}}{r}   & = & \mspec{p * r}{c}{a:A}{q * r} \\
+    \Frame{\setof{p}}{r}              & = & \setof{p} \\
+    \Frame{(S_1 \specand S_2)}{r}      & = & \Frame{S_1}{r} \specand \Frame{S_2}{r} \\
+    \Frame{(S_1 \specor S_2)}{r}       & = & \Frame{S_1}{r} \specor \Frame{S_2}{r} \\
+    \Frame{(S_1 \specimp S_2)}{r}      & = & \Frame{S_1}{r} \specimp \Frame{S_2}{r} \\
+    \Frame{(\forall x:\omega.\; S)}{r} & = & \forall x:\omega.\; (\Frame{S}{r}) \\
+    \Frame{(\exists x:\omega.\; S)}{r} & = & \exists x:\omega.\; (\Frame{S}{r}) \\
+  \end{array}
+\end{displaymath}
+This is just the familiar action of the frame rule on Hoare triples. It
+does nothing to the validity assertion $\setof{p}$, and distributes over all 
+the other connectives. 
+
+Framing is well-defined, and corresponds precisely to the semantic frame rule
+we considered earlier in the chapter. 
+
+\begin{prop}{(Syntactic Well-Formedness of Frame Operator)}
+If $\judgeS{S}$ and $\judgeA{p}{\assert}$, then
+we define $\judgeS{\Frame{S}{p}}$.  
+\end{prop}
+\begin{proof}
+  By structural induction on specifications.
+\end{proof}
+
+More interesting than the syntactic well-formedness of the frame
+operator is its semantic well-formedness. 
+
+\begin{lemma}{(Syntactic Framing is Semantic Framing)}
+If $\judgeS{S}$ and $\judgeA{r}{\assert}$, then for all $\delta \in \interp{\Delta}$, 
+$\interp{\judgeS{\Frame{S}{r}}}\;\delta = 
+\Frame{\interp{\judgeS{S}}\;\delta}{\interp{\judgeA{r}{\assert}}\;\delta}$ \\
+\end{lemma}
+\begin{proof}
+  The proof is at the end of the chapter.
+\end{proof}\\
+
+The distinctive axioms of the assertion logic are far fewer. In
+Figure~\ref{assertion-logic-axioms}, I give only three rules tailored
+to this particular program logic. One for embedding specifications in
+assertions, another for extracting assertions out of specifications,
+and the last says that equality derivations entail equality
+assertions. All the other rules are just the axioms of higher-order
+separation logic.
+
+Likewise, the valid equality judgment in
+Figure~\ref{assertion-equality} is fairly minimal: it contains the
+$\beta$ and $\eta$ rules for functions, as well as inheriting the
+equality judgments for types and terms.
+
+With all the buildup so far, it is easy to prove the following soundness
+theorem:
+
+\begin{theorem}{(Soundness of the Program Logic)}
+  \begin{enumerate}
+  \item If $\validP{p}$, then $\judgeA{p}{\assert}$ is valid.
+
+  \item If $\validS{S}$, the $\judgeS{S}$ is valid.
+
+  \item If $\judgeEqA{p}{q}{\omega}$, then $p$ and $q$ are validly equal.
+  \end{enumerate}
+\end{theorem}
+
+\begin{proof}
+  The proof of these three theorems follows from a mutual structural
+  induction.  The soundness of each atomic rule for the two validity
+  judgements is proven in the next section. The soundness of the rules
+  for equality are a consequence of the equality rules we have already
+  proven, and the cartesian closure of Set.  
+\end{proof}
+
+\section{Related Work}
+
+There are two immediate predecessors to the proof system in this
+dissertation. 
+
+First, there is the work of Reynolds on specification logic for
+Algol~\cite{spec-logic}. Idealized Algol~\cite{idealized-algol}
+combines a call-by-name functional language, together with a type of
+imperative computations whose operations correspond to the
+while-language (i.e., it does not have higher-order store). This
+stratification ensures that Algol features a powerful equational
+theory which validates both the $\beta$- and $\eta$-rules of the
+lambda-calculus. 
+
+Specification logic extends Hoare logic~\cite{hoare-logic} to deal
+with these new features, by viewing Hoare triples as the atomic
+propositions of a first-order logic of specifications. Then, the user
+of the logic can specify the behavior of a higher-order function using
+an implications over triples, using the hypothesis of an implication
+to specify the behavior of arguments of command type. In short,
+specification logic can be viewed as a synthesis of LCF~\cite{lcf} with
+  Hoare logic.
+
+One of the motivations for the language design in my dissertation was
+to see if the analogy between the computation type in Algol and the
+monadic type discipline could be extended to a full higher-order
+programming language, with features like higher-order store. This has
+worked fantastically well. The semantics of the logic of this
+dissertation is (suprisingly) \emph{simpler} than original
+specification logic, even though the programming language itself is a
+much more complex one than idealized Algol.
+
+In particular, one of the main sources of complexity in usages of
+specification logic have simply vanished from this logic. Algol has
+assignable variables (like C or Java, though of course this reverses
+the chronology), and so specification logic had to account for their
+update with assertions about so-called ``good variable''
+conditions. Since ML-like languages do not have assignable variables,
+this means that all aliasing is confined to the heap. As a result, the
+entire machinery of good variables is simply absent from my system.
+So all aliasing and interference is confined to the heap, and
+separation logic works quite well for specifying and reasoning about
+this interference.
+
+The other line of work I make use is on algebraic models of separation
+logic. I give a very concrete model of separation logic in this
+chapter, and am able to interpret higher-order quantification due to
+the fact that the lattice of propositions is complete. This is
+probably best understood as an instantiation of Biering~\emph{et
+  al.}'s hyperdoctrine model of higher-order separation
+logic. Likewise, my semantic domain for specifications makes use of
+the techniques introduced by Birkedal and Yang~\cite{birkedal-yang} to
+model higher-order frame rules.
+
+Happily, though, most of this machinery stays ``under the hood'' to
+ensure that the logic looks simple to the user.  As an example of this
+phenomenon, we use TT-closure~\cite{tt-closure} to force the
+admissibility of Hoare triples. This lets us give a simple rule for
+fixed-point induction, without having to specify conditions on
+admissible predicates (which is especially problematic in a setting
+with predicate variables).
+
+\subsection{Other Program Logics}
+
+\subsubsection{Parkinson's Separation Logic for Java}
+
+Parkinson developed a version of separation logic for Java in his
+doctoral dissertation~\cite{parkinson-thesis}. His logic does not
+feature a sophisticated specification logic; instead, he tries to use
+the traditional notion of behavioral
+subtyping~\cite{behavioral-subtyping} in order to deviate less
+dramatically from the standard syntax of Hoare logic. However, strict
+behavioral subtyping is very restrictive --- it essentially forces an
+object-oriented program to ``look like'' a first-order program --- and
+many object-oriented idioms (i.e., which correspond to higher-order
+programming patterns) cannot be specified or proven correct in this 
+framework 
+
+Parkinson recovers flexibility through the use of a very clever
+non-standard model of Hoare logic. The idea, described in Parkinson
+and Bierman~\cite{parkinson-bierman-05}, is to admit a form of
+second-order existential quantification, with a very unusual semantic
+interpretation. Their ``abstract predicate families'' are predicates
+defined on objects, whose definition varies according to the
+\emph{concrete} class of the predicate. That is, their abstract
+predicates ``dynamically dispatch'' to different definitions,
+depending on the class of the object indexing the predicate. As a
+result, they can re-use the proof rules of behavioral subtyping, even
+though different classes can be given entirely different invariants.
+
+While this is clearly a very natural idea for the specification of
+object-oriented programs, I think that a richer language of
+specifications and a more conventional interpretation of existentials
+and universals is likely to be desirable in practice. This is because
+modern OO languages like C\# and Scala also contain support for
+first-class functions, which means that program logics should directly
+support reasoning about higher-order programs.
+
+\subsubsection{Hoare Type Theory}
+
+Nanevski, Morisett and Birkedal have developed Hoare Type
+Theory~\cite{htt, nanevski08}, which is an elegant and sophisticated
+dependently-typed functional language that, like our system, uses a
+monadic discipline to control effects.  Unlike our work, HTT takes
+advantage of type dependency to directly integrate specifications into
+the types of computation terms.
+
+Nanevski, Ahmad, Morisett and Birkedal~\cite{abstract-htt} have
+proposed using the existential quantification of their type theory to
+hide data representations, giving examples such as a malloc/free style
+memory allocator. Nanevski and Vafeidis~\cite{nanevski-victor-10} give
+a proof of a modern congruence closure algorithm, illustrating that
+their system can verify some of the most complex imperative algorithms
+known.
+
+In general, I think that this line of work represents the future of
+the design of high-level imperative programming languages, but the
+particular features of HTT's design have some shortcomings which make
+a direct comparison with my work somewhat challenging.
+
+In particular, HTT uses an indexed family of monads to represent
+computations.  That is, a computation has a type $e :
+\spec{P}{-}{a:A}{Q(a)}$, where $P$ and $Q$ are predicates on the
+heap. This means that higher-order imperative programs may need to 
+refer to terms of computation type in their pre- and post-conditions.
+In the original formulation of HTT, which is predicative, this causes
+size issues to arise which make even writing  
+
+This difficulty has been overcome by Petersen~\emph{et al.}, who give
+an impredicative model of Hoare Type Theory. However, Svendsen
+[personal communication] says that in an impredicative setting, the
+weaker elimination rules for existentials mean that proofs involving
+existentially quantified code become difficult to do.
+
+These issues simply do not arise in my system, since specifications
+are kept strictly separate from types. This suggests that an
+interesting future direction would be to study a version of Hoare Type
+Theory in which there is an ordinary monadic type of computations,
+together with a predicates on terms of monadic type which equip it
+with pre- and post-conditions. 
+
+\subsubsection{Regional Logic and Ownership}
+
+In addition to systems based on separation, there is also a line of
+research based on the concept of object invariants and ownership.  The
+Java modeling language (JML)~\cite{jml} and the Boogie
+methodology~\cite{boogie} are two of the most prominent systems based
+on this research stream. In Boogie, each object tracks its owner
+object with a ghost field, and the ownership discipline enforces that
+the heap have a tree structure. This allows the calculation of frame
+properties without explosions due to aliasing, even though the
+specification language remains ordinary first-order logic.
+
+\section{Correctness Proofs}
+
+\subsection{Substitution Theorems}
+
+\subsubsection{Syntactic Substitution Theorems}
+
+\begin{lemma*}{(Syntactic Substitution for Sorts)}
+If $\judgeA{p}{\omega}$, then we have that:
+
+\begin{enumerate}
+\item If $\judgeACtx{\Delta, u:\omega, \Delta'}$, and $u$ does not occur in any subterm of sort type in $\Delta'$, or $\omega = \kappa$ and $p = \tau$,  then  
+         $\judgeACtx{\Delta, [p/u]\Delta'}$. 
+\item If $\judgeSort[\Delta, u:\omega, \Delta']{\omega'}$, and $u$ does not occur in any subterm of sort type in $\Delta'$ and $\omega'$, or $\omega = \kappa$ and $p = \tau$, then
+         $\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega'}$. 
+\end{enumerate}
+\end{lemma*}
+
+
 \begin{proof}
 This proof follows by mutual structural induction on each derivation. 
 Assume $D_0 :: \judgeA{p}{\omega}$
@@ -1972,8 +2839,84 @@ Assume $D_0 :: \judgeA{p}{\omega}$
 \end{enumerate}
 \end{proof}
 
+\begin{lemma*}{(Syntactic Substitution for Sort Equality Judgement)}
+If we have that $\judgeA{p}{\omega}$ and $\judgeACtx{\Delta, u:\omega, \Delta'}$, and we have that 
+$\judgeSortEq[{\Delta, u:\omega, \Delta'}]{\omega_1}{\omega_2}$, 
+then $\judgeSortEq[{\Delta, [p/u]\Delta'}]{[p/u]\omega'}{[p/u]\omega''}$. 
+\end{lemma*}
 
-\begin{lemma}{(Syntactic Substitution for Terms and Specifications)}
+\begin{proof}
+Assume $D_0 :: \judgeA{p}{\omega}$, and $D_C :: \judgeACtx{\Delta, u:\omega, \Delta'}$.  
+Now we will proceed by structural induction on the equality judgement. 
+\begin{itemize}
+\item Case \textsc{SortEqProp}:
+  \begin{tabbedproof}
+    \oo Assume $D :: \judgeSortEq[{\Delta, u:\omega, \Delta'}]{\assert}{\assert}$\\
+    \ooo By context substitution on $D_C$, we have $D'_C :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
+    \ooo By rule \textsc{SortEqProp}, we have $D' :: \judgeSortEq[{\Delta, [p/u]\Delta'}]{\assert}{\assert}$ \\
+    \ooo By definition of substitution, $\assert = [p/u]\assert$ \\
+    \ooo Therefore $D' :: \judgeSortEq[{\Delta, [p/u]\Delta'}]{[p/u]\assert}{[p/u]\assert}$ \\
+  \end{tabbedproof}
+
+\item Case \textsc{SortEqKind}: 
+  \begin{tabbedproof}
+    \oo Assume $D :: \judgeSortEq[{\Delta, u:\omega, \Delta'}]{\kappa}{\kappa}$\\
+    \ooo By context substitution on $D_C$, we have $D'_C :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
+    \ooo By rule \textsc{SortEqKind}, we have $D' :: \judgeSortEq[{\Delta, [p/u]\Delta'}]{\kappa}{\kappa}$ \\
+    \ooo By definition of substitution, $\kappa = [p/u]\kappa$ \\
+    \ooo Therefore $D' :: \judgeSortEq[{\Delta, [p/u]\Delta'}]{[p/u]\kappa}{[p/u]\kappa}$ \\
+  \end{tabbedproof}
+
+\item Case \textsc{SortEqImp}: 
+  \begin{tabbedproof}
+    \oo Assume $D :: \judgeSortEq[{\Delta, u:\omega, \Delta'}]{\omega'_1 \To \omega''_1}{\omega'_2 \To \omega''_2}$\\
+    \ooo By context substitution on $D_C$, we have $D'_C :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
+    \ooo By inversion on $D$, we get \\
+    \oooo $E_1 :: \judgeSortEq[{\Delta, u:\omega, \Delta'}]{\omega'_1}{\omega''_1}$\\
+    \oooo $E_2 :: \judgeSortEq[{\Delta, u:\omega, \Delta'}]{\omega'_2}{\omega''_2}$\\
+    \ooo By induction on $E_1$, we have $E'_1 :: \judgeSortEq[{\Delta, [p/u]\Delta'}]{[p/u]\omega'_1}{[p/u]\omega''_1}$\\
+    \ooo By induction on $E_2$, we have $E'_2 :: \judgeSortEq[{\Delta, [p/u]\Delta'}]{[p/u]\omega'_2}{[p/u]\omega''_2}$\\
+    \ooo By rule \textsc{SortEqImp} with $E'_1, E'_2$, we have  \\
+    \ooox $D' :: \judgeSortEq[{\Delta, [p/u]\Delta'}]{[p/u]\omega'_1 \To [p/u]\omega''_1}{[p/u]\omega'_2 \To [p/u]\omega''_2}$\\
+    \ooo By definition of substitution, $[p/u]\omega'_1 \To [p/u]\omega''_1 = [p/u](\omega'_1 \To \omega''_1)$\\
+    \ooo By definition of substitution, $[p/u]\omega'_2 \To [p/u]\omega''_2 = [p/u](\omega'_2 \To \omega''_2)$\\
+    \ooo Therefore 
+           $D' :: \judgeSortEq[{\Delta, [p/u]\Delta'}]{[p/u](\omega'_1 \To \omega''_1)}{[p/u](\omega'_2 \To \omega''_2)}$\\
+  \end{tabbedproof}
+
+\item Case \textsc{SortEqType}:
+  \begin{tabbedproof}
+    \oo Assume $D :: \judgeSortEq[{\Delta, u:\omega, \Delta'}]{A}{B}$ \\
+    \ooo By inversion on $D$, we have $D_1 :: \judgeKeq[{\restrictkind{\Delta, u:\omega, \Delta'}}]{A}{B}{\bigstar}$ \\
+    \ooo Case analyze $\omega$: \\
+    \oooo When $\omega = \kappa$: \\
+    \ooooo We have $\judgeA{\Delta}{\tau}{\kappa}$, where $p = \tau$ \\
+    \ooooo By definition, 
+           $\restrictkind{\Delta, u:\kappa, \Delta'} = \restrictkind{\Delta}, u:\kappa, \restrictkind{\Delta'}$ \\
+    \ooooo Therefore $D_1 :: \judgeKeq[{\restrictkind{\Delta}, u:\kappa, \restrictkind{\Delta'}}]{A}{B}{\bigstar}$ \\
+    \ooooo By equality rule for types, we have 
+           $D'_1 :: \judgeKeq[{\restrictkind{\Delta}, \restrictkind{\Delta'}}]{[\tau/u]A}{[\tau/u]B}{\bigstar}$ \\
+    \ooooo Since kinds have no free variables, $\restrictkind{\Delta'} = \restrictkind{[\tau/u]\Delta'}$ \\
+    \ooooo Therefore $D'_1 :: \judgeKeq[{\restrictkind{\Delta}, \restrictkind{[\tau/u]\Delta'}}]{[\tau/u]A}{[\tau/u]B}{\bigstar}$ \\
+    \ooooo By rule \textsc{SortEqType}, we have 
+            $D' :: \judgeSortEq[{\Delta, [\tau/u]\Delta'}]{[\tau/u]A}{[\tau/u]B}$ \\
+    \ooooo Therefore $D' :: \judgeSortEq[{\Delta, [p/u]\Delta'}]{[p/u]A}{[p/u]B}$ \\
+    \oooo Otherwise when $\omega \not= \kappa$: \\
+    \ooooo By definition, 
+           $\restrictkind{\Delta, u:\kappa, \Delta'} = \restrictkind{\Delta}, \restrictkind{\Delta'}$ \\
+    \ooooo Since kinds have no free variables, $\restrictkind{\Delta'} = \restrictkind{[p/u]\Delta'}$ \\
+    \ooooo Therefore $\restrictkind{\Delta, u:\kappa, \Delta'} = \restrictkind{\Delta, [p/u]\Delta'}$ \\
+    \ooooo Since $u \not\in FV(A)$, we have $[p/u]A = A$ \\
+    \ooooo Since $u \not\in FV(B)$, we have $[p/u]A = B$ \\
+    \ooooo Therefore $D_1 :: \judgeKeq[{\restrictkind{\Delta, [p/u]\Delta'}}]{[p/u]A}{[p/u]B}{\bigstar}$ \\
+    \ooooo By rule \textsc{SortEqType}, we have $D' :: \judgeSortEq[{\Delta, [p/u]\Delta'}]{[p/u]A}{[p/u]B}$\\
+  \end{tabbedproof}
+\end{itemize}
+\end{proof}
+
+
+
+\begin{lemma*}{(Syntactic Substitution for Terms and Specifications)}
 Suppose that $D_0 :: \judgeA{p}{\omega}$. Then
 \begin{enumerate}
 \item If $D :: \judgeA[{\Delta, u:\omega, \Delta'}]{q}{\omega'}$, 
@@ -1989,7 +2932,7 @@ Suppose that $D_0 :: \judgeA{p}{\omega}$. Then
          then 
          $D' :: \judgeS[{\Delta, [p/u]\Delta'}]{[p/u]S}$. 
 \end{enumerate}
-\end{lemma}
+\end{lemma*}
 \begin{proof}
   Before we begin this proof, we make a minor observation. Namely,
   suppose $u$ does not occur in a type or program expression in
@@ -2519,59 +3462,7 @@ Suppose that $D_0 :: \judgeA{p}{\omega}$. Then
   \end{enumerate}
 \end{proof}
   
-
-
-\section{Semantics}
-
-Now, we will consider the interpretation of the syntax. To do this,
-we will proceed in stages. First, we will show how to interpret sorts and
-contexts by sets, and show that the equality judgement for sorts is
-sound. Using this, we will then give interpretation of terms and
-specifications, and show that the interpretation is sound with respect
-to substitution.
-
-\subsection{Interpretation of Sorts}
-
-We will start by explaining how to interpret the sorts. Ultimately,
-we are going to define assertions to be the powerset of heaps, and
-specifications to be upward closed sets of assertions, but because we
-allow types as sorts, and types may have free type variables, we will
-need to give an indexed, recursive definition in order to make
-everything work properly.
-
-Therefore, we will need to give a mutually-recursive definition between
-the interpretation the two judgements $\judgeACtx{\Delta}$ and 
-$\judgeA{\Delta}{\omega}$.
-
-\begin{displaymath}
-  \begin{array}{lcl}
-    \interp{\judgeACtx{\Delta}} & \in & \mbox{Set} \\
-    \interp{\judgeSort{\omega}} & \in & \interp{\judgeACtx{\Delta}} \to \mbox{Set} \\[1em]
-
-    \interp{\judgeACtx{\cdot}} & = & \unittype \\
-    \interp{\judgeACtx{\Delta, u:\omega}} & = & \sum \delta \in \interp{\judgeACtx{\Delta}}.\; 
-                                                  (\interp{\judgeSort{\omega}}\;\delta) \\[1em]
- 
-    \interp{\judgeSort{\kappa}}\;\delta & = & \interp{\kappa} \\
-    \interp{\judgeSort{A}}\;\delta & = & 
-       U(\interp{\judgeWK[\restrictkind{\Delta}]{A}{\bigstar}}\;(\restricttyenv{\Delta}{\delta})) \\
-    \interp{\judgeSort{\assert}}\;\delta & = & \powerset{H} \\
-    \interp{\judgeSort{\omega \To \omega'}}\;\delta & = &  
-       \interp{\judgeSort{\omega}}\;\delta \to \interp{\judgeSort{\omega}}\;\delta \\
-  \end{array}
-\end{displaymath}
-
-The semantic brackets are slightly overloaded in this definition. To
-interpret a type $A$, we take it to be the set of the elements of the
-domain-theoretic interpretation of $A$, and to interpret a kind
-$\kappa$, we take it to be the set of closed canonical forms of that
-type. Both of these use the interpretations given in the previous
-chapter. 
-
-In order to establish that this actually defines a function, we will
-need to prove some supporting lemmas. First, we need to establish that
-we an also prove that the context $\Delta$ is well-formed is
-$\judgeSort{\omega}$ is derivable:
+\subsubsection{Interpretation of Sorts}
 
 \begin{lemma}{(Well-sortedness implies well-formed contexts)}
 If it is the case that $\judgeSort{\omega}$, then $\judgeACtx{\Delta}$.
@@ -2580,12 +3471,7 @@ If it is the case that $\judgeSort{\omega}$, then $\judgeACtx{\Delta}$.
 The proof is by a trivial structural induction over the derivation $\judgeSort{\omega}$. 
 \end{proof}
 
-Now, this means that the domain of the interpretation function
-$\interp{\judgeACtx{\Delta}}$ is always well-defined, given a $\judgeSort{\omega}$. Next,
-we need to establish that we get the same result, regardless of \emph{which} derivation
-of this judgement we found. 
-
-\begin{lemma}{(Uniqueness of Interpretations)}
+\begin{lemma*}{(Uniqueness of Interpretations)}
 We have that:
 \begin{enumerate}
 \item If we have two derivations $\mathcal{D}_1 :: \judgeACtx{\Delta}$
@@ -2595,8 +3481,7 @@ We have that:
       and $\mathcal{D}_2 ::\; \judgeSort{\omega}$, 
       then $\interp{\mathcal{D}_1} = \interp{\mathcal{D}_2}$
 \end{enumerate}
-\end{lemma}
-
+\end{lemma*}
 \begin{proof}
 We proceed by mutual induction on the size of the derivation $\mathcal{D}_1$
 
@@ -2733,16 +3618,10 @@ We proceed by mutual induction on the size of the derivation $\mathcal{D}_1$
 \end{enumerate}
 \end{proof}
 
-
-\subsection{Interpretation of Equality Judgement on Sorts}
-
-Now, we will show that our equality judgement on sorts $\judgeSortEq{\omega}{\omega'}$ is
-sound. 
-
-\begin{lemma}{(Soundness of Sort Equality)}
+\begin{lemma*}{(Soundness of Sort Equality)}
 If $\judgeACtx{\Delta}$, $\judgeSort{\omega}$, and $\judgeSort{\omega'}$ are derivable, then if 
 $\judgeSortEq{\omega}{\omega'}$ is derivable, then $\interp{\judgeSort{\omega}} = \interp{\judgeSort{\omega'}}$. 
-\end{lemma}
+\end{lemma*}
 
 \begin{proof}
 We do this proof by induction on the equality derivation. 
@@ -2838,672 +3717,7 @@ We do this proof by induction on the equality derivation.
 \end{itemize}
 \end{proof}
 
-\subsubsection{Interpretation of Terms and Specifications}
-
-The term judgement $\judgeA{p}{\omega}$ is mutually recursively
-defined with the specification judgement $\judgeS{S}$. Therefore, when
-we give the semantics of these judgements, we need to define them
-together. 
-
-\begin{figure}
-\begin{displaymath}
-\begin{array}{lcl}
-\interp{\judgeA{p}{\omega}} & \in & \prod \delta \in \interp{\judgeACtx{\Delta}}.\; \interp{\judgeSort{\omega}}\;\delta \\
-\interp{\judgeS{S}} & \in & \interp{\judgeACtx{\Delta}} \to \upset{W(\powerset{H})} \\[1em]
-
-\interp{\judgeA{\tau}{\kappa}}\;\delta & = & 
-   \interp{\judgeWK[\restrictkind{\Delta}]{\tau}{\kappa}}\; (\restricttyenv{\Delta}{\delta}) \\
-\interp{\judgeA{e}{A}}\;\delta & = & 
-   U(\interp{\judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}{e}{A}}\;
-       (\restricttyenv{\Delta}{\delta})\; (K,K))\;
-       (\restrictvals{\Delta}{\delta}) \\
-\interp{\judgeA{\pfun{u}{\omega'}{p}}{\omega' \To \omega}}\;\delta & = & 
-   \semfun{v \in \interp{\judgeSort{\omega'}}}{\interp{\judgeA[\Delta,u:\omega']{p}{\omega}}\;(\delta, v)} \\
-\interp{\judgeA{p\;q}{\omega}}\;\delta & = & 
-   (\interp{\judgeA{p}{\omega' \To \omega}}\;\delta)\;(\interp{\judgeA{q}{\omega'}}\;\delta) \\
-\interp{\judgeA{u}{\omega}}\;\delta & = & \delta(u) \\
-
-\interp{\judgeA{c}{\assert}}\;\delta & = & \interp{c}^0 \\
-
-\interp{\judgeA{p \oplus q}{\assert}}\;\delta & = & 
-    \interp{\judgeA{p}{\assert}}\;\delta \;\;\interp{\oplus}^2\;\;
-    \interp{\judgeA{q}{\assert}}\;\delta \\
-
-\interp{\judgeA{Q u:\omega.\; q}{\assert}}\;\delta & = & 
-    \interp{Q}_{v \in \interp{\judgeSort{\omega}}\;\delta} 
-        \interp{\judgeA[\Delta, u:\omega]{p}{\assert}}\;\delta \\
-
-\interp{\judgeA{e \pointsto_A e'}{\assert}}\;\delta & = & 
-    \mbox{let } l = \interp{\judgeA{e}{\reftype{A}}}\;\delta \mbox{ in}\\
-& & \mbox{let } v = \interp{\judgeA{e'}{A}}\;\delta \mbox{ in} \\
-
-% U(\interp{\judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}{e}{\reftype{A}}}\;(\restricttyenv{\Delta}{\delta}))\;(\restrictvals{\Delta}{\delta}) \\
-% & &  \mbox{let }v = U(\interp{\judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}{e'}{A}}\;(\restricttyenv{\Delta}{\delta}))\;(\restrictvals{\Delta}{\delta}) \\
-& & \setof{(\setof{l}, \semfun{loc}{v \mbox{ when } loc = l})} \\
-
-
-\interp{\judgeA{e =_\omega e'}{\assert}}\;\delta & = & 
-   \mbox{if }\interp{\judgeA{e}{\omega}}\;\delta = \interp{\judgeA{e'}{\omega}}\;\delta 
-   \mbox{ then } \top \mbox{ else} \bot \\
-
-\interp{\judgeA{Q u:\omega.\; p}{\assert}}\;\delta & = & 
-  \interp{Q}^\infty_{v \in \interp{\judgeSort{\omega}}\;\delta}
-    \interp{\judgeA[\Delta, u:\omega]{p}{\assert}}\;(\delta, v) \\
-
-\interp{\judgeA{\validprop{S}}{\assert}}\;\delta & = & 
-   \mbox{if } \interp{\judgeS{S}}\;\delta = \top_{\upset{W(\powerset{H})}}
-   \mbox{ then } \top
-   \mbox{ else } \bot \\
-
-\interp{\judgeA{p}{\omega}}\;\delta & = & 
-   \interp{\judgeA{p}{\omega'}}\;\delta \mbox{ when } \judgeSortEq{\omega}{\omega'} \\[1em]
-
-
-\interp{\top}^0 & = & \top \\
-\interp{\bot}^0 & = & \bot \\
-\interp{\emp}^0 & = & I \\[1em]
-
-\interp{\land}^2    & = & \land \\
-\interp{\implies}^2 & = & \implies \\
-\interp{\vee}^2     & = & \vee \\
-\interp{*}^2        & = & * \\
-\interp{\wand}^2    & = & \wand \\[1em]
-
-\interp{\forall}^\infty & = & \bigwedge \\
-\interp{\exists}^\infty & = & \bigvee \\
-\end{array}
-\end{displaymath}
-\caption{ Interpretation of Terms }
-\label{term-interpretation}  
-\end{figure}
-
-\begin{figure}
-\begin{displaymath}
-\begin{array}{lcl}
-\interp{\judgeS{S}} & = & \interp{\judgeACtx{\Delta}} \to \upset{W(\powerset{H})} \\ [1em]
-
-\interp{\judgeS{\spec{p}{c}{a:A}{q}}}\;\delta & = & 
-   \begin{array}{l}
-     \setof{\interp{\judgeA{p}{\assert}}\;\delta} \\
-      \interp{\judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}
-                       {\comp{c}}{A}}\;(\restricttyenv{\Delta}{\delta})\;
-       (\restrictvals{\Delta}{\delta}) \\
-     \setof{v.\; \interp{\judgeA[\Delta, a:A]{q}{\assert}}\;(\delta,v)} \\
-   \end{array} 
-\\[2em]
-
-\interp{\judgeS{\mspec{p}{e}{a:A}{q}}}\;\delta & = & 
-   \begin{array}{l}
-     \setof{\interp{\judgeA{p}{\assert}}\;\delta} \\
-       \interp{\judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}
-                       {e}{A}}\;(\restricttyenv{\Delta}{\delta})\;
-       (\restrictvals{\Delta}{\delta}) \\
-     \setof{v.\; \interp{\judgeA[\Delta, a:A]{q}{\assert}}\;(\delta,v)} \\
-   \end{array} 
-\\[2em]
-
-\interp{\judgeS{\setof{p}}}\;\delta & = & 
-  \mbox{if } \interp{\judgeA{p}{\assert}}\;\delta = \top_{\powerset{H}}
-  \mbox{ then } \top 
-  \mbox{ else } \bot \\
-
-\interp{\judgeS{S_1 \oplus S_2}}\;\delta & = & 
-  \interp{\judgeS{S_1}}\;\delta \;\;\interp{\oplus}\;\; 
-  \interp{\judgeS{S_2}}\;\delta \\
-
-\interp{\judgeS{Q u:\omega.\; S}}\;\delta & = & 
-  \interp{Q}_{v \in \interp{\judgeSort{\omega}}\;\delta} 
-     \interp{\judgeS[\Delta, u:\omega]{S}}\;(\delta, v) \\[1em]
-
-\interp{\specand} & = & \land \\
-\interp{\specor}  & = & \vee  \\
-\interp{\specimp} & = & \implies \\[1em]
-
-\interp{\forall} & = & \bigwedge \\
-\interp{\exists} & = & \bigvee \\
-
-\end{array}
-\end{displaymath}
-\caption{Interpretation of Specifications}
-\label{spec-interpretation}  
-\end{figure}
-
-\subsubsection{Do the Restriction Operations Make Sense?}
-
-As the rule \textsc{TermExpr} shows, program expressions can occur
-inside within terms, and in type checking them, we only allow
-variables of sort type and kind to occur within them. In
-Figure~\ref{term-interpretation}, we take advantage of this fact to
-interpret expressions in terms by means of 1) taking the denotational
-interpretation of the term, and 2) applying the values from the
-context to it.
-
-However, there is something a little fishy about this definition.  The
-interpretation of sorts goes into Set, and so environments are
-products in Set. But the interpretation of a term is a predomain, and
-so it wants an environment that is a production in CPO -- so we seem
-to have a type error, unless we can find a way to ``unforget'' the
-partial order structure that predomains come with. 
-
-In general, this is not possible, since every set can have potentially
-many different partial orders upon it, and \emph{a priori} we don't
-know which one we will need. However, in our specific situation, we can
-recover the correct partial order. This is because all of the domains
-we are interested in arise as interpretations of types. So, if we have
-the type, we can just re-compute the appropriate predomain. Furtheremore, the
-interpretation of sorts tells us that the elements will all lie in the
-correct set, since we chose the interpreting sets in the first place by 
-taking that predomain and forgetting the partial order structure. 
-
-\begin{lemma}{(Restriction on Kinds Makes Sense)}
-If $D :: \judgeACtx{\Delta}$ and $\delta \in \interp{D}$, then 
-$\restricttyenv{\Delta}{\delta} \in \interp{\restrictkind{\Delta}}$. 
-\end{lemma}
-
-\begin{proof}
-We proceed by induction on $D$. \\
-\begin{itemize}
-\item Case \textsc{CtxNil}:
-  \begin{tabbedproof}
-    \oo Assume $D :: \judgeACtx{\cdot}$ \\
-    \oo Assume $\delta \in \interp{D}$ \\
-    \ooo Then $\interp{D} = 1$, and $\delta = \unit$ \\
-    \ooo By semantics, $\restrictkind{\cdot} = \cdot$ \\
-    \ooo By semantics, $\restricttyenv{\cdot}{\unit} = \unit$ \\
-    \ooo So $\interp{\restrictkind{\cdot}} = 1$\\
-    \ooo So $\restricttyenv{\cdot}{\unit} \in \interp{\restrictkind{\cdot}}$ \\
-  \end{tabbedproof}
-
-\item Case \textsc{CtxCons}:
-  \begin{tabbedproof}
-    \oo Assume $D :: \judgeACtx{\Delta, u:\omega}$ \\
-    \oo Assume $(\delta, x) \in \interp{D}$ \\
-    \ooo By inversion on $D$, we have \\
-    \oooo $D_1 :: \judgeACtx{\Delta}$ \\
-    \oooo $D_2 :: \judgeSort{\omega}$ \\
-    \ooo By semantics $\delta \in \interp{\judgeACtx{\Delta}}$ \\
-    \ooo By semantics $x \in \interp{\judgeSort{\omega}}\delta$ \\
-    \ooo By cases on $\omega$: \\
-    \oooo If $\omega = \kappa$: \\
-    \ooooo Then $\restrictkind{\Delta, u:\kappa} = \restrictkind{\Delta}, u:\kappa$ \\
-    \ooooo Then $x \in \interp{\kappa}$ \\
-    \ooooo Then $\restricttyenv{\Delta, u:\kappa}{(\delta,x)} = 
-                (\restricttyenv{\Delta}{\delta}, x)$ \\
-    \ooooo By induction, $\restricttyenv{\Delta}{\delta} \in \interp{\restrictkind{\Delta}}$ \\
-    \ooooo By definition, $\interp{\restrictkind{\Delta, u:\kappa}} = \interp{\restrictkind{\Delta}} \times \interp{\kappa}$ \\
-    \ooooo Therefore $(\restricttyenv{\Delta}{\delta}, x) \in \interp{\restrictkind{\Delta}} \times \interp{\kappa}$ \\
-    \oooo If $\omega \not= \kappa$: \\
-    \ooooo Then $\restrictkind{\Delta, u:\kappa} = \restrictkind{\Delta}$ \\
-    \ooooo Then $\restricttyenv{\Delta, u:\kappa}{(\delta,x)} = 
-                \restricttyenv{\Delta}{\delta}$ \\
-    \ooooo By induction, $\restricttyenv{\Delta}{\delta} \in \interp{\restrictkind{\Delta}}$ \\
-    \ooooo Therefore $\restricttyenv{\Delta, u:\omega}{(\delta, x)} \in \interp{\restrictkind{\Delta, u:\omega}}$ \\
-  \end{tabbedproof}
-\end{itemize}
-\end{proof}
-
-\begin{lemma}{(Restriction for Values Makes Sense)}
-\label{value-restriction}
-If $\judgeACtx{\Delta}$ and $\delta \in \interp{\judgeACtx{\Delta}}$, 
-then $\restrictvals{\Delta}{\delta} \in U(\interp{\restrictkind{\Delta} \vdash \restricttype{\Delta}}\;
-            \restricttyenv{\Delta}{\delta}\;(K,K))$
-\end{lemma}
-
-\begin{proof}
-As before, we proceed by induction on $\judgeACtx{\Delta}$. 
-\begin{itemize}
-\item Case \textsc{CtxNil}: 
-  \begin{tabbedproof}
-    \oo Assume $D :: \judgeACtx{\cdot}$ \\
-    \oo Assume $\delta \in \interp{\cdot}$ \\
-    \ooo By semantics, $\interp{\cdot} = 1$ \\
-    \ooo Therefore $\delta = \unit$ \\
-    \ooo By semantics, $\restrictkind{\cdot} = \cdot$ \\
-    \ooo By semantics, $\restricttype{\cdot} = \cdot$ \\
-    \ooo By semantics, $\restricttyenv{\cdot}{\delta} = \unit$ \\
-    \ooo Now, let $\eta = \unit$ in CPO. \\
-    \ooo Then $\interp{\restrictkind{\cdot} \vdash \restricttype{\cdot}}\;\unit\;(K,K) = 1$ in CPO \\
-    \ooo Since $U(1) = 1$, we have $\eta \in \interp{\restrictkind{\Delta} \vdash \restricttype{\Delta}}\;
-            \restricttyenv{\Delta}{\delta}\;
-            (K,K)$ \\
-  \end{tabbedproof}
-
-\item Case \textsc{CtxCons}: 
-  \begin{tabbedproof}
-    \oo Assume $D :: \judgeACtx{\Delta, u:\omega}$ \\
-    \oo Assume $(\delta, x) \in \interp{\judgeACtx{\Delta, u:\omega}}$ \\
-    \ooo By inversion on $D$: \\
-    \oooo $D_1 :: \judgeACtx{\Delta}$ \\
-    \oooo $D_2 :: \judgeSort{\omega}$ \\
-    \ooo By semantics, $\delta \in \interp{D_1 :: \judgeACtx{\Delta}}$ \\
-    \ooo By semantics, $x \in \interp{D_2 :: \judgeSort{\omega}}\;\delta$ \\
-    \ooo By induction, there exists an $\eta$ such that \\
-    \oooo $\restricttyenv{\Delta}{\delta} \in 
-             U(\interp{\restrictkind{\Delta} \vdash \restricttype{\Delta}}\;
-                      \restricttyenv{\Delta}{\delta}\;(K,K))$ and \\
-    \ooo Case analyze $\omega$: \\
-    \oooo If $\omega = \kappa$: \\
-    \ooooo Then $\restrictkind{\Delta, u:\kappa} = \restrictkind{\Delta}, u:\kappa$ \\
-    \ooooo Then $\restricttyenv{\Delta,u:\kappa}{(\delta,x)} = (\restricttyenv{\Delta}{\delta}, x)$ \\
-    \ooooo Then $\restricttype{\Delta, u:\kappa} = \restricttype{\Delta}$ \\
-    \ooooo Then $\restricttyenv{\Delta, u:\kappa}{(\delta, x)} = \restricttyenv{\Delta}{\delta}$ \\
-    \ooooo By weakening, $\interp{\restrictkind{\Delta} \vdash
-                              \restricttype{\Delta}}\; \restricttyenv{\Delta}{\delta} 
-                          = 
-                          \interp{\restrictkind{\Delta}, u:\kappa \vdash
-                              \restricttype{\Delta}}\;
-                      (\restricttyenv{\Delta}{\delta}, x)$\\
-    \ooooo So $\restrictvals{\Delta}{\delta} \in U(\interp{\restrictkind{\Delta}, u:\kappa \vdash
-                              \restricttype{\Delta}}\;
-                      (\restricttyenv{\Delta}{\delta}, x)\;(K,K))$\\
-    \ooooo So $\restrictvals{\Delta}{\delta} \in U(\interp{\restrictkind{\Delta}, u:\kappa \vdash
-                              \restricttype{\Delta}}\;
-                      \restricttyenv{\Delta,u:\kappa}{(\delta, x)}\;(K,K))$\\
-    \ooooo So $\restrictvals{\Delta}{\delta} \in U(\interp{\restrictkind{\Delta}, u:\kappa \vdash
-                              \restricttype{\Delta, u:\kappa}}\;
-                      \restricttyenv{\Delta,u:\kappa}{(\delta, x)}\;(K,K))$\\
-    \ooooo So $\restrictvals{\Delta}{\delta} \in U(\interp{\restrictkind{\Delta, u:\kappa} \vdash
-                              \restricttype{\Delta, u:\kappa}}\;
-                      \restricttyenv{\Delta,u:\kappa}{(\delta, x)}\;(K,K))$\\
-    \ooooo Therefore 
-        $\restricttyenv{\Delta,u:\kappa}{\delta,x} \in U(\interp{\restrictkind{\Delta, u:\kappa} \vdash
-                                                                 \restricttype{\Delta, u:\kappa}}\;
-                      \restricttyenv{\Delta,u:\kappa}{(\delta, x)}\;(K,K))$\\
-    \oooo If $\omega = A$: \\
-    \ooooo Then $\restrictkind{\Delta, u:A} = \restrictkind{\Delta}$ \\
-    \ooooo Then $\restricttyenv{\Delta,u:A}{(\delta,x)} = \restricttyenv{\Delta}{\delta}$ \\
-    \ooooo Then $\restricttype{\Delta, u:A} = \restricttype{\Delta}, u:A$ \\
-    \ooooo Then $\restricttyenv{\Delta, u:A}{(\delta, x)} = (\restricttyenv{\Delta}{\delta}, x)$ \\
-    \ooooo By equality,  
-           $\interp{\restrictkind{\Delta} \vdash \restricttype{\Delta}}\;
-            \restricttyenv{\Delta}{\delta}
-            = 
-            \interp{\restrictkind{\Delta, u:A} \vdash \restricttype{\Delta}}\;
-            \restricttyenv{\Delta}{(\delta, x)}$ \\
-    \ooooo So $\restrictvals{\Delta}{\delta} \in \interp{\restrictkind{\Delta, u:A} \vdash \restricttype{\Delta}}\;
-            \restricttyenv{\Delta,u:A}{(\delta, x)}$ \\
-    \ooooo Also, $x \in \interp{\judgeSort{A}}\;\delta$ \\
-    \ooooo Therefore $x \in U(\interp{\judgeWK[\restrictkind{\Delta}]{A}{\bigstar}}\;
-                              \restricttyenv{\Delta}{\delta}\;(K,K))$ \\
-    \ooooo Therefore $x \in U(\interp{\judgeWK[\restrictkind{\Delta, u:A}]{A}{\bigstar}}\;
-                               \restricttyenv{\Delta, u:A}{(\delta, x)}\;(K,K))$ \\
-    \ooooo Let $T \in CPO = \interp{\judgeWK[\restrictkind{\Delta, u:A}]{A}{\bigstar}}\;
-                               \restricttyenv{\Delta, u:A}{(\delta, x)}\;(K,K)$ \\
-    \ooooo Now, $\sqsubseteq_T$ is an order for the predomain, and $x \in U(T)$. \\
-    \ooooo Therefore, $(\restrictvals{\Delta}{\delta}, x) \in 
-                         U(\interp{\restrictkind{\Delta, u:A} \vdash \restricttype{\Delta}}\;
-            \restricttyenv{\Delta, u:A}{(\delta, x)}) \times U(T)$ \\
-    \ooooo Therefore, $(\restrictvals{\Delta}{\delta}, x) \in 
-                         U(\interp{\restrictkind{\Delta, u:A} \vdash \restricttype{\Delta}}\;
-            \restricttyenv{\Delta, u:A}{(\delta, x)} \times T)$ \\
-    \ooooo Therefore, $(\restrictvals{\Delta}{\delta}, x) \in 
-                         U(\interp{\restrictkind{\Delta, u:A} \vdash \restricttype{\Delta, u:A}}\;
-            \restricttyenv{\Delta, u:A}{(\delta, x)})$ \\
-    \ooooo Therefore, $\restrictvals{\Delta, u:A}{(\delta,x)} \in 
-                         U(\interp{\restrictkind{\Delta, u:A} \vdash \restricttype{\Delta, u:A}}\;
-            \restricttyenv{\Delta, u:A}{(\delta, x)})$ \\
-
-    \oooo If $\omega \not= A$ and $\omega \not= \kappa$: \\
-    \ooooo Then $\restrictkind{\Delta, u:\omega} = \restrictkind{\Delta}$ \\
-    \ooooo Then $\restricttyenv{\Delta,u:\omega}{(\delta,x)} = \restricttyenv{\Delta}{\delta}$ \\
-    \ooooo Then $\restricttype{\Delta, u:\omega} = \restricttype{\Delta}$ \\
-    \ooooo Then $\restricttyenv{\Delta, u:\omega}{(\delta, x)} = \restricttyenv{\Delta}{\delta}$ \\
-    \ooooo Therefore, $\restrictvals{\Delta,u:\omega}{(\delta,x)} \in 
-              \interp{\restrictkind{\Delta, u:\omega} \vdash
-                      \restricttype{\Delta, u:\omega}}\;
-                     \restricttyenv{\Delta, u:\omega}{(\delta,x)}\;(K,K)$ \\
-
-  \end{tabbedproof}
-\end{itemize}
-\end{proof}
-
-
-
-
-\section{Substitution Theorems}
-
-\subsection{Substitution for Sorts}
-
-\subsubsection{Semantics of Sort Substitution}
-
-\begin{lemma}{(Substitution Preserves Meaning)}
-Suppose we have that $\judgeA{p}{\omega}$.
-
-\begin{enumerate}
-\item If $\judgeACtx{\Delta, u:\omega, \Delta'}$ and either $u$ does not occur in any subterm of sort type in $\Delta'$, or  $\omega = \kappa$ and $p = \tau$, then  $(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') \in \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$ if and only if $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$
-
-\item  If $\judgeSort[\Delta, u:\omega, \Delta']{\omega'}$ and and either $u$ does not occur in any subterm of sort type in $\Delta'$ or $\omega'$, or $\omega = \kappa$ and $p = \tau$, then for all $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$, we have 
-\begin{displaymath}
-\interp{\judgeSort[{\Delta, u:\omega, \Delta'}]{\omega'}}\;(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = \interp{\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega'}}\;(\delta, \delta')
-\end{displaymath}
-\end{enumerate}
-\end{lemma}
-
-\begin{proof}
-  We proceed by mutual induction on the derivations of context
-  well-formedness and sort well-formedness. 
-
-  As a note, even though contexts are properly maximally nested tuples
-  (a la Lisp s-expressions), we will overload the tuple notation and
-  treat expressions like $(\delta, \delta')$ as if the comma were a
-  proper concatenation that reassociates everything. This is a
-  harmless convenience thanks to the fact that tuples are associative
-  up to isomorphism.
-
-  \noindent Assume $D_0 :: \judgeA{p}{\omega}$ \\
-
-  \begin{enumerate}
-  \item First, we want to show $(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') \in 
-                                   \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$, 
-      if and only if $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$
-      
-      \begin{itemize}
-      \item Case \textsc{CtxNil}:
-        \begin{tabbedproof}
-          \oo Assume $\judgeACtx{\cdot}$ \\
-          \ooo Therefore $\cdot = \Delta, u:\omega, \Delta'$ \\
-          \ooo This is a contradiction; hence this case is impossible. \\
-        \end{tabbedproof}
-
-      \item Case \textsc{CtxCons}: 
-        \begin{tabbedproof}
-          \oo Assume $D :: \judgeACtx{\Delta_1, u_1:\omega_1}$ \\
-          \oo Assume either $u$ does not occur in any subterm of sort type in $\Delta'$, \\
-          \ox or $\omega = \kappa$ and $p = \tau$ \\
-          \oo Therefore $\Delta, u:\omega, \Delta' = \Delta_1, u_1:\omega_1$ \\
-          \oo $\Rightarrow$ direction:\\
-          \ooo Assume $(\delta, \interp{\judgeA[\Delta]{p}{\omega}}\;\delta, \delta') \in 
-                       \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$ \\
-          \oooo Case analyze $\Delta'$: \\
-          \ooooo If $\Delta' = \cdot$: \\
-          \oooooo Then $\delta' = \unit$ \\
-          \oooooo Then $\Delta = \Delta_1$ and $u = u_1$ and $\omega = \omega_1$ \\
-          \oooooo By inversion on $D :: \judgeACtx{\Delta_1, u:\omega}$, we get:\\
-          \ooooooo $D_1 :: \judgeACtx{\Delta}$ \\
-          \ooooooo $D_2 :: \judgeSort[\Delta]{\omega}$ \\
-          \oooooo By definition, $\delta \in \interp{\judgeACtx{\Delta}}$ \\
-          \oooooo By definition $[p/u]\cdot = \cdot$, and $\Delta, \cdot = \Delta$ \\
-          \oooooo Since $\delta' = \unit$, we have $(\delta, \delta') \simeq \delta$ \\
-          \oooooo Therefore $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$ \\
-          \ooooo If $\Delta' = \Delta'', u'':\omega''$: \\
-          \oooooo Then $\Delta, u:\omega, \Delta' = \Delta, u:\omega, \Delta'', u'':\omega''$ \\
-          \oooooo Then $\delta' = (\delta'', v'')$ \\
-          \oooooo By inversion on $D$, we get: \\
-          \ooooooo $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'', u'':\omega''}$ \\
-          \ooooooo $D_2 :: \judgeSort[{\Delta, u:\omega, \Delta''}]{\omega''}$ \\
-          \oooooo Therefore, $(\delta, \interp{p}{\omega}\;\delta, \delta'') \in 
-                             \interp{\Delta, u:\omega, \Delta''}$ \\
-          \oooooo Therefore, $v'' \in 
-                  \interp{\judgeSort[{\Delta, u:\omega, \Delta''}]{\omega''}}\;
-                     (\delta, \interp{p}{\omega}\;\delta, \delta'')$ \\
-          \oooooo Then, by induction on $D_1$, we have $(\delta, \delta'') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$ \\
-          \oooooo Then, by mutual induction on $D_2$, we have \\ 
-          \ooooox  $\interp{\judgeSort[{\Delta, u:\omega, \Delta''}]{\omega''}} 
-                      \;(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta'') 
-                   $ \\
-          \ooooox equals $\interp{\judgeSort[{\Delta, [p/u]\Delta''}]{[p/u]\omega''}}\;(\delta,\delta'')$ \\
-          \oooooo Therefore, $v'' \in \interp{\judgeSort[{\Delta, [p/u]\Delta''}]{[p/u]\omega''}}\;(\delta,\delta'')$ \\ 
-          \oooooo Therefore, 
-                   $(\delta, \delta'', v'') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'', [p/u]\omega''}}$ \\
-          \oooooo Therefore $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$ \\
-          \oo $\Leftarrow$ direction:\\
-          \ooo Assume $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$ \\
-          \ooo Case analyze $\Delta'$: \\
-          \oooo If $\Delta' = \cdot$: \\
-          \ooooo Then $\delta' = \unit$ \\
-          \ooooo Hence $\delta \in \interp{D_1 :: \judgeACtx{\Delta}}$ \\
-          \ooooo Hence $(\delta, \interp{\judgeA{p}{\omega}}\;\delta) \in \interp{\judgeACtx{\Delta, u:\omega}}$ \\
-          \oooo If $\Delta' = \Delta'', u'':[p/u]\omega''$: \\
-          \ooooo Then $\delta' =\delta'', v$ \\
-          \ooooo Hence $(\delta, \delta'') \in \interp{\judgeACtx{\Delta, u:\omega, \Delta''}}$ \\
-          \ooooo Hence $v \in \interp{\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega''}}$ \\
-          \ooooo By inversion on $D$, we have \\
-          \ooooox $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta''}$ \\
-          \ooooox $D_2 :: \judgeSort[{\Delta, u:\omega, \Delta''}]{\omega''}$ \\
-          \ooooo By induction, we know that $(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta'') \in \interp{\judgeACtx{\Delta, u:\omega, \Delta''}}$ \\
-          \ooooo By induction, we know that $\interp{\judgeSort[{\Delta,[p/u]\Delta''}]{[p/u]\omega''}}(\delta,\delta'')$ \\
-          \oooox equals $\interp{\judgeSort[\Delta, u:\omega, \Delta'']{\omega''}}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta'')$ \\
-          \ooooo Hence $v \in \interp{\judgeSort[\Delta, u:\omega, \Delta'']{\omega''}}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta'')$ \\
-          \ooooo Hence $(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta'', v) \in \interp{\judgeACtx{\Delta, u:\omega, \Delta'', u'':\omega''}}$ \\
-        \end{tabbedproof}
-      \end{itemize}
-
-  \item Now we want to show 
-    \begin{displaymath}
-      \interp{\judgeSort[{\Delta, u:\omega, \Delta'}]{\omega'}}\;(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = \interp{\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega'}}\;(\delta, \delta')
-    \end{displaymath}
-
-    \begin{itemize}
-    \item Case \textsc{SortKind}: 
-      \begin{tabbedproof}
-        \oo Assume we have $D :: \judgeSort[{\Delta, u:\omega, \Delta'}]{\kappa}$ \\
-        \oo By substitution we have $D_1 :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\kappa}$ \\
-        \oo Assume we have $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$ \\
-        \oo Therefore we know $\judgeACtx{\Delta, u:\omega, \Delta'}$ \\
-        \oo Therefore we know $\judgeACtx{\Delta, [p/u]\Delta'}$ \\
-        \oo By induction $(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') \in \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$ \\
-        \oo Then $\interp{\judgeSort[{\Delta, u:\omega, \Delta'}]{\kappa}}\;
-                     (\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = \interp{\kappa}$ \\
-        \oo Then $\interp{\judgeSort[{\Delta, [p/u]\Delta'}]{\kappa}}\;
-                     (\delta, \delta') = \interp{[p/u]\kappa}$ \\
-        \oo However, $[p/u]\kappa = \kappa$ \\
-        \oo Hence $\interp{\kappa} = \interp{[p/u]\kappa}$ \\
-        \oo Hence $\interp{\judgeSort[{\Delta, u:\omega, \Delta'}]{\kappa}}\;
-                     (\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') $ \\
-        \ox equals $\interp{\judgeSort[{\Delta, [p/u]\Delta'}]{\kappa}}\;
-                     (\delta, \delta')$ \\
-      \end{tabbedproof}
-
-    \item Case \textsc{SortProp}: 
-      \begin{tabbedproof}
-        \oo Assume we have $D :: \judgeSort[{\Delta, u:\omega, \Delta'}]{\assert}$ \\
-        \oo Assume we have $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$ \\
-        \ooo By substitution,  $D_1 :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\assert}$ \\
-        \ooo Therefore we know $\judgeACtx{\Delta, u:\omega, \Delta'}$ \\
-        \ooo Therefore we know $\judgeACtx{\Delta, [p/u]\Delta'}$ \\
-        \ooo By induction $(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') \in \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$ \\
-        \ooo Then $\interp{\judgeSort[{\Delta, u:\omega, \Delta'}]{\assert}}\;
-                     (\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = \interp{\assert}$ \\
-        \ooo Then $\interp{\judgeSort[{\Delta, [p/u]\Delta'}]{\assert}}\;
-                     (\delta, \delta') = \interp{[p/u]\assert}$ \\
-        \ooo However, $[p/u]\assert = \assert$ \\
-        \ooo Hence $\interp{\assert} = \interp{[p/u]\assert} = \powerset{H}$ \\
-        \ooo Hence $\interp{\judgeSort[{\Delta, u:\omega, \Delta'}]{\assert}}\;
-                     (\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') $ \\
-        \oox equals $\interp{\judgeSort[{\Delta, [p/u]\Delta'}]{\assert}}\;
-                     (\delta, \delta')$ \\
-      \end{tabbedproof}
-
-    \item Case \textsc{SortImp}: 
-      \begin{tabbedproof}
-        \oo Assume we have $D :: \judgeSort[{\Delta, u:\omega, \Delta'}]{\omega_1 \To \omega_2}$ \\
-        \oo Assume we have $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$ \\
-        \oo By substitution we have $E :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u](\omega_1 \To \omega_2)}$ \\
-        \oo Then by inversion on $D$ we have:\\
-        \ooo $D_1 :: \judgeSort[{\Delta, u:\omega, \Delta'}]{\omega_1}$ \\
-        \ooo $D_2 :: \judgeSort[{\Delta, u:\omega, \Delta'}]{\omega_2}$ \\
-        \oo Then by inversion on $E$ we have:\\
-        \ooo $E_1 :: \judgeSort[{\Delta ,[p/u]\Delta'}]{[p/u]\omega_1}$ \\
-        \ooo $E_2 :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega_2}$ \\
-        \oo Therefore we know $\judgeACtx{\Delta, u:\omega, \Delta'}$ \\
-        \oo By induction we know $(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') \in \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$ \\
-        \oo By semantics, $\interp{D}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta')$\\
-        \oox $= \interp{D_1}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta')
-                 \to
-                  \interp{D_2}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta')$\\
-        \oo By semantics, $\interp{E}(\delta, \delta')$\\
-        \oox $= \interp{E_1}(\delta, \delta')
-                 \to
-                  \interp{E_2}(\delta, \delta')$\\
-        \oo By induction, we have 
-              $\interp{D_1}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = 
-               \interp{E_1}(\delta, \delta')$ \\
-        \oo By induction, we have 
-              $\interp{D_2}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = 
-               \interp{E_2}(\delta, \delta')$ \\
-        \oo Therefore $\interp{D}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = 
-                        \interp{E}(\delta, \delta')$ \\
-      \end{tabbedproof}
-
-
-
-    \item Case \textsc{SortType}: 
-      \begin{tabbedproof}
-        \oo Assume $D :: \judgeSort[{\Delta, u:\omega, \Delta'}]{A}$ \\
-        \oo By substitution, we have $D' :: \judgeSort[{\Delta, u:\omega, \Delta'}]{[p/u]A}$ \\
-        \oo By inversion on $D$, we have: \\
-        \ooo $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'}$ \\
-        \ooo $D_2 :: \judgeWK[\restrictkind{\Delta, u:\omega, \Delta'}]{A}{\bigstar}$ \\
-        \oo By inversion on $D'$ and the fact that $u$ either does not occur in $A$ \\
-        \ox or $\omega = \kappa$ and $p = \tau$, together with substitution, we have: \\
-        \ooo $D'_1 :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
-        \ooo $D'_2 :: \judgeWK[\restrictkind{\Delta, [p/u]\Delta'}]{[p/u]A}{\bigstar}$ \\
-        \oo By semantics, 
-             $\interp{D}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = 
-              \interp{D_2}\;(\restricttyenv{\Delta, u:\omega, \Delta'}
-             {(\delta, \interp{\judgeA{p}{\omega}}, \delta')})$ \\
-        \oo Case-analyze $\omega$:\\
-        \ooo If $\omega = \kappa$ and $u$ occurs:\\
-        \oooo Then $D_0 :: \judgeA{\tau}{\kappa}$, where $p = \tau$ \\
-        \oooo Then  $D_2 :: \judgeWK[\restrictkind{\Delta, u:\kappa, \Delta'}]{A}{\bigstar}$ \\
-        \oooo By inversion on $D_0$, we have $D'_0 :: \judgeWK[\restrictkind{\Delta}]{\tau}{\kappa}$ \\
-        \oooo By semantics, $\interp{D_0}\;\delta = \interp{D'_0}\;(\restricttyenv{\Delta}{\delta})$\\
-        \oooo Let $\theta$ = $\restricttyenv{\Delta}{\delta}$ \\
-        \oooo Then $\interp{D'_0}\;\theta$ = $\theta(\tau)$ \\ 
-        \oooo Likewise, $\interp{D_2}(\delta,\theta(\tau), \delta') = \interp{\judgeWK[\restrictkind{\Delta,u:\omega,\Delta'}]{A}{\bigstar}}\;(\restricttyenv{\Delta,u:\kappa,\Delta'}{[\delta, \theta(\tau), \delta']})$ \\
-        \oooo Hence $\interp{D_2}(\delta,\theta(\tau),\delta) = (\theta, u:\theta(\tau), \restricttyenv{\Delta'}{\delta'})(A)$\\
-        \oooo By definition of substitutions, 
-                 $\interp{D_2}(\delta,\theta(\tau),\delta) = (\theta, \restricttyenv{\Delta'}{\delta'})([\tau/u]A)$\\
-        \oooo By weakening on $D'_0$, we have $D'_0 :: \judgeWK[\Delta, \Delta']{\tau}{\kappa}$\\
-        \oooo By substitution of $D'_0$ into $D'_2$, we get
-               $D'_3 :: \judgeWK[\restrictkind{\Delta, \Delta'}]{[\tau/u]A}{\bigstar}$ \\
-        \oooo Since kinds have no free variables, 
-               $D'_3 :: \judgeWK[\restrictkind{\Delta, [\tau/u]\Delta'}]{[\tau/u]A}{\bigstar}$ \\
-        \oooo By definition, $\interp{D'_3}\;(\theta, \restricttyenv{\Delta'}{\delta'}) = 
-                               (\theta, \restricttyenv{\Delta'}{\delta'})([\tau/u]A)$ \\
-        \oooo Therefore $\interp{D'_3}\;(\theta, \restricttyenv{\Delta'}{\delta'}) = 
-                         \interp{D_2}\;(\theta, \restricttyenv{\Delta'}{\delta'})$ \\
-        \oooo By semantics, $\interp{D'}(\delta,\delta') = \interp{D'_3}\;(\theta, \restricttyenv{\Delta'}{\delta'})$ \\
-        \oooo Therefore $\interp{D}(\delta, \interp{\judgeA{\tau}{\kappa}}\;\delta, \delta') = 
-                          \interp{D'}(\delta,\delta')$ \\
-        \ooo If $\omega \not= \kappa$: \\
-        \oooo Then  $D_2 :: \judgeWK[\restrictkind{\Delta, u:\omega, \Delta'}]{A}{\bigstar}$ \\
-        \oooo Because $\omega \not= \kappa$, 
-                 $\restrictkind{\Delta, u:\omega, \Delta'} = \restrictkind{\Delta, \Delta'}$ \\
-        \oooo Because kinds have no variables, 
-                 $\restrictkind{\Delta, \Delta'} = \restrictkind{\Delta, [p/u]\Delta'}$ \\
-        \oooo Therefore $(\delta, \delta') \in \restrictkind{\Delta, [p/u]\Delta'}$ \\
-        \oooo Because $u \not\in FV(A)$, $A = [p/u]A$ \\
-        \oooo Thus $D_2 :: \judgeWK[\restrictkind{\Delta, [p/u]\Delta'}]{[p/u]A}{\bigstar}$ \\
-        \oooo Then by rule \textsc{SortType}, we have $D' :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]A}$ \\
-        \oooo So $\interp{D'}(\delta, \delta') = \interp{D_2}(\restricttyenv{\Delta,[p/u]\Delta'}{\delta, \delta'})$ \\
-        \oooo But then, $\interp{D}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = 
-                          \interp{D'}(\delta, \delta')$ \\
-        \ooo If $u$ does not occur in $A$: \\
-        \oooo Then  $D_2 :: \judgeWK[\restrictkind{\Delta, u:\omega, \Delta'}]{A}{\bigstar}$ \\
-        \oooo We know $\restrictkind{\Delta, u:\omega, \Delta'} = \restrictkind{\Delta}, u:\omega, \restrictkind{\Delta'}$ \\
-        \oooo Since $u$ does not occur, we can strengthen to $D'_2 :: \judgeWK[\restrictkind{\Delta}, \restrictkind{\Delta'}]{A}{\bigstar}$ \\
-        \oooo Because kinds have no variables, 
-                 $\restrictkind{\Delta, \Delta'} = \restrictkind{\Delta, [p/u]\Delta'}$ \\
-        \oooo Therefore $(\delta, \delta') \in \restrictkind{\Delta, [p/u]\Delta'}$ \\
-        \oooo Because $u \not\in FV(A)$, $A = [p/u]A$ \\
-        \oooo Thus $D_2 :: \judgeWK[\restrictkind{\Delta, [p/u]\Delta'}]{[p/u]A}{\bigstar}$ \\
-        \oooo Then by rule \textsc{SortType}, we have $D' :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]A}$ \\
-        \oooo So $\interp{D'}(\delta, \delta') = \interp{D_2}(\restricttyenv{\Delta,[p/u]\Delta'}{\delta, \delta'})$ \\
-        \oooo But then, $\interp{D}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = 
-                          \interp{D'}(\delta, \delta')$ \\
-
-      \end{tabbedproof}
-    \end{itemize}
-  \end{enumerate}
-\end{proof}
-  
-
-\subsection{Substitution for Equality Judgement}
-
-\subsubsection{Syntactic Substitution}
-
-\begin{lemma}{(Syntactic Substitution for Equality Judgement)}
-If we have that $\judgeA{p}{\omega}$ and $\judgeACtx{\Delta, u:\omega, \Delta'}$, and we have that 
-$\judgeSortEq[{\Delta, u:\omega, \Delta'}]{\omega_1}{\omega_2}$, 
-then $\judgeSortEq[{\Delta, [p/u]\Delta'}]{[p/u]\omega'}{[p/u]\omega''}$. 
-\end{lemma}
-
-\begin{proof}
-Assume $D_0 :: \judgeA{p}{\omega}$, and $D_C :: \judgeACtx{\Delta, u:\omega, \Delta'}$.  
-Now we will proceed by structural induction on the equality judgement. 
-\begin{itemize}
-\item Case \textsc{SortEqProp}:
-  \begin{tabbedproof}
-    \oo Assume $D :: \judgeSortEq[{\Delta, u:\omega, \Delta'}]{\assert}{\assert}$\\
-    \ooo By context substitution on $D_C$, we have $D'_C :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
-    \ooo By rule \textsc{SortEqProp}, we have $D' :: \judgeSortEq[{\Delta, [p/u]\Delta'}]{\assert}{\assert}$ \\
-    \ooo By definition of substitution, $\assert = [p/u]\assert$ \\
-    \ooo Therefore $D' :: \judgeSortEq[{\Delta, [p/u]\Delta'}]{[p/u]\assert}{[p/u]\assert}$ \\
-  \end{tabbedproof}
-
-\item Case \textsc{SortEqKind}: 
-  \begin{tabbedproof}
-    \oo Assume $D :: \judgeSortEq[{\Delta, u:\omega, \Delta'}]{\kappa}{\kappa}$\\
-    \ooo By context substitution on $D_C$, we have $D'_C :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
-    \ooo By rule \textsc{SortEqKind}, we have $D' :: \judgeSortEq[{\Delta, [p/u]\Delta'}]{\kappa}{\kappa}$ \\
-    \ooo By definition of substitution, $\kappa = [p/u]\kappa$ \\
-    \ooo Therefore $D' :: \judgeSortEq[{\Delta, [p/u]\Delta'}]{[p/u]\kappa}{[p/u]\kappa}$ \\
-  \end{tabbedproof}
-
-\item Case \textsc{SortEqImp}: 
-  \begin{tabbedproof}
-    \oo Assume $D :: \judgeSortEq[{\Delta, u:\omega, \Delta'}]{\omega'_1 \To \omega''_1}{\omega'_2 \To \omega''_2}$\\
-    \ooo By context substitution on $D_C$, we have $D'_C :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
-    \ooo By inversion on $D$, we get \\
-    \oooo $E_1 :: \judgeSortEq[{\Delta, u:\omega, \Delta'}]{\omega'_1}{\omega''_1}$\\
-    \oooo $E_2 :: \judgeSortEq[{\Delta, u:\omega, \Delta'}]{\omega'_2}{\omega''_2}$\\
-    \ooo By induction on $E_1$, we have $E'_1 :: \judgeSortEq[{\Delta, [p/u]\Delta'}]{[p/u]\omega'_1}{[p/u]\omega''_1}$\\
-    \ooo By induction on $E_2$, we have $E'_2 :: \judgeSortEq[{\Delta, [p/u]\Delta'}]{[p/u]\omega'_2}{[p/u]\omega''_2}$\\
-    \ooo By rule \textsc{SortEqImp} with $E'_1, E'_2$, we have  \\
-    \ooox $D' :: \judgeSortEq[{\Delta, [p/u]\Delta'}]{[p/u]\omega'_1 \To [p/u]\omega''_1}{[p/u]\omega'_2 \To [p/u]\omega''_2}$\\
-    \ooo By definition of substitution, $[p/u]\omega'_1 \To [p/u]\omega''_1 = [p/u](\omega'_1 \To \omega''_1)$\\
-    \ooo By definition of substitution, $[p/u]\omega'_2 \To [p/u]\omega''_2 = [p/u](\omega'_2 \To \omega''_2)$\\
-    \ooo Therefore 
-           $D' :: \judgeSortEq[{\Delta, [p/u]\Delta'}]{[p/u](\omega'_1 \To \omega''_1)}{[p/u](\omega'_2 \To \omega''_2)}$\\
-  \end{tabbedproof}
-
-\item Case \textsc{SortEqType}:
-  \begin{tabbedproof}
-    \oo Assume $D :: \judgeSortEq[{\Delta, u:\omega, \Delta'}]{A}{B}$ \\
-    \ooo By inversion on $D$, we have $D_1 :: \judgeKeq[{\restrictkind{\Delta, u:\omega, \Delta'}}]{A}{B}{\bigstar}$ \\
-    \ooo Case analyze $\omega$: \\
-    \oooo When $\omega = \kappa$: \\
-    \ooooo We have $\judgeA{\Delta}{\tau}{\kappa}$, where $p = \tau$ \\
-    \ooooo By definition, 
-           $\restrictkind{\Delta, u:\kappa, \Delta'} = \restrictkind{\Delta}, u:\kappa, \restrictkind{\Delta'}$ \\
-    \ooooo Therefore $D_1 :: \judgeKeq[{\restrictkind{\Delta}, u:\kappa, \restrictkind{\Delta'}}]{A}{B}{\bigstar}$ \\
-    \ooooo By equality rule for types, we have 
-           $D'_1 :: \judgeKeq[{\restrictkind{\Delta}, \restrictkind{\Delta'}}]{[\tau/u]A}{[\tau/u]B}{\bigstar}$ \\
-    \ooooo Since kinds have no free variables, $\restrictkind{\Delta'} = \restrictkind{[\tau/u]\Delta'}$ \\
-    \ooooo Therefore $D'_1 :: \judgeKeq[{\restrictkind{\Delta}, \restrictkind{[\tau/u]\Delta'}}]{[\tau/u]A}{[\tau/u]B}{\bigstar}$ \\
-    \ooooo By rule \textsc{SortEqType}, we have 
-            $D' :: \judgeSortEq[{\Delta, [\tau/u]\Delta'}]{[\tau/u]A}{[\tau/u]B}$ \\
-    \ooooo Therefore $D' :: \judgeSortEq[{\Delta, [p/u]\Delta'}]{[p/u]A}{[p/u]B}$ \\
-    \oooo Otherwise when $\omega \not= \kappa$: \\
-    \ooooo By definition, 
-           $\restrictkind{\Delta, u:\kappa, \Delta'} = \restrictkind{\Delta}, \restrictkind{\Delta'}$ \\
-    \ooooo Since kinds have no free variables, $\restrictkind{\Delta'} = \restrictkind{[p/u]\Delta'}$ \\
-    \ooooo Therefore $\restrictkind{\Delta, u:\kappa, \Delta'} = \restrictkind{\Delta, [p/u]\Delta'}$ \\
-    \ooooo Since $u \not\in FV(A)$, we have $[p/u]A = A$ \\
-    \ooooo Since $u \not\in FV(B)$, we have $[p/u]A = B$ \\
-    \ooooo Therefore $D_1 :: \judgeKeq[{\restrictkind{\Delta, [p/u]\Delta'}}]{[p/u]A}{[p/u]B}{\bigstar}$ \\
-    \ooooo By rule \textsc{SortEqType}, we have $D' :: \judgeSortEq[{\Delta, [p/u]\Delta'}]{[p/u]A}{[p/u]B}$\\
-  \end{tabbedproof}
-\end{itemize}
-\end{proof}
-
-
-\subsection{Substitution for Terms and Specifications}
-
-\subsubsection{Semantics of Substitution}
-
-\begin{lemma}{(Substitution Preserves Meaning)}
+\begin{lemma*}{(Substitution Preserves Meaning)}
 If $D_0 :: \judgeA{p}{\omega}$, then we have 
 
 \begin{enumerate}
@@ -3525,8 +3739,7 @@ If $D_0 :: \judgeA{p}{\omega}$, then we have
                 \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$, 
   we have that $\interp{D}\;(\delta, \interp{D_0}\;\delta, \delta') = \interp{D'}\;(\delta, \delta')$ 
 \end{enumerate}
-\end{lemma}
-
+\end{lemma*}
 \begin{proof}
   Assume $D_0 :: \judgeA{p}{\omega}$. Now we proceed by mutual structural induction.
   
@@ -4355,224 +4568,422 @@ If $D_0 :: \judgeA{p}{\omega}$, then we have
 \end{proof}
 
 
-\section{The Program Logic}
+\subsubsection{The Restriction Operations}
 
-\begin{figure}[h]
-\begin{mathpar}
-  \inferrule*{\judgeS{\spec{p}{c}{a:A}{q} \specimp \mspec{p}{\comp{c}}{a:A}{q}}} 
-             {\validS{\spec{p}{c}{a:A}{q} \specimp \mspec{p}{\comp{c}}{a:A}{q}}} 
-\and 
-  \inferrule*
-    {\judgeS{\mspec{p}{c}{a:A}{q} \specimp \spec{p}{\comp{c}}{a:A}{q}}} 
-    {\validS{\mspec{p}{c}{a:A}{q} \specimp \spec{p}{\comp{c}}{a:A}{q}}} 
-\and
-
-  \inferrule*
-    {\judgeS{\spec{P}{e}{a:A}{P \land a = e}}}
-    {\validS{\spec{P}{e}{a:A}{P \land a = e}}}
-\and
-
-  \inferrule*
-    {\judgeS{\spec{e \pointsto_A -}{e := e'}{a:\unittype}{e \pointsto_A e'}}}
-    {\validS{\spec{e \pointsto_A -}{e := e'}{a:\unittype}{e \pointsto_A e'}}}
-\and
-
-  \inferrule*
-    {\judgeS{\spec{\emp}{\newref{A}{e}}{a:\reftype{A}}{a \pointsto e}}}
-    {\validS{\spec{\emp}{\newref{A}{e}}{a:\reftype{A}}{a \pointsto e}}}
-\and
-
-  \inferrule*
-    {\judgeS{\spec{e \pointsto_A e'}{!e}{a:A}{e \pointsto_A e' \land a = e'}}}
-    {\validS{\spec{e \pointsto_A e'}{!e}{a:A}{e \pointsto_A e' \land a = e'}}}
-\and
-
-  \inferrule*
-            {\validS{\mspec{p}{e}{x:A}{q}} \\
-             \validS[\Delta,x:A]{\spec{q}{c}{a:B}{r}}}
-            {\validS{\spec{p}{\letv{x}{e}{c}}{a:B}{r}}}
-\and
-
-  \inferrule*
-            {\validS{(\forall x:\monad{A}.\; \mspec{p}x{a:A}{q(a)} \specimp \mspec{p}{e}{a:A}{q})}}
-            {\validS{\mspec{p}{\fix{x:\monad{A}}{e}}{a:A}{q}}}
-\and
-
-  \inferrule*{\validS{\setof{r} \specimp \spec{p}{c}{a:A}{q}} \\
-              \mbox{$r$ is a pure formula} \\
-              \validP{p \implies r}}
-             {\validS{\spec{p}{c}{a:A}{q}}}
-\and
-
-  \inferrule*{\validS{\setof{r} \specimp \spec{p \land r}{c}{a:A}{q}}}
-             {\validS{\setof{r} \specimp \spec{p}{c}{a:A}{q}}}
-\and
-
-  \inferrule*{ }
-             {\validS{\setof{\validprop{S}} \specimp S}}
-\and
-
-  \inferrule*{\validS[\Delta, u:\omega]{\spec{p}{c}{a:A}{q}}}
-             {\validS{\spec{\exists u:\omega.\;p}{c}{a:A}{q}}}
-\and
-  \inferrule*{\validS{\spec{p'}{c}{a:A}{q'}} \\ \validP{p \implies p'} \\ \validP{q' \implies q}}
-             {\validS{\spec{p}{c}{a:A}{q}}}
-  
-\and
-
-  \inferrule*{\validS{\spec{p}{c}{a:A}{q}} \\
-              \validS{\spec{p'}{c}{a:A}{q'}}}
-             {\validS{\spec{p \vee p'}{c}{a:A}{q \vee q'}}}
-\and
-
-  \inferrule*{\validP{p}}
-             {\validS{\setof{p}}}
-
-\and
-\inferrule*[]
-          {\judgeS{S} \\ \judgeA{r}{\assert} }
-          {\validS{S \specimp S \otimes r}}
-
-\end{mathpar}
-\caption{Axioms of the Program Logic}
-\label{spec-logic-axioms}
-\end{figure}
-
-\begin{figure}
-\begin{mathpar}
-  \inferrule*{\validS{S}}
-             {\validP{\validprop{S}}}
-\and
-  \inferrule*{\judgeP{\Delta}{p}{\assert}}
-             {\validP{\validprop{\setof{p}} \implies p}}
-\and 
-  \inferrule*{\judgeEqA{p}{q}{\omega}}
-             {\validP{p =_\omega q}}
-\\
-  \mbox{(plus axioms of higher-order separation logic)}
-\end{mathpar}
-\caption{Axioms of Assertion Logic}
-\label{assertion-logic-axioms}  
-\end{figure}
-
-\begin{figure}
-\begin{mathpar}
-\inferrule*[]
-          {\judgeA{p}{\omega}}
-          {\judgeEqA{p}{p}{\omega}}
-\and
-\inferrule*[]
-          {\judgeEqA{p}{q}{\omega}}
-          {\judgeEqA{q}{p}{\omega}}
-\and
-\inferrule*[]
-          {\judgeEqA{p}{q}{\omega} \\ \judgeEqA{q}{r}{\omega}}
-          {\judgeEqA{p}{r}{\omega}}
-\and
-\inferrule*[]
-          {\judgeA{(\fun{x}{\omega}{p})\;q}{\omega'} \\
-           \mbox{$q$ satisfies conditions of substitution theorem}}
-          {\judgeEqA{(\fun{x}{\omega}{p})\;q}{[q/x]p}{\omega'}}
-\and
-\inferrule*[]
-          {\judgeEqA[\Delta, x:\omega]{p\;x}{p'\;x}{\omega'}}
-          {\judgeEqA{\fun{x}{\omega}{p}}{\fun{x}{\omega}{p'}}{\omega \To \omega'}}
-\and 
-\inferrule*[]
-          {\judgeEqA{p}{p'}{\omega \To \omega'} \\
-           \judgeEqA{q}{q'}{\omega}}
-          {\judgeEqA{p\;q}{p'\;q'}{\omega'}}
-\and
-\inferrule*[]
-          {x:\omega \in \Delta}
-          {\judgeEqA{x}{x}{\omega}}
-\and
-\inferrule*[]
-          {\judgeKeq[\restrictkind{\Delta}]{\tau}{\tau'}{\kappa}}
-          {\judgeEqA{\tau}{\tau'}{\kappa}}
-\and
-\inferrule*[]
-          {\judgeEq[\restrictkind{\Delta}]{\restricttype{\Delta}}{e}{e'}{A}}
-          {\judgeEqA{e}{e'}{A}}
-\and 
-\inferrule*[]
-          {\validP{p \iff q}}
-          {\judgeEqA{p}{q}{\assert}}
-\and
-\inferrule*[]
-          {\judgeEqA{p}{q}{\omega} \\ \judgeSortEq{\omega}{\omega'}}
-          {\judgeEqA{p}{q}{\omega'}}
-\end{mathpar}
-\caption{Equality Judgement for Assertions}
-\label{assertion-equality}  
-\end{figure}
-
-
-My program logic consists of three judgments:
-
-\begin{enumerate}
-\item $\validP{p}$, which asserts that a proposition $p$ is valid.
-
-\item $\validS{S}$, which asserts that a specification $S$ is valid.
-
-\item $\judgeEqA{p}{q}{\omega}$, which asserts that $p$ and $q$ are validly equal.
-\end{enumerate}
-%
-
-The semantics of these three judgments is given as follows:
-\begin{enumerate}
-\item An assertion $\judgeP{\Delta}{p}{\assert}$ is valid, if and only if
-for all $\delta \in \interp{\judgeACtx{\Delta}}$,
-$\interp{\judgeP{\Delta}{p}{\assert}}\;\delta = \top$.
-
-\item Similarly, a specification $\judgeS{S}$ is valid if and only
-if, for all $\delta \in \interp{\judgeACtx{\Delta}}$,
-$\interp{\judgeS{S}}\;\delta = \top$.
-
-\item Finally, two assertion terms $\judgeA{p}{\omega}$ and
-$\judgeA{q}{\omega}$ are validly equal, if and only if for all $\delta
-\in \interp{\judgeACtx{\Delta}}$,
-$\interp{\judgeP{\Delta}{p}{\assert}}\;\delta$ is equal to
-$\interp{\judgeP{\Delta}{p}{\assert}}\;\delta$
-\end{enumerate}
-
-So this says that for any assignment of the free variables, a valid
-assertion $p$ must be true, and similarly a valid specification $S$
-must be true. Likewise, two syntactic terms $p$ and $q$ are validly
-equal if their interpretations are equal under all environments. 
-
-The program logic consists of a set of three mutually-recursive
-judgments for deriving valid assertions, specifications, and
-equalities. In Figure~\ref{spec-logic-axioms}, I give the rules for
-deriving valid specifications. In Figure~\ref{assertion-logic-axioms},
-I give some of the rules for deriving valid assertions, and in
-Figure~\ref{assertion-equality}, I give rules for deriving equalities
-between terms.
-
-In Figures \ref{spec-logic-axioms} and \ref{assertion-logic-axioms}, I
-do not give a complete list of the axioms: in particular, I have not
-given axioms corresponding to the axioms of intuitionistic logic or
-separation logic. The soundness of these axioms is immediate from the
-semantics, and instead I have focused on the distinctive rules of the
-program logic.
-
-\begin{theorem}{(Soundness of the Program Logic)}
-  \begin{enumerate}
-  \item If $\validP{p}$, then $\judgeA{p}{\assert}$ is valid.
-
-  \item If $\validS{S}$, the $\judgeS{S}$ is valid.
-
-  \item If $\judgeEqA{p}{q}{\omega}$, then $p$ and $q$ are validly equal.
-  \end{enumerate}
-\end{theorem}
-
+\begin{lemma*}{(Restriction on Kinds Makes Sense)}
+If $D :: \judgeACtx{\Delta}$ and $\delta \in \interp{D}$, then 
+$\restricttyenv{\Delta}{\delta} \in \interp{\restrictkind{\Delta}}$. 
+\end{lemma*}
 \begin{proof}
-  The proof of these three theorems follows from a mutual structural
-  induction.  The soundness of each atomic rule for the two validity
-  judgements is proven in the next section. The soundness of the rules
-  for equality are a consequence of the equality rules we have already
-  proven, and the cartesian closure of Set.  
+We proceed by induction on $D$. \\
+\begin{itemize}
+\item Case \textsc{CtxNil}:
+  \begin{tabbedproof}
+    \oo Assume $D :: \judgeACtx{\cdot}$ \\
+    \oo Assume $\delta \in \interp{D}$ \\
+    \ooo Then $\interp{D} = 1$, and $\delta = \unit$ \\
+    \ooo By semantics, $\restrictkind{\cdot} = \cdot$ \\
+    \ooo By semantics, $\restricttyenv{\cdot}{\unit} = \unit$ \\
+    \ooo So $\interp{\restrictkind{\cdot}} = 1$\\
+    \ooo So $\restricttyenv{\cdot}{\unit} \in \interp{\restrictkind{\cdot}}$ \\
+  \end{tabbedproof}
+
+\item Case \textsc{CtxCons}:
+  \begin{tabbedproof}
+    \oo Assume $D :: \judgeACtx{\Delta, u:\omega}$ \\
+    \oo Assume $(\delta, x) \in \interp{D}$ \\
+    \ooo By inversion on $D$, we have \\
+    \oooo $D_1 :: \judgeACtx{\Delta}$ \\
+    \oooo $D_2 :: \judgeSort{\omega}$ \\
+    \ooo By semantics $\delta \in \interp{\judgeACtx{\Delta}}$ \\
+    \ooo By semantics $x \in \interp{\judgeSort{\omega}}\delta$ \\
+    \ooo By cases on $\omega$: \\
+    \oooo If $\omega = \kappa$: \\
+    \ooooo Then $\restrictkind{\Delta, u:\kappa} = \restrictkind{\Delta}, u:\kappa$ \\
+    \ooooo Then $x \in \interp{\kappa}$ \\
+    \ooooo Then $\restricttyenv{\Delta, u:\kappa}{(\delta,x)} = 
+                (\restricttyenv{\Delta}{\delta}, x)$ \\
+    \ooooo By induction, $\restricttyenv{\Delta}{\delta} \in \interp{\restrictkind{\Delta}}$ \\
+    \ooooo By definition, $\interp{\restrictkind{\Delta, u:\kappa}} = \interp{\restrictkind{\Delta}} \times \interp{\kappa}$ \\
+    \ooooo Therefore $(\restricttyenv{\Delta}{\delta}, x) \in \interp{\restrictkind{\Delta}} \times \interp{\kappa}$ \\
+    \oooo If $\omega \not= \kappa$: \\
+    \ooooo Then $\restrictkind{\Delta, u:\kappa} = \restrictkind{\Delta}$ \\
+    \ooooo Then $\restricttyenv{\Delta, u:\kappa}{(\delta,x)} = 
+                \restricttyenv{\Delta}{\delta}$ \\
+    \ooooo By induction, $\restricttyenv{\Delta}{\delta} \in \interp{\restrictkind{\Delta}}$ \\
+    \ooooo Therefore $\restricttyenv{\Delta, u:\omega}{(\delta, x)} \in \interp{\restrictkind{\Delta, u:\omega}}$ \\
+  \end{tabbedproof}
+\end{itemize}
 \end{proof}
+
+\begin{lemma*}{(Restriction for Values Makes Sense)}
+\label{value-restriction}
+If $\judgeACtx{\Delta}$ and $\delta \in \interp{\judgeACtx{\Delta}}$, 
+then $\restrictvals{\Delta}{\delta} \in U(\interp{\restrictkind{\Delta} \vdash \restricttype{\Delta}}\;
+            \restricttyenv{\Delta}{\delta}\;(K,K))$
+\end{lemma*}
+\begin{proof}
+As before, we proceed by induction on $\judgeACtx{\Delta}$. 
+\begin{itemize}
+\item Case \textsc{CtxNil}: 
+  \begin{tabbedproof}
+    \oo Assume $D :: \judgeACtx{\cdot}$ \\
+    \oo Assume $\delta \in \interp{\cdot}$ \\
+    \ooo By semantics, $\interp{\cdot} = 1$ \\
+    \ooo Therefore $\delta = \unit$ \\
+    \ooo By semantics, $\restrictkind{\cdot} = \cdot$ \\
+    \ooo By semantics, $\restricttype{\cdot} = \cdot$ \\
+    \ooo By semantics, $\restricttyenv{\cdot}{\delta} = \unit$ \\
+    \ooo Now, let $\eta = \unit$ in CPO. \\
+    \ooo Then $\interp{\restrictkind{\cdot} \vdash \restricttype{\cdot}}\;\unit\;(K,K) = 1$ in CPO \\
+    \ooo Since $U(1) = 1$, we have $\eta \in \interp{\restrictkind{\Delta} \vdash \restricttype{\Delta}}\;
+            \restricttyenv{\Delta}{\delta}\;
+            (K,K)$ \\
+  \end{tabbedproof}
+
+\item Case \textsc{CtxCons}: 
+  \begin{tabbedproof}
+    \oo Assume $D :: \judgeACtx{\Delta, u:\omega}$ \\
+    \oo Assume $(\delta, x) \in \interp{\judgeACtx{\Delta, u:\omega}}$ \\
+    \ooo By inversion on $D$: \\
+    \oooo $D_1 :: \judgeACtx{\Delta}$ \\
+    \oooo $D_2 :: \judgeSort{\omega}$ \\
+    \ooo By semantics, $\delta \in \interp{D_1 :: \judgeACtx{\Delta}}$ \\
+    \ooo By semantics, $x \in \interp{D_2 :: \judgeSort{\omega}}\;\delta$ \\
+    \ooo By induction, there exists an $\eta$ such that \\
+    \oooo $\restricttyenv{\Delta}{\delta} \in 
+             U(\interp{\restrictkind{\Delta} \vdash \restricttype{\Delta}}\;
+                      \restricttyenv{\Delta}{\delta}\;(K,K))$ and \\
+    \ooo Case analyze $\omega$: \\
+    \oooo If $\omega = \kappa$: \\
+    \ooooo Then $\restrictkind{\Delta, u:\kappa} = \restrictkind{\Delta}, u:\kappa$ \\
+    \ooooo Then $\restricttyenv{\Delta,u:\kappa}{(\delta,x)} = (\restricttyenv{\Delta}{\delta}, x)$ \\
+    \ooooo Then $\restricttype{\Delta, u:\kappa} = \restricttype{\Delta}$ \\
+    \ooooo Then $\restricttyenv{\Delta, u:\kappa}{(\delta, x)} = \restricttyenv{\Delta}{\delta}$ \\
+    \ooooo By weakening, $\interp{\restrictkind{\Delta} \vdash
+                              \restricttype{\Delta}}\; \restricttyenv{\Delta}{\delta} 
+                          = 
+                          \interp{\restrictkind{\Delta}, u:\kappa \vdash
+                              \restricttype{\Delta}}\;
+                      (\restricttyenv{\Delta}{\delta}, x)$\\
+    \ooooo So $\restrictvals{\Delta}{\delta} \in U(\interp{\restrictkind{\Delta}, u:\kappa \vdash
+                              \restricttype{\Delta}}\;
+                      (\restricttyenv{\Delta}{\delta}, x)\;(K,K))$\\
+    \ooooo So $\restrictvals{\Delta}{\delta} \in U(\interp{\restrictkind{\Delta}, u:\kappa \vdash
+                              \restricttype{\Delta}}\;
+                      \restricttyenv{\Delta,u:\kappa}{(\delta, x)}\;(K,K))$\\
+    \ooooo So $\restrictvals{\Delta}{\delta} \in U(\interp{\restrictkind{\Delta}, u:\kappa \vdash
+                              \restricttype{\Delta, u:\kappa}}\;
+                      \restricttyenv{\Delta,u:\kappa}{(\delta, x)}\;(K,K))$\\
+    \ooooo So $\restrictvals{\Delta}{\delta} \in U(\interp{\restrictkind{\Delta, u:\kappa} \vdash
+                              \restricttype{\Delta, u:\kappa}}\;
+                      \restricttyenv{\Delta,u:\kappa}{(\delta, x)}\;(K,K))$\\
+    \ooooo Therefore 
+        $\restricttyenv{\Delta,u:\kappa}{\delta,x} \in U(\interp{\restrictkind{\Delta, u:\kappa} \vdash
+                                                                 \restricttype{\Delta, u:\kappa}}\;
+                      \restricttyenv{\Delta,u:\kappa}{(\delta, x)}\;(K,K))$\\
+    \oooo If $\omega = A$: \\
+    \ooooo Then $\restrictkind{\Delta, u:A} = \restrictkind{\Delta}$ \\
+    \ooooo Then $\restricttyenv{\Delta,u:A}{(\delta,x)} = \restricttyenv{\Delta}{\delta}$ \\
+    \ooooo Then $\restricttype{\Delta, u:A} = \restricttype{\Delta}, u:A$ \\
+    \ooooo Then $\restricttyenv{\Delta, u:A}{(\delta, x)} = (\restricttyenv{\Delta}{\delta}, x)$ \\
+    \ooooo By equality,  
+           $\interp{\restrictkind{\Delta} \vdash \restricttype{\Delta}}\;
+            \restricttyenv{\Delta}{\delta}
+            = 
+            \interp{\restrictkind{\Delta, u:A} \vdash \restricttype{\Delta}}\;
+            \restricttyenv{\Delta}{(\delta, x)}$ \\
+    \ooooo So $\restrictvals{\Delta}{\delta} \in \interp{\restrictkind{\Delta, u:A} \vdash \restricttype{\Delta}}\;
+            \restricttyenv{\Delta,u:A}{(\delta, x)}$ \\
+    \ooooo Also, $x \in \interp{\judgeSort{A}}\;\delta$ \\
+    \ooooo Therefore $x \in U(\interp{\judgeWK[\restrictkind{\Delta}]{A}{\bigstar}}\;
+                              \restricttyenv{\Delta}{\delta}\;(K,K))$ \\
+    \ooooo Therefore $x \in U(\interp{\judgeWK[\restrictkind{\Delta, u:A}]{A}{\bigstar}}\;
+                               \restricttyenv{\Delta, u:A}{(\delta, x)}\;(K,K))$ \\
+    \ooooo Let $T \in CPO = \interp{\judgeWK[\restrictkind{\Delta, u:A}]{A}{\bigstar}}\;
+                               \restricttyenv{\Delta, u:A}{(\delta, x)}\;(K,K)$ \\
+    \ooooo Now, $\sqsubseteq_T$ is an order for the predomain, and $x \in U(T)$. \\
+    \ooooo Therefore, $(\restrictvals{\Delta}{\delta}, x) \in 
+                         U(\interp{\restrictkind{\Delta, u:A} \vdash \restricttype{\Delta}}\;
+            \restricttyenv{\Delta, u:A}{(\delta, x)}) \times U(T)$ \\
+    \ooooo Therefore, $(\restrictvals{\Delta}{\delta}, x) \in 
+                         U(\interp{\restrictkind{\Delta, u:A} \vdash \restricttype{\Delta}}\;
+            \restricttyenv{\Delta, u:A}{(\delta, x)} \times T)$ \\
+    \ooooo Therefore, $(\restrictvals{\Delta}{\delta}, x) \in 
+                         U(\interp{\restrictkind{\Delta, u:A} \vdash \restricttype{\Delta, u:A}}\;
+            \restricttyenv{\Delta, u:A}{(\delta, x)})$ \\
+    \ooooo Therefore, $\restrictvals{\Delta, u:A}{(\delta,x)} \in 
+                         U(\interp{\restrictkind{\Delta, u:A} \vdash \restricttype{\Delta, u:A}}\;
+            \restricttyenv{\Delta, u:A}{(\delta, x)})$ \\
+
+    \oooo If $\omega \not= A$ and $\omega \not= \kappa$: \\
+    \ooooo Then $\restrictkind{\Delta, u:\omega} = \restrictkind{\Delta}$ \\
+    \ooooo Then $\restricttyenv{\Delta,u:\omega}{(\delta,x)} = \restricttyenv{\Delta}{\delta}$ \\
+    \ooooo Then $\restricttype{\Delta, u:\omega} = \restricttype{\Delta}$ \\
+    \ooooo Then $\restricttyenv{\Delta, u:\omega}{(\delta, x)} = \restricttyenv{\Delta}{\delta}$ \\
+    \ooooo Therefore, $\restrictvals{\Delta,u:\omega}{(\delta,x)} \in 
+              \interp{\restrictkind{\Delta, u:\omega} \vdash
+                      \restricttype{\Delta, u:\omega}}\;
+                     \restricttyenv{\Delta, u:\omega}{(\delta,x)}\;(K,K)$ \\
+
+  \end{tabbedproof}
+\end{itemize}
+\end{proof}
+
+\subsubsection{Semantics of Substitution}
+
+\begin{lemma*}{(Substitution Preserves Meaning)}
+Suppose we have that $\judgeA{p}{\omega}$.
+
+\begin{enumerate}
+\item If $\judgeACtx{\Delta, u:\omega, \Delta'}$ and either $u$ does not occur in any subterm of sort type in $\Delta'$, or  $\omega = \kappa$ and $p = \tau$, then  $(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') \in \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$ if and only if $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$
+
+\item  If $\judgeSort[\Delta, u:\omega, \Delta']{\omega'}$ and and either $u$ does not occur in any subterm of sort type in $\Delta'$ or $\omega'$, or $\omega = \kappa$ and $p = \tau$, then for all $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$, we have 
+\begin{displaymath}
+\interp{\judgeSort[{\Delta, u:\omega, \Delta'}]{\omega'}}\;(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = \interp{\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega'}}\;(\delta, \delta')
+\end{displaymath}
+\end{enumerate}
+\end{lemma*}
+\begin{proof}
+  We proceed by mutual induction on the derivations of context
+  well-formedness and sort well-formedness. 
+
+  As a note, even though contexts are properly maximally nested tuples
+  (a la Lisp s-expressions), we will overload the tuple notation and
+  treat expressions like $(\delta, \delta')$ as if the comma were a
+  proper concatenation that reassociates everything. This is a
+  harmless convenience thanks to the fact that tuples are associative
+  up to isomorphism.
+
+  \noindent Assume $D_0 :: \judgeA{p}{\omega}$ \\
+
+  \begin{enumerate}
+  \item First, we want to show $(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') \in 
+                                   \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$, 
+      if and only if $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$
+      
+      \begin{itemize}
+      \item Case \textsc{CtxNil}:
+        \begin{tabbedproof}
+          \oo Assume $\judgeACtx{\cdot}$ \\
+          \ooo Therefore $\cdot = \Delta, u:\omega, \Delta'$ \\
+          \ooo This is a contradiction; hence this case is impossible. \\
+        \end{tabbedproof}
+
+      \item Case \textsc{CtxCons}: 
+        \begin{tabbedproof}
+          \oo Assume $D :: \judgeACtx{\Delta_1, u_1:\omega_1}$ \\
+          \oo Assume either $u$ does not occur in any subterm of sort type in $\Delta'$, \\
+          \ox or $\omega = \kappa$ and $p = \tau$ \\
+          \oo Therefore $\Delta, u:\omega, \Delta' = \Delta_1, u_1:\omega_1$ \\
+          \oo $\Rightarrow$ direction:\\
+          \ooo Assume $(\delta, \interp{\judgeA[\Delta]{p}{\omega}}\;\delta, \delta') \in 
+                       \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$ \\
+          \oooo Case analyze $\Delta'$: \\
+          \ooooo If $\Delta' = \cdot$: \\
+          \oooooo Then $\delta' = \unit$ \\
+          \oooooo Then $\Delta = \Delta_1$ and $u = u_1$ and $\omega = \omega_1$ \\
+          \oooooo By inversion on $D :: \judgeACtx{\Delta_1, u:\omega}$, we get:\\
+          \ooooooo $D_1 :: \judgeACtx{\Delta}$ \\
+          \ooooooo $D_2 :: \judgeSort[\Delta]{\omega}$ \\
+          \oooooo By definition, $\delta \in \interp{\judgeACtx{\Delta}}$ \\
+          \oooooo By definition $[p/u]\cdot = \cdot$, and $\Delta, \cdot = \Delta$ \\
+          \oooooo Since $\delta' = \unit$, we have $(\delta, \delta') \simeq \delta$ \\
+          \oooooo Therefore $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$ \\
+          \ooooo If $\Delta' = \Delta'', u'':\omega''$: \\
+          \oooooo Then $\Delta, u:\omega, \Delta' = \Delta, u:\omega, \Delta'', u'':\omega''$ \\
+          \oooooo Then $\delta' = (\delta'', v'')$ \\
+          \oooooo By inversion on $D$, we get: \\
+          \ooooooo $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'', u'':\omega''}$ \\
+          \ooooooo $D_2 :: \judgeSort[{\Delta, u:\omega, \Delta''}]{\omega''}$ \\
+          \oooooo Therefore, $(\delta, \interp{p}{\omega}\;\delta, \delta'') \in 
+                             \interp{\Delta, u:\omega, \Delta''}$ \\
+          \oooooo Therefore, $v'' \in 
+                  \interp{\judgeSort[{\Delta, u:\omega, \Delta''}]{\omega''}}\;
+                     (\delta, \interp{p}{\omega}\;\delta, \delta'')$ \\
+          \oooooo Then, by induction on $D_1$, we have $(\delta, \delta'') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$ \\
+          \oooooo Then, by mutual induction on $D_2$, we have \\ 
+          \ooooox  $\interp{\judgeSort[{\Delta, u:\omega, \Delta''}]{\omega''}} 
+                      \;(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta'') 
+                   $ \\
+          \ooooox equals $\interp{\judgeSort[{\Delta, [p/u]\Delta''}]{[p/u]\omega''}}\;(\delta,\delta'')$ \\
+          \oooooo Therefore, $v'' \in \interp{\judgeSort[{\Delta, [p/u]\Delta''}]{[p/u]\omega''}}\;(\delta,\delta'')$ \\ 
+          \oooooo Therefore, 
+                   $(\delta, \delta'', v'') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'', [p/u]\omega''}}$ \\
+          \oooooo Therefore $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$ \\
+          \oo $\Leftarrow$ direction:\\
+          \ooo Assume $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$ \\
+          \ooo Case analyze $\Delta'$: \\
+          \oooo If $\Delta' = \cdot$: \\
+          \ooooo Then $\delta' = \unit$ \\
+          \ooooo Hence $\delta \in \interp{D_1 :: \judgeACtx{\Delta}}$ \\
+          \ooooo Hence $(\delta, \interp{\judgeA{p}{\omega}}\;\delta) \in \interp{\judgeACtx{\Delta, u:\omega}}$ \\
+          \oooo If $\Delta' = \Delta'', u'':[p/u]\omega''$: \\
+          \ooooo Then $\delta' =\delta'', v$ \\
+          \ooooo Hence $(\delta, \delta'') \in \interp{\judgeACtx{\Delta, u:\omega, \Delta''}}$ \\
+          \ooooo Hence $v \in \interp{\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega''}}$ \\
+          \ooooo By inversion on $D$, we have \\
+          \ooooox $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta''}$ \\
+          \ooooox $D_2 :: \judgeSort[{\Delta, u:\omega, \Delta''}]{\omega''}$ \\
+          \ooooo By induction, we know that $(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta'') \in \interp{\judgeACtx{\Delta, u:\omega, \Delta''}}$ \\
+          \ooooo By induction, we know that $\interp{\judgeSort[{\Delta,[p/u]\Delta''}]{[p/u]\omega''}}(\delta,\delta'')$ \\
+          \oooox equals $\interp{\judgeSort[\Delta, u:\omega, \Delta'']{\omega''}}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta'')$ \\
+          \ooooo Hence $v \in \interp{\judgeSort[\Delta, u:\omega, \Delta'']{\omega''}}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta'')$ \\
+          \ooooo Hence $(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta'', v) \in \interp{\judgeACtx{\Delta, u:\omega, \Delta'', u'':\omega''}}$ \\
+        \end{tabbedproof}
+      \end{itemize}
+
+  \item Now we want to show 
+    \begin{displaymath}
+      \interp{\judgeSort[{\Delta, u:\omega, \Delta'}]{\omega'}}\;(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = \interp{\judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega'}}\;(\delta, \delta')
+    \end{displaymath}
+
+    \begin{itemize}
+    \item Case \textsc{SortKind}: 
+      \begin{tabbedproof}
+        \oo Assume we have $D :: \judgeSort[{\Delta, u:\omega, \Delta'}]{\kappa}$ \\
+        \oo By substitution we have $D_1 :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\kappa}$ \\
+        \oo Assume we have $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$ \\
+        \oo Therefore we know $\judgeACtx{\Delta, u:\omega, \Delta'}$ \\
+        \oo Therefore we know $\judgeACtx{\Delta, [p/u]\Delta'}$ \\
+        \oo By induction $(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') \in \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$ \\
+        \oo Then $\interp{\judgeSort[{\Delta, u:\omega, \Delta'}]{\kappa}}\;
+                     (\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = \interp{\kappa}$ \\
+        \oo Then $\interp{\judgeSort[{\Delta, [p/u]\Delta'}]{\kappa}}\;
+                     (\delta, \delta') = \interp{[p/u]\kappa}$ \\
+        \oo However, $[p/u]\kappa = \kappa$ \\
+        \oo Hence $\interp{\kappa} = \interp{[p/u]\kappa}$ \\
+        \oo Hence $\interp{\judgeSort[{\Delta, u:\omega, \Delta'}]{\kappa}}\;
+                     (\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') $ \\
+        \ox equals $\interp{\judgeSort[{\Delta, [p/u]\Delta'}]{\kappa}}\;
+                     (\delta, \delta')$ \\
+      \end{tabbedproof}
+
+    \item Case \textsc{SortProp}: 
+      \begin{tabbedproof}
+        \oo Assume we have $D :: \judgeSort[{\Delta, u:\omega, \Delta'}]{\assert}$ \\
+        \oo Assume we have $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$ \\
+        \ooo By substitution,  $D_1 :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\assert}$ \\
+        \ooo Therefore we know $\judgeACtx{\Delta, u:\omega, \Delta'}$ \\
+        \ooo Therefore we know $\judgeACtx{\Delta, [p/u]\Delta'}$ \\
+        \ooo By induction $(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') \in \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$ \\
+        \ooo Then $\interp{\judgeSort[{\Delta, u:\omega, \Delta'}]{\assert}}\;
+                     (\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = \interp{\assert}$ \\
+        \ooo Then $\interp{\judgeSort[{\Delta, [p/u]\Delta'}]{\assert}}\;
+                     (\delta, \delta') = \interp{[p/u]\assert}$ \\
+        \ooo However, $[p/u]\assert = \assert$ \\
+        \ooo Hence $\interp{\assert} = \interp{[p/u]\assert} = \powerset{H}$ \\
+        \ooo Hence $\interp{\judgeSort[{\Delta, u:\omega, \Delta'}]{\assert}}\;
+                     (\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') $ \\
+        \oox equals $\interp{\judgeSort[{\Delta, [p/u]\Delta'}]{\assert}}\;
+                     (\delta, \delta')$ \\
+      \end{tabbedproof}
+
+    \item Case \textsc{SortImp}: 
+      \begin{tabbedproof}
+        \oo Assume we have $D :: \judgeSort[{\Delta, u:\omega, \Delta'}]{\omega_1 \To \omega_2}$ \\
+        \oo Assume we have $(\delta, \delta') \in \interp{\judgeACtx{\Delta, [p/u]\Delta'}}$ \\
+        \oo By substitution we have $E :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u](\omega_1 \To \omega_2)}$ \\
+        \oo Then by inversion on $D$ we have:\\
+        \ooo $D_1 :: \judgeSort[{\Delta, u:\omega, \Delta'}]{\omega_1}$ \\
+        \ooo $D_2 :: \judgeSort[{\Delta, u:\omega, \Delta'}]{\omega_2}$ \\
+        \oo Then by inversion on $E$ we have:\\
+        \ooo $E_1 :: \judgeSort[{\Delta ,[p/u]\Delta'}]{[p/u]\omega_1}$ \\
+        \ooo $E_2 :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]\omega_2}$ \\
+        \oo Therefore we know $\judgeACtx{\Delta, u:\omega, \Delta'}$ \\
+        \oo By induction we know $(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') \in \interp{\judgeACtx{\Delta, u:\omega, \Delta'}}$ \\
+        \oo By semantics, $\interp{D}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta')$\\
+        \oox $= \interp{D_1}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta')
+                 \to
+                  \interp{D_2}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta')$\\
+        \oo By semantics, $\interp{E}(\delta, \delta')$\\
+        \oox $= \interp{E_1}(\delta, \delta')
+                 \to
+                  \interp{E_2}(\delta, \delta')$\\
+        \oo By induction, we have 
+              $\interp{D_1}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = 
+               \interp{E_1}(\delta, \delta')$ \\
+        \oo By induction, we have 
+              $\interp{D_2}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = 
+               \interp{E_2}(\delta, \delta')$ \\
+        \oo Therefore $\interp{D}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = 
+                        \interp{E}(\delta, \delta')$ \\
+      \end{tabbedproof}
+
+
+
+    \item Case \textsc{SortType}: 
+      \begin{tabbedproof}
+        \oo Assume $D :: \judgeSort[{\Delta, u:\omega, \Delta'}]{A}$ \\
+        \oo By substitution, we have $D' :: \judgeSort[{\Delta, u:\omega, \Delta'}]{[p/u]A}$ \\
+        \oo By inversion on $D$, we have: \\
+        \ooo $D_1 :: \judgeACtx{\Delta, u:\omega, \Delta'}$ \\
+        \ooo $D_2 :: \judgeWK[\restrictkind{\Delta, u:\omega, \Delta'}]{A}{\bigstar}$ \\
+        \oo By inversion on $D'$ and the fact that $u$ either does not occur in $A$ \\
+        \ox or $\omega = \kappa$ and $p = \tau$, together with substitution, we have: \\
+        \ooo $D'_1 :: \judgeACtx{\Delta, [p/u]\Delta'}$ \\
+        \ooo $D'_2 :: \judgeWK[\restrictkind{\Delta, [p/u]\Delta'}]{[p/u]A}{\bigstar}$ \\
+        \oo By semantics, 
+             $\interp{D}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = 
+              \interp{D_2}\;(\restricttyenv{\Delta, u:\omega, \Delta'}
+             {(\delta, \interp{\judgeA{p}{\omega}}, \delta')})$ \\
+        \oo Case-analyze $\omega$:\\
+        \ooo If $\omega = \kappa$ and $u$ occurs:\\
+        \oooo Then $D_0 :: \judgeA{\tau}{\kappa}$, where $p = \tau$ \\
+        \oooo Then  $D_2 :: \judgeWK[\restrictkind{\Delta, u:\kappa, \Delta'}]{A}{\bigstar}$ \\
+        \oooo By inversion on $D_0$, we have $D'_0 :: \judgeWK[\restrictkind{\Delta}]{\tau}{\kappa}$ \\
+        \oooo By semantics, $\interp{D_0}\;\delta = \interp{D'_0}\;(\restricttyenv{\Delta}{\delta})$\\
+        \oooo Let $\theta$ = $\restricttyenv{\Delta}{\delta}$ \\
+        \oooo Then $\interp{D'_0}\;\theta$ = $\theta(\tau)$ \\ 
+        \oooo Likewise, $\interp{D_2}(\delta,\theta(\tau), \delta') = \interp{\judgeWK[\restrictkind{\Delta,u:\omega,\Delta'}]{A}{\bigstar}}\;(\restricttyenv{\Delta,u:\kappa,\Delta'}{[\delta, \theta(\tau), \delta']})$ \\
+        \oooo Hence $\interp{D_2}(\delta,\theta(\tau),\delta) = (\theta, u:\theta(\tau), \restricttyenv{\Delta'}{\delta'})(A)$\\
+        \oooo By definition of substitutions, 
+                 $\interp{D_2}(\delta,\theta(\tau),\delta) = (\theta, \restricttyenv{\Delta'}{\delta'})([\tau/u]A)$\\
+        \oooo By weakening on $D'_0$, we have $D'_0 :: \judgeWK[\Delta, \Delta']{\tau}{\kappa}$\\
+        \oooo By substitution of $D'_0$ into $D'_2$, we get
+               $D'_3 :: \judgeWK[\restrictkind{\Delta, \Delta'}]{[\tau/u]A}{\bigstar}$ \\
+        \oooo Since kinds have no free variables, 
+               $D'_3 :: \judgeWK[\restrictkind{\Delta, [\tau/u]\Delta'}]{[\tau/u]A}{\bigstar}$ \\
+        \oooo By definition, $\interp{D'_3}\;(\theta, \restricttyenv{\Delta'}{\delta'}) = 
+                               (\theta, \restricttyenv{\Delta'}{\delta'})([\tau/u]A)$ \\
+        \oooo Therefore $\interp{D'_3}\;(\theta, \restricttyenv{\Delta'}{\delta'}) = 
+                         \interp{D_2}\;(\theta, \restricttyenv{\Delta'}{\delta'})$ \\
+        \oooo By semantics, $\interp{D'}(\delta,\delta') = \interp{D'_3}\;(\theta, \restricttyenv{\Delta'}{\delta'})$ \\
+        \oooo Therefore $\interp{D}(\delta, \interp{\judgeA{\tau}{\kappa}}\;\delta, \delta') = 
+                          \interp{D'}(\delta,\delta')$ \\
+        \ooo If $\omega \not= \kappa$: \\
+        \oooo Then  $D_2 :: \judgeWK[\restrictkind{\Delta, u:\omega, \Delta'}]{A}{\bigstar}$ \\
+        \oooo Because $\omega \not= \kappa$, 
+                 $\restrictkind{\Delta, u:\omega, \Delta'} = \restrictkind{\Delta, \Delta'}$ \\
+        \oooo Because kinds have no variables, 
+                 $\restrictkind{\Delta, \Delta'} = \restrictkind{\Delta, [p/u]\Delta'}$ \\
+        \oooo Therefore $(\delta, \delta') \in \restrictkind{\Delta, [p/u]\Delta'}$ \\
+        \oooo Because $u \not\in FV(A)$, $A = [p/u]A$ \\
+        \oooo Thus $D_2 :: \judgeWK[\restrictkind{\Delta, [p/u]\Delta'}]{[p/u]A}{\bigstar}$ \\
+        \oooo Then by rule \textsc{SortType}, we have $D' :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]A}$ \\
+        \oooo So $\interp{D'}(\delta, \delta') = \interp{D_2}(\restricttyenv{\Delta,[p/u]\Delta'}{\delta, \delta'})$ \\
+        \oooo But then, $\interp{D}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = 
+                          \interp{D'}(\delta, \delta')$ \\
+        \ooo If $u$ does not occur in $A$: \\
+        \oooo Then  $D_2 :: \judgeWK[\restrictkind{\Delta, u:\omega, \Delta'}]{A}{\bigstar}$ \\
+        \oooo We know $\restrictkind{\Delta, u:\omega, \Delta'} = \restrictkind{\Delta}, u:\omega, \restrictkind{\Delta'}$ \\
+        \oooo Since $u$ does not occur, we can strengthen to $D'_2 :: \judgeWK[\restrictkind{\Delta}, \restrictkind{\Delta'}]{A}{\bigstar}$ \\
+        \oooo Because kinds have no variables, 
+                 $\restrictkind{\Delta, \Delta'} = \restrictkind{\Delta, [p/u]\Delta'}$ \\
+        \oooo Therefore $(\delta, \delta') \in \restrictkind{\Delta, [p/u]\Delta'}$ \\
+        \oooo Because $u \not\in FV(A)$, $A = [p/u]A$ \\
+        \oooo Thus $D_2 :: \judgeWK[\restrictkind{\Delta, [p/u]\Delta'}]{[p/u]A}{\bigstar}$ \\
+        \oooo Then by rule \textsc{SortType}, we have $D' :: \judgeSort[{\Delta, [p/u]\Delta'}]{[p/u]A}$ \\
+        \oooo So $\interp{D'}(\delta, \delta') = \interp{D_2}(\restricttyenv{\Delta,[p/u]\Delta'}{\delta, \delta'})$ \\
+        \oooo But then, $\interp{D}(\delta, \interp{\judgeA{p}{\omega}}\;\delta, \delta') = 
+                          \interp{D'}(\delta, \delta')$ \\
+
+      \end{tabbedproof}
+    \end{itemize}
+  \end{enumerate}
+\end{proof}
+
+
 
 
 \subsection{Soundness of Assertion Logic Axioms}
@@ -5173,7 +5584,7 @@ then $\judgeS{\spec{p \vee p'}{c}{a:A}{q \vee q'}}$ is valid.
 
 \begin{lemma}{(Equality Substitution)}
 If $\judgeS{\setof{r} \specimp \spec{p}{c[e/x]}{a:A}{q}}$ is valid and
-$\validP{r implies e =_A e'}$ is valid, then $\judgeS{\setof{r} \specimp \spec{p}{c[e'/x]}{a:A}{q}}$ is valid.
+$\validP{r \implies e =_A e'}$ is valid, then $\judgeS{\setof{r} \specimp \spec{p}{c[e'/x]}{a:A}{q}}$ is valid.
 \end{lemma}
 
 \begin{proof}
@@ -5284,8 +5695,8 @@ and $\judgeA{q \implies q'}{\assert}$ is valid, then $\judgeS{\spec{p'}{c}{a:A}{
 
 \subsection{The Syntactic Frame Property}
 
-Now, we can define a \emph{syntactic} frame operator $\Frame{S}{r}$
-on specifications. 
+We have defined a \emph{syntactic} frame operator $\Frame{S}{r}$ on
+specifications.
 
 \begin{displaymath}
   \begin{array}{lcl}
@@ -5300,10 +5711,10 @@ on specifications.
   \end{array}
 \end{displaymath}
 
-\begin{prop}{(Syntactic Well-Formedness of Frame Operator)}
+\begin{prop*}{(Syntactic Well-Formedness of Frame Operator)}
 If $\judgeS{S}$ and $\judgeA{p}{\assert}$, then
 we define $\judgeS{\Frame{S}{p}}$.  
-\end{prop}
+\end{prop*}
 \begin{proof}
   By structural induction on specifications.
 \end{proof}
@@ -5311,11 +5722,11 @@ we define $\judgeS{\Frame{S}{p}}$.
 More interesting than the syntactic well-formedness of the frame
 operator is its semantic well-formedness. 
 
-\begin{lemma}{(Syntactic Framing is Semantic Framing)}
+\begin{lemma*}{(Syntactic Framing is Semantic Framing)}
 If $\judgeS{S}$ and $\judgeA{r}{\assert}$, then for all $\delta \in \interp{\Delta}$, 
 $\interp{\judgeS{\Frame{S}{r}}}\;\delta = 
 \Frame{\interp{\judgeS{S}}\;\delta}{\interp{\judgeA{r}{\assert}}\;\delta}$ \\
-\end{lemma}
+\end{lemma*}
 
 \begin{proof}
   This proof proceeds by induction on the derivation of $S$. 

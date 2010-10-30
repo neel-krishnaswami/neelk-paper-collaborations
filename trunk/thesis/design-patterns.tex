@@ -2126,39 +2126,11 @@ Now, the proof of the $\mathsf{broadcast}$ function is quite easy:
 \section{Related Work}
 % \vspace{-0.5em}
 
-Parkinson developed a version of separation logic for Java in his
-doctoral dissertation~\cite{parkinson-thesis}. His logic does not have
-a notion of implications over specifications, instead using behavioral
-subtyping to determine what specification dynamically dispatched
-method calls could have. Parkinson and Bierman have also introduced a
-notion of abstract predicate family~\cite{parkinson-bierman-05}
-related to the higher-order quantification of Birkedal \emph{et al}.
-
-% Nanevski, Morisett and Birkedal have developed Hoare Type
-% Theory~\cite{htt}, which is a sophisticated dependently-typed
-% functional language that, like our system, uses a monadic discipline
-% to control effects.  Unlike our work, HTT takes advantage of type
-% dependency to directly integrate specifications into the types of
-% computation terms. Nanevski, Ahmad, Morisett and
-% Birkedal~\cite{abstract-htt} have proposed using the existential
-% quantification of their type theory to hide data representations,
-% giving examples such as a malloc/free style memory allocator.
-
-In addition to systems based on separation, there is also a line of
-research based on the concept of object invariants and ownership.  The
-Java modeling language (JML)~\cite{jml} and the Boogie
-methodology~\cite{boogie} are two of the most prominent systems based
-on this research stream. In Boogie, each object tracks its owner
-object with a ghost field, and the ownership discipline enforces that
-the heap have a tree structure. This allows the calculation of frame
-properties without explosions due to aliasing, even though the
-specification language remains ordinary first-order logic.
-
-In his dissertation, Parkinson gave as an example a simple iterator
-protocol, lacking the integration with composites we have exhibited.
-Subsequently, we formalized a similar account of
-iterators~\cite{iterator}, again lacking the integration with
-composites. Jacobs, Meijer, Piessens and
+In his dissertation~\cite{parkinson-thesis}, Parkinson gave as an
+example a simple iterator protocol, lacking the integration with
+composites we have exhibited.  Subsequently, we formalized a similar
+account of iterators~\cite{iterator}, again lacking the integration
+with composites. Jacobs, Meijer, Piessens and
 Schulte~\cite{iterators-revisited} extend Boogie with new rules for
 the coroutine constructs C\# uses to define iterators. Their solution
 typifies the difficulties ownership-based approaches face with
