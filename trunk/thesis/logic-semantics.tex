@@ -2578,6 +2578,23 @@ fixed-point induction, without having to specify conditions on
 admissible predicates (which is especially problematic in a setting
 with predicate variables).
 
+Finally, nested triples are very useful for specifying the properties
+of higher-order programs: it is very useful to be able put the
+specification of the contents of a reference into an assertion.  In
+this chapter, I have given a ``cheap and cheerful'' embedding of
+assertions in specifications and vice-versa, become true
+specifications. This approach has the virtues of first, being very
+technically easy to implement, and second, sufficient for all of the
+examples I have considered.
+
+However, more sophisticated approaches are certainly
+possible. \citet{nested-hoare-triples} describe how to unify the
+assertion and specification languages into a single logic.  This
+offers the technical benefit that it extends the power of the
+higher-order frame rule by letting it operate in a hereditary way, to
+act on nested triples contained within assertions. In contrast, the
+frame rule I give stops at the boundary of an assertion.
+
 \subsection{Other Program Logics}
 
 \subsubsection{Parkinson's Separation Logic for Java}
@@ -2626,36 +2643,41 @@ the types of computation terms.
 Nanevski, Ahmad, Morisett and Birkedal~\cite{abstract-htt} have
 proposed using the existential quantification of their type theory to
 hide data representations, giving examples such as a malloc/free style
-memory allocator. Nanevski and Vafeidis~\cite{nanevski-victor-10} give
+memory allocator. \citet{nanevski-victor-10} also give
 a proof of a modern congruence closure algorithm, illustrating that
-their system can verify some of the most complex imperative algorithms
-known.
+this system can be used to verify some of the most complex imperative
+algorithms known.
 
-In general, I think that this line of work represents the future of
-the design of high-level imperative programming languages, but the
-particular features of HTT's design have some shortcomings which make
-a direct comparison with my work somewhat challenging.
+My sense is that this line of work represents the future of the design
+of high-level imperative programming languages, but the particular
+choices made in HTT's design have some shortcomings which make a
+direct comparison with my own work somewhat more challenging than it
+should be.
 
 In particular, HTT uses an indexed family of monads to represent
 computations.  That is, a computation has a type $e :
 \spec{P}{-}{a:A}{Q(a)}$, where $P$ and $Q$ are predicates on the
-heap. This means that higher-order imperative programs may need to 
+heap. This means that higher-order imperative programs may need to
 refer to terms of computation type in their pre- and post-conditions.
 In the original formulation of HTT, which is predicative, this causes
-size issues to arise which make even writing  
+size issues to arise which can make writing higher-order imperative
+programs difficult, since any code mentioned in the indexes has to be
+at a lower universe level than the code being verified.
 
 This difficulty has been overcome by Petersen~\emph{et al.}, who give
 an impredicative model of Hoare Type Theory. However, Svendsen
 [personal communication] says that in an impredicative setting, the
-weaker elimination rules for existentials mean that proofs involving
-existentially quantified code become difficult to do.
+weaker elimination rules for impredicative existentials means that
+proofs involving higher-order imperative code become more difficult to
+do. (This was discovered during an attempt to port the example program
+in Chapter 6 to HTT.)
 
 These issues simply do not arise in my system, since specifications
 are kept strictly separate from types. This suggests that an
 interesting future direction would be to study a version of Hoare Type
 Theory in which there is an ordinary monadic type of computations,
 together with a predicates on terms of monadic type which equip it
-with pre- and post-conditions. 
+with pre- and post-conditions.
 
 \subsubsection{Regional Logic and Ownership}
 
@@ -2667,7 +2689,20 @@ on this research stream. In Boogie, each object tracks its owner
 object with a ghost field, and the ownership discipline enforces that
 the heap have a tree structure. This allows the calculation of frame
 properties without explosions due to aliasing, even though the
-specification language remains ordinary first-order logic.
+specification language remains ordinary first-order
+logic. \citet{banerjee-naumann-regions} give a logic, which they name
+``regional logic'', which formalizes these ideas in a small core logic
+more tractable than industrial-strength systems like JML or Boogie.
+
+One of the most interesting features of this line of work is that
+\citet{banerjee-naumann-rep} were able to use an ownership discipline to
+prove a representation independence (i.e., relational parametricity)
+result for Java-like programs.  This is something that neither my
+system, nor any of the other ones described earlier is capable of.
+The equality relation I use is simply the equality inherited from the
+(highly non-abstract) denotational semantics I give.
+
+
 
 \section{Correctness Proofs}
 
