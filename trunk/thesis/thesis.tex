@@ -41,6 +41,8 @@
 \usepackage{stackrel}
 \usepackage{xr}
 
+\usepackage{fancyhdr}
+\setlength{\headheight}{15.2pt}
 
 \input{defs.tex}
 
@@ -51,13 +53,14 @@
 \usepackage[letterpaper,twoside,vscale=.8,hscale=.75,nomarginpar,hmarginratio=1:1]{geometry}
 
 % Provides a draft mark at the top of the document. 
-\draftstamp{\today}{DRAFT}
+% \draftstamp{\today}{DRAFT}
+
 
 \begin {document} 
 \frontmatter
 
 %initialize page style, so contents come out right (see bot) -mjz
-\pagestyle{empty}
+\pagestyle{fancyplain}
 
 \title{ %% {\it \huge Thesis Proposal}\\
 {\bf Verifying Higher-Order Imperative Programs with Higher-Order Separation Logic}}
@@ -95,7 +98,20 @@ My parents encouraged me to study computers.
 I am not at all sure this was what they had in mind. 
 \end{dedication}
 
-\pagestyle{plain} % for toc, was empty
+% \pagestyle{plain} % for toc, was empty
+ 
+
+\pagestyle{fancyplain}
+\renewcommand{\chaptermark}[1]{\markboth{#1}{}}
+ 
+\lhead{\fancyplain{}{\thepage} --- \texttt{DRAFT 1 NOV 2010}}
+\chead{}
+\rhead{\fancyplain{}{\textit{\leftmark}}}
+\lfoot{}
+\cfoot{}
+\rfoot{}
+
+
 
 %% Obviously, it's probably a good idea to break the various sections of your thesis
 %% into different files and input them into this file...
