@@ -6,8 +6,8 @@ In this section, I will describe the type structure of the programming
 language I will use in this dissertation. The language is a pure,
 total, predicatively polymorphic programming language (with
 quantification over higher kinds), augmented with a monadic type
-constructor that permits nontermination and higher-order state. Its
-syntax is given in figure~\ref{lang-type-syntax}.
+constructor that permits nontermination and higher-order state. The
+syntax of types is given in figure~\ref{lang-type-syntax}.
 
 
 \begin{figure}[h]
@@ -31,16 +31,14 @@ syntax is given in figure~\ref{lang-type-syntax}.
          \fun{\alpha}{\kappa}{\tau} 
     \\[1em]
     \mbox{Polytypes} & 
-      A & ::= & 
+      A,B & ::= & 
          \unittype \bnfalt 
          A \times B \bnfalt 
          A \to B \bnfalt 
          A + B \bnfalt
          \N \bnfalt  \\
     &&&  \reftype{A} \bnfalt
-         \monad{A} \bnfalt 
-         \\ % \cont{A} \\
-    &&&  \tau \bnfalt \\
+         \monad{A} \bnfalt \tau \bnfalt \\
     &&&  \forall \alpha:\kappa.\; A \bnfalt 
          \exists \alpha:\kappa.\; A \\[1em]
     \mbox{Type Contexts} & 
@@ -52,46 +50,61 @@ syntax is given in figure~\ref{lang-type-syntax}.
 \end{figure}
 
 The basic kind structure of the language is given with the kinds
-$\kappa$. The The kind $\star$ is the kind of monotypes, which are
-written with the letter $\tau$. These are the unit type $\unittype$,
-pair types $\tau \times \sigma$, sums $\tau + \sigma$, function space
-$\tau \to \sigma$, natural numbers $\N$, computation types
-$\monad{\tau}$, continuation types $\cont{\tau}$ and finally
-(ML-style) references $\reftype{A}$. Also, within open types we may
-also use type variables $\alpha$ to refer to types, and we can also
-define lambda-abstractions and applications to inhabit the higher
-kinds of this language.
+$\kappa$, which range over the kind $\star$, the kind of ground
+monotypes, and higher kinds built from it $\kappa \to kappa$. We write
+all of these constructors with the letters $\tau$ and $\sigma$. The
+monotype constructors are the unit type $\unittype$, pair types $\tau
+\times \sigma$, sums $\tau + \sigma$, function space $\tau \to
+\sigma$, natural numbers $\N$, computation types $\monad{\tau}$, and
+finally (ML-style) references $\reftype{A}$. Also, within open types
+we may also use type variables $\alpha$ to refer to monotype constructors, and we
+can also define lambda-abstractions and applications to inhabit the
+higher kinds of this language.
 
 The type $\reftype{A}$ is not merely a pointer to a value of
-monomorphic type; instead, it also permits storing a pointer to a
-value of polymorphic types $A$. The intuition justifying this
-liberality is that a reference to a value of polymorphic type is
-itself merely a location, so it is permissible to treat a reference to
-a value of polymorphic type as a monomorphic value. Indeed, the
-denotational semantics of references will rely upon this intuition.
+monomorphic type; it also permits storing a pointer to a value of
+polymorphic types $A$. This seeminly violates the usual stratification
+between monotypes and polytypes, since quantifiers can occur within
+$A$. The intuition for viewing $\reftype{A}$ as a monotype is that a
+reference to a value of polymorphic type is itself merely a location
+with no additional structure, and so it is safe to treat a reference
+to a value of polymorphic type as a monomorphic value. Our
+denotational semantics of references will formalize this intuition
+and make it precise.
 
 The polytypes $A$ themselves extend the monotypes with universal
 quantification $\forall \alpha:\kappa.\;A$ as well as existential
 types $\exists \alpha:\kappa.\;A$. Each of the simple type
 constructors --- sums, products, functions, computations --- also may
-contain polymorphic types as subexpressions within it. Though it may
-not look like it at first glance, this is actually only a fairly
-modest generalization of the type schemes of ML. Because the universal
-and existential quantifiers range over the kinds $\kappa$, it is
-impossible to instantiate them with a polytype, thereby limiting us to
-predicative polymorphism.
+contain polymorphic types as subexpressions within it. However, this
+is actually only a modest generalization of classical ML-style type
+schemes. Because the universal and existential quantifiers range over
+the kinds $\kappa$, it is impossible to instantiate them with a
+polytype, thereby limiting us to predicative
+polymorphism. Nevertheless, being able to quantifier over higher kinds
+and instantiate quantifiers with them is sufficient to model many
+useful idioms (for example, quantifying not just over the element type
+of a list, but also quantifying over the collection type constructor).
+For the occasional cases we need to write impredicatively polymorphic
+programs, we will simulate true impredicativity by passing references.
 
 The kinding judgments $\judgeWK{\tau}{\kappa}$ and
 $\judgeWK{A}{\bigstar}$ determine well-formedness of monotypes and
-polytypes, respectively. Notice that we use two judgments, because we
-do not give polytypes their own first-class kind $\bigstar$ --- this
-means that we can syntactically enforce the restriction that the
-context $\Theta$, which is a collection of type variables and their
-kinds, can only range over kinds which can contain only monotypes.
+polytypes, respectively. The judgment $\judgeWK{\tau}{\kappa}$ asserts
+that the monotype constructor $\tau$ has the kind $\kappa$, and as can
+be seen in Figure~\ref{monotype-kinding}, the type constructors all
+have the expected structure. The rule for references calls out to the
+judgment $\judgeWK{A}{\bigstar}$, defined in
+Figure~\ref{polytype-kinding}, which gives well-formedness conditions
+for polytypes. The reason we need a second judgment is that there is
+no kind of polytypes, and so we simply directly judge whether a
+polytype is well-formed. 
 
-We give the kinding rules for the monotypes in
-figure~\ref{monotype-kinding}, and the kinding rules for polytypes
-in figure~\ref{polytype-kinding}. 
+These judgments, and all others in this thesis, follow the usual
+Barendregt variable convention, in that variable names do not occur
+repeated in contexts, and that bound variables are renamed (according
+to the usual rules of alpha-equivalence) so that they are different
+from the free variables.
 
 \begin{figure}[h]
 \begin{mathpar}
@@ -171,10 +184,6 @@ in figure~\ref{polytype-kinding}.
 \inferrule*[right=KNat]
           { }
           {\judgeWK{\N}{\bigstar}}
-\and
-\inferrule*[right=KRef]
-          {\judgeWK{A}{\bigstar}}
-          {\judgeWK{\reftype{A}}{\bigstar}}
 \and
 \inferrule*[right=KComp]
           {\judgeWK{A}{\bigstar}}
@@ -272,7 +281,7 @@ equality judgment whenever we need to compare monotyped terms.
 \and
 \inferrule[]
           { \judgeKeq[\Theta, \alpha:\kappa']
-                     {\tau\;\alpha}{\sigma\;\alpha}{\kappa} }
+                     {\tau\;\alpha}{\sigma\;\alpha}{\kappa} \\ \alpha \not\in \FV{\tau,\sigma}}
           { \judgeKeq{\tau}{\sigma}{\kappa' \to \kappa} }
 \\
 \inferrule[]
@@ -287,11 +296,11 @@ equality judgment whenever we need to compare monotyped terms.
           { \judgeKeq{\tau}{\tau'}{\kappa} \\
             \judgeKeq{\tau'}{\sigma}{\kappa} }
           { \judgeKeq{\tau}{\sigma}{\kappa} }
-\and
-\inferrule[]
-          { \judgeKeq{\tau}{\tau'}{\kappa'} \\ 
-            \judgeKeq[\Theta, \alpha:\kappa']{\sigma}{\sigma'}{\kappa} }
-          { \judgeKeq{[\tau/\alpha]\sigma}{[\tau'/\alpha]\sigma'}{\kappa} }
+% \and
+% \inferrule[]
+%           { \judgeKeq{\tau}{\tau'}{\kappa'} \\ 
+%             \judgeKeq[\Theta, \alpha:\kappa']{\sigma}{\sigma'}{\kappa} }
+%           { \judgeKeq{[\tau/\alpha]\sigma}{[\tau'/\alpha]\sigma'}{\kappa} }
 \end{mathpar}
 \caption{Equality Rules for Monotypes}
 \label{monotype-equality}
@@ -377,22 +386,27 @@ $\judgeWK[\Theta]{\tau}{\kappa}$.
 
 
 \begin{prop}{(Substitution)}
-If we have that $\judgeWK[\Theta, \alpha:\kappa']{\tau}{\kappa}$ and 
-$\judgeWK{\tau'}{\kappa'}$, then $\judgeWK{[\tau'/\alpha]\tau}{\kappa}$. 
+Suppose $\judgeWK{\tau'}{\kappa'}$. Then 
+  \begin{itemize}
+  \item If $\judgeWK[\Theta, \alpha:\kappa']{\tau}{\kappa}$, then $\judgeWK{[\tau'/\alpha]\tau}{\kappa}$.
+  \item If $\judgeWK[\Theta, \alpha:\kappa']{A}{\bigstar}$, then $\judgeWK{[\tau'/\alpha]A}{\bigstar}$.
+  \end{itemize}
 \end{prop}
 \begin{proof}
-This follows from structural induction on the derivation of 
-$\judgeWK[\Theta, \alpha:\kappa']{\tau}{\kappa}$. 
+This follows from mutual structural induction on the derivation of 
+$\judgeWK[\Theta, \alpha:\kappa']{\tau}{\kappa}$ and $\judgeWK[\Theta, \alpha:\kappa']{A}{\bigstar}$. 
 \end{proof}\\
 
 
 \begin{prop}{(Well-Kindedness of Equality)}
 If we have that $\judgeKeq{\tau}{\sigma}{\kappa}$, then we know that 
-$\judgeWK{\tau}{\kappa}$ and $\judgeWK{\sigma}{\kappa}$. 
+$\judgeWK{\tau}{\kappa}$ and $\judgeWK{\sigma}{\kappa}$.  Likewise, 
+$\judgeKeq{A}{B}{\bigstar}$, then we know that $\judgeWK{a}{\bigstar}$ and $\judgeWK{b}{\bigstar}$.  
+
 \end{prop}
 \begin{proof}
-This follows from structural induction on the derivation of   
-$\judgeKeq{\tau}{\sigma}{\kappa}$.
+This follows from mutual structural inductions on the derivation of   
+$\judgeKeq{\tau}{\sigma}{\kappa}$ and $\judgeKeq{A}{B}{\bigstar}$. 
 \end{proof}\\
 
 \begin{prop}{(Substitution into Equality)}
@@ -404,15 +418,26 @@ $\judgeKeq{\tau}{\sigma}{\kappa}$.
              $\judgeKeq{[\sigma/\alpha]A}{[\sigma'/\alpha]B}{\bigstar}$.
   \end{itemize}
 \end{prop}
+\begin{proof}
+This follows by mutualy structural induction on the two derivations of the 
+equality judgment.
+\end{proof}
 
 \subsection{Semantics of Kinds}
 
 Because types and kinds form an instance of the simply typed lambda
-calculus, we know that there is a unique $\beta$-normal, $\eta$-long
-form for each well-kinded type expression, both for the monotypes and
-the polytypes. This means that when we quotient the set of well-kinded
-terms by the equality judgment, we know that each equivalence class
-contains a single long normal term, which we can take as the canonical
+calculus, we would like to argue that there is a unique
+$\beta$-normal, $\eta$-long form for each well-kinded type expression.
+If we consider only the monotype constructors excluding the reference
+types, this is immediate.  However, the presence of quantifiers in
+reference types slightly complicates this story. Luckily, redices can
+only occur in subterms of polytypes which are monotype constructors, and
+hence by an induction on the structure of a polytype we can deduce that
+it has unique normal forms as well. 
+
+As a result, when we quotient the set of well-kinded terms by the
+equality judgment, we know that each equivalence class contains a
+single long normal term, which we can take as the canonical
 representative of that class. We can formalize this by giving the
 set-theoretic semantics of the kinds as follows.
 
@@ -443,14 +468,23 @@ function taking the environment into the interpretation of kinds:
 \begin{displaymath}
   \begin{array}{lcl}
     \interp{\judgeWK{\tau}{\kappa}} & \in & \interp{\Theta} \to \interp{\kappa} \\
-    \interp{\judgeWK{\tau}{\kappa}} & = & \semfun{\theta \in \interp{\Theta}}{\normalize{\theta(\tau)}} \\
-    \interp{\judgeWK{A}{\bigstar}} & = & \semfun{\theta \in \interp{\Theta}}{\normalize{\theta(A)}} \\
+    \interp{\judgeWK{\tau}{\kappa}} & = & \semfun{\theta \in \interp{\Theta}}{\normalize{\theta_\Theta(\tau)}} \\
+    \interp{\judgeWK{A}{\bigstar}} & = & \semfun{\theta \in \interp{\Theta}}{\normalize{\theta_\Theta(A)}} \\
   \end{array}
 \end{displaymath}
 
-Here, $\theta(\tau)$ takes a substitution $\theta$ and substitutes for
-each of the free variables in $\tau$, and $\normalize{\tau}$ computes
-the normal form of the type constructor $\tau$. 
+Here, $\theta(\tau)$ is a tuple in $\interp{\Theta}$, and the notation $\theta_\Theta$
+denotes a function which turns it back into a substitution:
+\begin{displaymath}
+  \begin{array}{lcl}
+    ()_\cdot & = & [] \\
+    (\theta, \tau)_{\Theta, \alpha:\kappa} & = & [\theta_\Theta, \tau/\alpha] \\
+  \end{array}
+\end{displaymath}
+
+We then take the substitution $\theta_\Theta$ and substitutes for each
+of the free variables in $\tau$ (or $A$), and $\normalize{\tau}$
+computes the normal form of the type constructor $\tau$.
 
 This means that the following theorems about the equality theory on
 type constructors are true: 
@@ -499,11 +533,12 @@ the objects of this category be \emph{predomains}, rather than
 domains. This permits us to model pure types as predomains lacking a
 bottom element.
 
-In figure~\ref{interp-monotypes}, we give an interpretation of the
+In Figure~\ref{interp-monotypes}, we give an interpretation of the
 closed, canonical monotypes (i.e., monotypes of kind $\star$, with no
 free occurrences of type variables within them, and no $\beta$-redexes
-within them).  This semantics is additionally parametrized with two
-arguments $K^+$ and $K^-$, whose purpose I will explain shortly.
+within them) as a functor in $CPO_\bot \times CPO^{op}_\bot \to CPO$.
+This semantics is parametrized with two arguments $K^+$ and $K^-$,
+whose purpose I will explain shortly.
 
 \begin{figure}
 \begin{displaymath}
@@ -512,8 +547,9 @@ arguments $K^+$ and $K^-$, whose purpose I will explain shortly.
 \begin{displaymath}
 \begin{array}{lcl}
 \mbox{Monotype} & = & \interp{\star} \\
-Loc(A) & = & \N \times \setof{A} \\
-Loc    & = & \bigcup \setof{X \;|\; \exists A.\; (\judgeWK[\cdot]{A}{\bigstar}) \;\land\;X = Loc(A)} \\[1em]
+Loc    & = & \N \times \interp{\bigstar} \\
+Loc(A) & = & \comprehend{(n, B) \in Loc}{A = B} \\[1em]
+% Loc    & = & \bigcup \setof{X \;|\; \exists A.\; (\judgeWK[\cdot]{A}{\bigstar}) \;\land\;X = Loc(A)} \\[1em]
 
 \interpmono{\judgeWK[\cdot]{\unittype}{\star}}(K_+, K_-) & = & \setof{*} \\
 
@@ -544,66 +580,72 @@ Loc    & = & \bigcup \setof{X \;|\; \exists A.\; (\judgeWK[\cdot]{A}{\bigstar}) 
 \caption{Locally Continuous Functor Interpreting Monotypes}
 \label{interp-monotypes}
 \end{figure}
-Before explaining the clauses in detail, I will explain why this
-defines a function at all. First, because we are considering closed
-terms of kind $\star$, the normalization theorem tells us that any
-such term will normalize to one of the cases listed above. In
-particular, we will never bottom out at a variable, because the
-context is closed. We will never bottom out at a lambda, because we
-are considering only the kind $\star$, and we will never bottom out an
-application, because there will be room for further beta-reduction in
-this case, and by hypothesis we are only considering the normal forms.
+Before explaining the clauses in detail, I will explain why it is
+well-defined at all. First, because we are considering closed terms of
+kind $\star$, the normalization theorem tells us that any such term
+will normalize to one of the cases listed above. In particular, we
+will never bottom out at a variable, because the context is closed. We
+will never bottom out at a lambda, because we are considering only the
+kind $\star$, and we will never bottom out an application, because
+there will be room for further beta-reduction in this case, and by
+hypothesis we are only considering the normal forms.
 
 This means we cover all of the possibilities in this definition, and
 furthermore we know it is well-founded, because all of the recursive
 calls to $\interpmono{-}$ are always on immediate subterms of the
 type.
 
-This definition defines a functor -- because the category Cat of
-categories and functors is itself Cartesian closed, we can take the
-liberty of writing it as a lambda-expression. Most of the clauses of
-this definition should be relatively straightforward --- the main
-mystery is that we have parametrized this interpretation by two
-arguments $K_+$ and $K_-$, which I will explain when we reach the
-continuation and monadic type constructors.  We interpret the unit
-type as the one-element, discretely ordered predomain, the natural
-number type as the natural numbers with a discrete order, pairs as the
-categorical products of $CPO$, sums as coproducts, and functions via
-the exponentials of $CPO$.
+Most of the clauses of this definition should be relatively
+straightforward --- the main mystery is that we have parametrized this
+interpretation by two arguments $K_+$ and $K_-$, whose meaning I will
+explain when we reach the monadic type constructor.  We interpret the
+unit type as the one-element, discretely ordered predomain, the
+natural number type as the natural numbers with a discrete order,
+pairs as the categorical products of $CPO$, sums as coproducts, and
+functions via the exponentials of $CPO$.
 
 Reference types $\reftype{A}$ are interpreted as pairs consisting of
-natural numbers and the syntactic object $A$. The intuition is that a
-reference is just a number, together with a type tag saying what type
-of value the reference will point to. It is important that we do
-\emph{not} interpret the type tag $A$ in this definition --- a ref
-cell is a number plus the purely syntactic object $A$, acting as a
-label. This is because we have no interpretation function that can 
-interpret the quantifiers yet: the current definition interprets only
-the monotypes. 
+natural numbers and the representative syntactic object $A$. The
+intuition is that a reference is just a number, together with a type
+tag saying what type of value the reference will point to. It is
+important that we do \emph{not} interpret the type tag $A$ in this
+definition --- a ref cell is a number plus the purely syntactic object
+$A$, acting as a label. This is because we have no interpretation
+function that can interpret the quantifiers yet: the current
+definition interprets only the monotypes.
 
 The first time we use $K$ is when we interpret the type
-$\monad{\tau}$.  The monadic type $\monad{\tau}$ is interpreted as a
-sort of double-negation: $(\interpmono{\tau}(K_+, K_-) \to K_-) \to
-K_+$.  So the $K_+$ and $K_-$ arguments are revealed as the positive
-and negative occurrences of the ``answer type'' of a continuation.
-One thing worth pointing out is that the positive and negative
-occurrences do \emph{not} trade places on the recursive call, because
-it occurs on the left-hand-side of the left-hand-side of a function
-space (which is hence a positive occurrence). 
+$\monad{\tau}$.  The monadic type $\monad{\tau}$ is interpreted in
+continuation-passing style, as $(\interpmono{\tau}(K_+, K_-) \to K_-)
+\to K_+$, and the the $K_+$ and $K_-$ arguments are revealed as the
+positive and negative occurrences of the ``answer type'' of the
+continuation. One fact worth pointing out is that the positive and
+negative occurrences do \emph{not} trade places on the recursive call
+to $\interp{\tau}$, since it occurs on the left-hand-side of the
+left-hand-side of a function space (which is hence a positive
+occurrence).
 
-The careful reader will have noticed that so far our definitions do
-not mention state at all. What will ultimately happen is that we will
-interpret continuations as functions from heaps to the two-point
-Sierpinski lattice $O = \setof{\top, \bot}$. However, since heaps can
-contain references to values of polymorphic type, and since we have
-not yet defined how the semantics of polymorphic types work, we have
+So far, this may seem like sleight-of-hand: I promised that
+$\monad{\tau}$ was to be the type of stateful computations, but there
+is (apparently) no state in this definition --- instead, it seems like
+a continuation semantics.  The way that we will resolve this
+difficulty is by our choice of the answer type $K$. We will ultimately
+interpret the answer type $K$ as maps from heaps $H$ to the two-point
+Sierpinski lattice $O = \setof{\top, \bot}$, so that $K = H \to
+O$. Then, the monadic type will mean $(\interp{\tau} \to (H \to O))
+\to (H \to O)$, which can be understood as a sort of predicate
+transformer.
+
+Note that we have not yet defined what heaps mean, since heaps can
+contain references to values of polymorphic type, and we have not yet
+defined the semantics of polymorphic types. This is why we have
 carefully parametrized our functorial semantics of monotypes so that
 we do not needed to mention them explicitly.
 
 To close this gap, we will give an interpretation of polymorphic types
 as an indexed function from a context of closed mono-kinded type
-constructors to a CPO.  As before, we parametrize by the
-continuation arguments, and again define a functor.
+constructors to a CPO.  As before, we parameterize by the continuation
+arguments, and again define a functor.
 
 \begin{displaymath}
 \begin{array}{lcl}\interp{\judgeWK{A}{\bigstar}} &\in& \interp{\Theta} \to (CPO_\bot \times CPO^{op}_\bot) \to CPO 
@@ -706,11 +748,11 @@ H(K_+,K_-) & = & \Sigma L \subseteq^{fin} Loc.\;
 
 We use $H$ to define what heaps mean. A heap is a dependent sum whose
 first component is a finite set of allocated locations, together with
-a map that takes each location in the set of allocated location and
+a map that takes each location in the set of allocated locations, and
 returns a value of the appropriate type.
 
 The continuation type is defined by the solution to the equation
-$\mathcal{K}$, which of type $CPO^{op}_\bot \times CPO_\bot \to
+$\mathcal{K}$, which of type $(CPO^{op}_\bot \times CPO_\bot) \to
 CPO_\bot$. We know that this goes into $CPO_\bot$, since it defines a
 map into the two point domain, and a function space into a domain is
 itself a domain. So if we can solve the equation $K = \mathcal{K}(K,
@@ -725,7 +767,7 @@ continuation monad and the state monad via a domain which looks
 like $(\tau \to H \to O) \to H \to O$.
 
 To show that this equation actually has a solution, it suffices to 
-show that $F$ is a locally-continuous functor. We'll prove this by 
+show that $F$ is a locally-continuous functor. We will prove this by 
 induction over $\interp{-}$ and $\interpmono{-}$, and then at each
 case appeal to a series of lemmas showing that each construction we
 use preserves local continuity. 
@@ -741,14 +783,14 @@ That is, it must be monotone --- if $f \sqsubseteq f'$ and $g
 must also preserve limits --- given a pair of chains $f_i, g_i$, 
 $\bigsqcup_i F(f_i, g_i) = F(\bigsqcup_i f_i, \bigsqcup_i g_i)$. 
 
-Now, we'll show that the functors we used earlier are all locally
+Now, we will show that the functors we used earlier are all locally
 continuous. All of this is standard, but I give the proofs to make the
 presentation self-contained.
 
 \begin{lemma}{Local Continuity}
 \begin{enumerate}
 \item If $F,G : CPO_\bot \times CPO^{op}_\bot \to CPO$ are locally continuous,
-      then $\lambda A,B. F(A,B) \times G(A,B)$ is locally continuous.  
+      then $\lambda A,B.\; F(A,B) \times G(A,B)$ is locally continuous.  
 \item If $F,G : CPO_\bot \times CPO^{op}_\bot \to CPO$ are locally continuous,
       then $\lambda A,B.\; F(A,B) + G(A,B)$ is locally continuous.  
 \item If $F,G : CPO_\bot \times CPO^{op}_\bot \to CPO$ are locally continuous,
@@ -1008,7 +1050,7 @@ solution to the fixed point equation it defines.
 
 \begin{prop}{(Smyth and Plotkin)}
 Any locally-continuous functor $F : CPO_\bot \times CPO^{op}_\bot \to
-CPO_\bot$ has a solution to the equation $X \cong F(X)$. Moreover, there
+CPO_\bot$ has a solution to the equation $X \cong F(X, X)$. Moreover, there
 is also a \emph{minimal} isomorphism solving this equation. 
 \end{prop}
 
@@ -1537,7 +1579,7 @@ For the projection $h'_p$, we have
 
 \subsubsection{Showing $X$ is a Solution to $F(X, X) \cong X$}
 
-\begin{lemma}{(X is a fixed point)} The equation $F(X, X) \cong X$
+\begin{lemma}{(X is a fixed point)} The isomorphism $F(X, X) \cong X$
 is valid.
 \end{lemma}
 \begin{proof}
@@ -1586,7 +1628,7 @@ then lets us prove the third case, that $H$ is a locally-continuous
 functor, because we can work from the inside out, using the fact that
 set-indexed sums and products of locally-continuous functors are
 themselves locally continuous. Finally, since $\mathcal{K}$ is just 
-$H \to K_O$, we know it is locally continuous also. 
+$H \to O$, we know it is locally continuous also. 
 \end{proof}
 
 \ \\\noindent Observe that $\mathcal{K}$, applied to any arguments,
@@ -1687,17 +1729,14 @@ and $f^*$ in terms of the internal language of CPO as follows:
 \end{enumerate}
 \end{proof}
 
-
-
-
 \section{The Programming Language}
 
 We have given the semantics of types in domain-theoretic terms. Now,
 we'll give the syntax and typing of the programming language. Then,
-we'll use the domain-theoretic semantics just given in order to first
-give a denotational semantics for the programming language, and
-second, to give an interesting equality theory for it. The syntax of 
-terms is given in figure~\ref{lang-syntax}. 
+we'll use the domain-theoretic semantics just given to first give a
+denotational semantics for the programming language, and second, to
+give an interesting equality theory for it. The syntax of terms is
+given in figure~\ref{lang-syntax}.
 
 
 \begin{figure}
@@ -1847,20 +1886,35 @@ terms is given in figure~\ref{lang-syntax}.
 The pure terms of the language include the unit value $\unit$; pairs
 $\pair{e}{e'}$ and projections $\fst{e}$ and $\snd{e}$; injections
 into sum types $\inl{\;e}$ and $\inr{\;e}$, and a case form
-$\Case{e}{x}{e'}{y}{e''}$; zero $\z$, successor $\s{e}$, and primitive
-iteration $\iter{e}{e_0}{x}{e_1}$; lambda abstractions $\fun{x}{A}{e}$
-and applications $e\;e'$; type abstraction $\Fun{\alpha}{\kappa}{e}$
-and type application $e\;\tau$; and existential packing
-$\pack{\tau}{e}$ and unpacking $\unpack{\alpha}{x}{e}{e'}$. Suspended
-monadic computations $\comp{c}$ are terms of the type $\monad{A}$.
+$\Case{e}{x}{e'}{y}{e''}$; lambda abstractions $\fun{x}{A}{e}$ and
+applications $e\;e'$; type abstraction $\Fun{\alpha}{\kappa}{e}$ and
+type application $e\;\tau$; and existential packing $\pack{\tau}{e}$
+and unpacking $\unpack{\alpha}{x}{e}{e'}$. Suspended monadic
+computations $\comp{c}$ are terms of the type $\monad{A}$.  Natural
+numbers are given by zero $\z$ and successor $\s{e}$ constructors, and
+are eliminated by primitive iteration $\iter{e}{e_0}{x}{\!e_1}$. The
+restriction to primitive iteration ensures that infinitely looping
+programs cannot be defined by eliminating natural numbers, while still
+permitting us to define total functions such as addition and
+multiplication. (We will make free use of other inductive datatypes in
+following chapters, using the naturals as a prototypical example of how 
+to handle them.)
 
-Finally, we have a term-level fixed point operator, $\fix{x:D}{e}$. It
-is not defined over all types; it is only permitted to range over
-\emph{well-pointed} types. That is, fixed points are only defined over
-types whose interpretations are domains with least elements. This
-ensures that the semantic fixed point operation is well-defined, and
-hence we can give a semantics of fixed points at this type. The typing
-rules for all of these forms are given in
+For general recursion, we have a term-level fixed point operator,
+$\fix{x:D}{e}$. It is not defined over all types; it is only permitted
+to range over \emph{well-pointed} types. That is, fixed points are
+only defined over types whose interpretations are domains with least
+elements. The pointed types include the monadic types, functions into
+pointed types, products of pointed types, and polymorphic
+quantification over pointed types. Functions into pointed types
+corresponds to ML's usual fixed point, and taking fixed points of
+products corresponds to mutual recursion.  Taking fixed points of
+polymorphic types corresponds to \emph{polymorphic recursion}. The
+absence of nontermination (or any other effect) at other types ensures
+that the full beta and eta rules will be available for reasoning with
+them.
+
+The typing rules for all of these forms are given in
 figure~\ref{lang-typing-pure}, and the computation forms of the
 language are given in figure~\ref{lang-typing-monadic}.
 
@@ -1897,18 +1951,18 @@ language are given in figure~\ref{lang-typing-monadic}.
 
 We give the semantics of the expression and command languages
 with functions $\interpE{\judgeE{\Gamma}{e}{A}}$ and
-$\interpC{\judgeE{\Gamma}{c}{A}}$. Since we have two contexts, we will
+$\interpC{\judgeC{\Gamma}{c}{A}}$. Since we have two contexts, we will
 need two environments, one a type environment (as before, a tuple of
 closed type expressions), and the other, a value environment
 (consisting of a tuple of values of the appropriate type). In other
 words, the interpretation of a term is a type-indexed family of
 morphisms in $CPO$.
 
-We give the interpetation of contexts in
+We give the interpretation of contexts in
 Figure~\ref{lang-context-interp}. In this definition, we take the
 usual liberties in not explicitly giving the isomorphisms necessary to
 implement structural rules like Exchange. The definitions of the two
-mutually-recursive interpretation functions, $\interpE{\judgeE{\Gamma}{e}{A}}$
+mutually recursive interpretation functions, $\interpE{\judgeE{\Gamma}{e}{A}}$
 and $\interpC{\judgeC{\Gamma}{c}{A}}$, which interpret pure expressions and
 computations respectively, are given in
 figure~\ref{lang-pure-interp} and figure~\ref{lang-monadic-interp}.
@@ -1923,10 +1977,10 @@ universals. The $\eta$-rule for numbers justifies reasoning about
 iterative programs via induction on the natural numbers. The
 $\eta$-rule for universals and existentials arises from simple
 extensionality over types: since our model is not parametric, it
-does not justify parametricic principles of reasoning.
+does not justify parametric principles of reasoning.
 
-Below, we collect the theorems describing the properties of this judgment,
-and give their proofs in the following subsection. 
+Below, we collect the theorems describing the properties of these two
+judgments, and give their proofs in the following subsection.
 
 \begin{figure}
 \begin{displaymath}
@@ -1972,11 +2026,11 @@ and give their proofs in the following subsection.
        & = & 
        \pi_2(\interpE{\judgeE{\Gamma}{e}{A_1\times A_2}}\;\theta\;\gamma)
     \\
-    \interpE{\judgeE{\Gamma}{\inl{e}}{A_1+A_2}}\;\theta\;\gamma 
+    \interpE{\judgeE{\Gamma}{\inl{\;e}}{A_1+A_2}}\;\theta\;\gamma 
        & = & 
        \iota_1(\interpE{\judgeE{\Gamma}{e}{A_1}}\;\theta\;\gamma)
     \\
-    \interpE{\judgeE{\Gamma}{\inr{e}}{A_1+A_2}}\;\theta\;\gamma 
+    \interpE{\judgeE{\Gamma}{\inr{\;e}}{A_1+A_2}}\;\theta\;\gamma 
        & = & 
        \iota_2 (\interpE{\judgeE{\Gamma}{e}{A_2}}\;\theta\;\gamma)
     \\
@@ -1999,7 +2053,7 @@ and give their proofs in the following subsection.
     \\
     \interpE{\judgeE{\Gamma}{\s{e}}{\N}}\;\theta\;\gamma
        & = & 
-         s (\interpE{\judgeE{\Gamma}{e}{\N}}\;\theta\;\gamma)
+         1 + (\interpE{\judgeE{\Gamma}{e}{\N}}\;\theta\;\gamma)
     \\
     \interpE{\judgeE{\Gamma}{\iter{e}{e_0}{x}{e_1}}{A}}\;\theta\;\gamma
     &=& 
@@ -2153,7 +2207,7 @@ and give their proofs in the following subsection.
 %           {\judgeEq{\Gamma}{e_1\;e_2}{e'_1\;e'_2}{B}}
 % \and
 \inferrule*[right=EqFunEta]
-          {\judgeEq{\Gamma, x:A}{e\;x}{e'\;x}{B}}
+          {\judgeEq{\Gamma, x:A}{e\;x}{e'\;x}{B} \\ x \not\in \FV{e,e'}}
           {\judgeEq{\Gamma}{e}{e'}{A \to B}}
 \and
 \inferrule*[right=EqFunBeta]
@@ -2175,18 +2229,18 @@ and give their proofs in the following subsection.
 %           {\judgeEq{\Gamma}{\Case{e}{x}{e_1}{y}{e_2}}{\Case{e'}{x}{e'_1}{y}{e'_2}}{C}}
 % \and
 \inferrule*[right=EqSumInlBeta]
-          {\judgeE{\Gamma}{\Case{\inl{e}}{x}{e_1}{y}{e_2}}{C}}
-          {\judgeEq{\Gamma}{\Case{\inl{e}}{x}{e_1}{y}{e_2}}{[e/x]e_1}{C}}
+          {\judgeE{\Gamma}{\Case{\inl{\;e}}{x}{e_1}{y}{e_2}}{C}}
+          {\judgeEq{\Gamma}{\Case{\inl{\;e}}{x}{e_1}{y}{e_2}}{[e/x]e_1}{C}}
 \and
 \inferrule*[right=EqSumInrBeta]
-          {\judgeE{\Gamma}{\Case{\inr{e}}{x}{e_1}{y}{e_2}}{C}}
-          {\judgeEq{\Gamma}{\Case{\inr{e}}{x}{e_1}{y}{e_2}}{[e/x]e_1}{C}}
+          {\judgeE{\Gamma}{\Case{\inr{\;e}}{x}{e_1}{y}{e_2}}{C}}
+          {\judgeEq{\Gamma}{\Case{\inr{\;e}}{x}{e_1}{y}{e_2}}{[e/y]e_2}{C}}
 \and
 \inferrule*[right=EqSumEta]
           {\judgeE{\Gamma}{e}{A+B} \\
            \judgeE{\Gamma, z:A+B}{e'}{C}}
-          {\judgeEq{\Gamma}{[e/z]e'}{\Case{e}{x}{[\inl{x}/z]e'}
-                                             {y}{[\inr{x}/z]e'}}{C}}
+          {\judgeEq{\Gamma}{[e/z]e'}{\Case{e}{x}{[\inl{\;x}/z]e'}
+                                             {y}{[\inr{\;x}/z]e'}}{C}}
 \\
 \inferrule*[right=EqMonad]
           {\judgeEqC{\Gamma}{c}{c'}{A}}
@@ -2208,7 +2262,7 @@ and give their proofs in the following subsection.
 \and
 \inferrule*[right=EqNatSBeta]
           {\judgeE{\Gamma}{\iter{\s{e}}{e_0}{x}{e_1}}{A}}
-          {\judgeEq{\Gamma}{\iter{\s{e}}{e_0}{x}{e_1}}{e_1[\iter{e}{e_0}{x}{e_1}/x]}{A}}
+          {\judgeEq{\Gamma}{\iter{\s{e}}{e_0}{x}{e_1}}{[\iter{e}{e_0}{x}{e_1}/x]e_1}{A}}
 \and
 \inferrule*[right=EqNatEta]
           {\judgeE{\Gamma}{e_0}{A} \\
@@ -2253,7 +2307,7 @@ and give their proofs in the following subsection.
 \begin{mathpar}
 \inferrule*[right=EqCommandEta]
           {\judgeC{\Gamma}{c}{A}}
-          {\judgeEqC{\Gamma}{e}{\letv{x}{e}{x}}{A}}
+          {\judgeEqC{\Gamma}{c}{\letv{x}{[c]}{x}}{A}}
 \and
 \inferrule*[right=EqCommandBeta]
           {\judgeC{\Gamma}{\letv{x}{\comp{e}}{c}}{A}}
@@ -2287,7 +2341,7 @@ and give their proofs in the following subsection.
 \inferrule*[right=EqSubst]
           {\judgeEq{\Gamma, x:A}{e_1}{e_2}{B} \\
            \judgeEq{\Gamma}{e'_1}{e'_2}{A}}
-          {\judgeEq{\Gamma}{[e'_1/x]e_1}{[e'_2/x]e'_2}{B}}
+          {\judgeEq{\Gamma}{[e'_1/x]e_1}{[e'_2/x]e_2}{B}}
 \and
 \inferrule*[right=EqCommandRefl]
           {\judgeC{\Gamma}{c}{A}}
@@ -2353,7 +2407,7 @@ If we know that $\judgeWK{\tau}{\kappa}$, then
   then \\ $\interpC{\judgeE{\Gamma}{[e'/y]c}{B}}\;\theta\;(\gamma,\gamma') = 
         \interpC{\judgeC{\Gamma, y:A}{c}{B}}\;\theta \;
                 \left(\gamma,
-                      \interpE{\judgeE{\Gamma}{e'}{A}}\;\theta\;\gamma,
+                      \interpC{\judgeE{\Gamma}{e'}{A}}\;\theta\;\gamma,
                       \gamma'
                 \right)$
 \end{enumerate}
@@ -2368,7 +2422,7 @@ $\interpE{\judgeE{\Gamma}{e}{A}} = \interpE{\judgeE{\Gamma}{e'}{A}}$.
 
 \item If $\judgeEqC{\Gamma}{c}{c'}{A}$, then $\judgeC{\Gamma}{c}{A}$ and 
 $\judgeC{\Gamma}{c'}{A}$ and 
-$\interpC{\judgeE{\Gamma}{c}{A}} = \interpC{\judgeC{\Gamma}{c'}{A}}$.
+$\interpC{\judgeC{\Gamma}{c}{A}} = \interpC{\judgeC{\Gamma}{c'}{A}}$.
 \end{enumerate}
 \end{lemma}\ \\
 

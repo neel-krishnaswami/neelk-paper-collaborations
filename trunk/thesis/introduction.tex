@@ -14,22 +14,22 @@ interesting for formal verification, since the combination yields
 languages more complex than the sum of their parts. 
 
 Techniques to reason about purely functional programs, which
-extensively use higher-order methods but eschew mutable state, are an
-extremely well-developed branch of programming language theory, with a
+extensively use higher-order methods but eschew mutable state, are a
+well-developed branch of programming language theory, with a
 long and successful history.
 
 Historically, techniques to reason about mutable state have lagged
 behind, but some years ago O'Hearn and Reynolds introduced separation
-logic~\citep{sep-logic}, which has proven extremely successful at
-enabling correctness proofs of even such intricate imperative programs
-as garbage collectors~\citep{gc-proof}. However, separation logic has
-historically focused on low-level programming languages that lack a
-strong type discipline and allow the use of techniques such as casting
-pointers to integers.
+logic~\citep{sep-logic}, which has proven successful at enabling
+correctness proofs of even such intricate imperative programs as
+garbage collectors~\citep{gc-proof}. Separation logic has historically
+focused on low-level programming languages that lack a strong type
+discipline and allow the use of techniques such as casting pointers to
+integers.
 
-However, even high level languages that allow the use of state are
-prone to aliasing errors, since (with a few exceptions) type systems
-do not track interference properties. Some languages, such as
+Even high level languages that allow the use of state are prone to
+aliasing errors, since (with a few exceptions) type systems do not
+track interference properties. Some languages, such as
 Haskell~\cite{haskell-report}, isolate all side-effects within a
 particular family of monadic types. While this preserves reasoning
 principles for functional code, we still face the problem that
@@ -40,38 +40,36 @@ rehabilitate them.
 Of course, we can combine language features combinatorially, and if
 this particular combination had no applications, then it would be only
 of technical interest. In fact, though, higher-order state pervades
-the design of many common programs. For example, graphical user
-interfaces (GUIs) are typically structured as families of callbacks
-that operate over the shared data structures representing the
-interface and program. These callbacks are structured using the
-subject-observer pattern~\cite{gof}, which uses collections of
-callbacks to implicitly synchronize mutable data structures across a
-program. So higher-order state not only poses a technical challenge,
-but also offers a tantalizingly concrete example to motivate the
-technical development.
+the design of common programs. For example, graphical user interfaces
+(GUIs) are typically structured as families of callbacks that operate
+over the shared data structures representing the interface and
+program. These callbacks are structured using the subject-observer
+pattern~\cite{gof}, which uses collections of callbacks to implicitly
+synchronize mutable data structures across a program. So higher-order
+state not only poses a technical challenge, but also offers a
+tantalizingly concrete example to motivate the technical development.
 
 In this dissertation, I develop a model higher-order imperative
 programming language, and develop a program logic for it. I
-demonstrate the power of my program logic by verifying many
+demonstrate the power of my program logic by verifying a series of
 interesting examples, culminating in the correctness proof of a
-library for event-driven programming, which despite an extremely
-imperative (and higher-order) implementation, nevertheless permits
-clients to reason about it using simple and powerful equational
-reasoning principles.
+library for event-driven programming, which despite an imperative (and
+higher-order) implementation, nevertheless permits clients to reason
+about it using simple and powerful equational reasoning principles.
 
 \section{Programming Language}
 
 The first contribution of my dissertation is to give a denotational
 semantics for a predicative version of System
-$F^\omega$~\cite{girard-thesis}, extended with a monadic type constructor for
-state in Pfenning-Davies~\cite{pfenning-davies} style. This language
-can be considered an instance of Moggi's~\cite{moggi-monads} monadicf
-metalanguage, as all heap effects and nontermination are encapsulated
+$F^\omega$~\cite{girard-thesis}, extended with a monadic type
+constructor for state in Pfenning-Davies~\cite{pfenning-davies}
+style. This language is an instance of Moggi's~\cite{moggi-monads}
+monadic metalanguage, as all heap effects and nontermination live
 within the monadic type constructor.
 
-Higher-order imperative programs usually contain a very substantial
+Higher-order imperative programs usually contain a substantial
 functional part in addition to whatever imperative operations they
-perform. As a result, it is very convenient to be able to reason
+perform. As a result, it is convenient to be able to reason
 equationally about programs when possible (including induction
 principles for inductive types), and by giving a denotational
 semantics, I can easily show the soundness of these equational
@@ -79,8 +77,8 @@ properties.
 
 Ths semantics of this language is the focus of Chapter 2. In
 particular, I show that a programming language including references to
-polymorphic values, still gives rise to domain equations which can
-still be solved using the classical techniques of Smyth and
+polymorphic values, nevertheless gives rise to a domain equation which
+can be solved using the classical techniques of Smyth and
 Plotkin~\cite{smyth-plotkin}.
 
 \section{Higher Order Separation Logic}
@@ -164,14 +162,14 @@ witnesses to the existential formulas. This is morally an application
 of Mitchell and Plotkin's identification of data abstraction and
 existential types~\cite{mitchell-plotkin} --- in this view, linking a
 module with a client is nothing but an application of the existential
-elimination rule of ordinary logic.  However, note that instead of
-abstracting only over types (as, we also abstract over the \emph{heap}.
+elimination rule of ordinary logic.  Note that instead of abstracting
+only over types, we also abstract over the \emph{heap}.
 
-In order for a verification methodology to scale up to even modestly-
-sized programs, it must be modular. There are three informal senses in
-which I use the word ``modular'', each of which is supported by
-different features of this logic, and are (mostly) illustrated in this
-example. 
+In order for a verification methodology to scale up to even
+modestly-sized programs, it must be modular. There are three informal
+senses in which I use the word ``modular'', each of which is supported
+by different features of this logic, and are (mostly) illustrated in
+this example.
 
 \begin{enumerate}
 \item First, we should be able to verify programs library by
@@ -194,18 +192,18 @@ example.
   state, because we must explicitly specify the aliasing or
   non-aliasing of every variable and mutable data structure in our
   pre- and post-conditions. Besides the quadratic dependence on the
-  size of the program, the relevant set of variables grows whenever a
-  subprogram is embedded in a larger. Separation logic resolves this
-  problem by introducing via the frame rule, a feature which we carry
-  forward in our logic.
+  size of programs, the relevant set of variables grows whenever a
+  subprogram is embedded in a larger one. Separation logic resolves
+  this problem via the frame rule, a feature which we carry forward in
+  our logic.
 
   In our example, counters have state, and so the predicates for
-  distinct counters need to held distinct. So even in the simplest
-  possible example, it is useful to be able to have the power of 
-  separation logic available. 
+  distinct counters need to be disjoint. So even in the simplest
+  possible example, it is useful to be able to have the power of
+  separation logic available.
 
 \item Finally, it is important to ensure that the abstractions we
-  introduce compose. Benton\cite{benton-modularity} described a
+  introduce compose. Benton~\cite{benton-modularity} described a
   situation where he was able to prove that a memory allocator and the
   rest of the program interacted only through a particular interface,
   but when he tried to divide the rest of the program into further
@@ -291,7 +289,7 @@ executed when the cell is asked for a value. Cells memoize their
 values and remember their dependencies, so that when they are asked
 again for a value, they will not unnecessarily recompute a
 value. Conversely, if a cell is modified, it will invalidate its
-memoized value and transitively invalidate anything that dependend on
+memoized value and transitively invalidate anything that depended on
 that value.  The specification of the dataflow graph relies crucially
 on ramifications in order to modularly specify dependencies and the
 effects of modifications to the graph.
