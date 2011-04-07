@@ -63,7 +63,7 @@ higher kinds of this language.
 
 The type $\reftype{A}$ is not merely a pointer to a value of
 monomorphic type; it also permits storing a pointer to a value of
-polymorphic types $A$. This seeminly violates the usual stratification
+polymorphic types $A$. This seemingly violates the usual stratification
 between monotypes and polytypes, since quantifiers can occur within
 $A$. The intuition for viewing $\reftype{A}$ as a monotype is that a
 reference to a value of polymorphic type is itself merely a location
@@ -419,7 +419,7 @@ $\judgeKeq{\tau}{\sigma}{\kappa}$ and $\judgeKeq{A}{B}{\bigstar}$.
   \end{itemize}
 \end{prop}
 \begin{proof}
-This follows by mutualy structural induction on the two derivations of the 
+This follows by mutual structural induction on the two derivations of the 
 equality judgment.
 \end{proof}
 
@@ -489,7 +489,7 @@ computes the normal form of the type constructor $\tau$.
 This means that the following theorems about the equality theory on
 type constructors are true: 
 
-\begin{prop}{(Equality Judgement is Sound)}
+\begin{prop}{(Equality Judgment is Sound)}
 We have that 
 \begin{enumerate}
 \item If $\judgeKeq{\tau}{\tau'}{\kappa}$, then $\tau =_{\beta\eta} \tau'$ 
@@ -498,7 +498,7 @@ We have that
 \end{prop}
 
 \begin{proof}
-This proof is an easy structural induction on the equality judgement. 
+This proof is an easy structural induction on the equality judgment. 
 \end{proof}
 
 \section{Semantics of Types}
@@ -543,7 +543,7 @@ polymorphic type, which defeats simple attempts to give semantics by
 induction on types.
 
 Our strategy to resolve this circularity is to give successive domain
-equations for monotypes, polytypes, and heaps, suitably parameterized
+equations for monotypes, polytypes, and heaps, suitably parametrized
 so as to let us avoid reference to the semantics of a later stage in
 an earlier one. Then, we will solve the domain equation, and tie the
 knot.
@@ -577,7 +577,7 @@ closed, canonical monotypes (i.e., monotypes of kind $\star$, with no
 free occurrences of type variables within them, and no $\beta$-redexes
 within them) as a functor in $CPO_\bot \times CPO^{op}_\bot \to CPO$.
 This semantics is parametrized with two arguments $K^+$ and $K^-$,
-which separate the positive and negative occurences of the basic 
+which separate the positive and negative occurrences of the basic 
 continuations. 
 
 \begin{figure}
@@ -685,7 +685,7 @@ monotypes so that we do not needed to mention them explicitly.
 
 To continue closing this gap, we will give an interpretation of
 polymorphic types as an indexed function from a context of closed
-mono-kinded type constructors to a CPO.  As before, we parameterize by
+mono-kinded type constructors to a CPO.  As before, we parametrize by
 the continuation arguments, and again define a functor. This
 definition is given in Figure~\ref{interp-polytypes}.
 
@@ -811,7 +811,7 @@ receive a heap, and then either loop or terminate. The monadic type
 $\monad{\tau}$ now can be seen as the state-and-continuation monad,
 which combines the effects of the continuation monad and the state
 monad via a domain which looks like $(\tau \to H \to O) \to H \to O$.
-(Though our model supports it, we will never actually use the possibily
+(Though our model supports it, we will never actually use the possibly
 of adding control operators to the language in this thesis.)
 
 To show that this equation actually has a solution, it suffices to
@@ -1126,7 +1126,7 @@ above.
 \subsubsection{Embeddings and Projections}
 
 First, recall that an \emph{embedding} $e : C \to D$ between pointed
-cpos is a continuous function such that there exists a function $p : D
+CPOs is a continuous function such that there exists a function $p : D
 \to C$ (called a \emph{projection}) with the properties that $p \circ
 e = id_C$ and $e \circ p \sqsubseteq id_D$. 
 
@@ -1845,6 +1845,7 @@ given in figure~\ref{lang-syntax}.
 \end{figure}
 
 
+
 \begin{figure}
 \begin{mathpar}
 \inferrule*[right=EUnit]
@@ -2045,15 +2046,23 @@ Below, we collect the theorems describing the properties of these two
 judgments, and give their proofs in the following subsection.
 
 \begin{figure}
-\begin{displaymath}
-  \begin{array}{lcl}
-  \interp{\Theta \vdash \cdot}\theta & = & 1 \\
-  \interp{\Theta \vdash \Gamma, x:A}\theta & = & 
-       \interp{\Theta \vdash \Gamma}\theta 
-       \times 
-       \interp{\Theta \vdash A:\bigstar}\theta \\
-  \end{array}
-\end{displaymath}
+\begin{mathpar}
+\inferrule*[right=CtxNil]
+          { }
+          {\judgectx{\Theta}{\cdot}}
+\and
+\inferrule*[right=CtxCons]
+          {\judgectx{\Theta}{\Gamma} \\ \judgeWK{A}{\bigstar}}
+          {\judgectx{\Theta}{\Gamma, x:A}}
+\\
+\begin{array}{lcl}
+ \interp{\Theta \vdash \cdot}\;\theta & = & 1 \\
+ \interp{\Theta \vdash \Gamma, x:A}\;\theta & = & 
+     \interp{\Theta \vdash \Gamma}\;\theta 
+     \times 
+     \interp{\Theta \vdash A:\bigstar}\theta \\
+\end{array}
+\end{mathpar}
 \caption{Interpretation of Program Contexts}
 \label{lang-context-interp}
 \end{figure}
@@ -2273,7 +2282,7 @@ judgments, and give their proofs in the following subsection.
           {\judgeEq{\Gamma}{e}{e'}{A \to B}}
 \and
 \inferrule*[right=EqFunBeta]
-          {\judgeE{\Gamma}{(\fun{x}{A}{e})\;e'}{B}}
+          {\judgeE{\Gamma}{(\fun{x}{A}{e})\;e'}{B} \\ x \not\in \Gamma}
           {\judgeEq{\Gamma}{(\fun{x}{A}{e})\;e'}{[e'/x]e}{B}}
 \\
 % \inferrule*[right=EqInlCong]
@@ -2431,10 +2440,10 @@ judgments, and give their proofs in the following subsection.
   Suppose $\judgeE[\Theta]{\Gamma}{e}{A}$. 
   \begin{enumerate}
    \item It is the case that 
-    $\interpE{\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e}{A}}\;(\theta, \tau)\;\gamma$ is equal to \\
+    $\interpE{\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e}{A}}\;(\theta, \tau)\;\gamma$ is equal to 
     $\interpE{\judgeE[\Theta]{\Gamma}{e}{A}}\;\theta\;\gamma$. 
    \item It is the case that 
-    $\interpE{\judgeE[\Theta]{\Gamma, x:B}{e}{A}}\;\theta\;(\gamma,v)$ is equal to \\
+    $\interpE{\judgeE[\Theta]{\Gamma, x:B}{e}{A}}\;\theta\;(\gamma,v)$ is equal to 
     $\interpE{\judgeE[\Theta]{\Gamma}{e}{A}}\;\theta\;\gamma$. 
   \end{enumerate}
 \end{lemma}\ \\
