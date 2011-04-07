@@ -533,12 +533,52 @@ the objects of this category be \emph{predomains}, rather than
 domains. This permits us to model pure types as predomains lacking a
 bottom element.
 
+\subsection{The Overall Plan}
+
+The central problem in giving the semantics of types is the
+interpretation of the monadic type constructor. Since the monadic type
+is the type of imperative computations, it must be a kind of heap or
+predicate transformer. However, heaps contain values of arbitrary
+polymorphic type, which defeats simple attempts to give semantics by
+induction on types.
+
+Our strategy to resolve this circularity is to give successive domain
+equations for monotypes, polytypes, and heaps, suitably parameterized
+so as to let us avoid reference to the semantics of a later stage in
+an earlier one. Then, we will solve the domain equation, and tie the
+knot.
+
+\begin{enumerate}
+\item For each ground monotype $\tau$, we give a functor in $CPO_\bot
+  \times CPO^{op}_\bot \to CPO$.  The parameters to this functor will
+  eventually be the basic continuations.
+\item Using this interpretation of monotypes, for each polymorphic
+  kinding judgment, we will give another functor in $CPO_\bot \times
+  CPO^{op}_\bot \to CPO$. Again, the parameters to this functor will
+  eventually be the basic continuations.
+\item For heaps, a functor $CPO_\bot \times CPO^{op}_\bot \to
+  CPO$. Again, the parameters to this functor will eventually be the
+  basic continuations.
+\item A domain equation in $CPO_\bot \times CPO^{op}_\bot \to
+  CPO_\bot$, whose least fixed point we will take as our domain of
+  basic continuations.
+\end{enumerate}
+
+Roughly speaking, the basic continuations will be the (continuous)
+maps from heaps to primitive observations (the 2-point Sierpinski
+space), and by interpreting the monadic type as a CPS type with answer
+type equal to the basic continuations, we can view monadic terms as
+heap transformers.
+
+\subsection{Interpreting Monotypes}
+
 In Figure~\ref{interp-monotypes}, we give an interpretation of the
 closed, canonical monotypes (i.e., monotypes of kind $\star$, with no
 free occurrences of type variables within them, and no $\beta$-redexes
 within them) as a functor in $CPO_\bot \times CPO^{op}_\bot \to CPO$.
 This semantics is parametrized with two arguments $K^+$ and $K^-$,
-whose purpose I will explain shortly.
+which separate the positive and negative occurences of the basic 
+continuations. 
 
 \begin{figure}
 \begin{displaymath}
@@ -619,34 +659,37 @@ $\monad{\tau}$.  The monadic type $\monad{\tau}$ is interpreted in
 continuation-passing style, as $(\interpmono{\tau}(K_+, K_-) \to K_-)
 \to K_+$, and the the $K_+$ and $K_-$ arguments are revealed as the
 positive and negative occurrences of the ``answer type'' of the
-continuation. One fact worth pointing out is that the positive and
-negative occurrences do \emph{not} trade places on the recursive call
-to $\interp{\tau}$, since it occurs on the left-hand-side of the
+continuation. One minor fact worth pointing out is that the positive
+and negative occurrences do \emph{not} trade places on the recursive
+call to $\interp{\tau}$, since it occurs on the left-hand-side of the
 left-hand-side of a function space (which is hence a positive
 occurrence).
 
-So far, this may seem like sleight-of-hand: I promised that
-$\monad{\tau}$ was to be the type of stateful computations, but there
-is (apparently) no state in this definition --- instead, it seems like
-a continuation semantics.  The way that we will resolve this
-difficulty is by our choice of the answer type $K$. We will ultimately
-interpret the answer type $K$ as maps from heaps $H$ to the two-point
-Sierpinski lattice $O = \setof{\top, \bot}$, so that $K = H \to
-O$. Then, the monadic type will mean $(\interp{\tau} \to (H \to O))
-\to (H \to O)$, which can be understood as a sort of predicate
+Note how this works: $\monad{\tau}$ is to be the type of stateful
+computations, but there is (apparently) no state in this definition;
+it seems like an ordinary continuation semantics.  The way that we
+will re-introduce state is in the definition of $K$. We will
+ultimately interpret the answer type $K$ as maps from heaps $H$ to the
+two-point Sierpinski lattice $O = \setof{\top, \bot}$, so that $K = H
+\to O$. Then, the monadic type will mean $(\interp{\tau} \to (H \to
+O)) \to (H \to O)$, which can be understood as a sort of predicate
 transformer.
 
-Note that we have not yet defined what heaps mean, since heaps can
-contain references to values of polymorphic type, and we have not yet
-defined the semantics of polymorphic types. This is why we have
-carefully parametrized our functorial semantics of monotypes so that
-we do not needed to mention them explicitly.
+\subsection{Interpreting Polytypes}
 
-To close this gap, we will give an interpretation of polymorphic types
-as an indexed function from a context of closed mono-kinded type
-constructors to a CPO.  As before, we parameterize by the continuation
-arguments, and again define a functor.
+At this stage of the definition, we cannot yet define what heaps mean,
+since heaps can contain references to values of polymorphic type, and
+we have not yet defined the semantics of polymorphic types. This is
+why we have carefully parametrized our functorial semantics of
+monotypes so that we do not needed to mention them explicitly.
 
+To continue closing this gap, we will give an interpretation of
+polymorphic types as an indexed function from a context of closed
+mono-kinded type constructors to a CPO.  As before, we parameterize by
+the continuation arguments, and again define a functor. This
+definition is given in Figure~\ref{interp-polytypes}.
+
+\begin{figure}
 \begin{displaymath}
 \begin{array}{lcl}\interp{\judgeWK{A}{\bigstar}} &\in& \interp{\Theta} \to (CPO_\bot \times CPO^{op}_\bot) \to CPO 
 \\[1em]
@@ -688,6 +731,9 @@ arguments, and again define a functor.
 \\
 \end{array}
 \end{displaymath}
+\caption{Locally Continuous Functor Interpreting Polytypes}
+\label{interp-polytypes}
+\end{figure}
 
 As explained earlier, the interpretation of the type constructor
 context $\interp{\Theta}$ are the tuples of the interpretations of
@@ -714,11 +760,11 @@ for monotypes, to allow for the possibility that there may be
 sub-components of pairs/sums/functions/etc that contain universal or
 existential types.
 
-This does mean we need to verify that this definition is coherent,
-however. For example, a type like $\N + \N : \bigstar$ can be derived
-two ways, depending on whether the ``$+$'' is viewed as constructor
-combining polytypes or monotypes. Fortunately, the lack of interesting
-structure on polytypes makes this easy.
+As a result, we need to verify that this definition is coherent, For
+example, a type like $\N + \N : \bigstar$ can be derived two ways,
+depending on whether the ``$+$'' is viewed as constructor combining
+polytypes or monotypes. Fortunately, the lack of interesting structure
+on polytypes makes this easy.
 
 \begin{prop}{(Coherence of Polymorphic Type Interpretation)}
   For any two derivations of $D, D' :: \judgeWK{A}{\bigstar}$, we have that 
@@ -730,10 +776,11 @@ structure on polytypes makes this easy.
 rules from which it can be derived. 
 \end{proof}
 
-\ \\
 
-\noindent Now we are finally in a position to define the recursive domain equation we 
-would like to solve:
+\subsection{Interpreting Heaps and Basic Continuations}
+
+We are finally in a position to define heaps and the recursive domain
+equation we would like to solve:
 
 \begin{displaymath}
 \begin{array}{lcl}
@@ -755,22 +802,23 @@ The continuation type is defined by the solution to the equation
 $\mathcal{K}$, which of type $(CPO^{op}_\bot \times CPO_\bot) \to
 CPO_\bot$. We know that this goes into $CPO_\bot$, since it defines a
 map into the two point domain, and a function space into a domain is
-itself a domain. So if we can solve the equation $K = \mathcal{K}(K,
+itself a domain. So if we can solve the equation $K \simeq \mathcal{K}(K,
 K)$, then we can plug $K$ into all our other definitions to interpret
 all of the types in our language.
 
-Filling this in, we can understand how continuations of type $\tau$
-work: they receive a value of type $\tau$ and a heap, and then either
-loop or terminate. The monadic type $\monad{\tau}$ now can be seen as
-the state-and-continuation monad, which combines the effects of the
-continuation monad and the state monad via a domain which looks 
-like $(\tau \to H \to O) \to H \to O$.
+Filling this in, we can understand how basic continuations work: they
+receive a heap, and then either loop or terminate. The monadic type
+$\monad{\tau}$ now can be seen as the state-and-continuation monad,
+which combines the effects of the continuation monad and the state
+monad via a domain which looks like $(\tau \to H \to O) \to H \to O$.
+(Though our model supports it, we will never actually use the possibily
+of adding control operators to the language in this thesis.)
 
-To show that this equation actually has a solution, it suffices to 
-show that $F$ is a locally-continuous functor. We will prove this by 
+To show that this equation actually has a solution, it suffices to
+show that $F$ is a locally-continuous functor. We will prove this by
 induction over $\interp{-}$ and $\interpmono{-}$, and then at each
 case appeal to a series of lemmas showing that each construction we
-use preserves local continuity. 
+use preserves local continuity.
 
 \section{Solving Domain Equations}
 
@@ -806,6 +854,20 @@ presentation self-contained.
 \end{lemma}
  
 \begin{proof}
+
+We elide proofs of monotonicity, and give only the proofs of preservation of
+limits. The notations $\left<f;g\right>$ and notation $[f;g]$ are the unique
+mediating maps for products and sums, and mean:
+\begin{displaymath}
+\begin{array}{lcl}
+  [f;g] & = & \fun{x}{A+B}{\left\{\begin{array}{ll}
+                         f\;a & \mbox{when }x = \inl{\;a} \\
+                         g\;b & \mbox{when }x = \inl{\;b} \\
+                         \end{array}\right.} \\[1em]
+  \left<f;g\right> & = & \fun{x}{A \times B}{(f\;x,g\;x)} 
+\end{array}
+\end{displaymath}
+We also lift these to $n$-ary versions.
 
 \begin{enumerate}
 \item Suppose $F$ and $G$ are locally continuous. Now, for $A$ and $B$, we have 
