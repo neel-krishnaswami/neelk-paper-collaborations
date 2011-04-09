@@ -2224,9 +2224,10 @@ judgments, and give their proofs in the following subsection.
     & = & 
       \mbox{let }v = \interpE{\judgeE{\Gamma}{e}{A}}\;\theta\;\gamma \mbox{ in}\\
     && \;\;\lambda k.\;\lambda (L, h).\; \\
-    && \;\;\qquad \mbox{let }l = (max(L) + 1, A) \mbox{ in}\\
+    && \;\;\qquad \mbox{let }l = \newloc{L}{A} \mbox{ in}\\
     && \;\;\qquad k\;l\;(L \cup \setof{l}, [h|l:v])
-    \\
+    \\[1em]
+    \newloc{L}{A} & = & (1 + \sup\comprehend{ n \in \N }{\exists B.\;(n,B) \in L}, A)
   \end{array}
 \end{displaymath}
 \caption{Interpretation of Computations}
@@ -2602,6 +2603,10 @@ $\interpE{\judgeE{\Gamma}{e}{A}}\;\theta$.)
           {Semantics}
   \end{eqnproof}
 
+  Note that we need to use the Barendregt convention, implicitly
+  renaming $x$ to ensure the avoidance of captures. We will not mention this point
+  further in remaining proofs. 
+
 \item Case EApp: We have 
    $\interpE{\judgeE{\Gamma, \Gamma'}{[e'/y](e_1\;e_2)}{B}}\;\theta\;
        (\gamma, \gamma')$
@@ -2732,10 +2737,10 @@ $\interpE{\judgeE{\Gamma}{e}{A}}\;\theta$.)
           {\lambda \theta\;(\gamma, \gamma').\; \interpE{\judgeE{\Gamma, y:A, \Gamma'}{e}{B_1+B_2}}\;\theta\;(\gamma, \interpE{e'}\theta\gamma, \gamma')}
           {IH}
     \eline[\interpE{(2)}]
-          {\lambda \theta\;(\gamma, \gamma').\; \interpE{\judgeE{\Gamma, y:A, \Gamma', x_1:B_1}{e_1}{C}}\;\theta\;(\gamma, \interpE{e'}\theta\gamma, \gamma')}
+          {\lambda \theta\;(\gamma, \gamma', v).\; \interpE{\judgeE{\Gamma, y:A, \Gamma', x_1:B_1}{e_1}{C}}\;\theta\;(\gamma, \interpE{e'}\theta\gamma, \gamma', v)}
           {IH}
     \eline[\interpE{(3)}]
-          {\lambda \theta\;(\gamma, \gamma').\; \interpE{\judgeE{\Gamma, y:A, \Gamma', x_2:B_2}{e_2}{C}}\;\theta\;(\gamma, \interpE{e'}\theta\gamma, \gamma')}
+          {\lambda \theta\;(\gamma, \gamma', v).\; \interpE{\judgeE{\Gamma, y:A, \Gamma', x_2:B_2}{e_2}{C}}\;\theta\;(\gamma, \interpE{e'}\theta\gamma, \gamma', v)}
           {IH}
   \end{eqnproof}
 
@@ -2888,13 +2893,13 @@ $[f_1, f_2]\;a$, where
     \eline{\interpE{\judgeE{\Gamma, \Gamma'}{\fix{x:D}{([e'/y]e)}}{D}}
            \;\theta\;(\gamma,\gamma')}
           {Substitution}
-    \eline{\interpE{fix(\semfun{v}{
+    \eline{fix(\semfun{v}{
              (\interpE{\judgeE{\Gamma, \Gamma', x:D}{[e'/y]e}{D}}
-               \;\theta\;(\gamma,\gamma',v))})}}
+               \;\theta\;(\gamma,\gamma',v))})}
           {Semantics}
-     \eline{\interpE{fix(\semfun{v}{
+     \eline{fix(\semfun{v}{
              (\interpE{\judgeE{\Gamma, y:A, \Gamma', x:D}{e}{D}}
-               \;\theta\;(\gamma,\interpE{e'}\;\theta\;\gamma, \gamma',v))})}}
+               \;\theta\;(\gamma,\interpE{e'}\;\theta\;\gamma, \gamma',v))})}
           {IH }
      \eline{\interpE{\judgeE{\Gamma, y:A, \Gamma'}{\fix{x:D}{e}}{D}}
              \;\theta
@@ -2934,15 +2939,15 @@ $[f_1, f_2]\;a$, where
            \judgeE{\Gamma,\Gamma'}{([e'/y]e)\;\tau}{[\tau/\alpha]B}}
            \;\theta\;(\gamma,\gamma')}
           {Substitution}
-    \eline{\left(\interpE{\judgeE{\Gamma,\Gamma'}{[e'/y]e}{\forall \alpha:\kappa.\;B}}\;\theta\;(\gamma,\gamma')\right)\;[\theta(\tau)]}
+    \eline{\left(\interpE{\judgeE{\Gamma,\Gamma'}{[e'/y]e}{\forall \alpha:\kappa.\;B}}\;\theta\;(\gamma,\gamma')\right)\;\tau(\theta)}
           {Semantics}
     \eline{\left(
              \interpE{\judgeE{\Gamma,y:A,\Gamma'}{e}{\forall \alpha:\kappa.\;B}}
                  \;\theta\;(\gamma,\interpE{e'}\;\theta\;\gamma,\gamma')
-           \right)\; [\theta(\tau)]}
+           \right)\; \tau(\theta)}
           {IH}
     \eline{\interpE{
-           \judgeE{\Gamma,\Gamma'}{e\;\tau}{[\tau/\alpha]B}}
+           \judgeE{\Gamma,y:A,\Gamma'}{e\;\tau}{[\tau/\alpha]B}}
            \;\theta\;(\gamma,\interpE{e'}\;\theta\;\gamma, \gamma')}
           {Substitution}
   \end{eqnproof}
@@ -2956,14 +2961,14 @@ $[f_1, f_2]\;a$, where
                   {\exists \alpha:\kappa.\;B}}
            \;\theta\;(\gamma, \gamma')}
           {Substitution}
-    \eline{([\theta(\tau)], 
+    \eline{(\tau(\theta), 
             \interpE{
             \judgeE{\Gamma,\Gamma'}
                    {[e'/y]e}
                    {[\tau/\alpha]B}}
             \;\theta\;(\gamma,\gamma'))}
           {Semantics}
-    \eline{([\theta(\tau)], 
+    \eline{(\tau(\theta), 
             \interpE{
             \judgeE{\Gamma,y:A,\Gamma'}
                    {e}
@@ -2988,7 +2993,7 @@ $[f_1, f_2]\;a$, where
           {Substitution}
     \eline{(\semfun{\pair{\tau}{v}}
                    {(\interpE{\judgeE[\Theta, \alpha:\kappa]
-                             {\Gamma,\Gamma', x:A}
+                             {\Gamma,\Gamma', x:C}
                              {[e'/y]e_2}
                              {B}}
                      \;(\theta,\tau)
@@ -2997,39 +3002,39 @@ $[f_1, f_2]\;a$, where
     \eclaim{\;\;(\interpE{
             \judgeE{\Gamma,\Gamma'}
                    {[e'/y]e_1}
-                   {\exists \alpha:\kappa.\;A}}
+                   {\exists \alpha:\kappa.\;C}}
             \;\theta\;(\gamma,\gamma'))}
           {Semantics}
     \eline{(\semfun{\pair{\tau}{v}}
                    {(\interpE{\judgeE[\Theta, \alpha:\kappa]
-                             {\Gamma,\Gamma', x:A}
+                             {\Gamma, y:A, \Gamma', x:C}
                              {e_2}
                              {B}}
                      \;(\theta,\tau)
                      \;(\gamma, \interpE{e'}\;(\theta,\tau)\;\gamma, \gamma', v))})}
            {}
     \eclaim{\;\;(\interpE{
-            \judgeE{\Gamma,\Gamma'}
+            \judgeE{\Gamma, y:A, \Gamma'}
                    {e_1}
-                   {\exists \alpha:\kappa.\;A}}
+                   {\exists \alpha:\kappa.\;C}}
             \;\theta\;(\gamma,\interpE{e'}\;\theta\;\gamma, \gamma'))}
           {IH}
     \eline{(\semfun{\pair{\tau}{v}}
                    {(\interpE{\judgeE[\Theta, \alpha:\kappa]
-                             {\Gamma,\Gamma', x:A}
+                             {\Gamma, y:A, \Gamma', x:C}
                              {e_2}
                              {B}}
                      \;(\theta,\tau)
                      \;(\gamma, \interpE{e'}\;\theta\;\gamma, \gamma', v))})}
            {}
     \eclaim{\;\;(\interpE{
-            \judgeE{\Gamma,\Gamma'}
+            \judgeE{\Gamma, y:A, \Gamma'}
                    {e_1}
-                   {\exists \alpha:\kappa.\;A}}
+                   {\exists \alpha:\kappa.\;C}}
             \;\theta\;(\gamma,\interpE{e'}\;\theta\;\gamma, \gamma'))}
           {$\alpha \not\in FTV(e')$}
     \eline{\interpE{
-           \judgeE{\Gamma,\Gamma'}
+           \judgeE{\Gamma, y:A, \Gamma'}
                   {\unpack{\alpha}{x}{e_1}{e_2}}
                   {B}}
            \;\theta
@@ -3182,7 +3187,7 @@ Now, the cases for the computation terms follow.
           {Substitution}
     \eline{\lambda k.\;\lambda (L, h).\;\left(
              \begin{array}{l}
-               \mbox{let }l = (max(L) + 1, A) \mbox{ in} \\
+               \mbox{let }l = \newloc{L}{A}  \mbox{ in} \\
                k\;l\;(L \cup \setof{l}, [h|l:v]) \\
              \end{array}\right)}
           {}
@@ -3207,10 +3212,10 @@ Now, the cases for the computation terms follow.
 If we know that $\judgeWK{\tau}{\kappa}$, then 
 \begin{itemize}
 \item If $\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e}{A}$, then 
-       $\interpE{\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e}{A}}\;(\theta,[\theta(\tau)])\;\gamma$ is
+       $\interpE{\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e}{A}}\;(\theta,\tau(\theta))\;\gamma$ is
        equal to \\ $\interpE{\judgeE{[\tau/\alpha]\Gamma}{[\tau/\alpha]e}{[\tau/\alpha]A}}\;\theta\;\gamma$
 \item If $\judgeC[\Theta, \alpha:\kappa]{\Gamma}{c}{A}$, then 
-       $\interpC{\judgeC[\Theta, \alpha:\kappa]{\Gamma}{c}{A}}\;(\theta,[\theta(\tau)])\;\gamma$ 
+       $\interpC{\judgeC[\Theta, \alpha:\kappa]{\Gamma}{c}{A}}\;(\theta,\tau(\theta))\;\gamma$ 
        is equal to \\ $\interpC{\judgeC{[\tau/\alpha]\Gamma}{[\tau/\alpha]c}{[\tau/\alpha]A}}\;\theta\;\gamma$
 \end{itemize}
 \end{lemma*}
@@ -3225,19 +3230,19 @@ interesting case is:
   \begin{eqnproof}
         [\interpE{\judgeE[\Theta, \alpha:\kappa]
                          {\Gamma}
-                         {x_i}{A_i}}\;(\theta, {[\theta(\tau)]})\;\gamma]
+                         {x_i}{A_i}}\;(\theta, {\tau(\theta)})\;\gamma]
     \eline{\pi_i(\gamma)}
           {Semantics}
   \end{eqnproof}
 
-\noindent Now, observe that the tuple $\gamma$ is an element of $\interp{\Theta,\alpha:\kappa \vdash \Gamma}\;(\theta, [\theta(\tau)])$.
+\noindent Now, observe that the tuple $\gamma$ is an element of $\interp{\Theta,\alpha:\kappa \vdash \Gamma}\;(\theta, \tau(\theta))$.
 
-  \begin{eqnproof}[\interp{\Theta,\alpha:\kappa \vdash \Gamma}\;(\theta, {[\theta(\tau)]}) =]
+  \begin{eqnproof}[\interp{\Theta,\alpha:\kappa \vdash \Gamma}\;(\theta, {\tau(\theta)}) =]
      \eline{\interp{\interp{\judgeWK[\Theta,\alpha:\kappa]{A_1}{\bigstar}}\;
-                       (\theta, [\theta(\tau)]) 
+                       (\theta, \tau(\theta)) 
                     \times \ldots \times 
                     \interp{\judgeWK[\Theta,\alpha:\kappa]{A_n}{\bigstar}}\;
-                       (\theta, [\theta(\tau)])}}
+                       (\theta, \tau(\theta))}}
            {}
      \eline{\interp{\judgeWK{[\tau/\alpha]A_1}{\bigstar}}\;\theta 
             \times \ldots \times 
@@ -3435,11 +3440,11 @@ proceed as follows:
 
 \item case EqSumInlBeta
   \begin{eqnproof}
-    \eclaim[1]{\judgeEq{\Gamma}{\Case{\inl{e}}{x}{e_1}{y}{e_2}}{[e/x]e_1}{C}}
+    \eclaim[1]{\judgeEq{\Gamma}{\Case{\inl{\;e}}{x}{e_1}{y}{e_2}}{[e/x]e_1}{C}}
               {Hypothesis}
-    \eclaim[2]{\judgeE{\Gamma}{\Case{\inl{e}}{x}{e_1}{y}{e_2}}{C}}
+    \eclaim[2]{\judgeE{\Gamma}{\Case{\inl{\;e}}{x}{e_1}{y}{e_2}}{C}}
               {Inversion on 1}
-    \eclaim[3]{\judgeE{\Gamma}{\inl{e}}{A + B}}
+    \eclaim[3]{\judgeE{\Gamma}{\inl{\;e}}{A + B}}
               {Inversion on 2}
     \eclaim[4]{\judgeE{\Gamma, x:A}{e_1}{C}}
               {Inversion on 2}
@@ -3450,12 +3455,12 @@ proceed as follows:
     \eclaim[7]{\judgeE{\Gamma}{[e/x]e_1}{C}}
               {Substitute 6 into 4}
   \end{eqnproof}
-  \begin{eqnproof}[\interpE{\judgeE{\Gamma}{\Case{\inl{e}}{x}{e_1}{y}{e_2}}{C}}\;\theta\;\gamma =]
+  \begin{eqnproof}[\interpE{\judgeE{\Gamma}{\Case{\inl{\;e}}{x}{e_1}{y}{e_2}}{C}}\;\theta\;\gamma =]
     \eline{[f_1,f_2](a)}
           {Semantics}
     \eclaim[\mbox{where}]
            {\begin{array}{lcl}
-               a & = & \interpE{\judgeE{\Gamma}{\inl{e}}{A + B}}\;\theta\;\gamma \\
+               a & = & \interpE{\judgeE{\Gamma}{\inl{\;e}}{A + B}}\;\theta\;\gamma \\
                  & = & \iota_1(\interpE{\judgeE{\Gamma}{e}{A}}\;\theta\;\gamma) \\
                f_1 & = & \semfun{v}{\interpE{\judgeE{\Gamma,x:A}{e_1}{C}}\;\theta\;(\gamma,v)} \\
                f_2 & = & \semfun{v}{\interpE{\judgeE{\Gamma,y:B}{e_2}{C}}\;\theta\;(\gamma,v)} \\
@@ -3474,11 +3479,11 @@ proceed as follows:
 
 \item case EqSumInrBeta:
   \begin{eqnproof}
-    \eclaim[1]{\judgeEq{\Gamma}{\Case{\inr{e}}{x}{e_1}{y}{e_2}}{[e/y]e_2}{C}}
+    \eclaim[1]{\judgeEq{\Gamma}{\Case{\inr{\;e}}{x}{e_1}{y}{e_2}}{[e/y]e_2}{C}}
               {Hypothesis}
-    \eclaim[2]{\judgeE{\Gamma}{\Case{\inr{e}}{x}{e_1}{y}{e_2}}{C}}
+    \eclaim[2]{\judgeE{\Gamma}{\Case{\inr{\;e}}{x}{e_1}{y}{e_2}}{C}}
               {Inversion on 1}
-    \eclaim[3]{\judgeE{\Gamma}{\inr{e}}{A + B}}
+    \eclaim[3]{\judgeE{\Gamma}{\inr{\;e}}{A + B}}
               {Inversion on 2}
     \eclaim[4]{\judgeE{\Gamma, x:A}{e_1}{C}}
               {Inversion on 2}
@@ -3489,12 +3494,12 @@ proceed as follows:
     \eclaim[7]{\judgeE{\Gamma}{[e/y]e_2}{C}}
               {Substitute 6 into 5}
   \end{eqnproof}
-  \begin{eqnproof}[\interpE{\judgeE{\Gamma}{\Case{\inr{e}}{x}{e_1}{y}{e_2}}{C}}\;\theta\;\gamma =]
+  \begin{eqnproof}[\interpE{\judgeE{\Gamma}{\Case{\inr{\;e}}{x}{e_1}{y}{e_2}}{C}}\;\theta\;\gamma =]
     \eline{[f_1,f_2](a)}
           {Semantics}
     \eclaim[\mbox{where}]
            {\begin{array}{lcl}
-               a & = & \interpE{\judgeE{\Gamma}{\inr{e}}{A + B}}\;\theta\;\gamma \\
+               a & = & \interpE{\judgeE{\Gamma}{\inr{\;e}}{A + B}}\;\theta\;\gamma \\
                  & = & \iota_2(\interpE{\judgeE{\Gamma}{e}{B}}\;\theta\;\gamma) \\
                f_1 & = & \semfun{v}{\interpE{\judgeE{\Gamma,x:A}{e_1}{C}}\;\theta\;(\gamma,v)} \\
                f_2 & = & \semfun{v}{\interpE{\judgeE{\Gamma,y:B}{e_2}{C}}\;\theta\;(\gamma,v)} \\
@@ -3513,7 +3518,7 @@ proceed as follows:
 
 \item case EqSumEta:
   \begin{eqnproof}
-    \eclaim[1]{\judgeEq{\Gamma}{\Case{e}{x}{[\inl{x}/z]e'}{y}{[\inr{y}/z]e'}}{[e/z]e'}{C}}
+    \eclaim[1]{\judgeEq{\Gamma}{\Case{e}{x}{[\inl{\;x}/z]e'}{y}{[\inr{\;y}/z]e'}}{[e/z]e'}{C}}
               {Hypothesis}
     \eclaim[2]{\judgeE{\Gamma}{e}{A+B}}
               {Inversion on 1}
@@ -3521,17 +3526,17 @@ proceed as follows:
               {Inversion on 1}
     \eclaim[4]{\judgeE{\Gamma, x:A, z:A+B}{e'}{C}}
               {Weakening on 3}
-    \eclaim[5]{\judgeE{\Gamma, x:A}{\inl{x}}{A+B}}
+    \eclaim[5]{\judgeE{\Gamma, x:A}{\inl{\;x}}{A+B}}
               {By rules}
-    \eclaim[6]{\judgeE{\Gamma, x:A}{[\inl{x}/z]e'}{C}}
+    \eclaim[6]{\judgeE{\Gamma, x:A}{[\inl{\;x}/z]e'}{C}}
               {Substitution of 5 into 4}
     \eclaim[7]{\judgeE{\Gamma, y:B, z:A+B}{e'}{C}}
               {Weakening on 3}
-    \eclaim[8]{\judgeE{\Gamma, y:B}{\inr{y}}{A+B}}
+    \eclaim[8]{\judgeE{\Gamma, y:B}{\inr{\;y}}{A+B}}
               {By rules}
-    \eclaim[9]{\judgeE{\Gamma, y:B}{[\inr{y}/z]e'}{C}}
+    \eclaim[9]{\judgeE{\Gamma, y:B}{[\inr{\;y}/z]e'}{C}}
               {Substitution of 8 into 7}
-    \eclaim[10]{\judgeE{\Gamma}{\Case{e}{x}{[\inl{x}/z]e'}{y}{[\inr{y}/z]e'}}{C}}
+    \eclaim[10]{\judgeE{\Gamma}{\Case{e}{x}{[\inl{\;x}/z]e'}{y}{[\inr{\;y}/z]e'}}{C}}
                {By ECase on 2, 6, 9}
     \eclaim[11]{\judgeE{\Gamma}{[e/z]e'}{C}}
                {Substitution of 2 into 3}
@@ -3541,20 +3546,20 @@ proceed as follows:
 Now from the semantics, we know that $\interpE{\judgeE{\Gamma}{e}{A+B}}\;\theta\;\gamma$ is
 either equal to some $\iota_i(v_A)$ or some $\iota_2(v_B)$. 
 
-Suppose it is equal $\iota_1(v_A)$. Then,  $\interpE{\judgeE{\Gamma}{\Case{e}{x}{[\inl{x}/z]e'}{y}{[\inr{y}/z]e'}}{C}}\;\theta\;\gamma$ is equal to 
+Suppose it is equal $\iota_1(v_A)$. Then,  $\interpE{\judgeE{\Gamma}{\Case{e}{x}{[\inl{\;x}/z]e'}{y}{[\inr{\;y}/z]e'}}{C}}\;\theta\;\gamma$ is equal to 
 \begin{eqnproof}
   \eline{\left[
            \begin{array}{l}
-            \semfun{v}{\interpE{\judgeE{\Gamma,x:A}{[\inl{x}/z]e'}{C}}\;\theta\;(\gamma,v)}, \\
-            \semfun{v}{\interpE{\judgeE{\Gamma,y:B}{[\inr{y}/z]e'}{C}}\;\theta\;(\gamma,v)}  \\
+            \semfun{v}{\interpE{\judgeE{\Gamma,x:A}{[\inl{\;x}/z]e'}{C}}\;\theta\;(\gamma,v)}, \\
+            \semfun{v}{\interpE{\judgeE{\Gamma,y:B}{[\inr{\;y}/z]e'}{C}}\;\theta\;(\gamma,v)}  \\
            \end{array}\right]
          (\iota_1(v_A))}
         {Semantics}
-  \eline{\interpE{\judgeE{\Gamma,x:A}{[\inl{x}/z]e'}{C}}\;\theta\;(\gamma,v_A)}
+  \eline{\interpE{\judgeE{\Gamma,x:A}{[\inl{\;x}/z]e'}{C}}\;\theta\;(\gamma,v_A)}
         {Sums}  
   \eline{\begin{array}{l}
            \interpE{\judgeE{\Gamma,x:A,z:A+B}{e'}{C}}\;\theta \\
-           \qquad (\gamma, v_A, \interpE{\judgeE{\Gamma,x:A}{\inl{x}}{A+B}}\;\theta\;(\gamma, v_A)) \\
+           \qquad (\gamma, v_A, \interpE{\judgeE{\Gamma,x:A}{\inl{\;x}}{A+B}}\;\theta\;(\gamma, v_A)) \\
          \end{array}}
         {Substitution}
   \eline{\interpE{\judgeE{\Gamma,x:A,z:A+B}{e'}{C}}\;\theta\;(\gamma, v_A, \iota_1(v_A))}
@@ -3568,21 +3573,21 @@ Suppose it is equal $\iota_1(v_A)$. Then,  $\interpE{\judgeE{\Gamma}{\Case{e}{x}
 \end{eqnproof}
 
 Suppose it is $\iota_2(v_B)$. Then,
-$\interpE{\judgeE{\Gamma}{\Case{e}{x}{[\inl{x}/z]e'}{y}{[\inr{y}/z]e'}}{C}}\;\theta\;\gamma$
+$\interpE{\judgeE{\Gamma}{\Case{e}{x}{[\inl{\;x}/z]e'}{y}{[\inr{\;y}/z]e'}}{C}}\;\theta\;\gamma$
 is equal to
 \begin{eqnproof}
   \eline{\left[
            \begin{array}{l}
-            \semfun{v}{\interpE{\judgeE{\Gamma,x:A}{[\inl{x}/z]e'}{C}}\;\theta\;(\gamma,v)}, \\
-            \semfun{v}{\interpE{\judgeE{\Gamma,y:B}{[\inr{y}/z]e'}{C}}\;\theta\;(\gamma,v)}  \\
+            \semfun{v}{\interpE{\judgeE{\Gamma,x:A}{[\inl{\;x}/z]e'}{C}}\;\theta\;(\gamma,v)}, \\
+            \semfun{v}{\interpE{\judgeE{\Gamma,y:B}{[\inr{\;y}/z]e'}{C}}\;\theta\;(\gamma,v)}  \\
            \end{array}\right]
          (\iota_2(v_B))}
         {Semantics}
-  \eline{\interpE{\judgeE{\Gamma,y:B}{[\inr{y}/z]e'}{C}}\;\theta\;(\gamma,v_B)}
+  \eline{\interpE{\judgeE{\Gamma,y:B}{[\inr{\;y}/z]e'}{C}}\;\theta\;(\gamma,v_B)}
         {Sums}  
   \eline{\begin{array}{l}
            \interpE{\judgeE{\Gamma,y:B,z:A+B}{e'}{C}}\;\theta \\
-           \qquad (\gamma, v_B, \interpE{\judgeE{\Gamma,y:B}{\inr{y}}{A+B}}\;\theta\;(\gamma, v_B)) \\
+           \qquad (\gamma, v_B, \interpE{\judgeE{\Gamma,y:B}{\inr{\;y}}{A+B}}\;\theta\;(\gamma, v_B)) \\
          \end{array}}
         {Substitution}
   \eline{\interpE{\judgeE{\Gamma,y:B,z:A+B}{e'}{C}}\;\theta\;(\gamma, v_B, \iota_2(v_B))}
@@ -3836,11 +3841,11 @@ $\interpE{\judgeE{\Gamma, n:\N}{e}{A}}\;\theta\;(\gamma, k)$ $=$ $\interpE{\judg
     \eline{\interpE{\judgeE{\Gamma}{\Fun{\alpha}{\kappa}{e}}{\forall \alpha:\kappa.\;A}}
                    \;\theta\;\gamma
            \;
-           [\theta(\tau)]}
+           \tau(\theta)}
           {Semantics}
-    \eline{(\semfun{\sigma}{\interpE{\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e}{A}}\;(\theta, \sigma)\;\gamma}) [\theta(\tau)]}
+    \eline{(\semfun{\sigma}{\interpE{\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e}{A}}\;(\theta, \sigma)\;\gamma}) \tau(\theta)}
           {Semantics}
-    \eline{\interpE{\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e}{A}}\;(\theta, [\theta(\tau)])\;\gamma}
+    \eline{\interpE{\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e}{A}}\;(\theta, \tau(\theta))\;\gamma}
           {}
     \eline{\interpE{\judgeE{\Gamma}{[\tau/\alpha]e}{[\tau/\alpha]A}}\;\theta\;\gamma}
           {Type Substitution}
@@ -3909,12 +3914,12 @@ $\interpE{\judgeE{\Gamma, n:\N}{e}{A}}\;\theta\;(\gamma, k)$ $=$ $\interpE{\judg
           {Semantics}
     \eline{\begin{array}{l}
              (\semfun{(\sigma,v)}{\interpE{\judgeE[\Theta,\alpha:\kappa]{\Gamma,x:A}{e'}{C}}\;(\theta,\sigma)\;(\gamma,v)}) \\
-             \;\;\left([\theta(\tau)], \interpE{\judgeE{\Gamma}{e}{[\tau/\alpha]A}}\;\theta\;\gamma\right) \\
+             \;\;\left(\tau(\theta), \interpE{\judgeE{\Gamma}{e}{[\tau/\alpha]A}}\;\theta\;\gamma\right) \\
            \end{array}}
           {Semantics}
     \eline{\begin{array}{l}
              \interpE{\judgeE[\Theta,\alpha:\kappa]{\Gamma,x:A}{e'}{C}} \\
-             (\theta,[\theta(\tau)])\;(\gamma, \interpE{\judgeE{\Gamma}{e}{[\tau/\alpha]A}}\;\theta\;\gamma) \\
+             (\theta,\tau(\theta))\;(\gamma, \interpE{\judgeE{\Gamma}{e}{[\tau/\alpha]A}}\;\theta\;\gamma) \\
            \end{array}}
           {Simplify}
     \eline{\interpE{\judgeE{\Gamma,x:A}{[\tau/\alpha, e/x]e'}{C}} \theta\;\gamma}
@@ -3947,7 +3952,7 @@ $\interpE{\judgeE{\Gamma, n:\N}{e}{A}}\;\theta\;(\gamma, k)$ $=$ $\interpE{\judg
              (\semfun{(\sigma,v)}{\interpE{\judgeE[\Theta, \alpha:\kappa]
                                                   {\Gamma, x:A}{[\pack{\alpha}{x}/z]e'}{B}}
                                 \;(\theta,\sigma)\;(\gamma,v)}) \\
-           \;\interpE{\judgeE{\Gamma}{\pack{\tau}{e}}{\exists \alpha:\kappa.\;A}}
+           \;\interpE{\judgeE{\Gamma}{e}{\exists \alpha:\kappa.\;A}}
                      \;\theta\;\gamma \\
            \end{array}}
           {Semantics}
@@ -3960,7 +3965,7 @@ $\interpE{\judgeE{\Gamma, n:\N}{e}{A}}\;\theta\;(\gamma, k)$ $=$ $\interpE{\judg
                       \interpE{\judgeE[\Theta, \alpha:\kappa]
                                       {\Gamma, x:A}{\pack{\alpha}{x}}{\exists \alpha:\kappa.\;A}}
                       \;(\theta,\sigma)\;(\gamma, v)) \\
-           \;\interpE{\judgeE{\Gamma}{\pack{\tau}{e}}{\exists \alpha:\kappa.\;A}}
+           \;\interpE{\judgeE{\Gamma}{e}{\exists \alpha:\kappa.\;A}}
                      \;\theta\;\gamma \\
            \end{array}}
           {Substitution}
@@ -3969,45 +3974,70 @@ $\interpE{\judgeE{\Gamma, n:\N}{e}{A}}\;\theta\;(\gamma, k)$ $=$ $\interpE{\judg
                                                   {\Gamma, x:A, z:\exists \alpha:\kappa.\;A}
                                                   {e'}{B}} 
              \;(\theta,\sigma)\; (\gamma,v, (\sigma, v))) \\
-           \;\interpE{\judgeE{\Gamma}{\pack{\tau}{e}}{\exists \alpha:\kappa.\;A}}
+           \;\interpE{\judgeE{\Gamma}{e}{\exists \alpha:\kappa.\;A}}
                      \;\theta\;\gamma \\
            \end{array}}
           {Semantics}
     \eline{\begin{array}{l}
-             (\lambda (\sigma,v).\;\interpE{\judgeE[\Theta,\alpha:\kappa]
-                                                  {\Gamma, x:A, z:\exists \alpha:\kappa.\;A}
+             (\lambda (\sigma,v).\;\interpE{\judgeE[\Theta]
+                                                  {\Gamma, z:\exists \alpha:\kappa.\;A}
                                                   {e'}{B}} 
-             \;(\theta,\sigma)\; (\gamma,v, (\sigma, v))) \\
-           \;([\theta(\tau)], \interpE{\judgeE{\Gamma}{e}{[\tau/\alpha]A}}\;\theta\;\gamma) \\
+             \;\theta\; (\gamma, (\sigma, v))) \\
+           \;\interpE{\judgeE{\Gamma}{e}{\exists \alpha:\kappa.\;A}}
+                     \;\theta\;\gamma \\
+           \end{array}}
+          {Strengthening}
+    \eline{\begin{array}{l}
+             \interpE{\judgeE[\Theta]
+                              {\Gamma, z:\exists \alpha:\kappa.\;A}
+                              {e'}{B}} 
+             \;\theta\; (\gamma, \interpE{\judgeE{\Gamma}{e}{\exists \alpha:\kappa.\;A}}
+                                    \;\theta\;\gamma) 
            \end{array}}
           {Semantics}
     \eline{\begin{array}{l}
-             \interpE{\judgeE[\Theta,\alpha:\kappa]
-                             {\Gamma, x:A, z:\exists \alpha:\kappa.\;A}
-                             {e'}{B}} \\
-             \; (\theta, [\theta(\tau)]) \\
-             \; (\gamma, \interpE{\judgeE{\Gamma}{e}{[\tau/\alpha]A}}\;\theta\;\gamma,
-                 ([\theta(\tau)], \interpE{\judgeE{\Gamma}{e}{[\tau/\alpha]A}}\;\theta\;\gamma))\\
-           \end{array}}
-          {Simplify}
-    \eline{\begin{array}{l}
-             \interpE{\judgeE[\Theta,\alpha:\kappa]
-                             {\Gamma, x:A, z:\exists \alpha:\kappa.\;A}
-                             {e'}{B}} \\
-             \; (\theta, [\theta(\tau)]) \\
-             \; (\gamma, \interpE{\judgeE{\Gamma}{e}{[\tau/\alpha]A}}\;\theta\;\gamma,
-                 \interpE{\judgeE{\Gamma}{\pack{\tau}{e}}{\exists \alpha:\kappa.\;A}}
-                     \;\theta\;\gamma) \\
+             \interpE{\judgeE[\Theta]
+                              {\Gamma}
+                              {[e/z]e'}{B}}\;\theta \;\gamma
            \end{array}}
           {Semantics}
-    \eline{\begin{array}{l}
-             \interpE{\judgeE[\Theta,\alpha:\kappa]{\Gamma, x:A}{[e/z]e'}{B}} \\
-             \; (\theta, [\theta(\tau)]) 
-             \; (\gamma, \interpE{\judgeE{\Gamma}{e}{[\tau/\alpha]A}}\;\theta\;\gamma) \\
-           \end{array}}
-          {Substitution}
-    \eline{\interpE{\judgeE{\Gamma}{[e/z]e'}{B}}\;\theta\;\gamma}
-          {$\alpha,x \not \in FV([e/z]e')$}
+% 
+% 
+%     \eline{\begin{array}{l}
+%              (\lambda (\sigma,v).\;\interpE{\judgeE[\Theta,\alpha:\kappa]
+%                                                   {\Gamma, x:A, z:\exists \alpha:\kappa.\;A}
+%                                                   {e'}{B}} 
+%              \;(\theta,\sigma)\; (\gamma,v, (\sigma, v))) \\
+%            \;(\tau(\theta), \interpE{\judgeE{\Gamma}{e}{[\tau/\alpha]A}}\;\theta\;\gamma) \\
+%            \end{array}}
+%           {Semantics}
+%     \eline{\begin{array}{l}
+%              \interpE{\judgeE[\Theta,\alpha:\kappa]
+%                              {\Gamma, x:A, z:\exists \alpha:\kappa.\;A}
+%                              {e'}{B}} \\
+%              \; (\theta, \tau(\theta)) \\
+%              \; (\gamma, \interpE{\judgeE{\Gamma}{e}{[\tau/\alpha]A}}\;\theta\;\gamma,
+%                  (\tau(\theta), \interpE{\judgeE{\Gamma}{e}{[\tau/\alpha]A}}\;\theta\;\gamma))\\
+%            \end{array}}
+%           {Simplify}
+%     \eline{\begin{array}{l}
+%              \interpE{\judgeE[\Theta,\alpha:\kappa]
+%                              {\Gamma, x:A, z:\exists \alpha:\kappa.\;A}
+%                              {e'}{B}} \\
+%              \; (\theta, \tau(\theta)) \\
+%              \; (\gamma, \interpE{\judgeE{\Gamma}{e}{[\tau/\alpha]A}}\;\theta\;\gamma,
+%                  \interpE{\judgeE{\Gamma}{e}{\exists \alpha:\kappa.\;A}}
+%                      \;\theta\;\gamma) \\
+%            \end{array}}
+%           {Semantics}
+%     \eline{\begin{array}{l}
+%              \interpE{\judgeE[\Theta,\alpha:\kappa]{\Gamma, x:A}{[e/z]e'}{B}} \\
+%              \; (\theta, \tau(\theta)) 
+%              \; (\gamma, \interpE{\judgeE{\Gamma}{e}{[\tau/\alpha]A}}\;\theta\;\gamma) \\
+%            \end{array}}
+%           {Substitution}
+%     \eline{\interpE{\judgeE{\Gamma}{[e/z]e'}{B}}\;\theta\;\gamma}
+%           {$\alpha,x \not \in FV([e/z]e')$}
   \end{eqnproof}
 
 \item case EqCommandEta: 
