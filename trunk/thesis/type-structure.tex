@@ -2385,7 +2385,7 @@ judgments, and give their proofs in the following subsection.
           {\judgeC{\Gamma}{\letv{x}{\comp{e}}{c}}{A}}
           {\judgeEqC{\Gamma}{\letv{x}{\comp{e}}{c}}{[e/x]c}{A}}
 \and
-\inferrule*[right=EqCommandComm]
+\inferrule*[right=EqCommandAssoc]
           {\judgeC{\Gamma}{\letv{x}{\comp{\letv{y}{e}{c_1}}}{c_2}}{A}}
           {\judgeEqC{\Gamma}{\letv{x}{\comp{\letv{y}{e}{c_1}}}{c_2}}
                             {\letv{y}{e}{\letv{x}{\comp{c_1}}}{c_2}}{A}}
@@ -4123,7 +4123,7 @@ $\interpE{\judgeE{\Gamma, n:\N}{e}{A}}\;\theta\;(\gamma, k)$ $=$ $\interpE{\judg
           {Substitution}
   \end{eqnproof}
 
-\item EqCommandComm:
+\item EqCommandAssoc:
   \begin{eqnproof}
     \eclaim[1]{\scriptsize \judgeEqC{\Gamma}{\letv{x}{\comp{\letv{y}{e}{c_1}}}{c_2}}
                                 {\letv{y}{e}{\letv{x}{\comp{c_1}}{c_2}}}{C}}
