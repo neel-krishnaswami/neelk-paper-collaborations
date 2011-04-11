@@ -10,6 +10,8 @@
 \newcommand{\seqsort}[1]{\ctext{seq}\;{#1}}
 \newcommand{\listtype}[1]{\ctext{list}\;{#1}}
 
+\newcommand{\forallsort}[3]{\Pi {#1}:{#2}.\;{#3}}
+
 \newcommand{\pair}[2]{\left<{#1},{#2}\right>}
 \newcommand{\fst}[1]{\ctext{fst}\; #1}
 \newcommand{\snd}[1]{\ctext{snd}\; #1}
@@ -123,7 +125,7 @@
 
 
 \newcommand{\judgeP}[3]{{#1} \vdash {#2} : {#3}}
-\newcommand{\judgeS}[2][\Delta]{{#1} \vartriangleright {#2} : \spectype}
+\newcommand{\judgeS}[2][\Theta; \Gamma; \Delta]{{#1} \vartriangleright {#2} : \spectype}
 
 \newcommand{\judgeSCtx}[2]{{#1} \vartriangleright {#2} : \ctext{context}}
 
@@ -205,16 +207,21 @@
 % Macros for type checking assertions
 
 \newcommand{\pfun}[3]{\hat{\lambda} #1:#2.\;#3}
+\newcommand{\pfunall}[3]{\underline{\hat{\lambda}} #1:#2.\;#3}
 \newcommand{\restrictkind}[1]{({#1})\Downarrow_K}
 \newcommand{\restricttype}[1]{({#1})\Downarrow_T}
 
 \newcommand{\restricttyenv}[2]{{#2}\Downarrow^{#1}_K}
 \newcommand{\restrictvals}[2]{{#2}\Downarrow^{#1}_T}
-\newcommand{\judgeACtx}[1]{\vartriangleright {#1} \;\ctext{ok}}
-\newcommand{\judgeA}[3][\Delta]{{#1} \vartriangleright {#2} : {#3}}
-\newcommand{\judgeSort}[2][\Delta]{\judgeA[{#1}]{{#2}}{\ctext{sort}}}
-\newcommand{\judgeSortEq}[3][\Delta]{{#1} \vartriangleright {#2} \equiv {#3} : \ctext{sort}}
+
+\newcommand{\judgeSort}[2][\Theta]{\judgeA[{#1}]{{#2}}{\ctext{sort}}}
+\newcommand{\judgeSortEq}[3][\Theta]{{#1} \vartriangleright {#2} \equiv {#3} : \ctext{sort}}
+
 \newcommand{\judgeEqA}[4][\Delta]{{#1} \vartriangleright {#2} \equiv {#3} : {#4}}
+
+\newcommand{\judgeACtx}[2][\Theta]{{#1} \vartriangleright {#2}}
+\newcommand{\judgeA}[3][\Theta; \Gamma; \Delta]{{#1} \vartriangleright {#2} : {#3}}
+
 
 \newcommand{\ms}[1]{\mathcal{#1}}
 \newcommand{\Frame}[2]{{#1} \otimes {#2}}
