@@ -1938,16 +1938,6 @@ between the two sorts. The type-indexed sort
 $\forallsort{\alpha}{\kappa}{\upsilon}$ is interpreted by an indexed
 family of sets, with the index extendeding the context.
 
-We show that this definition is compatible with sort-equality below:
-
-\begin{lemma}{(Soundness of Sort Equality)}
-If $\judgeSortEq{\omega}{\omega'}$ is derivable, then
-$\interp{\judgeSort{\omega}} = \interp{\judgeSort{\omega'}}$.
-\end{lemma}
-\begin{proof}
-  The proof is a routine induction.
-\end{proof}
-
 
 % Therefore, we will need to give a mutually-recursive definition
 % between the interpretation the two judgements $\judgeACtx{\Delta}$ and
@@ -2041,7 +2031,7 @@ syntactically distinct.
 
 \subsection{Substitution Properties}
 
-We state the two main soundness theorems below. 
+We state the main soundness theorems below. 
 
 \begin{figure}
 \begin{displaymath}
@@ -2192,7 +2182,8 @@ l \pointsto v & = & \setof{(\setof{l}, \semfun{loc}{v \mbox{ when } loc = l})}
 \label{spec-interpretation}  
 \end{figure}
 
-\subsubsection{Semantics of Substitution}
+\ \\
+
 
 \begin{lemma}{(Substitution for Sorts)}
 Suppose $\judgeWK{\tau}{\kappa}$.
@@ -2204,13 +2195,42 @@ Suppose $\judgeWK{\tau}{\kappa}$.
       $\interp{\judgeACtx{{[\tau/\alpha]}\Delta}}\;\theta$ equals 
       $\interp{\judgeACtx[\Theta, \alpha:\kappa]{\Delta}}(\theta, \interp{\judgeWK{\tau}{\kappa}}\;\theta)$ 
 \item If $\judgeSortEq[\Theta, \alpha:\kappa]{\omega}{\omega'}$, then
-$\judgeSortEq{{[\tau/\alpha]}\omega}{{[\tau/\alpha]}\omega'}$. 
+      $\judgeSortEq{{[\tau/\alpha]}\omega}{{[\tau/\alpha]}\omega'}$. 
+\item If $\judgeSortEq{\omega}{\omega'}$ is derivable, then
+      $\interp{\judgeSort{\omega}} = \interp{\judgeSort{\omega'}}$.
+\item If $\judgeSort[\Theta]{\omega}$, then $\judgeSort[\Theta, \alpha:\kappa]{\omega}$
+\item If $\judgeSort[\Theta]{\omega}$ and $\judgeSort[\Theta, \alpha:\kappa]{\omega}$, then
+      $\interp{\judgeSort[\Theta]{\omega}}\;\theta = \interp{\judgeSort[\Theta, \alpha:\kappa]{\omega}}\;(theta,\tau)$
 \end{enumerate}
 \end{lemma}
 \begin{proof}
-  These lemmas follow from a routine induction.
+  These lemmas follow from routine inductions.
 \end{proof}
 
+\ \\
+
+\begin{lemma}{(Weakening and Strengthening)}
+\begin{enumerate}
+\item If $\judgeA{p}{\omega}$, then $\judgeA[\Theta, \alpha:\kappa; \Gamma; \Delta]{p}{\omega}$.
+\item If $\judgeA{p}{\omega}$ and $\judgeSort{A}$, then $\judgeA[\Theta; \Gamma, x:A; \Delta]{p}{\omega}$.
+\item If $\judgeA{p}{\omega}$ and $\judgeSort{\upsilon}$, then $\judgeA[\Theta; \Gamma; \Delta, u:\upsilon]{p}{\omega}$.
+\item If $\judgeA{p}{\omega}$ and $\judgeA[\Theta, \alpha:\kappa; \Gamma; \Delta]{p}{\omega'}$ and $\judgeSortEq{\omega}{\omega'}$, then \\
+      $\interp{\judgeA{p}{\omega}}\;\theta\;\gamma\;\delta =\interp{\judgeA[\Theta, \alpha:\kappa; \Gamma; \Delta]{p}{\omega'}}\;(\theta, \tau)\;\gamma\;\delta$. 
+\item If $\judgeA{p}{\omega}$ and $\judgeA[\Theta; \Gamma, x:A; \Delta]{p}{\omega'}$ and $\judgeSortEq{\omega}{\omega'}$, then \\
+      $\interp{\judgeA{p}{\omega}}\;\theta\;\gamma\;\delta =\interp{\judgeA[\Theta; \Gamma, x:A; \Delta]{p}{\omega'}}\;\theta\;(\gamma,v)\;\delta$. 
+\item If $\judgeA{p}{\omega}$ and $\judgeA[\Theta; \Gamma; \Delta, u:\upsilon]{p}{\omega'}$ and $\judgeSortEq{\omega}{\omega'}$, then \\
+      $\interp{\judgeA{p}{\omega}}\;\theta\;\gamma\;\delta =\interp{\judgeA[\Theta; \Gamma; \Delta, u:\upsilon]{p}{\omega'}}\;(\theta, \tau)\;\gamma\;(\delta,v)$. 
+\end{enumerate}
+In the last three cases, we assume that the arguments to the semantic functions are suitably typed. 
+\end{lemma}
+
+\begin{proof}
+These proofs all follow from a routine induction. The
+extra premise in the final three cases handles the slight non-syntax-directedness induced by the 
+\textsc{TEqSort} rule. 
+\end{proof}
+
+\ \\
 
 \begin{lemma}{(Substitution for Terms and Specifications)}
 \begin{enumerate}
@@ -2282,8 +2302,8 @@ $\judgeSortEq{{[\tau/\alpha]}\omega}{{[\tau/\alpha]}\omega'}$.
          {\validS{\spec{p}{c}{a:A}{q} \specimp \mspec{p}{\comp{c}}{a:A}{q}}} 
 \and 
   \inferrule*[right=AxEquiv2]
-    {\judgeS{\mspec{p}{c}{a:A}{q} \specimp \spec{p}{\comp{c}}{a:A}{q}}} 
-    {\validS{\mspec{p}{c}{a:A}{q} \specimp \spec{p}{\comp{c}}{a:A}{q}}} 
+    {\judgeS{\mspec{p}{\comp{c}}{a:A}{q} \specimp \spec{p}{c}{a:A}{q}}} 
+    {\validS{\mspec{p}{\comp{c}}{a:A}{q} \specimp \spec{p}{c}{a:A}{q}}} 
 \and
 
   \inferrule*[right=AxReturn]
@@ -2308,13 +2328,13 @@ $\judgeSortEq{{[\tau/\alpha]}\omega}{{[\tau/\alpha]}\omega'}$.
 
   \inferrule*[right=AxBind]
             {\validS{\mspec{p}{e}{x:A}{q}} \\
-             \validS[\Delta,x:A]{\spec{q}{c}{a:B}{r}} \\
-             \judgeA[\Delta,a:A]{q}{\assert}}
+             \validS[\Theta; \Gamma, x:A; \Delta]{\spec{q}{c}{a:B}{r}} \\
+             \judgeA[\Theta; \Gamma, a:B; \Delta]{r}{\assert}}
             {\validS{\spec{p}{\letv{x}{e}{c}}{a:B}{r}}}
 \and
 
   \inferrule*[right=AxFix]
-            {\validS{(\forall x:\monad{A}.\; \mspec{p}x{a:A}{q(a)} \specimp \mspec{p}{e}{a:A}{q})}}
+            {\validS{(\forall x:\monad{A}.\; \mspec{p}x{a:A}{q(a)}) \specimp \mspec{p}{e}{a:A}{q})}}
             {\validS{\mspec{p}{\fix{x:\monad{A}}{e}}{a:A}{q}}}
 \end{mathpar}
 \caption{Basic Axioms of Specification Logic}
@@ -2334,15 +2354,25 @@ $\judgeSortEq{{[\tau/\alpha]}\omega}{{[\tau/\alpha]}\omega'}$.
              {\validS{\setof{r} \specimp \spec{p \land r}{c}{a:A}{q}}}
              {\validS{\setof{r} \specimp \spec{p}{c}{a:A}{q}}}
 \and
-
+  
   \inferrule*[right=AxUseValid]
              { }
              {\validS{\setof{\validprop{S}} \specimp S}}
 \and
+  \inferrule*[right=AxForgetEx1]
+             {\validS[\Theta; \Gamma; \Delta, u:\upsilon]{\spec{p}{c}{a:A}{q}}\\ u\not\in\mathrm{FV}(q)}
+             {\validS{\spec{\exists u:\upsilon.\;p}{c}{a:A}{q}}}
 
-  \inferrule*[right=AxForgetEx]
-             {\validS[\Delta, u:\omega]{\spec{p}{c}{a:A}{q}} \\ u\not\in\mathrm{FV}(c) \\ u\not\in\mathrm{FV}(q)}
-             {\validS{\spec{\exists u:\omega.\;p}{c}{a:A}{q}}}
+\and
+  \inferrule*[right=AxForgetEx2]
+             {\validS[\Theta; \Gamma, y:B; \Delta]{\spec{p}{c}{a:A}{q}} \\ y\not\in\mathrm{FV}(c) \\ y\not\in\mathrm{FV}(q)}
+             {\validS{\spec{\exists y:B.\;p}{c}{a:A}{q}}}
+
+\and
+  \inferrule*[right=AxForgetEx3]
+             {\validS[\Theta, \alpha:\kappa; \Gamma; \Delta]{\spec{p}{c}{a:A}{q}} \\ \alpha\not\in\mathrm{FV}(c) \\ u\not\in\mathrm{FV}(\alpha)}
+             {\validS{\spec{\exists \alpha:\kappa.\;p}{c}{a:A}{q}}}
+
 \and
   \inferrule*[right=AxEquality]
              {\validS{\setof{r} \specimp \spec{p}{c[e/x]}{a:A}{q}} \\
@@ -2382,7 +2412,7 @@ $\judgeSortEq{{[\tau/\alpha]}\omega}{{[\tau/\alpha]}\omega'}$.
   \inferrule*{\validS{S}}
              {\validP{\validprop{S}}}
 \and
-  \inferrule*{\judgeP{\Delta}{p}{\assert}}
+  \inferrule*{\judgeA{p}{\assert}}
              {\validP{\validprop{\setof{p}} \implies p}}
 \and 
   \inferrule*{\judgeEqA{p}{q}{\omega}}
@@ -2409,8 +2439,7 @@ $\judgeSortEq{{[\tau/\alpha]}\omega}{{[\tau/\alpha]}\omega'}$.
           {\judgeEqA{p}{r}{\omega}}
 \and
 \inferrule*[]
-          {\judgeA{(\fun{x}{\omega}{p})\;q}{\omega'} \\
-           \mbox{$q$ satisfies conditions of substitution theorem}}
+          {\judgeA{(\fun{x}{\omega}{p})\;q}{\omega'}}
           {\judgeEqA{(\fun{x}{\omega}{p})\;q}{[q/x]p}{\omega'}}
 \and
 \inferrule*[]
@@ -2423,15 +2452,11 @@ $\judgeSortEq{{[\tau/\alpha]}\omega}{{[\tau/\alpha]}\omega'}$.
           {\judgeEqA{p\;q}{p'\;q'}{\omega'}}
 \and
 \inferrule*[]
-          {x:\omega \in \Delta}
-          {\judgeEqA{x}{x}{\omega}}
-\and
-\inferrule*[]
-          {\judgeKeq[\restrictkind{\Delta}]{\tau}{\tau'}{\kappa}}
+          {\judgeKeq{\tau}{\tau'}{\kappa}}
           {\judgeEqA{\tau}{\tau'}{\kappa}}
 \and
 \inferrule*[]
-          {\judgeEq[\restrictkind{\Delta}]{\restricttype{\Delta}}{e}{e'}{A}}
+          {\judgeEq{\Gamma}{e}{e'}{A}}
           {\judgeEqA{e}{e'}{A}}
 \and 
 \inferrule*[]
@@ -2460,19 +2485,24 @@ My program logic consists of three judgments:
 
 \noindent The semantics of these three judgments is given as follows:
 \begin{enumerate}
-\item An assertion $\judgeP{\Delta}{p}{\assert}$ is valid, if and only if
-for all $\delta \in \interp{\judgeACtx{\Delta}}$,
-$\interp{\judgeP{\Delta}{p}{\assert}}\;\delta = \top$.
+\item An assertion $\judgeP{\Delta}{p}{\assert}$ is valid, if and only
+  if for all $\theta \in \interp{\theta}, \gamma \in
+  \interp{\judgectx{\Theta}{\Gamma}}\theta$, and $\delta \in
+  \interp{\judgeACtx{\Delta}}\theta$, we have
+  $\interp{\judgeP{\Delta}{p}{\assert}}\;\theta\;\gamma\;\delta = \top$.
 
 \item Similarly, a specification $\judgeS{S}$ is valid if and only
-if, for all $\delta \in \interp{\judgeACtx{\Delta}}$,
+if, for all $\theta \in \interp{\theta}, \gamma \in
+  \interp{\judgectx{\Theta}{\Gamma}}\theta$, and $\delta \in
+  \interp{\judgeACtx{\Delta}}\theta$, we have
 $\interp{\judgeS{S}}\;\delta = \top$.
 
 \item Finally, two assertion terms $\judgeA{p}{\omega}$ and
-$\judgeA{q}{\omega}$ are validly equal, if and only if for all $\delta
-\in \interp{\judgeACtx{\Delta}}$,
-$\interp{\judgeP{\Delta}{p}{\assert}}\;\delta$ is equal to
-$\interp{\judgeP{\Delta}{p}{\assert}}\;\delta$
+$\judgeA{q}{\omega}$ are validly equal, if and only if for all 
+$\theta \in \interp{\theta}, \gamma \in
+  \interp{\judgectx{\Theta}{\Gamma}}\theta$, and $\delta \in
+  \interp{\judgeACtx{\Delta}}\theta$, we have that
+$\interp{\judgeP{\Delta}{p}{\assert}}\;\delta = \interp{\judgeP{\Delta}{p}{\assert}}\;\delta$
 \end{enumerate}
 
 So this says that for any assignment of the free variables, a valid
@@ -2572,9 +2602,11 @@ More interesting than the syntactic well-formedness of the frame
 operator is its semantic well-formedness. 
 
 \begin{lemma}{(Syntactic Framing is Semantic Framing)}
-If $\judgeS{S}$ and $\judgeA{r}{\assert}$, then for all $\delta \in \interp{\Delta}$, 
-$\interp{\judgeS{\Frame{S}{r}}}\;\delta = 
-\Frame{\interp{\judgeS{S}}\;\delta}{\interp{\judgeA{r}{\assert}}\;\delta}$ \\
+If $\judgeS{S}$ and $\judgeA{r}{\assert}$, then for suitably typed $\theta, \gamma$ and $\delta$,
+$\interp{\judgeS{\Frame{S}{r}}}\;\theta\;\gamma\;\delta$ equals  \\
+$\Frame{\interp{\judgeS{S}}\;\theta\;\gamma\;\delta}{\interp{\judgeA{r}{\assert}}\;\theta\;\gamma\;\delta}.$ 
+
+
 \end{lemma}
 \begin{proof}
   The proof is at the end of the chapter.
@@ -2875,7 +2907,7 @@ Now, we proceed by mutual induction on the derivation of $p$ and $S$:
   \begin{tabbedproof}
     \oo By inversion, we know $\judgectx{\Theta, \alpha:\kappa}{\Delta}$ \\
     \oo By inversion, we know $\judgectx{\Theta, \alpha:\kappa}{\Gamma}$ \\
-    \oo By inversion, we know $\judgeWK[\Theta, \alpha]{\tau'}{\kappa'}$ \\
+    \oo By inversion, we know $\judgeWK[\Theta, \alpha:\kappa]{\tau'}{\kappa'}$ \\
     \oo By substitution, $\judgectx{\Theta}{{[\tau/\alpha]}\Delta}$ \\
     \oo By substitution, $\judgectx{\Theta}{{[\tau/\alpha]}\Gamma}$ \\
     \oo By substitution, $\judgeWK{{[\tau/\alpha]}\tau'}{\kappa'}$ \\
@@ -2993,16 +3025,16 @@ Now, we proceed by mutual induction on the derivation of $p$ and $S$:
   %
   For semantics, consider $\interp{\judgeA[\Theta; {[\tau/\alpha]}\Gamma; {[\tau/\alpha]}\Delta]{{[\tau/\alpha]}(\pfun{\beta}{\kappa'}{p})}{{[\tau/\alpha]}(\kappa' \To \upsilon)}}\;\theta\;\gamma\;\delta$ \\
   \begin{eqnproof}
-    \eline{\semfun{\tau}{\interp{\judgeA[\Theta, \beta:\kappa'; {[\tau/\alpha]}\Gamma; {[\tau/\alpha]}\Delta]{{[\tau/\alpha]}p}{{[\tau/\alpha]}\upsilon}}\;(\theta,\tau)\;\gamma\;\delta}}
+    \eline{\semfun{\tau'}{\interp{\judgeA[\Theta, \beta:\kappa'; {[\tau/\alpha]}\Gamma; {[\tau/\alpha]}\Delta]{{[\tau/\alpha]}p}{{[\tau/\alpha]}\upsilon}}\;(\theta,\tau')\;\gamma\;\delta}}
           {Semantics}
-    \eline{\semfun{\tau}{\interp{\judgeA[\Theta, \alpha:\kappa, \beta:\kappa'; \Gamma; \Delta]{p}{\upsilon}}\;(\theta, \interp{\judgeWK{\tau}{\kappa}}\;\theta, \tau)\;\gamma\;\delta}}
+    \eline{\semfun{\tau'}{\interp{\judgeA[\Theta, \alpha:\kappa, \beta:\kappa'; \Gamma; \Delta]{p}{\upsilon}}\;(\theta, \interp{\judgeWK{\tau}{\kappa}}\;\theta, \tau')\;\gamma\;\delta}}
           {Induction}
     \eline{\interp{\judgeA[\Theta, \alpha:\kappa; \Gamma; \Delta]{\pfun{\beta}{\kappa'}{p}}{\kappa' \To \upsilon}}\;(\theta, \interp{\judgeWK{\tau}{\kappa}}\;\theta)\;\gamma\;\delta}
           {Semantics}
   \end{eqnproof}
   The correctness of the application of $\gamma$ and $\delta$ follows from the equations for contexts
   under substitution. We also silently permuted the context at the second step, and made use of the fact
-  that $\beta$ is not free in $\Gamma$ or $\Delta$.
+  that $\beta$ is not free in $\Gamma$, $\Delta$ or $\tau$.
 
 \item Case \textsc{TAbsAll}: $\judgeA[\Theta, \alpha:\kappa; \Gamma; \Delta]{\pfunall{\beta}{\kappa'}{p}}{\forallsort{\beta}{\kappa'}{\upsilon}}$
   
@@ -3014,11 +3046,16 @@ Now, we proceed by mutual induction on the derivation of $p$ and $S$:
     \oo By def of subst, $\judgeA[\Theta; {[\tau/\alpha]}\Gamma; {[\tau/\alpha]}\Delta]{{[\tau/\alpha]}(\pfunall{\beta}{\kappa'}{p})}{{[\tau/\alpha]}\forallsort{\beta}{\kappa'}{\upsilon}}$ \\
   \end{tabbedproof}
   %
-  For semantics, consider $\interp{\judgeA[\Theta; {[\tau/\alpha]}\Gamma; {[\tau/\alpha]}\Delta]{{[\tau/\alpha]}(\pfun{\beta}{\kappa'}{p})}{{[\tau/\alpha]}(\forallsort{\beta}{\kappa'}{\upsilon})}}\;\theta\;\gamma\;\delta$ \\
+  For semantics, consider $\interp{\judgeA[\Theta; 
+                                           {[\tau/\alpha]}\Gamma; 
+                                           {[\tau/\alpha]}\Delta]
+                                          {{[\tau/\alpha]}(\pfun{\beta}{\kappa'}{p})}
+                                          {{[\tau/\alpha]}(\forallsort{\beta}{\kappa'}{\upsilon})}}
+                                  \;\theta\;\gamma\;\delta$ \\
   \begin{eqnproof}
-    \eline{\semfun{\tau}{\interp{\judgeA[\Theta, \beta:\kappa'; {[\tau/\alpha]}\Gamma; {[\tau/\alpha]}\Delta]{{[\tau/\alpha]}p}{{[\tau/\alpha]}\upsilon}}\;(\theta,\tau)\;\gamma\;\delta}}
+    \eline{\semfun{\tau'}{\interp{\judgeA[\Theta, \beta:\kappa'; {[\tau/\alpha]}\Gamma; {[\tau/\alpha]}\Delta]{{[\tau/\alpha]}p}{{[\tau/\alpha]}\upsilon}}\;(\theta,\tau')\;\gamma\;\delta}}
           {Semantics}
-    \eline{\semfun{\tau}{\interp{\judgeA[\Theta, \alpha:\kappa, \beta:\kappa'; \Gamma; \Delta]{p}{\upsilon}}\;(\theta, \interp{\judgeWK{\tau}{\kappa}}\;\theta, \tau)\;\gamma\;\delta}}
+    \eline{\semfun{\tau'}{\interp{\judgeA[\Theta, \alpha:\kappa, \beta:\kappa'; \Gamma; \Delta]{p}{\upsilon}}\;(\theta, \interp{\judgeWK{\tau}{\kappa}}\;\theta, \tau')\;\gamma\;\delta}}
           {Induction}
     \eline{\interp{\judgeA[\Theta, \alpha:\kappa; \Gamma; \Delta]{\pfun{\beta}{\kappa'}{p}}{\forallsort{\beta}{\kappa'}{\upsilon}}}\;(\theta, \interp{\judgeWK{\tau}{\kappa}}\;\theta)\;\gamma\;\delta}
           {Semantics}
@@ -3035,15 +3072,26 @@ Now, we proceed by mutual induction on the derivation of $p$ and $S$:
     \oo By inversion, $\judgeA[\Theta, \alpha:\kappa; \Gamma; \Delta]{q}{\omega}$\\
     \oo By induction, $\judgeA[\Theta; {[\tau/\alpha]}\Gamma; {[\tau/\alpha]}\Delta]{{[\tau/\alpha]}p}{{[\tau/\alpha]}(\omega \To \upsilon)}$\\
     \oo By induction, $\judgeA[\Theta; {[\tau/\alpha]}\Gamma; {[\tau/\alpha]}\Delta]{{[\tau/\alpha]}q}{{[\tau/\alpha]}\omega}$\\
-    \oo By rule, $\judgeA[\Theta; {[\tau/\alpha]}\Gamma; {[\tau/\alpha]}\Delta]{{[\tau/\alpha]}p\;{[\tau/\alpha]}q}{{[\tau/\alpha]}\omega \To {[\tau/\alpha]}\upsilon}$\\
-    \oo By subst def, $\judgeA[\Theta; {[\tau/\alpha]}\Gamma; {[\tau/\alpha]}\Delta]{{[\tau/\alpha]}(p\;q)}{{[\tau/\alpha]}(\omega \To \upsilon)}$\\
+    \oo By rule, $\judgeA[\Theta; {[\tau/\alpha]}\Gamma; {[\tau/\alpha]}\Delta]{{[\tau/\alpha]}p\;{[\tau/\alpha]}q}{{[\tau/\alpha]}\upsilon}$\\
+    \oo By subst def, $\judgeA[\Theta; {[\tau/\alpha]}\Gamma; {[\tau/\alpha]}\Delta]{{[\tau/\alpha]}(p\;q)}{{[\tau/\alpha]}\upsilon}$\\
   \end{tabbedproof}
 
-  For semantics, consider $\interp{\judgeA[\Theta; {[\tau/\alpha]}\Gamma; {[\tau/\alpha]}\Delta]{{[\tau/\alpha]}(p\;q)}{{[\tau/\alpha]}\upsilon}}\;\theta\;\gamma\;\delta$
+  For semantics, consider $\interp{\judgeA[\Theta; 
+                                          {[\tau/\alpha]}\Gamma; 
+                                          {[\tau/\alpha]}\Delta]
+                                          {{[\tau/\alpha]}(p\;q)}
+                                          {{[\tau/\alpha]}\upsilon}}
+                                 \;\theta\;\gamma\;\delta$
   \begin{eqnproof}
     \eline{\begin{array}{l}
-             (\interp{\judgeA[\Theta; {[\tau/\alpha]}\Gamma; {[\tau/\alpha]}\Delta]{{[\tau/\alpha]}p}{{[\tau/\alpha]}(\omega \To \upsilon)}}\;\theta\;\gamma\;\delta) \\
-             \;\;(\interp{\judgeA[\Theta; {[\tau/\alpha]}\Gamma; {[\tau/\alpha]}\Delta]{{[\tau/\alpha]}q}{{[\tau/\alpha]}\omega}}\;\theta\;\gamma\;\delta) 
+             (\interp{\judgeA[\Theta; {[\tau/\alpha]}\Gamma; {[\tau/\alpha]}\Delta]
+                             {{[\tau/\alpha]}p}
+                             {{[\tau/\alpha]}(\omega \To \upsilon)}}
+                     \;\theta\;\gamma\;\delta) \\
+             \;\;(\interp{\judgeA[\Theta; {[\tau/\alpha]}\Gamma; {[\tau/\alpha]}\Delta]
+                                 {{[\tau/\alpha]}q}
+                                 {{[\tau/\alpha]}\omega}}
+                         \;\theta\;\gamma\;\delta) 
       \end{array}}
     {Semantics}
     \eline{\begin{array}{l}
@@ -3068,7 +3116,11 @@ Now, we proceed by mutual induction on the derivation of $p$ and $S$:
     \oo By subst def, $\judgeA[\Theta; {[\tau/\alpha]}\Gamma; {[\tau/\alpha]}\Delta]{{[\tau/\alpha]}(p\;[\tau'])}{{[\tau/\alpha, [\tau/\alpha]\tau'/\beta]}\upsilon}$\\
   \end{tabbedproof}
 
-  For semantics, consider $\interp{\judgeA[\Theta; {[\tau/\alpha]}\Gamma; {[\tau/\alpha]}\Delta]{{[\tau/\alpha]}(p\;[\tau'])}{{[\tau/\alpha]}\upsilon}}\;\theta\;\gamma\;\delta$
+  For semantics, consider $\interp{\judgeA[\Theta;  
+                                           {[\tau/\alpha]}\Gamma; 
+                                           {[\tau/\alpha]}\Delta]
+                                          {{[\tau/\alpha]}(p\;[\tau'])}
+                                          {{[\tau/\alpha]}[\tau'/\beta]\upsilon}}\;\theta\;\gamma\;\delta$
   \begin{eqnproof}
     \eline{\begin{array}{l}
              (\interp{\judgeA[\Theta; {[\tau/\alpha]}\Gamma; {[\tau/\alpha]}\Delta]{{[\tau/\alpha]}p}{{[\tau/\alpha]}(\forallsort{\beta}{\kappa'}{\upsilon})}}\;\theta\;\gamma\;\delta) \\
@@ -3080,7 +3132,7 @@ Now, we proceed by mutual induction on the derivation of $p$ and $S$:
              \;\;(\interp{\judgeA[\Theta, \alpha:\kappa; \Gamma; \Delta]{\tau'}{\kappa'}}\;(\theta, \interp{\judgeWK{\tau}{\kappa}}\;\theta)\;\gamma\;\delta) 
       \end{array}}
     {Induction}
-    \eline{\interp{\judgeA[\Theta, \alpha:\kappa; \Gamma; \Delta]{p\;[\tau']}{\upsilon}}\;(\theta, \interp{\judgeWK{\tau}{\kappa}}\;\theta)\;\gamma\;\delta}
+    \eline{\interp{\judgeA[\Theta, \alpha:\kappa; \Gamma; \Delta]{p\;[\tau']}{[\tau'/\beta]\upsilon}}\;(\theta, \interp{\judgeWK{\tau}{\kappa}}\;\theta)\;\gamma\;\delta}
           {Semantics}
   \end{eqnproof}
 
@@ -3096,10 +3148,10 @@ Now, we proceed by mutual induction on the derivation of $p$ and $S$:
     \oo By rule, $\judgeA[\Theta; {[\tau/\alpha]}\Gamma; {[\tau/\alpha]}\Delta]{c}{\assert}$
   \end{tabbedproof}
 
-  For semantics consider $\interp{\judgeA[\Theta; {[\tau/\alpha]}\Gamma; {[\tau/\alpha]}\Delta]{c}{\assert}}\;\theta;\gamma\;\delta$ 
+  For semantics consider $\interp{\judgeA[\Theta; {[\tau/\alpha]}\Gamma; {[\tau/\alpha]}\Delta]{c}{\assert}}\;\theta\;\gamma\;\delta$ 
   \begin{eqnproof}
     \eline{\interp{c}^0}{Semantics}
-    \eline{\interp{\judgeA[\Theta, \alpha:\kappa; \Gamma; \Delta]{c}{\assert}}\;(\theta, \interp{\judgeWK{\tau}{\kappa}}\;\theta);\gamma\;\delta}
+    \eline{\interp{\judgeA[\Theta, \alpha:\kappa; \Gamma; \Delta]{c}{\assert}}\;(\theta, \interp{\judgeWK{\tau}{\kappa}}\;\theta)\;\gamma\;\delta}
           {Semantics}
   \end{eqnproof}
   The correctness of the application of $\gamma$ and $\delta$ follows from the equations for contexts
@@ -3356,12 +3408,12 @@ Now, we proceed by mutual induction on the derivation of $p$ and $S$:
            \end{array}}
           {Semantics}
     \eline{\begin{array}{l}
-           \{\interp{\judgeA[\Theta, \alpha:\kappa \Gamma; \Delta]{p}{\assert}}\;(\theta, \interp{\judgeWK{\tau}{\kappa}}\;\theta)\;\gamma\;\delta\} \\
+           \{\interp{\judgeA[\Theta, \alpha:\kappa; \Gamma; \Delta]{p}{\assert}}\;(\theta, \interp{\judgeWK{\tau}{\kappa}}\;\theta)\;\gamma\;\delta\} \\
            \interp{\judgeC[\Theta, \alpha:\kappa]{\Gamma}{c}{A}}\;(\theta, \interp{\judgeWK{\tau}{\kappa}}\;\theta)\;\gamma\;\delta \\
-           \{v.\;\interp{\judgeA[\Theta, \alpha:\kappa \Gamma, a:A; \Delta]{q}{\assert}}\;(\theta, \interp{\judgeWK{\tau}{\kappa}}\;\theta)\;(\gamma,v)\;\delta\} 
+           \{v.\;\interp{\judgeA[\Theta, \alpha:\kappa; \Gamma, a:A; \Delta]{q}{\assert}}\;(\theta, \interp{\judgeWK{\tau}{\kappa}}\;\theta)\;(\gamma,v)\;\delta\} 
            \end{array}}
           {Induction}
-    \eline{\interp{\judgeS[\Theta; \Gamma; \Delta]{(\spec{p}{c}{a:A}{q})}}\;(\theta, \interp{\judgeWK{\tau}{\kappa}}\;\theta);\gamma\;\delta}
+    \eline{\interp{\judgeS[\Theta; \Gamma; \Delta]{(\spec{p}{c}{a:A}{q})}}\;(\theta, \interp{\judgeWK{\tau}{\kappa}}\;\theta)\;\gamma\;\delta}
           {Semantics}
   \end{eqnproof}
   The correctness of the application of $\gamma$ and $\delta$ follows from the equations for
@@ -3389,9 +3441,9 @@ Now, we proceed by mutual induction on the derivation of $p$ and $S$:
            \end{array}}
           {Semantics}
     \eline{\begin{array}{l}
-           \{\interp{\judgeA[\Theta, \alpha:\kappa \Gamma; \Delta]{p}{\assert}}\;(\theta, \interp{\judgeWK{\tau}{\kappa}}\;\theta)\;\gamma\;\delta\} \\
+           \{\interp{\judgeA[\Theta, \alpha:\kappa; \Gamma; \Delta]{p}{\assert}}\;(\theta, \interp{\judgeWK{\tau}{\kappa}}\;\theta)\;\gamma\;\delta\} \\
            \interp{\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e}{\monad{A}}}\;(\theta, \interp{\judgeWK{\tau}{\kappa}}\;\theta)\;\gamma\;\delta \\
-           \{v.\;\interp{\judgeA[\Theta, \alpha:\kappa \Gamma, a:A; \Delta]{q}{\assert}}\;(\theta, \interp{\judgeWK{\tau}{\kappa}}\;\theta)\;(\gamma,v)\;\delta\} 
+           \{v.\;\interp{\judgeA[\Theta, \alpha:\kappa; \Gamma, a:A; \Delta]{q}{\assert}}\;(\theta, \interp{\judgeWK{\tau}{\kappa}}\;\theta)\;(\gamma,v)\;\delta\} 
            \end{array}}
           {Induction}
     \eline{\interp{\judgeS[\Theta; \Gamma; \Delta]{(\mspec{p}{e}{a:A}{q})}}\;(\theta, \interp{\judgeWK{\tau}{\kappa}}\;\theta);\gamma\;\delta}
@@ -3493,7 +3545,7 @@ Now, we proceed by mutual induction on the derivation of $p$ and $S$:
             \;\;\interp{\judgeS[\Theta, \alpha:\kappa, \beta:\kappa';\Gamma;\Delta]{S}}\;(\theta, \interp{\judgeWK{\tau}{\kappa}}\;\theta, \tau')\,\gamma\,(\delta,v)
            \end{array}}
           {Induction}
-    \eline{\interp{\judgeS[\Theta;\Gamma;\Delta]{Q \beta:\kappa'.\;S}}\;(\theta, \interp{\judgeWK{\tau}{\kappa}}\;\theta)\,\gamma\,\delta}
+    \eline{\interp{\judgeS[\Theta, \alpha:\kappa;\Gamma;\Delta]{Q \beta:\kappa'.\;S}}\;(\theta, \interp{\judgeWK{\tau}{\kappa}}\;\theta)\,\gamma\,\delta}
           {Semantics}
   \end{eqnproof}
 
@@ -3593,7 +3645,7 @@ Now, we proceed by mutual induction on the derivation of $p$ and $S$:
     \begin{eqnproof}
       \eline{\interp{\judgeE{\Gamma}{[e''/y]e}{A}}\;\theta\;\gamma}
             {Semantics}
-      \eline{\interp{\judgeE{\Gamma}{e}{A}}\;\theta\;(\gamma, \interp{\judgeE{\Gamma}{e''}{B}}\;\theta\;\gamma)\;\delta}
+      \eline{\interp{\judgeE{\Gamma}{e}{A}}\;\theta\;(\gamma, \interp{\judgeE{\Gamma}{e''}{B}}\;\theta\;\gamma)}
             {Substitution}
       \eline{\interp{\judgeA[\Theta; \Gamma, y:B; \Delta]{e}{A}}\;\theta\;(\gamma, \interp{\judgeE{\Gamma}{e''}{B}}\;\theta\;\gamma)\;\delta}
             {Semantics}
@@ -3688,6 +3740,7 @@ Now, we proceed by mutual induction on the derivation of $p$ and $S$:
   First, the syntax:
   \begin{tabbedproof}
     \oo By inversion, $\judgeA[\Theta, \beta:\kappa'; \Gamma, y:B; \Delta]{p}{\upsilon}$ \\
+    \oo By weakening, $\judgeE[\Theta, \beta:\kappa']{\Gamma}{e''}{B}$ \\
     \oo By induction, $\judgeA[\Theta, \beta:\kappa'; \Gamma; \Delta]{[e''/y]p}{\upsilon}$ \\
     \oo By rule, $\judgeA{\pfunall{\beta}{\kappa'}{[e''/y]p}}{\forallsort{\beta}{\kappa'}{\upsilon}}$ \\
     \oo By def of subst, $\judgeA{[e''/y](\pfunall{\beta}{\kappa'}{p})}{\forallsort{\beta}{\kappa'}{\upsilon}}$ \\
@@ -3728,7 +3781,7 @@ Now, we proceed by mutual induction on the derivation of $p$ and $S$:
       \end{array}}
     {Semantics}
     \eline{\begin{array}{l}
-             (\interp{\judgeA[\Theta; \Gamma, y:B; \Delta]{p}{\omega \To \upsilon}}\;\theta\;\gamma\;\delta) \\
+             (\interp{\judgeA[\Theta; \Gamma, y:B; \Delta]{p}{\omega \To \upsilon}}\;\theta\;(\gamma, \interp{\judgeE{\Gamma}{e''}{B}}\;\theta\;\gamma)\;\delta) \\
              \;\;(\interp{\judgeA[\Theta; \Gamma, y:B; \Delta]{q}{\omega}}\;\theta\;(\gamma, \interp{\judgeE{\Gamma}{e''}{B}}\;\theta\;\gamma)\;\delta) 
       \end{array}}
     {Induction}
@@ -3810,7 +3863,7 @@ Now, we proceed by mutual induction on the derivation of $p$ and $S$:
           {Semantics}
   \end{eqnproof}
 
-\item Case \textsc{TQuantify1}: $\judgeA[\Theta, \alpha; \Gamma; \Delta]{Q u:\upsilon.\;p}{\assert}$
+\item Case \textsc{TQuantify1}: $\judgeA[\Theta; \Gamma, y:B; \Delta]{Q u:\upsilon.\;p}{\assert}$
   
   First, the syntax:
   \begin{tabbedproof}
@@ -3832,11 +3885,11 @@ Now, we proceed by mutual induction on the derivation of $p$ and $S$:
            \end{array}}
           {Semantics}
     \eline{\begin{array}{l}
-            \interp{Q}_{v \in \interp{\judgeSort[\Theta, \alpha:\kappa]{\upsilon}}\;\theta} \\
+            \interp{Q}_{v \in \interp{\judgeSort[\Theta]{\upsilon}}\;\theta} \\
             \;\;\interp{\judgeA[\Theta;\Gamma, y:B;\Delta, u:\upsilon]{p}{\assert}}\;\theta\,(\gamma, \interp{\judgeE{\Gamma}{e''}{B}}\;\theta\;\gamma)\,(\delta,v)
            \end{array}}
           {Induction}
-    \eline{\interp{\judgeA[\Theta, \alpha:\kappa;\Gamma;\Delta]{Q u:\upsilon.\;p}{\assert}}\;\theta\,(\gamma, \interp{\judgeE{\Gamma}{e''}{B}}\;\theta\;\gamma)\,\delta}
+    \eline{\interp{\judgeA[\Theta;\Gamma;\Delta]{Q u:\upsilon.\;p}{\assert}}\;\theta\,(\gamma, \interp{\judgeE{\Gamma}{e''}{B}}\;\theta\;\gamma)\,\delta}
           {Semantics}
   \end{eqnproof}
 
@@ -3877,6 +3930,7 @@ Now, we proceed by mutual induction on the derivation of $p$ and $S$:
   First, the syntax:
   \begin{tabbedproof}
     \oo By inversion, $\judgeA[\Theta, \beta:\kappa'; \Gamma, y:B; \Delta]{p}{\assert}$ \\
+    \oo By weakening, $\judgeE[\Theta, \beta:\kappa']{\Gamma}{e''}{B}$ \\
     \oo By induction, $\judgeA[\Theta, \beta:\kappa'; \Gamma; \Delta]{[e''/y]p}{\assert}$ \\
     \oo By rule, $\judgeA[\Theta; \Gamma; \Delta]
                          {Q \beta:\kappa'.\;[e''/y]p}{\assert}$ \\
@@ -3894,7 +3948,7 @@ Now, we proceed by mutual induction on the derivation of $p$ and $S$:
            \end{array}}
           {Semantics}
     \eline{\begin{array}{l}
-            \interp{Q}_{\tau' \in \interp{\judgeSort[\Theta, \alpha:\kappa]{\kappa'}}\;\theta} \\
+            \interp{Q}_{\tau' \in \interp{\judgeSort[\Theta]{\kappa'}}\;\theta} \\
             \;\;\interp{\judgeA[\Theta, \beta:\kappa';\Gamma, y:B;\Delta]{p}{\assert}}\;(\theta, \tau)\,(\gamma, \interp{\judgeE{\Gamma}{e''}{B}}\;\theta\;\gamma)\,\delta
            \end{array}}
           {Induction}
@@ -4010,17 +4064,17 @@ Now, we proceed by mutual induction on the derivation of $p$ and $S$:
   \begin{eqnproof}
     \eline{\begin{array}{l}
            \{\interp{\judgeA[\Theta; \Gamma; \Delta]{[e''/y]p}{\assert}}\;\theta\;\gamma\;\delta\} \\
-           \interp{\judgeC{\Gamma}{[e''/y]c}{A}}\;\theta\;\gamma\;\delta \\
+           \interp{\judgeC{\Gamma}{[e''/y]c}{A}}\;\theta\;\gamma \\
            \{v.\;\interp{\judgeA[\Theta; \Gamma, a:A; \Delta]{[e''/y]q}{\assert}}\;\theta\;(\gamma,v)\;\delta\} 
            \end{array}}
           {Semantics}
     \eline{\begin{array}{l}
            \{\interp{\judgeA[\Theta, \Gamma; \Delta]{p}{\assert}}\;\theta\;(\gamma, \interp{\judgeE{\Gamma}{e''}{B}}\;\theta\;\gamma)\;\delta\} \\
-           \interp{\judgeC[\Theta]{\Gamma, y:B}{c}{A}}\;\theta\;(\gamma, \interp{\judgeE{\Gamma}{e''}{B}}\;\theta\;\gamma)\;\delta \\
+           \interp{\judgeC[\Theta]{\Gamma, y:B}{c}{A}}\;\theta\;(\gamma, \interp{\judgeE{\Gamma}{e''}{B}}\;\theta\;\gamma) \\
            \{v.\;\interp{\judgeA[\Theta; \Gamma, y:B, a:A; \Delta]{q}{\assert}}\;\theta\;(\gamma, \interp{\judgeE{\Gamma}{e''}{B}}\;\theta\;\gamma, v)\;\delta\} 
            \end{array}}
           {Induction}
-    \eline{\interp{\judgeS[\Theta; \Gamma, y:B; \Delta]{(\spec{p}{c}{a:A}{q})}}\;\theta;(\gamma, \interp{\judgeE{\Gamma}{e''}{B}}\;\theta\;\gamma)\;\delta}
+    \eline{\interp{\judgeS[\Theta; \Gamma, y:B; \Delta]{(\spec{p}{c}{a:A}{q})}}\;\theta\;(\gamma, \interp{\judgeE{\Gamma}{e''}{B}}\;\theta\;\gamma)\;\delta}
           {Semantics}
   \end{eqnproof}
   The correctness of the application of $\gamma$ and $\delta$ follows from the equations for
@@ -4043,17 +4097,17 @@ Now, we proceed by mutual induction on the derivation of $p$ and $S$:
   \begin{eqnproof}
     \eline{\begin{array}{l}
            \{\interp{\judgeA[\Theta; \Gamma; \Delta]{[e''/y]p}{\assert}}\;\theta\;\gamma\;\delta\} \\
-           \interp{\judgeE{\Gamma}{[e''/y]e}{\monad{A}}}\;\theta\;\gamma\;\delta \\
+           \interp{\judgeE{\Gamma}{[e''/y]e}{\monad{A}}}\;\theta\;\gamma \\
            \{v.\;\interp{\judgeA[\Theta; \Gamma, a:A; \Delta]{[e''/y]q}{\assert}}\;\theta\;(\gamma,v)\;\delta\} 
            \end{array}}
           {Semantics}
     \eline{\begin{array}{l}
            \{\interp{\judgeA[\Theta; \Gamma, y:B; \Delta]{p}{\assert}}\;\theta\;(\gamma, \interp{\judgeE{\Gamma}{e''}{B}}\;\theta\;\gamma)\;\delta\} \\
-           \interp{\judgeE{\Gamma, y:B}{e}{\monad{A}}}\;\theta\;(\gamma, \interp{\judgeE{\Gamma}{e''}{B}}\;\theta\;\gamma)\;\delta \\
+           \interp{\judgeE{\Gamma, y:B}{e}{\monad{A}}}\;\theta\;(\gamma, \interp{\judgeE{\Gamma}{e''}{B}}\;\theta\;\gamma) \\
            \{v.\;\interp{\judgeA[\Theta; \Gamma, y:B, a:A; \Delta]{q}{\assert}}\;\theta\;(\gamma, \interp{\judgeE{\Gamma}{e''}{B}}\;\theta\;\gamma, v)\;\delta\} 
            \end{array}}
           {Induction}
-    \eline{\interp{\judgeS[\Theta; \Gamma, y:B; \Delta]{(\mspec{p}{e}{a:A}{q})}}\;\theta;(\gamma, \interp{\judgeE{\Gamma}{e''}{B}}\;\theta\;\gamma)\;\delta}
+    \eline{\interp{\judgeS[\Theta; \Gamma, y:B; \Delta]{(\mspec{p}{e}{a:A}{q})}}\;\theta\;(\gamma, \interp{\judgeE{\Gamma}{e''}{B}}\;\theta\;\gamma)\;\delta}
           {Semantics}
   \end{eqnproof}
 
@@ -4139,8 +4193,8 @@ Now, we proceed by mutual induction on the derivation of $p$ and $S$:
            \end{array}}
           {Semantics}
     \eline{\begin{array}{l}
-            \interp{Q}_{\tau' \in \interp{\judgeSort[\Theta, \alpha:\kappa]{\kappa'}}\;\theta} \\
-            \;\;\interp{\judgeS[\Theta, \alpha:\kappa, \beta:\kappa';\Gamma;\Delta]{S}}\;(\theta, \tau')\,(\gamma, \interp{\judgeE{\Gamma}{e''}{B}}\;\theta\;\gamma)\,(\delta,v)
+            \interp{Q}_{\tau' \in \interp{\judgeSort[\Theta]{\kappa'}}\;\theta} \\
+            \;\;\interp{\judgeS[\Theta, \alpha:\kappa, \beta:\kappa';\Gamma;\Delta]{S}}\;(\theta, \tau')\,(\gamma, \interp{\judgeE{\Gamma}{e''}{B}}\;\theta\;\gamma)\,\delta
            \end{array}}
           {Induction}
     \eline{\interp{\judgeS[\Theta;\Gamma;\Delta]{Q \beta:\kappa'.\;S}}\;\theta\,(\gamma, \interp{\judgeE{\Gamma}{e''}{B}}\;\theta\;\gamma)\,\delta}
@@ -4198,7 +4252,7 @@ Now, we proceed by mutual induction on the derivation of $p$ and $S$:
 
 \ \\
 
-First, assume $\judgeA{r}{\upsilon''}$, and $\judgeA[\Theta; \Gamma;\Delta, b:\upsilon'']{p}{\omega}$, and
+Finally, assume $\judgeA{r}{\upsilon''}$, and $\judgeA[\Theta; \Gamma;\Delta, b:\upsilon'']{p}{\omega}$, and
 $\judgeS[\Theta; \Gamma, y:B; \Delta, b:\upsilon'']{S}$. 
 
 Now, we proceed by mutual induction on the derivation of $p$ and $S$: 
@@ -4262,9 +4316,9 @@ Now, we proceed by mutual induction on the derivation of $p$ and $S$:
   \oo By strengthening, $\judgeA[\Theta; \Gamma; \Delta]{[r/b]u}{\upsilon}$ \\
   \end{tabbedproof}
 
-  For semantics, consider that $\interp{\judgeA[\Theta; \Gamma; \Delta]{[r/b]u}{\upsilon}}\;\theta;\gamma\;delta$ \\
+  For semantics, consider that $\interp{\judgeA[\Theta; \Gamma; \Delta]{[r/b]u}{\upsilon}}\;\theta;\gamma\;\delta$ \\
   \begin{eqnproof}
-    \eline{\pi_u(delta)}
+    \eline{\pi_u(\delta)}
           {Semantics} 
     \eline{\interp{\judgeA[\Theta; \Gamma; \Delta, b:\upsilon'']{u}{\upsilon}}\;\theta;\gamma\;(\delta, \interp{\judgeA{r}{\upsilon''}}\;\theta\;\gamma\;\delta)}
           {Semantics}
@@ -4321,7 +4375,7 @@ Now, we proceed by mutual induction on the derivation of $p$ and $S$:
   First, the syntax:
   \begin{tabbedproof}
     \oo By inversion, $\judgeA[\Theta, \beta:\kappa'; \Gamma; \Delta, b:\upsilon'']{p}{\upsilon}$ \\
-    \oo By weakening, $\judgeA[\Theta, \beta:\kappa']{\Gamma}{r}{\upsilon''}$ \\
+    \oo By weakening, $\judgeA[\Theta, \beta:\kappa'; \Gamma; \Delta]{r}{\upsilon''}$ \\
     \oo By induction, $\judgeA[\Theta, \beta:\kappa'; \Gamma; \Delta]{{[r/b]}p}{\upsilon}$ \\
     \oo By rule, $\judgeA[\Theta; \Gamma; \Delta]{\pfun{\beta}{\kappa'}{{[r/b]}p}}{\kappa' \To \upsilon}$ \\
     \oo By def of subst, $\judgeA{{[r/b]}(\pfun{\beta}{\kappa'}{p})}{\kappa' \To \upsilon}$ \\
@@ -4523,7 +4577,7 @@ Now, we proceed by mutual induction on the derivation of $p$ and $S$:
     \eline{\interp{\judgeA[\Theta;\Gamma; \Delta, b:\upsilon'']{Q x:A.\;p}{\assert}}\;\theta\,\gamma\,(\delta, \interp{\judgeA{r}{\upsilon''}}\;\theta\;\gamma\;\delta)}
           {Semantics}
   \end{eqnproof}
-  Here, we make use of the fact that $x$ is not free in $e''$, and we silently permute the context as 
+  Here, we make use of the fact that $x$ is not free in $r$, and we silently permute the context as 
   needed. 
 
 \item Case \textsc{TQuantify3}: $\judgeA[\Theta; \Gamma; \Delta, b:\upsilon'']{Q \beta:\kappa'.\;p}{\assert}$
@@ -4658,7 +4712,7 @@ Now, we proceed by mutual induction on the derivation of $p$ and $S$:
   \begin{eqnproof}
     \eline{\begin{array}{l}
            \{\interp{\judgeA[\Theta; \Gamma; \Delta]{[r/b]p}{\assert}}\;\theta\;\gamma\;\delta\} \\
-           \interp{\judgeC{\Gamma}{[r/b]c}{A}}\;\theta\;\gamma\;\delta \\
+           \interp{\judgeC{\Gamma}{[r/b]c}{A}}\;\theta\;\gamma \\
            \{v.\;\interp{\judgeA[\Theta; \Gamma, a:A; \Delta]{[r/b]q}{\assert}}\;\theta\;(\gamma,v)\;\delta\} 
            \end{array}}
           {Semantics}
@@ -4671,8 +4725,6 @@ Now, we proceed by mutual induction on the derivation of $p$ and $S$:
     \eline{\interp{\judgeS[\Theta; \Gamma; \Delta, b:\upsilon'']{(\spec{p}{c}{a:A}{q})}}\;\theta;\gamma\;(\delta, \interp{\judgeA{r}{\upsilon''}}\;\theta\;\gamma\;\delta)}
           {Semantics}
   \end{eqnproof}
-  The correctness of the application of $\gamma$ and $\delta$ follows from the equations for
-  contexts under substitution. 
 
 \item Case \textsc{SpecMTriple}: $\judgeS[\Theta; \Gamma; \Delta, b:\upsilon'']{\mspec{p}{e}{a:A}{q}}$
   
@@ -4787,7 +4839,7 @@ Now, we proceed by mutual induction on the derivation of $p$ and $S$:
            \end{array}}
           {Semantics}
     \eline{\begin{array}{l}
-            \interp{Q}_{\tau' \in \interp{\judgeSort[\Theta, \alpha:\kappa]{\kappa'}}\;\theta} \\
+            \interp{Q}_{\tau' \in \interp{\judgeSort[\Theta]{\kappa'}}\;\theta} \\
             \;\;\interp{\judgeS[\Theta, \beta:\kappa';\Gamma;\Delta, b:\upsilon'']{S}}\;(\theta, \tau')\,\gamma\;(\delta, \interp{\judgeA{r}{\upsilon''}}\;\theta\;\gamma\;\delta,v)
            \end{array}}
           {Induction}
@@ -4856,11 +4908,11 @@ Now, we proceed by mutual induction on the derivation of $p$ and $S$:
   If $\judgeS{S}$ is valid, then $\judgeA{\validprop{S}}{\assert}$ is valid. 
 \end{lemma}
 \begin{proof}
-  Assume we have a suitable environment $\delta$. By hypothesis we know
-$\interp{\judgeS{S}}\;\delta$ $=$ $\top$ in the specification lattice. However,
-we know the interpretation of $\interp{\judgeA{\validprop{S}}{\assert}}\;\delta$ is 
-equal to $\IfThenElse{\interp{\judgeS{S}}\;\delta = \top}{\top}{\bot}$, so it 
-follows that $\interp{\judgeA{\validprop{S}}{\assert}}\;\delta = \top$ in the assertion
+  Assume we have a suitable $\theta, \gamma,$ and $\delta$. By hypothesis we know
+$\interp{\judgeS{S}}\;\theta\;\gamma\;\delta$ $=$ $\top$ in the specification lattice. However,
+we know the interpretation of $\interp{\judgeA{\validprop{S}}{\assert}}\;\theta\;\gamma\;\delta$ is 
+equal to $\IfTE{\interp{\judgeS{S}}\;\theta\;\gamma\;\delta = \top}{\top}{\bot}$, so it 
+follows that $\interp{\judgeA{\validprop{S}}{\assert}}\;\theta\;\gamma\;\delta = \top$ in the assertion
 lattice. Hence it is true for all substitutions, and is therefore valid. 
 \end{proof}\\
 
@@ -4869,20 +4921,20 @@ If $\judgeA{p}{\assert}$, then $\judgeA{\validprop{\setof{p}} \implies p}{\asser
 \end{lemma}
 \begin{proof}
 \begin{tabbedproof}
-\oo Assume we have $\judgeA{p}{\assert}$ and a suitable $\delta$. \\ 
+\oo Assume we have $\judgeA{p}{\assert}$ and a suitable $\theta, \gamma,$ and $\delta$. \\ 
 \oo We want to show that $\interp{\judgeA{\validprop{\setof{p}} \implies
-    p}{\assert}}\;\delta$ is equal to $\top$.  \\
+    p}{\assert}}\;\theta\;\gamma\;\delta$ is equal to $\top$.  \\
 \oo This is equivalent to every $h \in H$ being in 
-    $\interp{\judgeA{\validprop{\setof{p}} \implies p}{\assert}}\;\delta$ \\
+    $\interp{\judgeA{\validprop{\setof{p}} \implies p}{\assert}}\;\theta\;\gamma\;\delta$ \\
 \oo From the semantics of implication, we want to show that \\ 
-\ooo if $h \in \interp{\judgeA{\validprop{\setof{p}}}{\assert}}\;\delta$, 
-     then  $h \in \interp{\judgeA{p}{\assert}}\;\delta$. \\
-\oo Assume we have an $h \in \interp{\judgeA{\validprop{\setof{p}}}{\assert}}\;\delta$. \\
-\ooo We know  $\IfThenElse{\interp{\judgeS{\setof{p}}}\;\delta = \top}{\top}{\bot}$ \\
-\ooo Since we have an $h$ in this set,  $\interp{\judgeS{\setof{p}}}\;\delta = \top$. \\
-\ooo However,  $\interp{\judgeS{\setof{p}}}\;\delta = \IfThenElse{\interp{\judgeA{p}{\assert}}\;\delta = \top}{\top}{\bot}$ \\
-\ooo So $\interp{\judgeA{p}{\assert}}\;\delta = \top$. \\ 
-\ooo Since this is the full set of heaps $H$, it follows that $h \in \interp{\judgeA{p}{\assert}}\;\delta$. 
+\ooo if $h \in \interp{\judgeA{\validprop{\setof{p}}}{\assert}}\;\theta\;\gamma\;\delta$, 
+     then  $h \in \interp{\judgeA{p}{\assert}}\;\theta\;\gamma\;\delta$. \\
+\oo Assume we have an $h \in \interp{\judgeA{\validprop{\setof{p}}}{\assert}}\;\theta\;\gamma\;\delta$. \\
+\ooo We know  $\IfTE{\interp{\judgeS{\setof{p}}}\;\theta\;\gamma\;\delta = \top}{\top}{\bot}$ \\
+\ooo Since we have an $h$ in this set,  $\interp{\judgeS{\setof{p}}}\;\theta\;\gamma\;\delta = \top$. \\
+\ooo However,  $\interp{\judgeS{\setof{p}}}\;\theta\;\gamma\;\delta = \IfTE{\interp{\judgeA{p}{\assert}}\;\theta\;\gamma\;\delta = \top}{\top}{\bot}$ \\
+\ooo So $\interp{\judgeA{p}{\assert}}\;\theta\;\gamma\;\delta = \top$. \\ 
+\ooo Since this is the full set of heaps $H$, it follows that $h \in \interp{\judgeA{p}{\assert}}\;\theta\;\gamma\;\delta$. 
 \end{tabbedproof}
 \end{proof}
 
@@ -4893,10 +4945,11 @@ If $\judgeA{p}{\assert}$, then $\judgeA{\validprop{\setof{p}} \implies p}{\asser
 \begin{proof}
 \begin{tabbedproof}
 \oo Assume $\judgeEqA{p}{q}{\omega}$ is a valid equality \\
-\oo Assume we have a suitable $\delta$. \\ 
-\ooo Then we know that $\interp{\judgeA{p}{\assert}}\;\delta = \interp{\judgeA{q}{\omega}}\;\delta$. \\
-\ooo By semantics $\interp{\judgeA{p =_\omega q}{\assert}}\;\delta = \IfThenElse{\interp{\judgeA{p}{\omega}}\;\delta = \interp{\judgeA{q}{\omega}}\;\delta}{\top}{\bot}$ \\
-\ooo Therefore $\interp{\judgeA{p =_\omega q}{\assert}}\;\delta = \top$ \\
+\oo Assume we have a suitable $\theta, \gamma,$ and $\delta$. \\ 
+\ooo Then we know that $\interp{\judgeA{p}{\assert}}\;\theta\;\gamma\;\delta = \interp{\judgeA{q}{\omega}}\;\theta\;\gamma\;\delta$. \\
+\ooo By semantics $\interp{\judgeA{p =_\omega q}{\assert}}\;\theta\;\gamma\;\delta = $
+\ooox $\IfTE{\interp{\judgeA{p}{\omega}}\;\theta\;\gamma\;\delta = \interp{\judgeA{q}{\omega}}\;\theta\;\gamma\;\delta}{\top}{\bot}$ \\
+\ooo Therefore $\interp{\judgeA{p =_\omega q}{\assert}}\;\theta\;\gamma\;\delta = \top$ \\
 \oo Therefore $\judgeA{p =_\omega q}{\assert}$ is valid.
 \end{tabbedproof}
 \end{proof}
@@ -4905,34 +4958,36 @@ If $\judgeA{p}{\assert}$, then $\judgeA{\validprop{\setof{p}} \implies p}{\asser
 
 \begin{lemma}{(Validity and Classical and Intuitionistic Implication)}
 The statement that $\judgeS{S_1 \specimp S_2}$ is valid is logically equivalent to: if
-for all $\delta$ and $r$, if $r \in \interp{\judgeS{S_1}}\;\delta$ then $r \in \interp{\judgeS{S_2}}\;\delta$  
+for all $\theta, \gamma, \delta$ and $r$, if $r \in \interp{\judgeS{S_1}}\;\theta\;\gamma\;\delta$ then $r \in \interp{\judgeS{S_2}}\;\theta\;\gamma\;\delta$  
 \end{lemma}
 
 \begin{proof}
   \begin{tabbedproof}
     \oo $\To$ direction:\\
     \ooo Assume $\judgeS{S_1 \specimp S_2}$ is valid\\
-    \oooo We want to show for all $\delta$ and $r$, if $r \in \interp{\judgeS{S_1}}\;\delta$, then 
-          $r \in \interp{\judgeS{S_2}}\;\delta$ \\
-    \oooo Assume $\delta$ is an appropriate substitution, and $r$ such that $r \in \interp{\judgeS{S_1}}\;\delta$ \\
-    \ooooo We want to show $r \in \interp{\judgeS{S_2}}\;\delta$ \\
-    \oooooo From the hypothesis we know that $\interp{\judgeS{S_1 \specimp S_2}}\;\delta = \top$ \\
+    \oooo We want to show for all $\theta, \gamma, \delta$ and $r$, if $r \in \interp{\judgeS{S_1}}\;\delta$, then\\
+    \ooox $r \in \interp{\judgeS{S_2}}\;\theta\;\gamma\;\delta$ \\
+    \oooo Assume appropriate $\theta\;\gamma\;\delta$, and $r$ such that $r \in \interp{\judgeS{S_1}}\;\theta\;\gamma\;\delta$ \\
+    \ooooo We want to show $r \in \interp{\judgeS{S_2}}\;\theta\;\gamma\;\delta$ \\
+    \oooooo From the hypothesis we know that $\interp{\judgeS{S_1 \specimp S_2}}\;\theta\;\gamma\;\delta = \top$ \\
     \oooooo So we know for all $r$ and $s \worldgeq r$, that \\
-    \oooooox if $s \in \interp{\judgeS{S_1}}\;\delta$ then $s \in \interp{\judgeS{S_2}}\;\delta$ \\
-    \oooooo Since $r \worldgeq r$, we know if $r \in \interp{\judgeS{S_1}}\;\delta$ then $s \in \interp{\judgeS{S_2}}\;\delta$ \\
-    \oooooo Since $r \in \interp{\judgeS{S_1}}\;\delta$, we know that $r \in \interp{\judgeS{S_2}}\;\delta$ \\
+    \oooooox if $s \in \interp{\judgeS{S_1}}\;\theta\;\gamma\;\delta$ then $s \in \interp{\judgeS{S_2}}\;\theta\;\gamma\;\delta$ \\
+    \oooooo Since $r \worldgeq r$, we know \\
+    \oooooox if $r \in \interp{\judgeS{S_1}}\;\theta\;\gamma\;\delta$ then $s \in \interp{\judgeS{S_2}}\;\theta\;\gamma\;\delta$ \\
+    \oooooo Since $r \in \interp{\judgeS{S_1}}\;\theta\;\gamma\;\delta$, we know that $r \in \interp{\judgeS{S_2}}\;\theta\;\gamma\;\delta$ \\
     \oo $\From$ direction:\\
-    \ooo Assume for all $\delta$ and $r$, if $r \in \interp{\judgeS{S_1}}\;\delta$, then 
-          $r \in \interp{\judgeS{S_2}}\;\delta$ \\
-    \oooo We want to show for all $\delta$ that $\interp{\judgeS{S_1 \specimp S_2}}\;\delta = \top$ \\
-    \oooo Assume $\delta$ is a suitable substitution \\
-    \ooooo So we want to show $\interp{\judgeS{S_1 \specimp S_2}}\;\delta = \top$ \\
-    \ooooo So we want to show for all $r$ and $s \worldgeq r$, that \\
-    \ooooox if $s \in \interp{\judgeS{S_1}}\;\delta$ then $s \in \interp{\judgeS{S_2}}\;\delta$ \\
-    \ooooo Assume $r$ and $s$ such that $s \worldgeq r$ and $s \in \interp{\judgeS{S_1}}\;\delta$ \\
-    \oooooo Instantiate the quantifier in the hypothesis with $\delta$ and $s$, so we learn \\
-    \oooooox if $s \in \interp{\judgeS{S_1}}\;\delta$ then $s \in \interp{\judgeS{S_2}}\;\delta$ \\
-    \oooooo Since $s \in \interp{\judgeS{S_1}}\;\delta$ we can conclude $s \in \interp{\judgeS{S_2}}\;\delta$ \\
+    \ooo Assume for all $\theta\;\gamma\;\delta$ and $r$, \\
+    \ooox if $r \in \interp{\judgeS{S_1}}\;\theta\;\gamma\;\delta$, then 
+          $r \in \interp{\judgeS{S_2}}\;\theta\;\gamma\;\delta$ \\
+    \ooo We want to show for all $\theta\;\gamma\;\delta$ that $\interp{\judgeS{S_1 \specimp S_2}}\;\theta\;\gamma\;\delta = \top$ \\
+    \ooo Assume $\theta\;\gamma\;\delta$ are suitable substitutions \\
+    \oooo So we want to show $\interp{\judgeS{S_1 \specimp S_2}}\;\theta\;\gamma\;\delta = \top$ \\
+    \oooo So we want to show for all $r$ and $s \worldgeq r$, that \\
+    \oooox if $s \in \interp{\judgeS{S_1}}\;\theta\;\gamma\;\delta$ then $s \in \interp{\judgeS{S_2}}\;\theta\;\gamma\;\delta$ \\
+    \oooo Assume $r$ and $s$ such that $s \worldgeq r$ and $s \in \interp{\judgeS{S_1}}\;\theta\;\gamma\;\delta$ \\
+    \ooooo Instantiate the quantifier in the hypothesis with $\theta\;\gamma\;\delta$ and $s$, so we learn \\
+    \ooooox if $s \in \interp{\judgeS{S_1}}\;\theta\;\gamma\;\delta$ then $s \in \interp{\judgeS{S_2}}\;\theta\;\gamma\;\delta$ \\
+    \ooooo Since $s \in \interp{\judgeS{S_1}}\;\theta\;\gamma\;\delta$ we see that $s \in \interp{\judgeS{S_2}}\;\theta\;\gamma\;\delta$ \\
   \end{tabbedproof}
 \end{proof}
 
@@ -4942,17 +4997,13 @@ We have that $\judgeS{\spec{p}{c}{a:A}{q}}$ is valid if and only if $\judgeS{\ms
 
 \begin{proof}
 \begin{tabbedproof}
-\oo We want to show that for all suitable $\delta$, $\judgeS{\spec{p}{c}{a:A}{q}} = \top$  \\
+\oo We want to show that for all suitable $\theta, \gamma$, and $\delta$, $\judgeS{\spec{p}{c}{a:A}{q}} = \top$  \\
 \ox iff $\judgeS{\mspec{p}{\comp{c}}{a:A}{q}} = \top$  \\
 \oo Now, let \\
-\oox $P = \interp{\judgeA{p}{\assert}}\;\delta$ \\
-\oox $E = \interp{\judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}
-                  {[c]}{A}} \;(\restricttyenv{\Delta}{\delta})
-                            \;(\restrictvals{\Delta}{\delta})$ \\
-\oox $C = \interp{\judgeC[\restrictkind{\Delta}]{\restricttype{\Delta}}
-                  {c}{A}} \;(\restricttyenv{\Delta}{\delta})
-                          \;(\restrictvals{\Delta}{\delta})$ \\
-\oox $Q = \semfun{v}{\interp{\judgeA[\Delta, a:A]{q}{\assert}}\;(\delta,v)}$ \\
+\oox $P = \interp{\judgeA{p}{\assert}}\;\theta\;\gamma\;\delta$ \\
+\oox $E = \interp{\judgeE[\Theta]{\Gamma}{[c]}{A}}\; \theta\;\gamma$ \\
+\oox $C = \interp{\judgeC[\Theta]{\Gamma}{c}{A}}\; \theta\;\gamma$ \\
+\oox $Q = \semfun{v}{\interp{\judgeA[\Theta;\Gamma, a:A; \Delta]{q}{\assert}}\;\theta\;\gamma\;\theta\;(\gamma, v)\;\delta}$ \\
 \oo Observe that $E = C$, from the semantics of $\comp{c}$ \\
 \oo $\Rightarrow$: Assume $\judgeS{\spec{p}{c}{a:A}{q}}$ is valid \\
 \ooo Hence the semantic spec $\spec{P}{C}{a}{Q(a)} = \top$ \\
@@ -4970,25 +5021,26 @@ The schema $\judgeS{\spec{P}{e}{a:A}{P \land a = e}}$ is valid.
 
 \begin{proof}
 \begin{tabbedproof}
-\oo We want to show that for all suitable $\delta$, $\interp{\spec{P}{e}{a:A}{P \land a = e}}\;\delta = \top$ \\
+\oo We want to show that for all suitable $\theta, \gamma,$ and $\delta$, $\interp{\spec{P}{e}{a:A}{P \land a = e}}\;\theta\;\gamma\;\delta = \top$ \\
 \oo Now let \\
-\oox $P = \interp{\judgeA{p}{\assert}}\;\delta$ \\
-\oox $C = \interp{\judgeC[\restrictkind{\Delta}]{\restricttype{\Delta}}
-                  {e}{A}} \;(\restricttyenv{\Delta}{\delta})
-                          \;(\restrictvals{\Delta}{\delta})$ \\
-\oox $E = \interp{\judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}
-                  {e}{A}} \;(\restricttyenv{\Delta}{\delta})
-                          \;(\restrictvals{\Delta}{\delta})$ \\
-\oox $Q = \semfun{v}{\interp{\judgeA[\Delta, a:A]{P \land a = e}{\assert}}\;(\delta,v)}$ \\
+\oox $P = \interp{\judgeA{p}{\assert}}\;\theta\;\gamma\;\delta$ \\
+\oox $C = \interp{\judgeC[\Theta]{\Gamma}
+                  {e}{A}} \;\theta
+                          \;\gamma$ \\
+\oox $E = \interp{\judgeE[\Theta]{\Gamma}
+                  {e}{A}} \;\theta
+                          \;\gamma$ \\
+\oox $Q = \semfun{v}{\interp{\judgeA[\Theta; \Gamma, a:A; \Delta]{P \land a = e}{\assert}}\;\theta\;(\gamma, v)\;\delta}$ \\
 \oo We want to show that $\spec{P}{C}{a}{Q(a)} = \top$ \\
 \oo So we want to show that for all $R$, we have $R \in \spec{P}{C}{a}{Q(a)}$ \\
-\oo Hence it suffices to show that $\basicspec{P * R}{C}{v}{P \land \interp{a = e}\;(\delta,v) * R}$ \\
-\oo So we want to show that for all $h \in P * R$, we have $C\;\mathit{Best}(\semfun{v}{P \land \interp{a = e * R}\;(\delta,v)})\;h = \bot$ \\
+\oo Hence it suffices to show that $\basicspec{P * R}{C}{v}{P \land \interp{a = e}\;\theta\;(\gamma, v)\;\delta * R}$ \\
+\oo So we want to show that for all $h \in P * R$, \\
+\oox we have $C\;\mathit{Best}(\semfun{v}{P \land \interp{a = e * R}\;\theta\;(\gamma, v)\;\delta})\;h = \bot$ \\
 \oo Assume we have $h \in P * R$ \\
 \ooo Next, observe that $C\;k\;h = k\;E\;h$ \\
 \ooo To show that $\mathit{Best}(\semfun{a}{P \land a = e * R})\;E\;h = \bot$, \\
 \oox we need to show that $k\;\;E\;h = \bot$, for every $k \in \mathit{Approx}(\semfun{a}{P \land a = e *R})$ \\
-\ooo So assume $k \in \mathit{Approx}(\semfun{v}{P \land \interp{a = e}\;(\delta,v) * R})$ \\
+\ooo So assume $k \in \mathit{Approx}(\semfun{v}{P \land \interp{a = e}\;\theta\;(\gamma, v)\;\delta * R})$ \\
 \oooo Therefore for all $v \in \interp{A}$, and $h \in Q(v) * R$, we know $k\;v\;h = \bot$ \\
 \oooo We know $E \in \interp{A}$ \\
 \oooo So we need to show that given $h \in P * R$, we have $h \in Q(E) * R$ \\
@@ -5007,18 +5059,16 @@ $\judgeS{\spec{e \pointsto_A -}{e := e'}{a:\unittype}{e \pointsto_A e'}}$ is val
 \end{lemma}
 \begin{proof}
   \begin{tabbedproof}
-    \oo Assume $\delta \in \interp{\judgeACtx{\Delta}}$ \\
-    \ooo We want to show $\interp{\judgeS{\spec{e \pointsto_A -}{e := e'}{a:\unittype}{e \pointsto_A e'}}}\;\delta = \top$ \\
-    \ooo So we want to show $\forall r.\; r \in \interp{\judgeS{\spec{e \pointsto_A -}{e := e'}{a:\unittype}{e \pointsto_A e'}}}\;\delta$ \\
+    \oo Assume suitable $\theta$, $\gamma$, and $\delta$ \\
+    \ooo We want to show $\interp{\judgeS{\spec{e \pointsto_A -}{e := e'}{a:\unittype}{e \pointsto_A e'}}}\;\theta\;\gamma\;\delta = \top$ \\
+    \ooo So we want to show $\forall r.\; r \in \interp{\judgeS{\spec{e \pointsto_A -}{e := e'}{a:\unittype}{e \pointsto_A e'}}}\;\theta\;\gamma\;\delta$ \\
     \ooo Assume $r$ \\
-    \oooo We want to show $r \in \interp{\judgeS{\spec{e \pointsto_A -}{e := e'}{a:\unittype}{e \pointsto_A e'}}}\;\delta$ \\
-    \oooo Let $\theta = \restricttyenv{\Delta}{\delta}$ \\
-    \oooo Let $\gamma = \restrictvals{\Delta}{\delta}$ \\
-    \oooo Let $P = \interp{\judgeA{e \pointsto_A -}{\assert}}\;\delta$ \\
-    \oooo Let $C = \interp{\judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}{\comp{e := e'}}{\monad{A}}}\;\theta\;\gamma$ \\
-    \oooo Let $E = \interp{\judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}{e}{\reftype{A}}}\;\theta\;\gamma$ \\
-    \oooo Let $E' = \interp{\judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}{e'}{A}}\;\theta\;\gamma$ \\
-    \oooo let $Q = \semfun{v}{\interp{\judgeA{e \pointsto_A e'}{\assert}}\;(\delta, v)}$ \\
+    \oooo We want to show $r \in \interp{\judgeS{\spec{e \pointsto_A -}{e := e'}{a:\unittype}{e \pointsto_A e'}}}\;\theta\;\gamma\;\delta$ \\
+    \oooo Let $P = \interp{\judgeA{e \pointsto_A -}{\assert}}\;\theta\;\gamma\;\delta$ \\
+    \oooo Let $C = \interp{\judgeE[\Theta]{\Gamma}{\comp{e := e'}}{\monad{A}}}\;\theta\;\gamma$ \\
+    \oooo Let $E = \interp{\judgeE[\Theta]{\Gamma}{e}{\reftype{A}}}\;\theta\;\gamma$ \\
+    \oooo Let $E' = \interp{\judgeE[\Theta]{\Gamma}{e'}{A}}\;\theta\;\gamma$ \\
+    \oooo let $Q = \semfun{v}{\interp{\judgeA{e \pointsto_A e'}{\assert}}\;\theta\;(\gamma, v)\;\delta}$ \\
     \oooo We want to show $r \in \spec{P}{C}{a:A}{Q(a)}$ \\
     \oooo We want to show $\forall s \sqsupseteq r.\; \basicspec{P * s}{C}{a:A}{Q(a) * s}$ \\
     \oooo Assume $s \sqsupseteq r$ \\
@@ -5028,7 +5078,7 @@ $\judgeS{\spec{e \pointsto_A -}{e := e'}{a:\unittype}{e \pointsto_A e'}}$ is val
     \oooooo By semantics $h \in P * s$ means $\exists h_1, h_2.\; h_1 \in P$, $h_2 \in s$, and
             $h_1 \# h_2$ \\
     \oooooo By semantics of assertions, $h_1 \in P$ means 
-            $\exists v \in \interp{\judgeWK[\restrictkind{\Delta}]{A}{\bigstar}}\;\theta.\;
+            $\exists v \in \interp{\judgeWK[\Theta]{A}{\bigstar}}\;\theta.\;
                h_1 = [E:v]$ \\
     \oooooo Expanding definitions, 
              $C = \semfun{k}{\semfun{h}{k\;\unit\;\mbox{if } E\in\domain{h} \mbox{ then } [h|E:E'] \mbox{ else }\top}}$ \\
@@ -5058,8 +5108,8 @@ $\judgeS{\spec{e \pointsto_A -}{e := e'}{a:\unittype}{e \pointsto_A e'}}$ is val
     \ooooo Therefore $\basicspec{P * s}{C}{a:A}{Q(a) * s}$ \\
     \oooo Therefore $\forall s \sqsupseteq r.\; \basicspec{P * s}{C}{a:A}{Q(a) * s}$ \\
     \oooo Therefore $r \in \spec{P}{C}{a:A}{Q(a)}$ \\
-    \ooo Therefore $\forall r.\; r \in \interp{\judgeS{\spec{e \pointsto_A -}{e := e'}{a:\unittype}{e \pointsto_A e'}}}\;\delta$ \\
-    \ooo Therefore $\interp{\judgeS{\spec{e \pointsto_A -}{e := e'}{a:\unittype}{e \pointsto_A e'}}}\;\delta = \top$ \\
+    \ooo Therefore $\forall r.\; r \in \interp{\judgeS{\spec{e \pointsto_A -}{e := e'}{a:\unittype}{e \pointsto_A e'}}}\;\theta\;\gamma\;\delta$ \\
+    \ooo Therefore $\interp{\judgeS{\spec{e \pointsto_A -}{e := e'}{a:\unittype}{e \pointsto_A e'}}}\;\theta\;\gamma\;\delta = \top$ \\
   \end{tabbedproof}
 \end{proof}
 
@@ -5070,18 +5120,14 @@ If $\judgeS{\spec{\emp}{\newref{A}{e}}{a:\reftype{A}}{a \pointsto e}}$ is valid
 \end{lemma}
 \begin{proof}
   \begin{tabbedproof}
-    \oo Assume $\delta \in \interp{\judgeACtx{\Delta}}$ \\
-    \ooo We want to show $\interp{\judgeS{\spec{\emp}{\newref{A}{e}}{a:\reftype{A}}{a \pointsto e}}}\delta = \top$ \\
-    \ooo So we want to show $\forall r.\; r \in \interp{\judgeS{\spec{\emp}{\newref{A}{e}}{a:\reftype{A}}{a \pointsto e}}}\delta$ \\
+    \oo Assume suitable $\theta$, $\gamma$, and $\delta$ \\
+    \ooo We want to show $\interp{\judgeS{\spec{\emp}{\newref{A}{e}}{a:\reftype{A}}{a \pointsto e}}}\theta\;\gamma\;\delta = \top$ \\
+    \ooo So we want to show $\forall r.\; r \in \interp{\judgeS{\spec{\emp}{\newref{A}{e}}{a:\reftype{A}}{a \pointsto e}}}\theta\;\gamma\;\delta$ \\
     \ooo Assume $r$, \\
-    \oooo So we want to show $r \in \interp{\judgeS{\spec{\emp}{\newref{A}{e}}{a:\reftype{A}}{a \pointsto e}}}\delta$ \\
-    \oooo Let $\Theta = \restrictkind{\Delta}$ \\
-    \oooo Let $\theta = \restricttyenv{\Delta}{\delta}$ \\
-    \oooo Let $\Gamma = \restricttype{\Delta}$ \\
-    \oooo Let $\gamma = \restrictvals{\Delta}{\delta}$ \\
+    \oooo So we want to show $r \in \interp{\judgeS{\spec{\emp}{\newref{A}{e}}{a:\reftype{A}}{a \pointsto e}}}\theta\;\gamma\;\delta$ \\
     \oooo Let $C = \interp{\judgeE{\Gamma}{\comp{\newref{A}{e}}}{\monad{\reftype{A}}}\;\theta}\;\gamma$ \\
     \oooo Let $E = \interp{\judgeE{\Gamma}{e}{A}\;\theta}\;\gamma$ \\
-    \oooo Let $Q = \semfun{v}{\interp{\judgeA[\Delta, a:\reftype{A}]{a \pointsto_A e}{\assert}}\;(\delta, v)}$ \\
+    \oooo Let $Q = \semfun{v}{\interp{\judgeA[\Delta, a:\reftype{A}]{a \pointsto_A e}{\assert}}\;\theta\;(\gamma, v)\;\delta}$ \\
     \oooo So we want to show $r \in \spec{I}{C}{a:A}{Q(a)}$ \\
     \oooo So we want to show $\forall s \sqsupseteq r.\; \basicspec{s}{C}{a:A}{Q(a)*s}$ \\
     \oooo Assume $s \sqsupseteq r$ \\
@@ -5089,8 +5135,8 @@ If $\judgeS{\spec{\emp}{\newref{A}{e}}{a:\reftype{A}}{a \pointsto e}}$ is valid
     \ooooo We want to show $\forall h \in s.\; C\;Best(\semfun{a}{Q(a)*s})\;h = \bot$ \\
     \ooooo Assume $h \in s$ \\
     \oooooo Expanding definitions, $C\;Best((\semfun{a}{Q(a)*s})\;h = $ \\
-    \oooooox let $l = (\max(\domain{h})+1, [\theta(A)])$ in $Best(\semfun{a}{Q(a)*s})\;l\;[h|l:E]$ \\
-    \oooooo So let $l = (\max(\domain{h})+1, [\theta(A)])$ \\
+    \oooooox let $l = \newloc{h}{A}, [\theta(A)])$ in $Best(\semfun{a}{Q(a)*s})\;l\;[h|l:E]$ \\
+    \oooooo So let $l = \newloc{h}{A}$ \\
     \oooooo We want to show $Best(\semfun{a}{Q(a)*s})\;l\;[h|l:E] = \bot$ \\
     \oooooo To show this, we must show $\lnot (\exists k \in Approx(\semfun{a}{Q(a)*s}).\;k\;l\;[h|l:E] = \top)$ \\
     \oooooo So we must show $\forall k \in Approx(\semfun{a}{Q(l)*s}).\;k\;l\;[h|l:E] = \bot)$ \\
@@ -5109,8 +5155,8 @@ If $\judgeS{\spec{\emp}{\newref{A}{e}}{a:\reftype{A}}{a \pointsto e}}$ is valid
     \ooooo Therefore $\basicspec{s}{C}{a:A}{Q(a)*s}$ \\
     \oooo Therefore $\forall s \sqsupseteq r.\; \basicspec{s}{C}{a:A}{Q(a)*s}$ \\
     \oooo Therefore $r \in \spec{I}{C}{a:A}{Q(a)}$ \\
-    \ooo Therefore $\forall r.\; r \in \interp{\judgeS{\spec{\emp}{\newref{A}{e}}{a:\reftype{A}}{a \pointsto e}}}\delta$ \\
-    \ooo Therefore $\interp{\judgeS{\spec{\emp}{\newref{A}{e}}{a:\reftype{A}}{a \pointsto e}}}\delta = \top$ \\
+    \ooo Therefore $\forall r.\; r \in \interp{\judgeS{\spec{\emp}{\newref{A}{e}}{a:\reftype{A}}{a \pointsto e}}}\theta\;\gamma\;\delta$ \\
+    \ooo Therefore $\interp{\judgeS{\spec{\emp}{\newref{A}{e}}{a:\reftype{A}}{a \pointsto e}}}\theta\;\gamma\;\delta = \top$ \\
   \end{tabbedproof}
 \end{proof}
 
@@ -5118,20 +5164,16 @@ If $\judgeS{\spec{\emp}{\newref{A}{e}}{a:\reftype{A}}{a \pointsto e}}$ is valid
 We have that $\judgeS{\spec{e \pointsto_A e'}{!e}{a:A}{e \pointsto_A e' \land a = e'}}$ is valid.\end{lemma}
 \begin{proof}
   \begin{tabbedproof}
-    \oo Assume $\delta \in \interp{\judgeACtx{\Delta}}$ \\
-    \ooo We want to show $\interp{\judgeS{\spec{e \pointsto_A e'}{!e}{a:A}{e \pointsto e' \land a = e'}}}\delta = \top$ \\
-    \ooo So we want to show $\forall r.\; r \in \interp{\judgeS{\spec{e \pointsto_A e'}{!e}{a:A}{e \pointsto e' \land a = e'}}}\delta$ \\
+    \oo Assume suitable $\theta$, $\gamma$, and $\delta$ \\
+    \ooo We want to show $\interp{\judgeS{\spec{e \pointsto_A e'}{!e}{a:A}{e \pointsto e' \land a = e'}}}\theta\;\gamma\;\delta = \top$ \\
+    \ooo So we want to show $\forall r.\; r \in \interp{\judgeS{\spec{e \pointsto_A e'}{!e}{a:A}{e \pointsto e' \land a = e'}}}\theta\;\gamma\;\delta$ \\
     \ooo Assume $r$, \\
-    \oooo So we want to show $r \in r \in \interp{\judgeS{\spec{e \pointsto_A e'}{!e}{a:A}{e \pointsto e' \land a = e'}}}\delta$ \\
-    \oooo Let $\Theta = \restrictkind{\Delta}$ \\
-    \oooo Let $\theta = \restricttyenv{\Delta}{\delta}$ \\
-    \oooo Let $\Gamma = \restricttype{\Delta}$ \\
-    \oooo Let $\gamma = \restrictvals{\Delta}{\delta}$ \\
-    \oooo Let $P = \interp{\judgeA{e \pointsto_A e'}{\assert}}\;\delta$ \\
+    \oooo So we want to show $r \in r \in \interp{\judgeS{\spec{e \pointsto_A e'}{!e}{a:A}{e \pointsto e' \land a = e'}}}\theta\;\gamma\;\delta$ \\
+    \oooo Let $P = \interp{\judgeA{e \pointsto_A e'}{\assert}}\;\theta\;\gamma\;\delta$ \\
     \oooo Let $C = \interp{\judgeE{\Gamma}{\comp{!e}}{\monad{A}}\;\theta}\;\gamma$ \\
     \oooo Let $E = \interp{\judgeE{\Gamma}{e}{\reftype{A}}\;\theta}\;\gamma$ \\
     \oooo Let $E' = \interp{\judgeE{\Gamma}{e'}{A}\;\theta}\;\gamma$ \\
-    \oooo Let $Q = \semfun{v}{\interp{\judgeA[\Delta, a:\reftype{A}]{e \pointsto_A e' \land a = e'}{\assert}}\;(\delta, v)}$ \\
+    \oooo Let $Q = \semfun{v}{\interp{\judgeA[\Theta; \Gamma, a:\reftype{A}; \Delta]{e \pointsto_A e' \land a = e'}{\assert}}\;\theta\;(\gamma, v)\;\delta}$ \\
     \oooo So we want to show $r \in \spec{P}{C}{a:A}{Q(a)}$ \\
     \oooo So we want to show $\forall s \sqsupseteq r.\; \basicspec{P*s}{C}{a:A}{Q(a)*s}$ \\
     \oooo Assume $s \sqsupseteq r$ \\
@@ -5153,12 +5195,12 @@ We have that $\judgeS{\spec{e \pointsto_A e'}{!e}{a:A}{e \pointsto_A e' \land a 
     \ooooooo Instantiate with $v$ with $(h\;E)$, and $h$ with $h$ \\
     \ooooooo So we must show $h \in Q(h\;E)*s$ \\
     \ooooooo So we will check $h_1 \in Q(h\;E)$ and $h_2 \in s$, since $h_1 \cdot h_2 = h$ \\
-    \ooooooo So we want to check $h_1 \in \interp{\judgeA{e \pointsto_A e'}{\assert}}\;\delta = P$ \\
+    \ooooooo So we want to check $h_1 \in \interp{\judgeA{e \pointsto_A e'}{\assert}}\;\theta\;\gamma\;\delta = P$ \\
     \ooooooox and also $h_1 \in \interp{\judgeA[\Gamma,a:A]{a = e'}{\assert}}(\delta,h\;E)$ \\
     \ooooooo We know $h_1 \in P$ by assumption \\
-    \ooooooo Since $h\;E = E' = \interp{\judgeA{e'}{A}}\delta$, we know 
-              $\interp{\judgeA[\Gamma,a:A]{a = e'}{\assert}}(\delta,h\;E) = H$ \\
-    \ooooooo Therefore $h_1 \in \interp{\judgeA[\Gamma,a:A]{a = e'}{\assert}}(\delta,h\;E)$ \\
+    \ooooooo Since $h\;E = E' = \interp{\judgeA{e'}{A}}\theta\;\gamma\;\delta$, we know 
+              $\interp{\judgeA[\Theta; \Gamma,a:A; \Delta]{a = e'}{\assert}}\;\theta\;(\gamma,h\;E)\;\delta = H$ \\
+    \ooooooo Therefore $h_1 \in \interp{\judgeA[\Theta; \Gamma,a:A; \Delta]{a = e'}{\assert}}\;\theta\;(\gamma, h\;E)\;\delta$ \\
     \ooooooo We know $h_2 \in s$ by assumption\\
     \ooooooo Therefore $h \in Q(h\;E)*s$ \\
     \ooooooo Therefore we know $k\;(h\;E)\;h = \bot$ \\
@@ -5168,8 +5210,8 @@ We have that $\judgeS{\spec{e \pointsto_A e'}{!e}{a:A}{e \pointsto_A e' \land a 
     \ooooo Therefore $\basicspec{P*s}{C}{a:A}{Q(a)*s}$ \\
     \oooo Therefore $\forall s \sqsupseteq r.\; \basicspec{P*s}{C}{a:A}{Q(a)*s}$ \\
     \oooo Therefore $r \in \spec{P}{C}{a:A}{Q(a)}$ \\
-    \ooo Therefore $\forall r.\; r \in \interp{\judgeS{\spec{e \pointsto_A e'}{!e}{a:A}{e \pointsto e' \land a = e'}}}\delta$ \\
-    \ooo Therefore $\interp{\judgeS{\spec{e \pointsto_A e'}{!e}{a:A}{e \pointsto e' \land a = e'}}}\delta = \top$ \\
+    \ooo Therefore $\forall r.\; r \in \interp{\judgeS{\spec{e \pointsto_A e'}{!e}{a:A}{e \pointsto e' \land a = e'}}}\theta\;\gamma\;\delta$ \\
+    \ooo Therefore $\interp{\judgeS{\spec{e \pointsto_A e'}{!e}{a:A}{e \pointsto e' \land a = e'}}}\theta\;\gamma\;\delta = \top$ \\
   \end{tabbedproof}
 \end{proof}
 
@@ -5181,22 +5223,18 @@ Suppose $\judgeS{\mspec{p}{e}{x:A}{q}}$ is valid, and $\judgeS[\Delta,x:A]{\spec
   \begin{tabbedproof}
     \oo Assume $\judgeS{\mspec{p}{e}{x:A}{q}}$ is valid \\
     \oo Assume $\judgeS[\Delta,x:A]{\spec{q}{c}{a:B}{r}}$ is valid\\
-    \ooo Assume $\delta \in \interp{\judgeACtx{\Delta}}$ \\
-    \oooo We want to show $\interp{\judgeS{\spec{p}{\letv{x}{e}{c}}{a:B}{r}}}\delta = \top$\\
-    \oooo So we want $\forall t.\; t \in \interp{\judgeS{\spec{p}{\letv{x}{e}{c}}{a:B}{r}}}\delta$ \\
+    \ooo Assume suitable $\theta$, $\gamma$, and $\delta$ \\
+    \oooo We want to show $\interp{\judgeS{\spec{p}{\letv{x}{e}{c}}{a:B}{r}}}\theta\;\gamma\;\delta = \top$\\
+    \oooo So we want $\forall t.\; t \in \interp{\judgeS{\spec{p}{\letv{x}{e}{c}}{a:B}{r}}}\theta\;\gamma\;\delta$ \\
     \oooo Assume $t$ \\
-    \ooooo Let $\Theta$ = $\restrictkind{\Delta}$ \\
-    \ooooo Let $\theta$ = $\restricttyenv{\Delta}{\delta}$ \\
-    \ooooo Let $\Gamma$ = $\restricttype{\Delta}$ \\
-    \ooooo Let $\gamma$ = $\restrictvals{\Delta}{\delta}$ \\
     \ooooo Let $E = \interp{\judgeE{\Gamma}{e}{\monad{A}}}\;\theta\;\gamma$ \\
     \ooooo Let $F = \semfun{v}{\interp{\judgeE{\Gamma,x:A}{\comp{c}}{\monad{B}}}\;\theta\;(\gamma,v)}$ \\
-    \ooooo Let $P = \interp{\judgeA{p}{\assert}}\delta$ \\
-    \ooooo Let $Q = \semfun{v}{\interp{\judgeA[\Delta,x:A]{q}{\assert}}\;\delta}$ \\
-    \ooooo Let $R = \semfun{v}{\semfun{v'}{\interp{\judgeA[\Delta,x:A,a:B]{q}{\assert}}\;(\delta, v, v')}}$ \\
-    \ooooo Let $R' = \semfun{v'}{\interp{\judgeA[\Delta,a:B]{q}{\assert}}\;(\delta, v')}$ \\
+    \ooooo Let $P = \interp{\judgeA{p}{\assert}}\theta\;\gamma\;\delta$ \\
+    \ooooo Let $Q = \semfun{v}{\interp{\judgeA[\Theta; \Gamma ,x:A;\Delta]{q}{\assert}}\;\theta\;(\gamma,v)\;\delta}$ \\
+    \ooooo Let $R = \semfun{v}{\semfun{v'}{\interp{\judgeA[\Theta;\Gamma,x:A,a:B;]{q}{\assert}}\;\theta\;(\gamma, v, v')\;\delta}}$ \\
+    \ooooo Let $R' = \semfun{v'}{\interp{\judgeA[\Theta; \Gamma, a:B; \Delta]{q}{\assert}}\;\theta\;(\gamma, v')\;\delta}$ \\
     \ooooo Note $\forall v.\; R\;v = R'$ since $x \not\in \FV{r}$ \\
-    \ooooo Let $C = \interp{\judgeE{\Gamma}{\comp{\letv{x}{e}{c}}}{\monad{B}}}\;\delta$ \\
+    \ooooo Let $C = \interp{\judgeE{\Gamma}{\comp{\letv{x}{e}{c}}}{\monad{B}}}\;\theta\;\gamma$ \\
     \ooooo By semantics, $C = F^*(E)$ \\
     \ooooo By definition of monadic lift, $C = \semfun{k}{E\;(\semfun{v}{F\;v\;k})}$ \\
     \ooooo So we want to show $t \in \spec{P}{C}{a:A}{R'(a)}$ \\
@@ -5206,7 +5244,7 @@ Suppose $\judgeS{\mspec{p}{e}{x:A}{q}}$ is valid, and $\judgeS[\Delta,x:A]{\spec
     \oooooo Assume $h \in P * u$ \\
     \ooooooo So we want to show $E\;(\semfun{v}{F\;v\;Best(\semfun{a}{R'(a)*u})})\;h = \bot$ \\
     \ooooooo We know $\judgeS{\mspec{p}{e}{x:A}{q}}$ is valid \\
-    \ooooooo Instantiating with the environment $\delta$, we get $\forall t.\; t \in \spec{P}{E}{a:A}{Q(a)}$ \\
+    \ooooooo Instantiating with the environment $\theta\;\gamma\;\delta$, we get $\forall t.\; t \in \spec{P}{E}{a:A}{Q(a)}$ \\
     \ooooooo Thus $\forall t, u \sqsupseteq t.\; \basicspec{P * u}{E}{a:A}{Q(a) * u}$ \\
     \ooooooo Thus $\forall t, u \sqsupseteq t, h \in P * u, E\;Best(\semfun{a}{Q(a) * u})\;h = \bot$ \\
     \ooooooo Instantiating, we get $E\;Best(\semfun{a}{Q(a) * u})\;h = \bot$ \\
@@ -5216,7 +5254,7 @@ Suppose $\judgeS{\mspec{p}{e}{x:A}{q}}$ is valid, and $\judgeS[\Delta,x:A]{\spec
     \ooooooo To do this, we must show $\forall v, h \in Q(v) * u, F\;v\;Best(\semfun{a}{R'(a)*u})\;h = \bot$ \\
     \ooooooo Assume $v, h \in Q(v) * u$ \\
     \oooooooo We know $\judgeS[\Delta,x:A]{\spec{q}{c}{a:B}{r}}$ is valid\\
-    \oooooooo Instantiating with the environment $(\delta, v)$, we get \\
+    \oooooooo Instantiating with the environment $\theta\;(\gamma, v)\;\delta$, we get \\
     \oooooooox $\forall v, t, u \sqsupseteq t, h \in Q(v) * u, (F\;v)\;Best(\semfun{a}{R\;v\;a * u})\;h = \bot$ \\
     \oooooooo Instantiating, we get $(F\;v)\;Best(\semfun{a}{R\;v\;a * u})\;h = \bot$ \\
     \oooooooo By equality, we get $(F\;v)\;Best(\semfun{a}{R'(a) * u})\;h = \bot$ \\
@@ -5228,8 +5266,8 @@ Suppose $\judgeS{\mspec{p}{e}{x:A}{q}}$ is valid, and $\judgeS[\Delta,x:A]{\spec
     \oooooo Therefore $\forall h \in P * u.\; C\;Best(\semfun{a}{R'(a) * u})\;h = \bot$\\
     \ooooo Therefore $\forall u \sqsupseteq t.\; \basicspec{P * u}{C}{a:A}{(R'(a) * u)}$ \\
     \ooooo Therefore $t \in \spec{P}{C}{a:A}{R'(a)}$ \\
-    \oooo Therefore $\forall t.\; t \in \interp{\judgeS{\spec{p}{\letv{x}{e}{c}}{a:B}{r}}}\delta$ \\
-    \oooo Therefore $\interp{\judgeS{\spec{p}{\letv{x}{e}{c}}{a:B}{r}}}\delta = \top$\\
+    \oooo Therefore $\forall t.\; t \in \interp{\judgeS{\spec{p}{\letv{x}{e}{c}}{a:B}{r}}}\theta\;\gamma\;\delta$ \\
+    \oooo Therefore $\interp{\judgeS{\spec{p}{\letv{x}{e}{c}}{a:B}{r}}}\theta\;\gamma\;\delta = \top$\\
   \end{tabbedproof}
 \end{proof}
 
@@ -5250,21 +5288,21 @@ is valid.
   \begin{tabbedproof}
     \oo Let $S = \forall x:\monad{A}.\; \mspec{p}x{a:A}{q(a)} \specimp \mspec{p}{e}{a:A}{q}$\\
     \oo Let $S' = \mspec{p}{\fix{x:\monad{A}}{e}}{a:A}{q}$ \\
-    \oo Assume $\delta \in \interp{\judgeACtx{\Delta}}$ \\
-    \ooo So we want to show $\interp{S'}\;\delta = \top$ \\
-    \ooo Let $P = \interp{\judgeA{P}{\assert}}\;\delta$ \\
-    \ooo Let $C = \interp{\judgeA{\fix{x:\monad{A}}{e}}{\monad{A}}}\;\delta$ \\
-    \ooo Let $Q = \semfun{v}{\interp{\judgeA[\Delta,a:A]{q}{\assert}}\;(\delta,v)}$ \\
-    \ooo Let $F(v) = \interp{\judgeA[\Delta,a:A]{e}{\monad{A}}}\;(\delta,v)$ \\
+    \oo Assume suitable $\theta$, $\gamma$, and $\delta$ \\
+    \ooo So we want to show $\interp{S'}\;\theta\;\gamma\;\delta = \top$ \\
+    \ooo Let $P = \interp{\judgeA{P}{\assert}}\;\theta\;\gamma\;\delta$ \\
+    \ooo Let $C = \interp{\judgeE{\Gamma}{\fix{x:\monad{A}}{e}}{\monad{A}}}\;\theta\;\gamma$ \\
+    \ooo Let $Q = \semfun{v}{\interp{\judgeA[\Theta; \Gamma, a:A; \Delta]{q}{\assert}}\;\theta\;(\gamma, v)\;\delta}$ \\
+    \ooo Let $F(v) = \interp{\judgeE{\Gamma, a:A}{e}{\monad{A}}}\;\theta\;(\gamma, v)$ \\
     \ooo So we want to show $\spec{P}{C}{a:A}{Q(a)} = \top$ \\
-    \ooo We know $\interp{S}\;\delta = \top$ \\
-    \ooo Thus for all $v$, we know $\interp{\mspec{p}x{a:A}{q(a)} \specimp \mspec{p}{e}{a:A}{q}}\;(\delta,v) = \top$ \\
+    \ooo We know $\interp{S}\;\theta\;\gamma\;\delta = \top$ \\
+    \ooo Thus for all $v$, we know $\interp{\mspec{p}x{a:A}{q(a)} \specimp \mspec{p}{e}{a:A}{q}}\;\theta\;(\gamma, v)\;\delta = \top$ \\
     \ooo Thus we know for all $v$, $r$, and $s \sqsupseteq r$, \\
-    \ooox if $s \in \interp{\mspec{p}x{a:A}{q(a)}}\;(\delta,v)$ then $s \in \interp{\mspec{p}{e}{a:A}{q}}\;(\delta,v)$ \\
+    \ooox if $s \in \interp{\mspec{p}x{a:A}{q(a)}}\;\theta\;(\gamma, v)\;\delta$ then $s \in \interp{\mspec{p}{e}{a:A}{q}}\;\theta\;(\gamma, v)\;\delta$ \\
     \ooo Since $x \not\in \FV{p}$, we know for all $v$, 
-         $\interp{\judgeA[\Delta,x:\monad{A}]{p}{\assert}}\;(\delta,v) = P$ \\
+         $\interp{\judgeA[\Theta; \Gamma,x:\monad{A}; \Delta]{p}{\assert}}\;\theta\;(\gamma, v)\;\delta = P$ \\
     \ooo Since $x \not\in \FV{q}$, we know for all $v$, 
-         $\semfun{v'}{\interp{\judgeA[\Delta,x:\monad{A}, a:A]{q}{\assert}}\;(\delta,v,v')} = Q$ \\
+         $\semfun{v'}{\interp{\judgeA[\Theta; \Gamma, x:\monad{A}, a:A; \Delta]{q}{\assert}}\;\theta\;(\gamma,v,v') \;\delta} = Q$ \\
     \ooo Thus we know for all $v$, $r$, and $s \sqsupseteq r$, \\
     \ooox if $s \in  \spec{P}{v}{a:A}{Q(a)}$ then 
              $s \in \spec{P}{F(v)}{a:A}{Q(a)}$ \\
@@ -5273,7 +5311,7 @@ is valid.
     \ooo Then by the semantic fixed point theorem, 
           $\spec{P}{fix(F)}{a:A}{Q(a)} = \top$ \\
     \ooo So $\spec{P}{C}{a:A}{Q(a)} = \top$ \\
-    \ooo Therefore $\interp{S'}\;\delta = \top$ \\
+    \ooo Therefore $\interp{S'}\;\theta\;\gamma\;\delta = \top$ \\
   \end{tabbedproof}
 \end{proof}
 
@@ -5288,17 +5326,15 @@ $\judgeS{\spec{p}{c}{a:A}{q}}$ is valid.
   \begin{tabbedproof}
     \oo Assume $\judgeS{\setof{r} \specimp \spec{p}{c}{a:A}{q}}$ is valid \\
     \oo Assume $p \implies r$ is a valid truth of separation logic \\
-    \ooo Now, we know that for all $\delta$, $\interp{\judgeS{\setof{r} \specimp \spec{p}{c}{a:A}{q}}}\;\delta$ is $\top$\\
-    \ooo Now, we want to show for all $\delta$, that $\interp{\judgeS{\spec{p}{c}{a:A}{q}}}\;\delta = \top$ \\
-    \ooo Assume $\delta$ is an environment \\
-    \oooo So we want to show for all $r$, and all $s \worldgeq r$, that $\basicspec{P*s}{C}{a}{Q(a) * s}$ holds\\
+    \ooo We know that all suitable $\theta$, $\gamma$, and $\theta$, $\interp{\judgeS{\setof{r} \specimp \spec{p}{c}{a:A}{q}}}\;\theta\;\gamma\;\delta$ is $\top$\\
+    \ooo We want for all suitable $\theta$, $\gamma$, and $\theta$, that $\interp{\judgeS{\spec{p}{c}{a:A}{q}}}\;\theta\;\gamma\;\delta = \top$ \\
+    \ooo Assume $\theta\;\gamma\;\delta$ is a suitable environment \\
+    \oooo We want to show for all $r$, and all $s \worldgeq r$, that $\basicspec{P*s}{C}{a}{Q(a) * s}$ holds\\
     \ooox where \\
-    \oooox $R = \interp{\judgeA{r}{\assert}}\;\delta$ \\
-    \oooox $P = \interp{\judgeA{p}{\assert}}\;\delta$ \\
-    \oooox $C = \interp{\judgeC[\restrictkind{\Delta}]{\restricttype{\Delta}}{c}{A}}\;\theta\;\gamma$ \\
-    \oooox $Q = \semfun{v}{\interp{\judgeA[\Delta,a:A]{q}{\assert}}\;(\delta,v)}$ \\
-    \oooox $\theta = \restricttyenv{\Delta}{\delta}$ \\
-    \oooox $\gamma = \restrictvals{\Delta}{\delta}$ \\
+    \oooox $R = \interp{\judgeA{r}{\assert}}\;\theta\;\gamma\;\delta$ \\
+    \oooox $P = \interp{\judgeA{p}{\assert}}\;\theta\;\gamma\;\delta$ \\
+    \oooox $C = \interp{\judgeC[\Theta]{\Gamma}{c}{A}}\;\theta\;\gamma$ \\
+    \oooox $Q = \semfun{v}{\interp{\judgeA[\Theta; \Gamma, a:A; \Delta]{q}{\assert}}\;\theta\;(\gamma, v)\;\delta}$ \\
     \oooo To show $\basicspec{P*s}{C}{a}{Q(a)*s}$, we must show 
           $\forall h \in P * s.\; c\; (Best(\semfun{a}{Q(a)*s}))\;h = \bot$ \\
     \oooo Assume $h \in P * s$ \\
@@ -5306,8 +5342,8 @@ $\judgeS{\spec{p}{c}{a:A}{q}}$ is valid.
     \ooooo Since $R$ is pure, we know $h \in R \land s$ \\
     \ooooo So we know $h \in R$ \\
     \ooooo Since $R$ is pure it is either $\emptyset$ or $H$, and since we know $h \in R$, $R = H$ \\
-    \ooooo Therefore we know that $\interp{\judgeS{\setof{r}}}\;\delta = \top$ \\
-    \ooooo Therefore we know that $\interp{\judgeS{\spec{p}{c}{a:A}{q}}}\;\delta = \top$ \\
+    \ooooo Therefore we know that $\interp{\judgeS{\setof{r}}}\;\theta\;\gamma\;\delta = \top$ \\
+    \ooooo Therefore we know that $\interp{\judgeS{\spec{p}{c}{a:A}{q}}}\;\theta\;\gamma\;\delta = \top$ \\
   \end{tabbedproof}
 \end{proof}
 
@@ -5319,23 +5355,23 @@ valid, then $\judgeS{\setof{r} \specimp \spec{p}{c}{a:A}{q}}$ is valid.
 \begin{proof}
 \begin{tabbedproof}
   \oo Assume $\judgeS{\setof{r} \specimp \spec{p \land r}{c}{a:A}{q}}$ is valid. \\
-  \ooo This is equivalent to for all $\delta$ and $s$ if $s \in \interp{\setof{r}}\;\delta$, then $s \in \interp{\spec{p \land r}{c}{a:A}{q}}\;\delta$. \\
+  \ooo This is equivalent to for all suitable $\theta$, $\gamma$, $\theta$ and $s$, \\
+  \ooox if $s \in \interp{\setof{r}}\;\theta\;\gamma\;\delta$, then $s \in \interp{\spec{p \land r}{c}{a:A}{q}}\;\theta\;\gamma\;\delta$. \\
   \ooo We want to show that $\judgeS{\setof{r} \specimp \spec{p}{c}{a:A}{q}}$ is valid \\
-  \ooo This is equivalent to showing for all $\delta$ and $s$, if $s \in \interp{\setof{r}}\;\delta$, then $s \in \interp{\spec{p}{c}{a:A}{q}}\;\delta$. \\
-  \ooo Assume we have $\delta$ and $s$ such that $s \in \interp{\setof{r}}\;\delta$. \\
-  \oooo We want to show $s \in \interp{\spec{p}{c}{a:A}{q}}\;\delta$ is valid. \\
+  \ooo This is equivalent to showing for all suitable $\theta$, $\gamma$, and $\theta$ and $s$, \\
+  \ooox if $s \in \interp{\setof{r}}\;\theta\;\gamma\;\delta$, then $s \in \interp{\spec{p}{c}{a:A}{q}}\;\theta\;\gamma\;\delta$. \\
+  \ooo Assume we have $\theta\;\gamma\;\delta$ and $s$ such that $s \in \interp{\setof{r}}\;\theta\;\gamma\;\delta$. \\
+  \oooo We want to show $s \in \interp{\spec{p}{c}{a:A}{q}}\;\theta\;\gamma\;\delta$ is valid. \\
   \oooo So we want to show for all $t \worldgeq s$, that $\basicspec{P*t}{C}{a}{Q(a) * t}$ holds\\
   \ooox where \\
-  \oooox $R = \interp{\judgeA{r}{\assert}}\;\delta$ \\
-  \oooox $P = \interp{\judgeA{p}{\assert}}\;\delta$ \\
-  \oooox $C = \interp{\judgeC[\restrictkind{\Delta}]{\restricttype{\Delta}}{c}{A}}\;\theta\;\gamma$ \\
-  \oooox $Q = \semfun{v}{\interp{\judgeA[\Delta,a:A]{q}{\assert}}\;(\delta,v)}$ \\
-  \oooox $\theta = \restricttyenv{\Delta}{\delta}$ \\
-  \oooox $\gamma = \restrictvals{\Delta}{\delta}$ \\
+  \oooox $R = \interp{\judgeA{r}{\assert}}\;\theta\;\gamma\;\delta$ \\
+  \oooox $P = \interp{\judgeA{p}{\assert}}\;\theta\;\gamma\;\delta$ \\
+  \oooox $C = \interp{\judgeC[\Theta]{\Gamma}{c}{A}}\;\theta\;\gamma$ \\
+  \oooox $Q = \semfun{v}{\interp{\judgeA[\Theta; \Gamma, a:A; \Delta]{q}{\assert}}\;\theta\;(\gamma, v)\;\delta}$ \\
   \oooo Assume $t \worldgeq s$, and $h \in P * t$. \\
   \ooooo We want to show that $C\;\mathit{Best}(\semfun{a}{Q(a) * s})\;h = \bot$ \\
-  \ooooo Since $s \in \interp{\spec{p \land r}{c}{a:A}{q}}\;\delta$, we know $C\;\mathit{Best}(\semfun{a}{Q(a) * s})\;h = \bot$ if  $h \in (P \land R) * t$. \\
-  \ooooo Since we assumed that $\interp{\setof{r}}\;\delta$ was non-empty, this means that $\interp{r}\;\delta = \top = H$. \\
+  \ooooo Since $s \in \interp{\spec{p \land r}{c}{a:A}{q}}\;\theta\;\gamma\;\delta$, we know $C\;\mathit{Best}(\semfun{a}{Q(a) * s})\;h = \bot$ if  $h \in (P \land R) * t$. \\
+  \ooooo Since we assumed that $\interp{\setof{r}}\;\theta\;\gamma\;\delta$ was non-empty, this means that $\interp{r}\;\theta\;\gamma\;\delta = \top = H$. \\
   \ooooo Hence $h \in (P \land R) * t$. \\
   \ooooo Hence $C\;\mathit{Best}(\semfun{a}{Q(a) * s})\;h = \bot$ \\ 
 \end{tabbedproof}
@@ -5347,51 +5383,114 @@ We have that $\judgeS{\setof{\validprop{S}} \specimp S}$ is valid.
 \begin{proof}
   \begin{tabbedproof}
     \oo We want to show $\judgeS{\setof{\validprop{S}} \specimp S}$ is valid \\
-    \oo Equivalently, we need for all $\delta$ and $r$, if $r \in \interp{\judgeS{\setof{\validprop{S}}}}\;\delta$\\
-    \ox    then $r \in \interp{\judgeS{S}}\;\delta$ \\
-    \oo Assume we have a suitable $\delta$ and $r$ such that $r \in \interp{\judgeS{\setof{\validprop{S}}}}\;\delta$ \\
-    \ooo From the semantics, we know $\interp{\judgeS{\setof{\validprop{S}}}}\;\delta$ is either $\top$ or $\bot$ \\
-    \ooo Since $r \in \interp{\judgeS{\setof{\validprop{S}}}}\;\delta$, we know it is non-empty, hence \\
-    \ooox $\interp{\judgeS{\setof{\validprop{S}}}}\;\delta = \top$ \\
-    \ooo Therefore, we know that $\interp{\judgeA{\validprop{S}}{\assert}}\;\delta = H$ \\
-    \ooo Therefore, we know that $\interp{\judgeS{S}}\;\delta = \top$ \\
+    \oo Equivalently, we need for all suitable $\theta$, $\gamma$, and $\theta$ and $r$, if $r \in \interp{\judgeS{\setof{\validprop{S}}}}\;\theta\;\gamma\;\delta$\\
+    \ox    then $r \in \interp{\judgeS{S}}\;\theta\;\gamma\;\delta$ \\
+    \oo Assume we have a suitable $\theta, \gamma,$ and $\delta$ and $r$ such that $r \in \interp{\judgeS{\setof{\validprop{S}}}}\;\theta\;\gamma\;\delta$ \\
+    \ooo From the semantics, we know $\interp{\judgeS{\setof{\validprop{S}}}}\;\theta\;\gamma\;\delta$ is either $\top$ or $\bot$ \\
+    \ooo Since $r \in \interp{\judgeS{\setof{\validprop{S}}}}\;\theta\;\gamma\;\delta$, we know it is non-empty, hence \\
+    \ooox $\interp{\judgeS{\setof{\validprop{S}}}}\;\theta\;\gamma\;\delta = \top$ \\
+    \ooo Therefore, we know that $\interp{\judgeA{\validprop{S}}{\assert}}\;\theta\;\gamma\;\delta = H$ \\
+    \ooo Therefore, we know that $\interp{\judgeS{S}}\;\theta\;\gamma\;\delta = \top$ \\
   \end{tabbedproof}
 \end{proof}
 
-\begin{lemma}{(Existential Dropping)}
-If $\judgeS{\spec{\exists u:\omega.\;p}{c}{a:A}{q}}$ is valid, then 
-   $\judgeS[\Delta, u:\omega]{\spec{p}{c}{a:A}{q}}$ is valid. 
+\begin{lemma}{(Existential Dropping 1)}
+If $\judgeS{\spec{\exists u:\upsilon.\;p}{c}{a:A}{q}}$ is valid, then 
+   $\judgeS[\Theta; \Gamma; \Delta, u:\upsilon]{\spec{p}{c}{a:A}{q}}$ is valid. 
 \end{lemma}
 
 \begin{proof}
   \begin{tabbedproof}
-    \oo Assume $\judgeS{\spec{\exists u:\omega.\;p}{c}{a:A}{q}}$ is valid \\
-    \ooo We want to show $\judgeS[\Delta, u:\omega]{\spec{p}{c}{a:A}{q}}$ is valid \\
-    \ooo So we want to show for all $\delta' = (\delta, v)$, that $\interp{\judgeS[\Delta, u:\omega]{\spec{p}{c}{a:A}{q}}}\;\delta' = \top$ \\
-    \ooo Assume we have a suitable $\delta' = (\delta, v)$ \\ 
+    \oo Assume $\judgeS{\spec{\exists y:\upsilon.\;p}{c}{a:A}{q}}$ is valid \\
+    \ooo We want to show $\judgeS[\Theta; \Gamma; \Delta, u:\upsilon]{\spec{p}{c}{a:A}{q}}$ is valid \\
+    \ooo So we want to show for all $\theta, \gamma, v, \delta$, \\
+    \ooox that $\interp{\judgeS[\Theta; \Gamma; \Delta, u:\upsilon]{\spec{p}{c}{a:A}{q}}}\;\theta\;\gamma\;(\delta,v) = \top$ \\
+    \ooo Assume we have a suitable $(\theta, \gamma, \delta, v)$ and $\delta' = (\delta, v)$\\ 
     \oooo We want to show for all $r$, that $r \in \spec{P}{C}{a}{Q(a)}$ \\
     \oooo where \\
-    \oooox $P = \interp{\judgeA[\Delta, u:\omega]{p}{\assert}}\;\delta'$ \\
-    \oooox $C = \interp{\judgeC[\restrictkind{\Delta, u:\omega}]{\restricttype{\Delta, u:\omega}}{c}{A}}\;\theta'\;\gamma'$ \\
-    \oooox $Q = \semfun{v'}{\interp{\judgeA[\Delta, u:\omega]{q}{\assert}}\;(\delta',v')}$\\
-    \oooox $\theta' = \restricttyenv{\Delta, u:\omega}{\delta'}$ \\
-    \oooox $\gamma' = \restricttyenv{\Delta, u:\omega}{\delta'}$ \\
-    \oooox $\theta = \restricttyenv{\Delta}{\delta}$ \\
-    \oooox $\gamma = \restrictvals{\Delta}{\delta}$ \\
-    \oooo We also know that $C = \interp{\judgeC[\restrictkind{\Delta}]{\restricttype{\Delta}}{c}{A}}\;\delta$ \\
-    \oooo and that $Q = \semfun{v'}{\interp{\judgeA{q}{\assert}}\;(\delta,v')}$\\
+    \oooox $P = \interp{\judgeA[\Theta; \Gamma; \Delta, u:\upsilon]{p}{\assert}}\;\theta\;\gamma\;\delta'$ \\
+    \oooox $C = \interp{\judgeC[\Theta]{\Gamma, y:B}{c}{A}}\;\theta\;\gamma$ \\
+    \oooox $Q = \semfun{v'}{\interp{\judgeA[\Theta; \Gamma, a:A; \Delta, u:\upsilon]{q}{\assert}}\;\theta\;(\gamma, v')\;\delta'}$ \\
+    \oooo We also know that $C = \interp{\judgeC[\Theta]{\Gamma}{c}{A}}\;\theta\;\gamma$ \\
+    \oooo and that $Q = \semfun{v'}{\interp{\judgeA[\Theta;\Gamma, a:A;\Delta]{q}{\assert}}\;\theta\;(\gamma, v')\;\delta'}$\\
     \oooo So now we must show for all $s \worldgeq r$, that $\basicspec{P * s}{C}{a}{Q(a) * s}$ holds\\
     \oooo Now assume $s$ such that $s \worldgeq r$ \\
     \ooooo We need for all $h \in \basicspec{P * s}{C}{a}{Q(a) * s}$, that 
              $C\;Best(\semfun{a}{Q(a) * s})\;h = \bot$ \\
-    \ooooo We know $\spec{\exists u:\omega.\;p}{c}{a:A}{q}$ is valid \\
+    \ooooo We know $\spec{\exists u:\upsilon.\;p}{c}{a:A}{q}$ is valid \\
     \ooooo So we know for all $r$, that $r \in \spec{P'}{C}{a}{Q(a)}$ \\
-    \oooox where $P' = \bigvee_{v \in \interp{\judgeSort{\omega}}\;\delta} \interp{\judgeA[\Delta, u:\omega]{p}{\assert}}\;(\delta, v)$ \\
-    \ooooo Since $P = \interp{\judgeA[\Delta,u:\omega]{p}{\assert}}\;(\delta, v)$, we know $P \subseteq P'$ \\
+    \oooox where $P' = \bigvee_{v \in \interp{\judgeSort{\upsilon}}\;\theta} \interp{\judgeA[\Theta; \Gamma; \Delta, u:\upsilon]{p}{\assert}}\;\theta\;\gamma\;(\delta,v)$ \\
+    \ooooo Since $P = \interp{\judgeA[\Theta; \Gamma; \Delta, u:\upsilon]{p}{\assert}}\;\theta\;\gamma\;\delta'$, we know $P \subseteq P'$ \\
     \ooooo Therefore $h \in P' * s$, and so $C\;Best(\semfun{a}{Q(a) * s})\;h = \bot$ \\
     
   \end{tabbedproof}
 \end{proof}
+
+\begin{lemma}{(Existential Dropping 2)}
+If $\judgeS{\spec{\exists y:B.\;p}{c}{a:A}{q}}$ is valid, then 
+   $\judgeS[\Theta; \Gamma, y:B; \Delta]{\spec{p}{c}{a:A}{q}}$ is valid. 
+\end{lemma}
+
+\begin{proof}
+  \begin{tabbedproof}
+    \oo Assume $\judgeS{\spec{\exists y:B.\;p}{c}{a:A}{q}}$ is valid \\
+    \ooo We want to show $\judgeS[\Theta; \Gamma, y:B; \Delta]{\spec{p}{c}{a:A}{q}}$ is valid \\
+    \ooo So we want to show for all $\theta, \gamma, v, \delta$, \\
+    \ooox that $\interp{\judgeS[\Theta; \Gamma, y:B; \Delta]{\spec{p}{c}{a:A}{q}}}\;\theta\;(\gamma,v)\;\delta = \top$ \\
+    \ooo Assume we have a suitable $(\theta, \gamma, \delta, v)$ and $\gamma' = (\gamma, v)$\\ 
+    \oooo We want to show for all $r$, that $r \in \spec{P}{C}{a}{Q(a)}$ \\
+    \oooo where \\
+    \oooox $P = \interp{\judgeA[\Theta; \Gamma, y:B; \Delta]{p}{\assert}}\;\theta\;\gamma'\;\delta$ \\
+    \oooox $C = \interp{\judgeC[\Theta]{\Gamma, y:B}{c}{A}}\;\theta\;\gamma'$ \\
+    \oooox $Q = \semfun{v'}{\interp{\judgeA[\Theta; \Gamma, y:B, a:A; \Delta]{q}{\assert}}\;\theta\;(\gamma', v')\;\delta}$ \\
+    \oooo We also know that $C = \interp{\judgeC[\Theta]{\Gamma}{c}{A}}\;\theta\;\gamma$ \\
+    \oooo and that $Q = \semfun{v'}{\interp{\judgeA[\Theta;\Gamma, a:A;\Delta]{q}{\assert}}\;\theta\;(\gamma, v')\;\delta}$\\
+    \oooo So now we must show for all $s \worldgeq r$, that $\basicspec{P * s}{C}{a}{Q(a) * s}$ holds\\
+    \oooo Now assume $s$ such that $s \worldgeq r$ \\
+    \ooooo We need for all $h \in \basicspec{P * s}{C}{a}{Q(a) * s}$, that 
+             $C\;Best(\semfun{a}{Q(a) * s})\;h = \bot$ \\
+    \ooooo We know $\spec{\exists y:B.\;p}{c}{a:A}{q}$ is valid \\
+    \ooooo So we know for all $r$, that $r \in \spec{P'}{C}{a}{Q(a)}$ \\
+    \oooox where $P' = \bigvee_{v \in \interp{\judgeSort{B}}\;\theta} \interp{\judgeA[\Theta; \Gamma, y:B; \Delta]{p}{\assert}}\;\theta\;(\gamma, v)\;\delta$ \\
+    \ooooo Since $P = \interp{\judgeA[\Theta; \Gamma, y:B; \Delta]{p}{\assert}}\;\theta\;(\gamma, v)\;\delta$, we know $P \subseteq P'$ \\
+    \ooooo Therefore $h \in P' * s$, and so $C\;Best(\semfun{a}{Q(a) * s})\;h = \bot$ \\
+    
+  \end{tabbedproof}
+\end{proof}
+
+\begin{lemma}{(Existential Dropping 3)}
+If $\judgeS{\spec{\exists \alpha:\kappa.\;p}{c}{a:A}{q}}$ is valid, then 
+   $\judgeS[\Theta, \alpha:\kappa; \Gamma; \Delta]{\spec{p}{c}{a:A}{q}}$ is valid. 
+\end{lemma}
+
+\begin{proof}
+  \begin{tabbedproof}
+    \oo Assume $\judgeS{\spec{\exists \alpha:\kappa.\;p}{c}{a:A}{q}}$ is valid \\
+    \ooo We want to show $\judgeS[\Theta, \alpha:\kappa; \Gamma; \Delta]{\spec{p}{c}{a:A}{q}}$ is valid \\
+    \ooo So we want to show for all $\theta, \tau, \gamma, \delta$  \\
+    \ooox that $\interp{\judgeS[\Theta, \alpha:\kappa; \Gamma; \Delta]{\spec{p}{c}{a:A}{q}}}\;(\theta, \tau)\;\gamma\;\delta = \top$ \\
+    \ooo Assume we have a suitable $(\theta, \gamma, \delta, \tau)$ and $\theta' = (\theta, v)$\\ 
+    \oooo We want to show for all $r$, that $r \in \spec{P}{C}{a}{Q(a)}$ \\
+    \oooo where \\
+    \oooox $P = \interp{\judgeA[\Theta, \alpha:\kappa; \Gamma; \Delta]{p}{\assert}}\;\theta'\;\gamma\;\delta$ \\
+    \oooox $C = \interp{\judgeC[\Theta, \alpha:\kappa]{\Gamma, y:B}{c}{A}}\;\theta'\;\gamma$ \\
+    \oooox $Q = \semfun{v'}{\interp{\judgeA[\Theta, \alpha:\kappa; \Gamma, a:A; \Delta]{q}{\assert}}\;\theta'\;(\gamma, v')\;\delta}$ \\
+    \oooo We also know that $C = \interp{\judgeC[\Theta]{\Gamma}{c}{A}}\;\theta\;\gamma$ \\
+    \oooo and that $Q = \semfun{v'}{\interp{\judgeA[\Theta;\Gamma, a:A;\Delta]{q}{\assert}}\;\theta\;(\gamma, v')\;\delta}$\\
+    \oooo So now we must show for all $s \worldgeq r$, that $\basicspec{P * s}{C}{a}{Q(a) * s}$ holds\\
+    \oooo Now assume $s$ such that $s \worldgeq r$ \\
+    \ooooo We need for all $h \in \basicspec{P * s}{C}{a}{Q(a) * s}$, that 
+             $C\;Best(\semfun{a}{Q(a) * s})\;h = \bot$ \\
+    \ooooo We know $\spec{\exists \alpha:\kappa.\;p}{c}{a:A}{q}$ is valid \\
+    \ooooo So we know for all $r$, that $r \in \spec{P'}{C}{a}{Q(a)}$ \\
+    \oooox where $P' = \bigvee_{\tau \in \interp{\judgeSort{\kappa}}\;\theta} \interp{\judgeA[\Theta, \alpha:\kappa; \Gamma; \Delta]{p}{\assert}}\;(\theta, \tau)\;\gamma\;\delta$ \\
+    \ooooo Since $P = \interp{\judgeA[\Theta, \alpha:\kappa; \Gamma; \Delta]{p}{\assert}}\;\theta'\;\gamma\;\delta$, we know $P \subseteq P'$ \\
+    \ooooo Therefore $h \in P' * s$, and so $C\;Best(\semfun{a}{Q(a) * s})\;h = \bot$ \\
+    
+  \end{tabbedproof}
+\end{proof}
+
+
 
 \begin{lemma}{(Disjunction Rule)}
 If $\judgeS{\spec{p}{c}{a:A}{q}}$ is valid and 
@@ -5404,18 +5503,14 @@ then $\judgeS{\spec{p \vee p'}{c}{a:A}{q \vee q'}}$ is valid.
     \oo Assume $\judgeS{\spec{p}{c}{a:A}{q}}$ is valid \\
     \oo Assume $\judgeS{\spec{p'}{c}{a:A}{q'}}$ is valid \\
 
-    \oo Assume $\delta \in \interp{\judgeACtx{\Delta}}$ \\
-    \ooo We want to show $\interp{\judgeS{\spec{p \vee p'}{c}{a:A}{q \vee q'}}}\delta = \top$ \\
-    \ooo So we want to show $\forall r.\; r \in \interp{\judgeS{\spec{p \vee p'}{c}{a:A}{q \vee q'}}}\delta$ \\
+    \oo Assume suitable $\theta$, $\gamma$, and $\delta$ \\
+    \ooo We want to show $\interp{\judgeS{\spec{p \vee p'}{c}{a:A}{q \vee q'}}}\theta\;\gamma\;\delta = \top$ \\
+    \ooo So we want to show $\forall r.\; r \in \interp{\judgeS{\spec{p \vee p'}{c}{a:A}{q \vee q'}}}\theta\;\gamma\;\delta$ \\
     \ooo Assume $r$, \\
-    \oooo So we want to show $r \in\interp{\judgeS{\spec{p \vee p'}{c}{a:A}{q \vee q'}}}\delta$ \\
-    \oooo Let $\Theta = \restrictkind{\Delta}$ \\
-    \oooo Let $\theta = \restricttyenv{\Delta}{\delta}$ \\
-    \oooo Let $\Gamma = \restricttype{\Delta}$ \\
-    \oooo Let $\gamma = \restrictvals{\Delta}{\delta}$ \\
-    \oooo Let $P'' = \interp{\judgeA{p \vee p'}{\assert}}\;\delta$ \\
+    \oooo So we want to show $r \in\interp{\judgeS{\spec{p \vee p'}{c}{a:A}{q \vee q'}}}\theta\;\gamma\;\delta$ \\
+    \oooo Let $P'' = \interp{\judgeA{p \vee p'}{\assert}}\;\theta\;\gamma\;\delta$ \\
     \oooo Let $C = \interp{\judgeE{\Gamma}{[c]}{\monad{A}}}\;\theta\;\gamma$ \\
-    \oooo Let $Q'' = \semfun{v}{\interp{\judgeA[\Delta,a:A]{q \vee q'}{\assert}}\;(\delta, v)}$ \\
+    \oooo Let $Q'' = \semfun{v}{\interp{\judgeA[\Theta; \Gamma,a:A; \Delta]{q \vee q'}{\assert}}\;\theta\;(\gamma, v)\;\delta}$ \\
     \oooo So we want to show $r \in \spec{P''}{C}{a:A}{Q''(a)}$ \\
     \oooo So we want to show $\forall s \sqsupseteq r.\; \basicspec{P'' * s}{C}{a:A}{Q''(a) * s}$ \\
     \oooo Assume $s \sqsupseteq r$ \\
@@ -5423,11 +5518,12 @@ then $\judgeS{\spec{p \vee p'}{c}{a:A}{q \vee q'}}$ is valid.
     \ooooo We want to show $\forall h \in P'' * s.\; C\;Best(\semfun{a}{Q''(a) * s})\;h = \bot$ \\
     \ooooo Assume $h \in P'' * s$ \\
     \oooooo Therefore there are $h_1 \in P''$ and $h_2 \in s$ such that $h = h_1 \cdot h_2$ \\
-    \oooooo We know $P'' = \interp{\judgeA{p \vee p'}{\assert}}\;\delta = 
-                           \interp{\judgeA{p}{\assert}}\;\delta \vee 
-                           \interp{\judgeA{p'}{\assert}}\;\delta$ \\ 
-    \oooooo Call $P = \interp{\judgeA{p}{\assert}}\;\delta$ and $P' = \interp{\judgeA{p'}{\assert}}\;\delta$ \\
-    \oooooo Call $Q = \interp{\judgeA{q}{\assert}}\;\delta$ and $Q' = \interp{\judgeA{q'}{\assert}}\;\delta$ \\
+    \oooooo We know $P'' = \interp{\judgeA{p \vee p'}{\assert}}\;\theta\;\gamma\;\delta = $\\
+    \oooooox $\interp{\judgeA{p}{\assert}}\;\theta\;\gamma\;\delta \vee 
+                           \interp{\judgeA{p'}{\assert}}\;\theta\;\gamma\;\delta$ \\ 
+    \oooooo Call $P = \interp{\judgeA{p}{\assert}}\;\theta\;\gamma\;\delta$ and $P' = \interp{\judgeA{p'}{\assert}}\;\theta\;\gamma\;\delta$ \\
+    \oooooo Call $Q(v) = \interp{\judgeA[\Theta; \Gamma, a:A; \Delta]{q}{\assert}}\;\theta\;(\gamma,v)\;\delta$ \\
+    \ooooox and $Q'(v) = \interp{\judgeA[\Theta; \Gamma, a:A; \Delta]{q'}{\assert}}\;\theta\;(\gamma,v)\;\delta$ \\
     \oooooo By the definition of $\vee$, we know that $h_1 \in P$ or $h_1 \in P'$ \\
     \oooooo Suppose $h_1 \in P$: \\
     \ooooooo We know by assumption that $\basicspec{P * s}{C}{a:A}{Q(a) * s}$ \\
@@ -5452,35 +5548,30 @@ $\validP{r \implies e =_A e'}$ is valid, then $\judgeS{\setof{r} \specimp \spec{
 \end{lemma}
 
 \begin{proof}
-This rule follows as a consequence of the restriction lemmas we proved earlier. 
-
 \begin{tabbedproof}
 \oo Assume $\judgeS{\setof{r} \specimp \spec{p}{c[e/x]}{a:A}{q}}$ is valid. \\
-\ooo This is equivalent to assuming for all $\delta$ and $s$, if $s \in \interp{\setof{r}}\;\delta$, then $s \in \interp{\spec{p}{c[e/x]}{a:A}{q}}\;\delta$. \\
-\ooo Assume $\delta$, $r$, and $s \in \interp{\setof{r}}\;\delta$ \\
+\ooo This is equivalent to assuming for all suitable $\theta$, $\gamma$, and $\theta$ and $s$, \\
+\oooo if $s \in \interp{\setof{r}}\;\theta\;\gamma\;\delta$, then $s \in \interp{\spec{p}{c[e/x]}{a:A}{q}}\;\theta\;\gamma\;\delta$. \\
+\ooo Assume $\theta\;\gamma\;\delta$, $r$, and $s \in \interp{\setof{r}}\;\theta\;\gamma\;\delta$ \\
 \oooo Let \\
-\oooox $C = \interp{c[e/x]}\;\restricttyenv{\Delta}{\delta}\;\restrictvals{\Delta}{\delta}$ \\
-\oooox $C' = \interp{c[e'/x]}\;\restricttyenv{\Delta}{\delta}\;\restrictvals{\Delta}{\delta}$ \\
-\oooox $P = \interp{\judgeA{p}{\assert}}\;\delta$ \\
-\oooox $Q = \semfun{v}{\interp{\judgeA[\Delta,a:A]{q}{\assert}}\;(\delta,v)}$ \\
-\oooo Therefore we know that $R = \interp{r}\;\delta = \top = H$. \\
-\oooo Therefore it follows that $\interp{\judgeA{e =_A e'}{\assert}}\;\delta = H$ \\
-\oooo Therefore we know that $U(\interp{\judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}{e}{A}}\;\restricttyenv{\Delta}{\delta})\;\restrictvals{\Delta}{\delta}$ equals \\
-\ooox $U(\interp{\judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}{e'}{A}}\;\restricttyenv{\Delta}{\delta})\;\restrictvals{\Delta}{\delta}$ \\
-\oooo By Lemma~\ref{value-restriction}, we know that 
-$(\interp{\judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}{e}{A}}\;\restricttyenv{\Delta}{\delta})\;\restrictvals{\Delta}{\delta}$ equals \\
-\ooox $(\interp{\judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}{e'}{A}}\;\restricttyenv{\Delta}{\delta})\;\restrictvals{\Delta}{\delta}$, using lambda-notation for CPO \\
-\oooo Since substitution is sound, $\interp{c[e/x]}\;\restricttyenv{\Delta}{\delta}\;\restrictvals{\Delta}{\delta}  = \interp{c[e'/x]}\;\restricttyenv{\Delta}{\delta}\;\restrictvals{\Delta}{\delta}$, or $C = C'$\\
-\oooo By hypothesis, $s \in \interp{\spec{p}{c[e/x]}{a:A}{q}}\;\delta$. \\
+\oooox $C = \interp{c[e/x]}\;\theta\;\gamma$ \\
+\oooox $C' = \interp{c[e'/x]}\;\theta\;\gamma$ \\
+\oooox $P = \interp{\judgeA{p}{\assert}}\;\theta\;\gamma\;\delta$ \\
+\oooox $Q = \semfun{v}{\interp{\judgeA[\Theta; \Gamma,a:A; \Delta]{q}{\assert}}\;\theta\;(\gamma, v)\;\delta}$ \\
+\oooo Since we have $r$, we know that $R = \interp{r}\;\theta\;\gamma\;\delta = \top = H$. \\
+\oooo Therefore it follows that $\interp{\judgeA{e =_A e'}{\assert}}\;\theta\;\gamma\;\delta = H$ \\
+\oooo Therefore $\interp{\judgeE[\Theta]{\Gamma}{e}{A}}\;\theta\;\gamma = \interp{\judgeE[\Theta]{\Gamma}{e'}{A}}\;\theta\;\gamma$ \\
+\oooo Since substitution is sound, $\interp{c[e/x]}\;\theta\;\gamma  = \interp{c[e'/x]}\;\theta\;\gamma$, or $C = C'$\\
+\oooo By hypothesis, $s \in \interp{\spec{p}{c[e/x]}{a:A}{q}}\;\theta\;\gamma\;\delta$. \\
 \oooo So for all $t \worldgeq s, h \in P * t$, we have $C\;\mathit{Best}(\semfun{v}{Q(v) * t})\;h = \bot$ \\
 \oooo Since $C = C'$, we know for all $t \worldgeq s, h \in P * t$, we have $C'\;\mathit{Best}(\semfun{v}{Q(v) * t})\;h = \bot$ \\
-\oooo Therefore, $s \in \interp{\spec{p}{c[e'/x]}{a:A}{q}}\;\delta$. \\
+\oooo Therefore, $s \in \interp{\spec{p}{c[e'/x]}{a:A}{q}}\;\theta\;\gamma\;\delta$. \\
 \end{tabbedproof}
 \end{proof}
 
 \begin{lemma}{(Case Analysis)}
-  Suppose $\judgeS[\Delta,x:A]{\mspec{p \land e =_{A+B} \inl(x)}{e_A}{a:C}{q}}$ is valid,
-      and $\judgeS[\Delta,y:B]{\mspec{p \land e =_{A+B} \inr(y)}{e_B}{a:C}{q}}$ is valid.
+  Suppose $\judgeS[\Theta; \Gamma,x:A; \Delta]{\mspec{p \land e =_{A+B} \inl(x)}{e_A}{a:C}{q}}$ is valid,
+      and $\judgeS[\Theta; \Gamma,y:B; \Delta]{\mspec{p \land e =_{A+B} \inr(y)}{e_B}{a:C}{q}}$ is valid.
 
 Then $\judgeS{\mspec{p}{\Case{e}{x}{e_A}{y}{e_B}}{a:C}{q}}$ is valid. 
 \end{lemma}
@@ -5490,27 +5581,28 @@ Then $\judgeS{\mspec{p}{\Case{e}{x}{e_A}{y}{e_B}}{a:C}{q}}$ is valid.
 \oo Assume $\judgeS[\Delta,x:A]{\mspec{p \land e =_{A+B} \inl(x)}{e_A}{a:C}{q}}$ is valid. \\
 \oo Assume $\judgeS[\Delta,y:B]{\mspec{p \land e =_{A+B} \inr(y)}{e_B}{a:C}{q}}$ is valid. \\
 \ooo We want to show $\judgeS{\mspec{p}{\Case{e}{x}{e_A}{y}{e_B}}{a:C}{q}}$ is valid. \\
-\ooo So we want to show that for all $\delta, s$, $s \in \interp{\judgeS{\mspec{p}{\Case{e}{x}{e_A}{y}{e_B}}{a:C}{q}}}\;\delta$ \\
-\ooo Assume $\delta$ and $s$, and $h \in P * s$, letting \\
-\ooox $P = \interp{\judgeA{p}{\assert}}\;\delta$ \\
-\ooox $Q = \semfun{v}{\interp{\judgeA[\Delta, a:C]{p}{\assert}}\;(\delta,v)}$ \\
-\ooox $C_A = \semfun{v}{\interp{\judgeE[\restrictkind{\Delta, x:A}]{\restricttype{\Delta, x:A}}{e_A}{\monad{C}}}\;\restricttyenv{\Delta,x:A}{(\delta,v)}\;\restrictvals{\Delta, x:A}{(\delta,v)}}$ \\
-\ooox $C_B = \semfun{v}{\interp{\judgeE[\restrictkind{\Delta, y:B}]{\restricttype{\Delta, y:B}}{e_B}{\monad{C}}}\;\restricttyenv{\Delta,y:B}{(\delta,v)}\;\restrictvals{\Delta, y:B}{(\delta,v)}}$ \\
-\ooox $E = \interp{\judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}{e}{A+B}}\;\restricttyenv{\Delta}{\delta}\;\restrictvals{\Delta}{\delta}$ \\
+\ooo We want to show that for all $\theta\;\gamma\;\delta, s$, \\
+\ooox $s \in \interp{\judgeS{\mspec{p}{\Case{e}{x}{e_A}{y}{e_B}}{a:C}{q}}}\;\theta\;\gamma\;\delta$ \\
+\ooo Assume $\theta\;\gamma\;\delta$ and $s$, and $h \in P * s$, letting \\
+\ooox $P = \interp{\judgeA{p}{\assert}}\;\theta\;\gamma\;\delta$ \\
+\ooox $Q = \semfun{v}{\interp{\judgeA[\Theta; \Gamma, a:C; \Delta]{p}{\assert}}\;\theta\;(\gamma, v)\;\delta}$ \\
+\ooox $C_A = \semfun{v}{\interp{\judgeE{\Gamma, x:A}{e_A}{\monad{C}}}\;\theta\;(\gamma, v)\;\delta}$ \\
+\ooox $C_B = \semfun{v}{\interp{\judgeE{\Gamma, y:B}{e_B}{\monad{C}}}\;\theta\;(\gamma, v)\;\delta}$ \\
+\ooox $E = \interp{\judgeE[\Theta]{\Gamma}{e}{A+B}}\;\theta\;\gamma$ \\
 \oooo We want to show $[C_A,C_B](E)\;\mathit{Best}(\semfun{v}{Q(v)*s})\;h = \bot$\\
 \oooo Suppose $E = \inl(u)$ for some $u$: \\
 \ooooo Then we want to show that $C_A\;u\;\mathit{Best}(\semfun{v}{Q(v)*s})\;h = \bot$\\
 \ooooo We know $\judgeS[\Delta,x:A]{\mspec{p \land e =_{A+B} \inl(x)}{e_A}{a:C}{q}}$ is valid. \\
-\ooooo So for all $h \in (P \land \interp{e =_{A+B} \inl(x)}\;(\delta,\inl(u))) * s$, $C_A\;u\;\mathit{Best}(\semfun{v}{Q(v)*s})\;h = \bot$\\
-\ooooo Since $E=\inl(u)$, we know that $\top = \interp{\judgeA[\Delta,x:A]{e=_{A+B}\inl(x)}{\assert}}\;(\delta,\inl(u))$\\
-\ooooo Since equality is pure, $h \in \interp{p \land e =_{A+B} \inl(x)}\;(\delta,\inl(u)) * s$ \\
+\ooooo So for all $h \in (P \land \interp{e =_{A+B} \inl(x)}\;\theta\;(\gamma,\inl(u))\;\delta) * s$, $C_A\;u\;\mathit{Best}(\semfun{v}{Q(v)*s})\;h = \bot$\\
+\ooooo Since $E=\inl(u)$, we know that $\top = \interp{\judgeA[\Theta; \Gamma, x:A; \Delta]{e=_{A+B}\inl(x)}{\assert}}\;\theta\;(\gamma,\inl(u)\;\delta)$\\
+\ooooo Since equality is pure, $h \in \interp{p \land e =_{A+B} \inl(x)}\;\theta\;(\gamma,\inl(u))\;\delta * s$ \\
 \ooooo Therefore $C_A\;u\;\mathit{Best}(\semfun{v}{Q(v)*s})\;h = \bot$\\
 \oooo Suppose $E = \inr(u)$ for some $u$:  \\
 \ooooo Then we want to show that $C_B\;u\;\mathit{Best}(\semfun{v}{Q(v)*s})\;h = \bot$\\
-\ooooo We know $\judgeS[\Delta,y:B]{\mspec{p \land e =_{A+B} \inr(x)}{e_A}{a:C}{q}}$ is valid. \\
-\ooooo So for all $h \in (P \land \interp{e =_{A+B} \inr(x)}\;(\delta,\inr(u))) * s$, $C_B\;u\;\mathit{Best}(\semfun{v}{Q(v)*s})\;h = \bot$\\
-\ooooo Since $E=\inr(u)$, we know that $\top = \interp{\judgeA[\Delta,y:B]{e=_{A+B}\inr(x)}{\assert}}\;(\delta,\inr(u))$\\
-\ooooo Since equality is pure, $h \in \interp{p \land e =_{A+B} \inr(x)}\;(\delta,\inr(u)) * s$ \\
+\ooooo We know $\judgeS[\Theta; \Gamma, y:B; \Delta]{\mspec{p \land e =_{A+B} \inr(x)}{e_A}{a:C}{q}}$ is valid. \\
+\ooooo So for all $h \in (P \land \interp{e =_{A+B} \inr(x)}\;\theta\;(\gamma,\inr(u))\;\delta) * s$, $C_B\;u\;\mathit{Best}(\semfun{v}{Q(v)*s})\;h = \bot$\\
+\ooooo Since $E=\inr(u)$, we know that $\top = \interp{\judgeA[\Theta; \Gamma, y:B; \Delta]{e=_{A+B}\inr(x)}{\assert}}\;\theta\;(\gamma,\inr(u)\;\delta)$\\
+\ooooo Since equality is pure, $h \in \interp{p \land e =_{A+B} \inr(x)}\;\theta(\gamma,\inr(u))\;\delta * s$ \\
 \ooooo Therefore $C_B\;u\;\mathit{Best}(\semfun{v}{Q(v)*s})\;h = \bot$\\
 
 \end{tabbedproof}
@@ -5525,18 +5617,14 @@ and $\judgeA{q \implies q'}{\assert}$ is valid, then $\judgeS{\spec{p'}{c}{a:A}{
 \oo Assume $\judgeS{\spec{p}{c}{a:A}{q}}$ is valid \\
 \oo Assume $\judgeA{p' \implies p}{\assert}$ is valid \\
 \oo Assume $\judgeA{q \implies q'}{\assert}$ is valid \\
-\oo Assume $\delta \in \interp{\judgeACtx{\Delta}}$ \\
+\oo Assume suitable $\theta$, $\gamma$, and $\delta$ \\
 \ooo We want to show $\forall r.\; r \in \judgeS{\spec{p'}{c}{a:A}{q'}}$ \\
 \ooo Assume $r$, and let \\
-\ooox $\Theta = \restrictkind{\Delta}$ \\
-\ooox $\theta = \restricttyenv{\Delta}{\delta}$ \\
-\ooox $\Gamma = \restricttype{\Delta}$ \\
-\ooox $\gamma = \restrictvals{\Delta}{\delta}$ \\
-\ooox $P = \interp{\judgeA{p}{\assert}}\delta$ \\
-\ooox $P' = \interp{\judgeA{p'}{\assert}}\delta$ \\
+\ooox $P = \interp{\judgeA{p}{\assert}}\theta\;\gamma\;\delta$ \\
+\ooox $P' = \interp{\judgeA{p'}{\assert}}\theta\;\gamma\;\delta$ \\
 \ooox $C = \interp{\judgeC{\Gamma}{c}{A}}\;\theta\;\gamma$ \\
-\ooox $Q = \semfun{v}{\interp{\judgeA[\Delta,a:A]{q}{\assert}}\;(\delta,v)}$ \\
-\ooox $Q' = \semfun{v}{\interp{\judgeA[\Delta,a:A]{q}{\assert}}\;(\delta,v)}$ \\
+\ooox $Q = \semfun{v}{\interp{\judgeA[\Delta,a:A]{q}{\assert}}\;\theta\;(\gamma, v)\;\delta}$ \\
+\ooox $Q' = \semfun{v}{\interp{\judgeA[\Delta,a:A]{q}{\assert}}\;\theta\;(\gamma, v)\;\delta}$ \\
 \ooo We know $\interp{\judgeA{p' \implies p}{\assert}}\;\delta = P' \implies P$. \\
 \ooo We know $\interp{\judgeA{q \implies q'}{\assert}}\;\delta = Q \implies Q'$. \\
 \ooo So we want to show that $\forall s \sqsupseteq r.\; \basicspec{P' * s}{C}{a:A}{Q'(a) * s}$ \\
@@ -5549,7 +5637,7 @@ and $\judgeA{q \implies q'}{\assert}$ is valid, then $\judgeS{\spec{p'}{c}{a:A}{
 \oooo Hence  we know that $\mathit{Best}(\semfun{a}{Q'(a) * s}) \sqsupseteq \mathit{Best}(\semfun{a}{Q(a) * s})$ \\
 \oooo Hence by continuity, $C\;\mathit{Best}(\semfun{a}{Q'(a) * s})\;h = \bot$ \\
 \ooo Hence $\forall s \sqsupseteq r.\; \basicspec{P' * s}{C}{a:A}{Q'(a) * s}$ \\
-\ooo Hence $\forall r.\; r \in \interp{\judgeS{\spec{p'}{c}{a:A}{q'}}}\;\delta$ \\
+\ooo Hence $\forall r.\; r \in \interp{\judgeS{\spec{p'}{c}{a:A}{q'}}}\;\theta\;\gamma\;\delta$ \\
 
 
 
@@ -5587,9 +5675,9 @@ More interesting than the syntactic well-formedness of the frame
 operator is its semantic well-formedness. 
 
 \begin{lemma*}{(Syntactic Framing is Semantic Framing)}
-If $\judgeS{S}$ and $\judgeA{r}{\assert}$, then for all $\delta \in \interp{\Delta}$, 
-$\interp{\judgeS{\Frame{S}{r}}}\;\delta = 
-\Frame{\interp{\judgeS{S}}\;\delta}{\interp{\judgeA{r}{\assert}}\;\delta}$ \\
+If $\judgeS{S}$ and $\judgeA{r}{\assert}$, then for all suitable $\theta, \gamma,$ and $\delta$, 
+$\interp{\judgeS{\Frame{S}{r}}}\;\theta\;\gamma\;\delta = 
+\Frame{\interp{\judgeS{S}}\;\theta\;\gamma\;\delta}{\interp{\judgeA{r}{\assert}}\;\theta\;\gamma\;\delta}$ \\
 \end{lemma*}
 
 \begin{proof}
@@ -5599,61 +5687,61 @@ $\interp{\judgeS{\Frame{S}{r}}}\;\delta =
   \item Case \textsc{SpecTriple}: 
     \begin{tabbedproof}
       \oo We know $\judgeS{\spec{p}{c}{a:A}{q}}$ \\
-      \oo By the semantics of triples, we know that 
-          $\interp{\judgeS{\spec{p}{c}{a:A}{q}}}\;\delta = \spec{P}{C}{a}{Q(a)}$ \\ 
+      \oo By the semantics of triples, we know that \\
+      \ooo 
+          $\interp{\judgeS{\spec{p}{c}{a:A}{q}}}\;\theta\;\gamma\;\delta = \spec{P}{C}{a}{Q(a)}$ \\ 
           % $\spec{p}[c}{a:A}{q}\;\delta = \spec{P}{C}{a}{Q(a)}$ \\
       \ox where \\
-      \oox $P = \interp{\judgeA{p}{\assert}}\;\delta$ \\
-      \oox $C = \interp{\judgeC[\restrictkind{\Delta}]{\restricttype{\Delta}}{c}{A}}\;\theta\;\gamma$ \\
-      \oox $Q = \semfun{v}{(\interp{\judgeA[\Delta, a:A]{q}{\assert}}\;(\delta, v))}$ \\
-      \oox $\theta = \restricttyenv{\Delta}{\delta}$ \\
-      \oox $\gamma = \restrictvals{\Delta}{\delta}$ \\
+      \oox $P = \interp{\judgeA{p}{\assert}}\;\theta\;\gamma\;\delta$ \\
+      \oox $C = \interp{\judgeC[\Theta]{\Gamma}{c}{A}}\;\theta\;\gamma$ \\
+      \oox $Q = \semfun{v}{(\interp{\judgeA[\Theta; \Gamma, a:A; \Delta]{q}{\assert}}\;\theta\;(\gamma, v)\;\delta}$ \\
       \oo Now from the definition of syntactic framing, we know that $\Frame{S}{r} = \spec{p * r}{c}{a:A}{q(a) * r}$ \\
       \oo By semantics of triples, we know that \\
-      \oox $\interp{\judgeS{\spec{p * r}{c}{a:A}{q * r}}}\;\delta = \spec{P * R}{C}{a}{Q(a) * R}$ \\ 
-      \ox where $R = \interp{\judgeA{r}{\assert}}\;\delta$ \\
+      \oox $\interp{\judgeS{\spec{p * r}{c}{a:A}{q * r}}}\;\theta\;\gamma\;\delta = \spec{P * R}{C}{a}{Q(a) * R}$ \\ 
+      \ox where $R = \interp{\judgeA{r}{\assert}}\;\theta\;\gamma\;\delta$ \\
       \oo By lemma we know that $\spec{P * R}{C}{a}{Q(a) * R} = \Frame{\spec{P}{C}{a}{Q(a)}}{R}$ 
           semantically \\
-      \oo Therefore $\interp{\judgeS{\Frame{\spec{p}{c}{a:A}{q}}{r}}}\;\delta = $ \\
-      \oox $\Frame{\interp{\judgeS{\spec{p}{c}{a:A}{q}}}\;\delta}{(\interp{\judgeA{r}{\assert}}\;\delta)}$
+      \oo Therefore $\interp{\judgeS{\Frame{\spec{p}{c}{a:A}{q}}{r}}}\;\theta\;\gamma\;\delta = $ \\
+      \oox $\Frame{\interp{\judgeS{\spec{p}{c}{a:A}{q}}}\;\theta\;\gamma\;\delta}{(\interp{\judgeA{r}{\assert}}\;\theta\;\gamma\;\delta)}$
     \end{tabbedproof}
 
   \item Case \textsc{SpecMTriple}
     \begin{tabbedproof}
       \oo We know $\judgeS{\mspec{p}{e}{a:A}{q}}$ \\
-      \oo By the semantics of triples, we know that 
-          $\interp{\judgeS{\mspec{p}{e}{a:A}{q}}}\;\delta = \mspec{P}{E}{a}{Q(a)}$ \\ 
+      \oo By the semantics of triples, we know that \\
+      \oox  $\interp{\judgeS{\mspec{p}{e}{a:A}{q}}}\;\theta\;\gamma\;\delta = \mspec{P}{E}{a}{Q(a)}$ \\ 
       \ox where \\
-      \oox $P = \interp{\judgeA{p}{\assert}}\;\delta$ \\
-      \oox $E = \interp{\judgeE[\restrictkind{\Delta}]{\restricttype{\Delta}}{e}{\monad{A}}}\;\theta\;\gamma$ \\
-      \oox $Q = \semfun{v}{(\interp{\judgeA[\Delta, a:A]{q}{\assert}}\;(\delta, v))}$ \\
-      \oox $\theta = \restricttyenv{\Delta}{\delta}$ \\
-      \oox $\gamma = \restrictvals{\Delta}{\delta}$ \\
+      \oox $P = \interp{\judgeA{p}{\assert}}\;\theta\;\gamma\;\delta$ \\
+      \oox $E = \interp{\judgeE[\Theta]{\Gamma}{e}{\monad{A}}}\;\theta\;\gamma$ \\
+      \oox $Q = \semfun{v}{(\interp{\judgeA[\Theta; \Gamma, a:A; \Delta]{q}{\assert}}\;\theta\;(\gamma, v)\;\delta}$ \\
       \oo Now from the definition of syntactic framing, we know that $\Frame{S}{r} = \mspec{p * r}{e}{a:A}{q(a) * r}$ \\
       \oo By semantics of triples, we know that \\
-      \oox $\interp{\judgeS{\mspec{p * r}{e}{a:A}{q * r}}}\;\delta = \mspec{P * R}{e}{a}{Q(a) * R}$ \\ 
-      \ox where $R = \interp{\judgeA{r}{\assert}}\;\delta$ \\
+      \oox $\interp{\judgeS{\mspec{p * r}{e}{a:A}{q * r}}}\;\theta\;\gamma\;\delta = \mspec{P * R}{e}{a}{Q(a) * R}$ \\ 
+      \ox where $R = \interp{\judgeA{r}{\assert}}\;\theta\;\gamma\;\delta$ \\
       \oo By lemma we know that $\mspec{P * R}{E}{a}{Q(a) * R} = \Frame{\mspec{P}{E}{a}{Q(a)}}{R}$ 
           semantically \\
-      \oo Therefore $\interp{\judgeS{\Frame{\mspec{p}{c}{a:A}{q}}{r}}}\;\delta = 
-                     \Frame{\interp{\judgeS{\mspec{p}{c}{a:A}{q}}}\;\delta}{(\interp{\judgeA{r}{\assert}}\;\delta)}$
+      \oo Therefore $\interp{\judgeS{\Frame{\mspec{p}{c}{a:A}{q}}{r}}}\;\theta\;\gamma\;\delta = $ \\
+      \oox $\Frame{\interp{\judgeS{\mspec{p}{c}{a:A}{q}}}\;\theta\;\gamma\;\delta}{(\interp{\judgeA{r}{\assert}}\;\theta\;\gamma\;\delta)}$
     \end{tabbedproof}
 
     \item Case \textsc{SpecAssert}
       \begin{tabbedproof}
         \oo We know $\judgeS{\setof{p}}$ \\
         \oo So we also know that $\Frame{\setof{p}}{r} = \setof{p}$ \\
-        \oo Therefore, $\interp{\judgeS{\setof{p}}}\;\delta$ is either $\top$ or $\bot$, depending on
-            whether $\interp{\judgeA{p}{\assert}}\;\delta$ is $H$ or $\emptyset$ \\
+        \oo Therefore, $\interp{\judgeS{\setof{p}}}\;\theta\;\gamma\;\delta$ is either $\top$ or $\bot$, \\
+        \ox depending on
+            whether $\interp{\judgeA{p}{\assert}}\;\theta\;\gamma\;\delta$ is $H$ or $\emptyset$ \\
         \oo Now, we will do a case analysis on the meaning of $\setof{p}$ \\
-        \ooo If $\interp{\judgeS{\setof{p}}}\;\delta = \top$ \\
+        \ooo If $\interp{\judgeS{\setof{p}}}\;\theta\;\gamma\;\delta = \top$ \\
         \oooo Then, since $S \subseteq \Frame{S}{R}$ for all $S$ and $R$, and $\top$ is maximal, we know that \\
-        \oooox $\top = \Frame{\top}{(\interp{\judgeA{r}{\assert}}\;\delta)}$ \\
-        \oooo So $\interp{\judgeS{\Frame{\setof{p}}{r}}}\;\delta = \Frame{\interp{\judgeS{\setof{p}}}\;\delta}{(\interp{\judgeA{r}{\assert}}\;\delta)}$ \\
-        \ooo If $\interp{\judgeS{\setof{p}}}\;\delta = \bot$ \\
+        \oooox $\top = \Frame{\top}{(\interp{\judgeA{r}{\assert}}\;\theta\;\gamma\;\delta)}$ \\
+        \oooo So $\interp{\judgeS{\Frame{\setof{p}}{r}}}\;\theta\;\gamma\;\delta = $ \\
+        \oooox $\Frame{\interp{\judgeS{\setof{p}}}\;\theta\;\gamma\;\delta}{(\interp{\judgeA{r}{\assert}}\;\theta\;\gamma\;\delta)}$ \\
+        \ooo If $\interp{\judgeS{\setof{p}}}\;\theta\;\gamma\;\delta = \bot$ \\
         \oooo Then, since $\bot$ is the empty set, and since $\Frame{S}{r} = \comprehend{p}{p * r \in S}$, \\
-        \ooooo we know $\bot = \Frame{\bot}{\interp{\judgeA{r}{\assert}}\;\delta}$ \\
-        \oooo  So we know $\interp{\judgeS{\Frame{\setof{p}}{r}}}\;\delta = \Frame{\interp{\judgeS{\setof{p}}}\;\delta}{(\interp{\judgeA{r}{\assert}}\;\delta)}$ \\
+        \ooooo we know $\bot = \Frame{\bot}{\interp{\judgeA{r}{\assert}}\;\theta\;\gamma\;\delta}$ \\
+        \oooo  So we know $\interp{\judgeS{\Frame{\setof{p}}{r}}}\;\theta\;\gamma\;\delta = $ \\
+        \oooox  $\Frame{\interp{\judgeS{\setof{p}}}\;\theta\;\gamma\;\delta}{(\interp{\judgeA{r}{\assert}}\;\theta\;\gamma\;\delta)}$ \\
       \end{tabbedproof}
 
     \item Case \textsc{SpecBinary}
@@ -5661,25 +5749,28 @@ $\interp{\judgeS{\Frame{S}{r}}}\;\delta =
         \oo We know $\judgeS{S_1 \otimes S_2}$, where $\oplus \in \setof{\specand, \specor, \specimp}$ \\
         \oo We also know that $\Frame{(S_1 \oplus S_2)}{r} = (\Frame{S_1}{r}) \oplus (\Frame{S_2}{r})$ \\
         \oo By the semantics, we know \\
-        \oox $\interp{\judgeS{S_1 \oplus S_2}}\;\delta = \interp{\judgeS{S_1}}\;\delta \interp{\oplus} \; \interp{\judgeS{S_2}}\;\delta$ \\
+        \oox $\interp{\judgeS{S_1 \oplus S_2}}\;\theta\;\gamma\;\delta $ \\
+        \ooox $= \interp{\judgeS{S_1}}\;\theta\;\gamma\;\delta \;\interp{\oplus} \; \interp{\judgeS{S_2}}\;\theta\;\gamma\;\delta$ \\
         \oo By the semantics, we know that \\
-        \oox $\interp{\judgeS{\Frame{(S_1 \oplus S_2)}{r}}}\;\delta = 
-                                            (\interp{\judgeS{\Frame{S_1}{r}}}\;\delta) \interp{\oplus}
-                                            (\interp{\judgeS{\Frame{S_2}{r}}}\;\delta)$ \\
-        \oo By induction, we know $\interp{\judgeS{\Frame{S_1}{r}}}\;\delta = 
-                                   \Frame{\interp{\judgeS{S_1}}\;\delta}{(\interp{\judgeA{r}{\assert}}\;\delta)}$ \\
-        \oo By induction, we know $\interp{\judgeS{\Frame{S_2}{r}}}\;\delta = 
-                                   \Frame{\interp{\judgeS{S_2}}\;\delta}{(\interp{\judgeA{r}{\assert}}\;\delta)}$ \\
+        \oox $\interp{\judgeS{\Frame{(S_1 \oplus S_2)}{r}}}\;\theta\;\gamma\;\delta = $ \\
+        \ooox $(\interp{\judgeS{\Frame{S_1}{r}}}\;\theta\;\gamma\;\delta) \interp{\oplus}
+               (\interp{\judgeS{\Frame{S_2}{r}}}\;\theta\;\gamma\;\delta)$ \\
+        \oo By induction, we know \\
+        \oox $\interp{\judgeS{\Frame{S_1}{r}}}\;\theta\;\gamma\;\delta = 
+                                   \Frame{\interp{\judgeS{S_1}}\;\theta\;\gamma\;\delta}{(\interp{\judgeA{r}{\assert}}\;\theta\;\gamma\;\delta)}$ \\
+        \oo By induction, we know \\
+        \oox $\interp{\judgeS{\Frame{S_2}{r}}}\;\theta\;\gamma\;\delta = 
+                                   \Frame{\interp{\judgeS{S_2}}\;\theta\;\gamma\;\delta}{(\interp{\judgeA{r}{\assert}}\;\theta\;\gamma\;\delta)}$ \\
 
-        \oo Therefore, we know $\interp{\judgeS{\Frame{(S_1 \oplus S_2)}{r}}}\;\delta = $ \\
-        \oox                   $(\Frame{\interp{\judgeS{S_1}}\;\delta}{(\interp{\judgeA{r}{\assert}}\;\delta)}) 
-                                 \interp{\oplus} 
-                                (\Frame{\interp{\judgeS{S_2}}\;\delta}{(\interp{\judgeA{r}{\assert}}\;\delta)})$ \\
-        \oo Therefore we know $\interp{\judgeS{\Frame{(S_1 \oplus S_2)}{r}}}\;\delta = $ \\
-        \oox $\Frame{(\interp{\judgeS{S_1}}\;\delta \;\interp{\oplus}\; \interp{\judgeS{S_2}}\;\delta)}
-                    {(\interp{\judgeA{r}{\assert}}\;\delta)}$ \\
-        \oo Therefore we know $\interp{\judgeS{\Frame{(S_1 \oplus S_2)}{r}}}\;\delta = $ \\
-        \oox $\Frame{\interp{\judgeS{S_1 \oplus S_2}}\;\delta}{(\interp{\judgeA{r}{\assert}}\;\delta)}$ \\
+        \oo Therefore, we know $\interp{\judgeS{\Frame{(S_1 \oplus S_2)}{r}}}\;\theta\;\gamma\;\delta = $ \\
+        \oox                   $(\Frame{\interp{\judgeS{S_1}}\;\theta\;\gamma\;\delta}{(\interp{\judgeA{r}{\assert}}\;\theta\;\gamma\;\delta)})$ \\
+        \oox $\interp{\oplus}$ \\
+        \oox $(\Frame{\interp{\judgeS{S_2}}\;\theta\;\gamma\;\delta}{(\interp{\judgeA{r}{\assert}}\;\theta\;\gamma\;\delta)})$ \\
+        \oo Therefore we know $\interp{\judgeS{\Frame{(S_1 \oplus S_2)}{r}}}\;\theta\;\gamma\;\delta = $ \\
+        \oox $\Frame{(\interp{\judgeS{S_1}}\;\theta\;\gamma\;\delta \;\interp{\oplus}\; \interp{\judgeS{S_2}}\;\theta\;\gamma\;\delta)}
+                    {(\interp{\judgeA{r}{\assert}}\;\theta\;\gamma\;\delta)}$ \\
+        \oo Therefore we know $\interp{\judgeS{\Frame{(S_1 \oplus S_2)}{r}}}\;\theta\;\gamma\;\delta = $ \\
+        \oox $\Frame{\interp{\judgeS{S_1 \oplus S_2}}\;\theta\;\gamma\;\delta}{(\interp{\judgeA{r}{\assert}}\;\theta\;\gamma\;\delta)}$ \\
       \end{tabbedproof}
 
     \item Case \textsc{SpecQuantify}:
@@ -5687,16 +5778,16 @@ $\interp{\judgeS{\Frame{S}{r}}}\;\delta =
         \oo We know $\judgeS{Q u:\omega.\; S}$, where $Q \in \setof{\forall, \exists}$ \\
         \oo We also know that $\Frame{(Q u:\omega.\; S)}{r} = Q u:\omega.\; (\Frame{S}{r})$ \\
         \oo By the semantics, we know that $\interp{\judgeS{Q u:\omega.\; (\Frame{S}{r)}}}\;\delta = $ \\
-        \oox $\interp{Q}_{v \in \interp{\judgeSort{\omega}}\;\delta} \interp{\judgeS[\Delta, u:\omega]{\Frame{S}{r}}}\;(\delta, v)$\\
+        \oox $\interp{Q}_{v \in \interp{\judgeSort{\omega}}\;\delta} \interp{\judgeS[\Delta, u:\omega]{\Frame{S}{r}}}\;\theta\;(\gamma, v)\;\delta$\\
         \oo By induction, we know that for all appropriate $\delta'$, 
                $\interp{\judgeS[\Delta, u:\omega]{\Frame{S}{r}}}\;\delta' = $ \\
         \oox $\Frame{\interp{\judgeS[\Delta, u:\omega]{S}}\;\delta'}{\interp{\judgeA[\Delta, u:\omega]{r}{\assert}}\;\delta'}$ \\
-        \oo Now, if $\delta' = (\delta, v)$, then $\interp{\judgeA[\Delta, u:\omega]{r}{\assert}}\;\delta' = 
+        \oo Now, if $\delta' = \theta\;(\gamma, v)\;\delta$, then $\interp{\judgeA[\Delta, u:\omega]{r}{\assert}}\;\delta' = 
                                                    \interp{\judgeA{r}{\assert}}\;\delta$ since $u \not\in \FV{r}$ \\
         \oo So we know $\interp{\judgeS{Q u:\omega.\; (\Frame{S}{r)}}}\;\delta = $ \\
-        \oox $\interp{Q}_{v \in \interp{\judgeSort{\omega}}\;\delta} (\Frame{\interp{\judgeS[\Delta, u:\omega]{S}}\;(\delta,v)}{\interp{\judgeA{r}{\assert}}\;\delta})$ \\
+        \oox $\interp{Q}_{v \in \interp{\judgeSort{\omega}}\;\delta} (\Frame{\interp{\judgeS[\Delta, u:\omega]{S}}\;\theta\;(\gamma, v)\;\delta}{\interp{\judgeA{r}{\assert}}\;\delta})$ \\
         \oo Since framing distributes through meets, we know $\interp{\judgeS{Q u:\omega.\; (\Frame{S}{r)}}}\;\delta = $ \\
-        \oox $\Frame{(\interp{Q}_{v \in \interp{\judgeSort{\omega}}\;\delta} \interp{\judgeS[\Delta, u:\omega]{S}}\;(\delta,v))}{\interp{\judgeA{r}{\assert}}\;\delta})$ \\
+        \oox $\Frame{(\interp{Q}_{v \in \interp{\judgeSort{\omega}}\;\delta} \interp{\judgeS[\Delta, u:\omega]{S}}\;\theta\;(\gamma, v)\;\delta)}{\interp{\judgeA{r}{\assert}}\;\delta})$ \\
         \oo So we know $\interp{\judgeS{Q u:\omega.\; (\Frame{S}{r)}}}\;\delta = $ \\
         \oox $\Frame{\interp{\judgeS{Q u:\omega.\;S}}\;\delta}{(\interp{\judgeA{r}{\assert}}\;\delta)}$ \\
         \oo So we know $\interp{\judgeS{\Frame{(Q u:\omega.\; S)}{r}}}\;\delta = $ \\
