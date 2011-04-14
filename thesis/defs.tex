@@ -56,7 +56,7 @@
 \renewcommand{\implies}{\supset}
 \newcommand{\wand}{-\!\!*\,}
 \newcommand{\emp}{\mathsf{emp}}
-\newcommand{\validprop}[1]{{#1}\;\ctext{valid}}
+\newcommand{\validprop}[1]{{#1}\;\ctext{spec}}
 
 \newcommand{\todo}[1]{\texttt{[TODO: {#1}]}}
 
@@ -138,8 +138,8 @@
 \newcommand{\entailsP}[3]{{#1} \vartriangleright {#2} \vdash {#3}}
 \newcommand{\entailsS}[3]{{#1}; {#2} \vdash {#3} \ok}
 
-\newcommand{\validS}[2][\Delta]{{#1} \vartriangleright {#2} : \spectype \;\mathsf{valid}}
-\newcommand{\validP}[2][\Delta]{{#1} \vartriangleright {#2} : \assert \;\mathsf{valid}}
+\newcommand{\validS}[2][\Theta; \Gamma; \Delta]{{#1} \vartriangleright {#2} : \spectype \;\mathsf{valid}}
+\newcommand{\validP}[2][\Theta; \Gamma; \Delta]{{#1} \vartriangleright {#2} : \assert \;\mathsf{valid}}
 
 \newcommand{\chartp}{\ctext{char}}
 \newcommand{\fonttp}{\ctext{font}}
@@ -217,7 +217,7 @@
 \newcommand{\judgeSort}[2][\Theta]{\judgeA[{#1}]{{#2}}{\ctext{sort}}}
 \newcommand{\judgeSortEq}[3][\Theta]{{#1} \vartriangleright {#2} \equiv {#3} : \ctext{sort}}
 
-\newcommand{\judgeEqA}[4][\Delta]{{#1} \vartriangleright {#2} \equiv {#3} : {#4}}
+\newcommand{\judgeEqA}[4][\Theta; \Gamma; \Delta]{{#1} \vartriangleright {#2} \equiv {#3} : {#4}}
 
 \newcommand{\judgeACtx}[2][\Theta]{{#1} \vartriangleright {#2}}
 \newcommand{\judgeA}[3][\Theta; \Gamma; \Delta]{{#1} \vartriangleright {#2} : {#3}}
