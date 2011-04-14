@@ -626,13 +626,21 @@ Our initial attempt, however, will not succeed:
   \basicspec{P}{C}{a:A}{Q(a)} \triangleq
     \forall h \in P.\; \left(C\;Q\;h = \bot\right)
 \end{displaymath}
-The idea is that we can view a postcondition $Q(v)$ as a sort of continuation, 
-which returns $\bot$ if $h \in Q(v)$, and $\top$ otherwise. So we say that 
-for every heap in $P$, $C\;Q\;h$ must be bottom. 
+The idea is that we can view a postcondition $Q(v)$ as a sort of
+continuation, which returns $\bot$ if $h \in Q(v)$, and $\top$
+otherwise. So we say that for every heap in $P$, $C\;Q\;h$ must be
+bottom.
 
-While elegant, this idea suffers from the difficulty that $Q$ is an
-assertion, a function from $A$ to heaps to values, $C$ requires its
-continuation argument to be \emph{continuous}, a property which is not
+Thinking of $\top$ as a sort of crash, this definition says that $C$
+satisfies the precondition $P$ and post-condition $Q$ when, if it is
+applied to a continuation which does not crash on any $Q$-heap, yields
+a result which will not crash when given any $P$-heap.
+
+While this idea is elegant, it does not quite work. 
+
+The problem is that $Q$ is an assertion, an arbitrary set-theoretic
+function from $A$ to sets of to heaps, and $C$ requires its
+continuation argument to be \emph{continuous}, a property which not
 met by arbitrary $Q$. This idea can be repaired if we define a ``best
 continuous approximation'' to each $Q$.
 
@@ -647,11 +655,13 @@ the set:
 
 These define a set of continuations which ``continuously approximate''
 the postcondition $Q$ -- they are the set of continuations which run
-forever when given a value and heap in $Q$.  From this set we will
+forever when given a value and heap in $Q$.  Using this set we will
 define the function $Best(Q)$, which will be the ``best continuous
-approximation'' to Q. (Intuitively, think of this as being like a
-closure operator from topology, which finds the smallest open set
-containing the given set.)
+approximation'' to Q. 
+
+Intuitively, think of this as being like a closure operator from
+topology, which finds the smallest open set containing the given set.
+In our case, we want to find the 
 
 \begin{displaymath}
   Best(Q) \triangleq \lambda v \in A.\; \lambda h \in H.\; 
@@ -1596,7 +1606,7 @@ p,q & ::= & u \bnfalt \pfun{u}{\omega}{p} \bnfalt \pfunall{\alpha}{\kappa}{p} \b
             \validprop{S} \\[1em]
 
 \mbox{Specifications} & 
-S & ::= & \spec{p}{c}{a:A}{q} \bnfalt \mspec{p}{e}{a:A}{q} \bnfalt \setof{P} \\
+S & ::= & \spec{p}{c}{a:A}{q} \bnfalt \mspec{p}{e}{a:A}{q} \bnfalt \setof{p} \\
 & &  |  & S \specand S' \bnfalt S \specimp S' \bnfalt S \specor S' \\
 & &  |  & \forall u:\omega.\; S \bnfalt \exists u:\omega.\; S \\[1em]
 
@@ -1761,8 +1771,8 @@ $\judgeA{p}{\omega}$, defined in Figure~\ref{logic-prop-ok}.
 \and
 \inferrule*[right=TConst]
           {\judgeACtx{\Delta} \\ \judgectx{\Theta}{\Gamma} \\
-           c \in \setof{\top, \bot, \emp}}
-          {\judgeA{c}{\assert}}
+           p \in \setof{\top, \bot, \emp}}
+          {\judgeA{p}{\assert}}
 \and
 \inferrule*[right=TBinary]
           {\judgeA{p}{\assert} \\
@@ -2834,7 +2844,17 @@ assertion and specification languages into a single logic.  This
 offers the technical benefit that it extends the power of the
 higher-order frame rule by letting it operate in a hereditary way, to
 act on nested triples contained within assertions. In contrast, the
-frame rule I give stops at the boundary of an assertion.
+frame rule I give stops at the boundary of an assertion. 
+
+Despite looking, though, I have not yet found any programs that seem
+to need this extra generality to verify. Most of the programs I have
+considered which might benefit from these features seem to also need
+further generalizations, such as Liskov and Wing's monotonic
+predicates. Indeed, this is the case even for the higher-order frame
+rule: most of the results in this dissertation could have been proven
+without it. However, the Kripke view made it no harder to implement
+than the first-order frame rule. 
+
 
 \subsection{Other Program Logics}
 
@@ -2917,7 +2937,7 @@ These issues simply do not arise in my system, since specifications
 are kept strictly separate from types. This suggests that an
 interesting future direction would be to study a version of Hoare Type
 Theory in which there is an ordinary monadic type of computations,
-together with a predicates on terms of monadic type which equip it
+together with a predicate on terms of monadic type which indexes them
 with pre- and post-conditions.
 
 \subsubsection{Regional Logic and Ownership}
@@ -2942,7 +2962,6 @@ result for Java-like programs.  This is something that neither my
 system, nor any of the other ones described earlier is capable of.
 The equality relation I use is simply the equality inherited from the
 (highly non-abstract) denotational semantics I give.
-
 
 
 \section{Correctness Proofs}
