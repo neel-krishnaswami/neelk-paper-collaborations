@@ -84,7 +84,7 @@ will write $m \# m'$ to mean that $m \cdot m'$ is defined.
 Furthermore, the following properties must hold:
 
 \begin{itemize}
-\item $e$ is a unit, so that $e \cdot m = m$ and $e \# m$. 
+\item $e$ is a unit, so that $e \# m$ and $e \cdot m = m$. 
 \item $(\cdot)$ is commutative. If $m_1 \# m_2$, then $m_2 \# m_1$ and $m_1 \cdot m_2 = m_2 \cdot m_1$. 
 \item $(\cdot)$ is associative. 
   \begin{itemize}
@@ -387,17 +387,20 @@ $\bigvee P \leq r$ and $\forall p \in P.\; p \leq \bigvee P$.
 
 \end{proof}
 
-\subsection{Sets of Heaps form a BI algebra}
+\subsection{Sets of Heaps Form the BI Algebra of Heap Assertions}
 
-Now, we will take our predomain $H$ and form a BI algebra from it. To do so, we will
-map it with the forgetful functor $U$, so that we forget the partial order structure 
-and let $U(H)$ be an ordinary set. 
-
-Now, $U(H) = \sum L \in \powersetfin{Loc}.\; (\prod \sempair{n}{A} \in L.\; \interp{\judgeWK[\cdot]{A}{\bigstar}}\;(*)\;(K,K))$
-
-In what follows, we will usually suppress the $U$, in order to reduce clutter. 
-
-Now, we can define the operations on it as follows: 
+Now, we will take our predomain $H$ and form a partial commutative
+monoid from it, from which we can build a complete BI algebra. This
+algebra will serve as the domain of interpretation of heap
+assertions. To construct it, we will first apply the forgetful functor
+$U$ to $H$, to forget the partial order structure and leaving us with
+$U(H)$, the ordinary set of heaps.
+\begin{displaymath}
+U(H) = \sum L \in \powersetfin{Loc}.\; (\prod \sempair{n}{A} \in L.\;
+\interp{\judgeWK[\cdot]{A}{\bigstar}}\;(*)\;(K,K))
+\end{displaymath}
+However, in what follows we will suppress the $U$, in order to reduce
+clutter. Now, we can define the operations on it as follows:
 
 \begin{itemize}
 \item The unit element $e \triangleq \sempair{\emptyset}{\emptyset}$
@@ -516,29 +519,89 @@ Now, we can check the properties.
           {Definition}
   \end{eqnproof}
 \end{itemize}
+Therefore, we can use the construction of the previous subsection to
+equip sets of heaps with the structure of a complete BI algebra.
 
-Therefore, we can conclude that sets of heaps form a complete BI algebra. 
+\section{Challenges in Interpreting Specifications}
 
-\section{Semantics of Specifications}
+In this section, we will give the semantics of specifications. There
+are two main technical challenges to overcome. First, we will need to
+handle the problem of supporting fixed point induction, and second, we
+will need to support the frame rule of separation logic. We will first
+describe these two problems, and then give each problem's solution. 
 
-Before we can give the semantics of specifications, we are going to run
-into a very sticky issue: our denotational semantics does not validate
-the frame property. The formal semantics of the $\newref{A}{e}$
-command allocates a new reference by finding the largest numeric id of
-any reference in the heap's domain, and then allocating a reference
-whose numeric id is one greater than that.
+\subsection{Admissibility and Fixed Point Induction}
+
+We are designing a partial correctness program logic, and so to prove
+the correctness of recursive definitions, we would like an LCF-style
+fixed point induction rule. Suppose we wish to state a property $P$ of
+the fixed point of a functional $f : \monad{A} \to \monad{A}$. (For
+example, $P$ may be a Hoare triple). Ideally, we want to give an
+inference rule for recursion taking the following form:
+
+\begin{mathpar}
+  \inferrule*[right={Fixed Point Induction (Almost)}]
+            {P(\bot) \\ \forall x.\;P(x) \implies P(f(x))}
+            {P(\mathit{fix}(f))}
+\end{mathpar}
+This rule asserts that we prove a property $P$ by showing it holds of
+$\bot$, and that applying $f$ preserved the truth of $P$.  However,
+this rule is not sound for all $P$ --- it is only sound for
+\emph{admissible} $P$. That is, we need the additional condition that
+if $P$ holds for every element of a chain, it also holds for the limit
+of the chain. Not all predicates are admissible; consider for example
+the $f$ on the (pointed natural numbers):
+\begin{displaymath}
+  \begin{array}{lcl}
+    f & = & \semfun{g}{\semfun{x}{\IfTE{x = 0}{0}{g(x-1)}}} \\
+    P(h) & = & \exists n:\mathbb{N}.\;h(n) = \bot
+  \end{array}
+\end{displaymath}
+Here, $P(f^k(\bot))$ holds for any $k$-approximation --- $f^k(\bot)$ will
+loop on any input larger than $k$. However, the fixed point will never
+loop on any natural number input. 
+
+Often, admissibility is checked by syntactic conditions which pick out
+a class of predicates known to be admissible. We cannot take this
+approach, since we will use a higher-order assertion logic. As a
+result, we do not know what the shape of a proposition is, since it
+may refer to proposition variables.
+
+To handle this problem, we will use a technique sometimes called
+continuation closure or $\top\top$-closure, which will force our Hoare
+triples to be admissible (indeed, continuous) predicates. This will
+let us make free use of arbitrary assertions in Hoare triples, with no
+restrictions on the forms of pre- or post-conditions.
+
+\subsection{The Frame Rule}
+
+We also face a second sticky issue: our denotational semantics does
+not validate the frame property. The interpretation of the
+$\newref{A}{e}$ command allocates a new reference by finding the
+largest numeric id of any reference in the heap's domain, and then
+allocating a reference whose numeric id is one greater than that.
 
 This means that the behavior of the memory allocator is deterministic,
 which means that our semantic domain can include awkward programs
-which crash if the heap is larger than a certain size. Obviously,
-safety monotonicity property cannot hold for such programs, because
-extending the heap enough will cause these programs to crash.  
- 
-On the other hand, we do not actually want to prove the correctness of
-any of these pathological programs: all the programs we actually want
-to write and prove correct are actually well-behaved.
+which crash if the heap is larger than a certain size. Concretely,
+consider the following basic continuation:
+\begin{displaymath}
+  \begin{array}{lcl}
+    k_{\mathit{bad}} \;(L,h) & = & \IfTE{|L| < 50}{\bot}{\top}
+  \end{array}
+\end{displaymath}
 
-To do this, we will adapt an idea of Birkedal and
+This continuation is safe (i.e., returns $\bot$) if the heap contains
+fewer than 50 elements, and will crash (i.e., return $\top$)
+otherwise. Obviously, the safety monotonicity property cannot hold for
+such programs, because extending the heap enough can cause programs to
+switch from running safely to crashing. On the other hand, we do not
+actually want to prove the correctness of any of these pathological
+programs: all the programs we actually want to write and prove correct
+are actually well-behaved, and will not pay attention to state they
+have no ownership of.
+
+To make use of this fact, we will adapt an idea of Birkedal and
 Yang~\cite{birkedal-yang}. They proposed changing the interpretation
 of program specifications from a boolean semantics (in which each
 specification is either true or false) into a Kripke interpretation.
@@ -548,14 +611,174 @@ assertions of separation logic (i.e., elements of a BI algebra).
 Intuitively, we can think of each world as ``the set of assertions
 that can be safely framed onto this specification''. A specification
 is then true when all assertions can be framed onto it, which is how
-we will end up justifying the frame rule.
+we will end up justifying the frame rule. As we did for assertions, we
+will proceed in a modular way. We will first define a ``world
+preorder'' on elements of a BI algebra --- the extension ordering ---
+and then use this ordering to give the truth values as upwards-closed
+sets of assertions.
 
-As we did for assertions, we will give this semantics in a modular
-way. We will first define a preorder on elements of a BI algebra --- the
-extension ordering --- and then use this ordering to give the truth
-values as upwards-closed sets of assertions.
+\section{Basic Hoare Triples}
 
-\section{World Preorders}
+Since we have a continuation semantics, it is natural to define a
+continuation style interpretation of basic Hoare triples, as well.
+Our initial attempt, however, will not succeed:
+\begin{displaymath}
+  \basicspec{P}{C}{a:A}{Q(a)} \triangleq
+    \forall h \in P.\; \left(C\;Q\;h = \bot\right)
+\end{displaymath}
+The idea is that we can view a postcondition $Q(v)$ as a sort of continuation, 
+which returns $\bot$ if $h \in Q(v)$, and $\top$ otherwise. So we say that 
+for every heap in $P$, $C\;Q\;h$ must be bottom. 
+
+While elegant, this idea suffers from the difficulty that $Q$ is an
+assertion, a function from $A$ to heaps to values, $C$ requires its
+continuation argument to be \emph{continuous}, a property which is not
+met by arbitrary $Q$. This idea can be repaired if we define a ``best
+continuous approximation'' to each $Q$.
+
+\subsection{Approximating Postconditions}
+
+Given a predomain $A$, and a $Q \in U(A) \to \powerset{H}$, we define $Approx(Q)$ as 
+the set:
+\begin{displaymath}
+  Approx(Q) \triangleq \comprehend{k \in A \to H \to O}
+                         {\forall v \in A, h \in Q(v).\; k\;v\;h = \bot}
+\end{displaymath}
+
+These define a set of continuations which ``continuously approximate''
+the postcondition $Q$ -- they are the set of continuations which run
+forever when given a value and heap in $Q$.  From this set we will
+define the function $Best(Q)$, which will be the ``best continuous
+approximation'' to Q. (Intuitively, think of this as being like a
+closure operator from topology, which finds the smallest open set
+containing the given set.)
+
+\begin{displaymath}
+  Best(Q) \triangleq \lambda v \in A.\; \lambda h \in H.\; 
+    \left\{\begin{array}{ll}
+             \top & \mbox{when } \exists k \in Approx(Q).\; k\;v\;h = \top \\
+             \bot & \mbox{otherwise}
+           \end{array}
+    \right.
+\end{displaymath}
+Of course, we have to verify that $Best(Q)$ is actually a continuous function. 
+
+\begin{itemize}
+\item First, we need to check that $Best(Q)$ is a monotone function. 
+
+\begin{tabbedproof}
+\oo Suppose we have $v \sqsubseteq v'$ and $h \sqsubseteq h'$. \\
+\ooo We know $Best(Q)\;v\;h \in O$. Analyzing this by cases, we see \\
+\ooo Suppose $Best(Q)\;v\;h = \bot$ \\
+\oooo Since $\forall o \in O.\; \bot \sqsubseteq o$, it follows that 
+      $\bot \sqsubseteq Best(Q)\;v'\;h'$ \\
+\oooo So $Best(Q)\;v\;h \sqsubseteq Best(Q)\;v'\;h'$ \\
+\ooo Suppose $Best(Q)\;v\;h = \top$ \\
+\oooo By definition of $Best(Q)$, $\exists k \in Approx(Q).\; k\;v\;h = \top$ \\
+\oooo Let $k \in Approx(Q)$ be the witness such that $k\;v\;h = \top$ \\ 
+\ooooo Since $k$ is monotone, $k\;v\;h \sqsubseteq k\;v'\;h'$ \\
+\ooooo So $\top \sqsubseteq k\;v'\;h'$ \\
+\ooooo Since $\top$ is maximal in $O$, $k\;v'\;h' = \top$ \\
+\ooooo So we can take $k$ to be the witness such that $\exists k.\; k\;v'\;h' = \top$ \\
+\oooo Therefore $Best(Q)\;v'\;h' = \top$ \\
+\oooo Therefore $Best(Q)\;v\;h \sqsubseteq Best(Q)\;v'\;h'$ \\
+\end{tabbedproof}
+
+\item Second, we need to show that $Best(Q)$ preserves limits. 
+
+\begin{tabbedproof}
+\oo Suppose we have two chains $v_i$ and $h_i$ such that $i \leq j$
+implies $v_i \sqsubseteq v_j$ and $h_i \sqsubseteq h_j$. \\
+\ooo We want to show that $\bigsqcup_i Best(Q)\;v_i\;h_i = Best(Q)\;(\sqcup v_i)\;(\sqcup h_i)$ \\
+\ooo By excluded middle, either some $k$ in $Approx(Q)$ such that $k\;(\sqcup v_i)\;(\sqcup h_i) = \top$, or not. \\
+\ooo Suppose that $\exists k \in Approx(Q).\; k\;(\sqcup v_i)\;(\sqcup h_i) = \top$ \\
+\oooo Therefore $Best(Q)\;(\sqcup v_i)\;(\sqcup h_i) = \top$ \\
+\oooo By continuity of $k$, $\bigsqcup_i k\;v_i\;h_i = \top$ \\
+\oooo Since $O$ is discrete, there is an $n$ such that $k\;v_n\;h_n = \top$ \\
+\oooo Therefore, for all $j \geq n$, $Best(Q)\;v_n\;h_n = \top$ \\
+\oooo This means $\bigsqcup_i Best(Q)\;v_i\;h_n = \top$ \\
+\oooo Therefore $\bigsqcup_i Best(Q)\;v_i\;h_n = Best(Q)\;(\sqcup v_i)\;(\sqcup h_i)$ \\
+\ooo Suppose that $\lnot(\exists k \in Approx(Q).\; k\;(\sqcup v_i)\;(\sqcup h_i) = \top$ \\
+\oooo This is equivalent to $\forall k \in Approx(Q).\; k\;(\sqcup v_i)\;(\sqcup h_i) = \bot$ \\
+\oooo This means $Best(Q)\;(\sqcup v_i)\;(\sqcup h_i) = \bot$ \\
+\oooo Now, assume $k \in Approx(Q)$ \\
+\ooooo So $k\;(\sqcup v_i)\;(\sqcup h_i) = \bot$ \\
+\ooooo By continuity, $\bigsqcup_i k\;v_i\;h_i = \bot$ \\
+\ooooo Therefore for all $i$, $k\;v_i\;h_i = \bot$ \\
+\oooo So for all $k \in Approx(Q)$ and $i$, we know $k\;v_i\;h_i = \bot$ \\
+\oooo This is equivalent to $\forall i.\; \lnot(\exists k \in Approx(Q).\; k\;v_i\;h_i = \top)$\\
+\oooo Therefore, for all $i$, we know $Best(Q)\;v_i\;h_i = \bot$ \\
+\oooo Therefore, we know $\bigsqcup_i Best(Q)\;v_i\;h_i = \bot$ \\
+\oooo So we conclude $\bigsqcup_i Best(Q)\;v_i\;h_i = Best(Q)\;(\sqcup v_i)\;(\sqcup h_i)$\\
+\end{tabbedproof}
+\end{itemize}
+This establishes that $Best(Q)$ is a continuous function. 
+
+Now we will prove a minor lemma about this function, which shows that
+we are interpreting the two-point Sierpinksi lattice $O = \setof{\bot
+  \sqsubseteq \top}$ such that the bottom element is truth, and the
+top element is falsehood.
+
+\begin{lemma}{(Inclusion Order Reverses Approximation Order)}
+Suppose $Q$ and $Q'$ are assertions in $\interp{A} \to \powerset{H}$, and
+that for all $a \in \interp{A}$, $Q(a) \subseteq Q'(a)$. Then
+$\mathit{Best}(Q') \sqsubseteq \mathit{Best}(Q)$.
+\end{lemma}
+
+\begin{tabbedproof}
+\oo We want to show $\mathit{Best}(Q') \sqsubseteq \mathit{Best}(Q)$ \\
+\oo First, we will observe that $\mathit{Approx}(Q') \subseteq \mathit{Approx}(Q)$ \\
+\oo So, suppose that $k \in \mathit{Approx}(Q')$. We want to show $k \in \mathit{Approx}(Q)$. \\
+\ooo We want to show that for all $a \in \interp{A}$ and $h \in Q(a)$, $k\;a\;h = \bot$.  \\
+\ooo Assume that $a \in \interp{A}$ and $h \in Q(a)$. \\ 
+\oooo We know that since $Q(a) \subseteq Q'(a)$, we have $h \in Q'(a)$.  \\
+\oooo Therefore since $k \in \mathit{Approx}(Q')$, we know $k\;a\;h = \bot$ \\
+\oo Now, we want to show that $\mathit{Approx}(Q') \subseteq \mathit{Approx}(Q)$ \\
+\oo So we want to show that for all $a \in \interp{A}$ and $h \in H$, $\mathit{Approx}(Q')\;a\;h \subseteq \mathit{Approx}(Q)\;a\;h$ \\
+\oo Assume we have $a \in \interp{A}$ and $h \in H$ \\
+\ooo Suppose $\mathit{Approx}(Q')\;a\;h = \top$: \\
+\oooo Therefore there is a $k\in\mathit{Approx}(Q')$ such that $k\;a\;h = \top$ \\
+\oooo Therefore $k \in \mathit{Approx}(Q)$, and so $\mathit{Approx}(Q)\;a\;h = \top$ \\
+\ooo Suppose $\mathit{Approx}(Q')\;a\;h = \bot$: \\
+\oooo Therefore for all $k \in \mathit{Approx}(Q')$, we have $k\;a\;h = \top$ \\
+\oooo Therefore for all $k \in \mathit{Approx}(Q)$, we have $\mathit{Approx}(Q)\;a\;h = \bot$ \\
+
+\end{tabbedproof}
+
+\subsection{Defining the Basic Hoare Triples}
+
+Supposing that $P$ is an element of the BI algebra $\powerset{H}$, $C$ is an element
+of the domain of commands $(A \to K) \to K$, and $Q$ is an $A$-indexed assertion, of
+type $A \to \powerset{H}$, then we can define the basic boolean Hoare triple 
+$\basicspec{p}{c}{a:A}{q(a)}$:
+
+\begin{displaymath}
+  \basicspec{P}{C}{a:A}{Q(a)} \triangleq
+    \forall h \in P.\; \left(C\;Best(Q)\;h = \bot\right)
+\end{displaymath}
+
+If $C$ is given a continuation which will run forever (i.e., yields
+$\bot$) whenever it receives a heap in $Q$, then given a heap $h \in
+P$, $C$ applied to that continuation and that heap will also run forever.
+
+The reason that we interpret triples this way is to make the
+fixed-point induction rule a sound rule of inference. Intuitively, we
+are defining our triples only in terms of continuous things, and so
+the limit of a chains should agree with the chain.
+
+We will not prove this fact here, deferring that proof for the Kripke
+Hoare triples we will actually use. The reason is that these basic
+triples are too basic --- they do not validate the frame property ---
+and so we will not need to use basic Hoare triples except as a tool
+used to define our Kripke Hoare triples.
+
+
+\section{Kripke Hoare Triples}
+
+As with the development of the assertion logic, we will proceed in a
+modular style, by first giving algebraic conditions we want our  
+
+\subsection{World Preorders}
 
 We can define a world preorder $W(B, \worldleq)$ over a BI algebra $B$ as
 follows.  The elements of $W(B, \leq)$ are the elements of $B$, and for any
@@ -588,7 +811,7 @@ that $p_1 \worldleq p_2$ and $p_2 \worldleq p_3$.
 \ooo By definition of $\worldleq$, $p_1 \worldleq p_3$ \\
 \end{tabbedproof}
 
-\section{Heyting Algebras over Preorders}
+\subsection{Heyting Algebras over Preorders}
 
 Given any preorder $(P, \worldleq)$, we can construct a complete
 Heyting algebra by considering the set of its upward-closed subsets
@@ -597,7 +820,7 @@ $(\upset{P}, \subseteq)$:
 \begin{displaymath}
 \upset{P} = 
   \{ S \in \mathcal{P}(P) \;|\;
-     \forall p \in S, \forall q \in B. \mbox{ if } p \worldleq q \mbox{ then } q \in S 
+     \forall p \in S, \forall q \in P. \mbox{ if } p \worldleq q \mbox{ then } q \in S 
   \}
 \end{displaymath}
 
@@ -616,9 +839,9 @@ the operations are:
 \end{itemize}
 
 The idea here is that we will take the world preorder over assertions
-(ordered by the extension order $\worldleq$) and use it to define a 
-Heyting algebra, whose elements will become the semantics of specifications.
-
+(ordered by the extension order $\worldleq$) and use it to define a
+Heyting algebra, whose elements will become the interpretations of
+specifications.
 
 To show that these operations actually form a Heyting algebra, we need
 to show that they satisfy the Heyting algebra axioms. First, we need
@@ -651,7 +874,7 @@ upwards-closed subset.
 \ooo Which means $\bigwedge_{i \in I} S_i \in \upset{P}$ \\ 
 \end{tabbedproof}
 
-\noindent Next, we need to show that the Heyting algebra axiom for meets. 
+\noindent Next, we need to show the Heyting algebra axiom for meets. 
 Stated formally,
 this is $\forall S \in \upset{P}$, if $X \subseteq
 \upset{P}$ and $(\forall S' \in X.\; S \leq S')$, then $S
@@ -753,9 +976,10 @@ First, we will check that the definition gives us an upward closed set.
 \ooo From this, we know $\forall r' \worldgeq x, $ if $r' \in S_1$ then $r' \in S_2$ \\
 \ooo We want to show $\forall r' \worldgeq y, $ if $r' \in S_1$ then $r' \in S_2$ \\
 \ooo Assume $r' \worldgeq y$ and $r' \in S_1$ \\
-\oooo Since $r' \worldgeq y$ and $r' \worldgeq x$, we know $r' \worldgeq x$ \\
+\oooo Since $r' \worldgeq y$ and $y \worldgeq x$, we know $r' \worldgeq x$ \\
 \oooo From this  and $r' \in S_1$, we can use the hypothesis in line 2 to get $r' \in S_2$ \\
 \ooo Therefore $\forall r' \worldgeq y, $ if $r' \in S_1$ then $r' \in S_2$ \\
+\oo Therefore $y \in S_1 \implies S_2$
 \end{tabbedproof}
 
 \noindent Now that we know that $\implies$ has the correct codomain, we need to
@@ -826,220 +1050,99 @@ Next, let's show the $\Leftarrow$ direction.
 
 \begin{tabular}{ll}
 Assume $\forall x.\; x \in S_1 \Rightarrow x \in S_2 \implies R$ &
-(1) \\
+(1) Assumption \\
 
 Assume $x \in S_1 \land S_2$ & 
-(2) \\
+(-) Assumption \\
 
 $x \in S_1$ & 
-Since $x \in S_1 \land S_2$ (2)\\
+(2) Since $x \in S_1 \land S_2$ \\
 
 $x \in S_2$ & 
-Since $x \in S_1 \land S_2$ (3) \\
+(3) Since $x \in S_1 \land S_2$ \\
 
 $x \in S_2 \implies R$ & 
-By (2) and (1) \\
+(-) By (2) and (1) \\
 
 $x \in \{ r \in P \;|\; \forall r' \worldgeq r.\; \mbox{if } r' \in S_2 \mbox{ then } r' \in R \}$ &
-Definition of $\implies$ \\
+(-) Definition of $\implies$ \\
 
 $\forall r' \worldgeq x.\; \mbox{if } r' \in S_2 \mbox{ then } r' \in R$ &
-Comprehension instantiation (4) \\
+(4) Comprehension instantiation  \\
 
 $x \worldgeq x$ & 
-Reflexivity (5) \\
+(5) Reflexivity  \\
 
 $\mbox{if } x \in S_2 \mbox{ then } x \in R$ & 
-Instantation of (4) with (5) \\
+(-) Instantiation of (4) with (5) \\
 
 $x \in R$ & 
-Implication elim via (3) \\
+(-) Implication elim via (3) \\
 
 $\forall x.\; x \in S_1 \land S_2 \Rightarrow x \in R$ & 
-Universal/Implication intro (2) \\
+(-) Universal/Implication intro (2) \\
 
 $(\forall x.\; x \in S_1 \Rightarrow x \in S_2 \implies R) \Rightarrow (\forall x.\; x \in S_1 \land S_2 \Rightarrow x \in R)$ & 
-Implication intro (1) \\
+(-) Implication intro (1) \\
 \end{tabular}
 \end{proof}
 
 These lemmas establish that $\upset{P}$ forms a complete Heyting algebra. 
 
-\section{Semantic Hoare Triples}
+\subsection{Defining Kripke Hoare Triples}
 
-In this section, we will define \emph{semantic Hoare triples}, which will be the basic
-elements we will use to define our specification logic. As always, the definition
-will come in a piece-wise fashion. We will start by defining ``basic Hoare triples'',
-which will be given semantics in a relatively familiar boolean fashion. We will then
-use these to define our true Kripke-style semantic Hoare triples. 
+In this section, we will define \emph{Kripke Hoare triples}, which
+will be the basic elements we will use to define our specification
+logic. As always, the definition will come in a piece-wise
+fashion. Having already defined ``basic Hoare triples'', we can then
+use these to define our true Kripke Hoare triples.
 
-\subsection{Basic Hoare Triples}
+First, note that our separation logic assertions form a BI-algebra,
+and hence form a world preorder. This then gives rise to a Heyting
+algebra $\upset{\powerset{H}}$, which we will take to be our domain of
+specifications.
 
-Since we have a continuation semantics, it is natural to define a
-continuation style interpretation of basic Hoare triples, as well.
-
-\subsubsection{Approximating Postconditions}
-
-Given a $Q \in \interp{A} \to \powerset{H}$, we define $Approx(Q)$ as the set:
-\begin{displaymath}
-  Approx(Q) \triangleq \comprehend{k \in \interp{A} \to H \to O}
-                         {\forall v \in \interp{A}, h \in Q(v).\; k\;v\;h = \bot}
-\end{displaymath}
-
-These define a set of continuations which ``continuously approximate''
-the postcondition $Q$ -- they are the set of continuations which run
-forever when given a value and heap in $Q$.  From this set we will
-define the function $Best(Q)$, which will be the ``best continuous
-approximation'' to Q. (Intuitively, think of this as being like a
-closure operator from topology, which finds the smallest open set
-containing the given set.)
-
-\begin{displaymath}
-  Best(Q) \triangleq \lambda v \in \interp{A}.\; \lambda h \in H.\; 
-    \left\{\begin{array}{ll}
-             \top & \mbox{when } \exists k \in Approx(Q).\; k\;v\;h = \top \\
-             \bot & \mbox{otherwise}
-           \end{array}
-    \right.
-\end{displaymath}
-Of course, we have to verify that $Best(Q)$ is actually a continuous function. 
-
-\begin{itemize}
-\item First, we need to check that $Best(Q)$ is a monotone function. 
-
-\begin{tabbedproof}
-\oo Suppose we have $v \sqsubseteq v'$ and $h \sqsubseteq h'$. \\
-\ooo We know $Best(Q)\;v\;h \in O$. Analyzing this by cases, we see \\
-\ooo Suppose $Best(Q)\;v\;h = \bot$ \\
-\oooo Since $\forall o \in O.\; \bot \sqsubseteq o$, it follows that 
-      $\bot \sqsubseteq Best(Q)\;v'\;h'$ \\
-\oooo So $Best(Q)\;v\;h \sqsubseteq Best(Q)\;v'\;h'$ \\
-\ooo Suppose $Best(Q)\;v\;h = \top$ \\
-\oooo By definition of $Best(Q)$, $\exists k \in Approx(Q).\; k\;v\;h = \top$ \\
-\oooo Let $k \in Approx(Q)$ be the witness such that $k\;v\;h = \top$ \\ 
-\ooooo Since $k$ is monotone, $k\;v\;h \sqsubseteq k\;v'\;h'$ \\
-\ooooo So $\top \sqsubseteq k\;v'\;h'$ \\
-\ooooo Since $\top$ is maximal in $O$, $k\;v'\;h' = \top$ \\
-\ooooo So we can take $k$ to be the witness such that $\exists k.\; k\;v'\;h' = \top$ \\
-\oooo Therefore $Best(Q)\;v'\;h' = \top$ \\
-\oooo Therefore $Best(Q)\;v\;h \sqsubseteq Best(Q)\;v'\;h'$ \\
-\end{tabbedproof}
-
-\item Second, we need to show that $Best(Q)$ preserves limits. 
-
-\begin{tabbedproof}
-\oo Suppose we have two chains $v_i$ and $h_i$ such that $i \leq j$
-implies $v_i \sqsubseteq v_j$ and $h_i \sqsubseteq h_j$. \\
-\ooo We want to show that $\bigsqcup_i Best(Q)\;v_i\;h_i = Best(Q)\;(\sqcup v_i)\;(\sqcup h_i)$ \\
-\ooo By excluded middle, either some $k$ in $Approx(Q)$ such that $k\;(\sqcup v_i)\;(\sqcup h_i) = \top$, or not. \\
-\ooo Suppose that $\exists k \in Approx(Q).\; k\;(\sqcup v_i)\;(\sqcup h_i) = \top$ \\
-\oooo Therefore $Best(Q)\;(\sqcup v_i)\;(\sqcup h_i) = \top$ \\
-\oooo By continuity of $k$, $\bigsqcup_i k\;v_i\;h_i = \top$ \\
-\oooo Since $O$ is discrete, there is an $n$ such that $k\;v_n\;h_n = \top$ \\
-\oooo Therefore, for all $j \geq n$, $Best(Q)\;v_n\;h_n = \top$ \\
-\oooo This means $\bigsqcup_i Best(Q)\;v_i\;h_n = \top$ \\
-\oooo Therefore $\bigsqcup_i Best(Q)\;v_i\;h_n = Best(Q)\;(\sqcup v_i)\;(\sqcup h_i)$ \\
-\ooo Suppose that $\lnot(\exists k \in Approx(Q).\; k\;(\sqcup v_i)\;(\sqcup h_i) = \top$ \\
-\oooo This is equivalent to $\forall k \in Approx(Q).\; k\;(\sqcup v_i)\;(\sqcup h_i) = \bot$ \\
-\oooo This means $Best(Q)\;(\sqcup v_i)\;(\sqcup h_i) = \bot$ \\
-\oooo Now, assume $k \in Approx(Q)$ \\
-\ooooo So $k\;(\sqcup v_i)\;(\sqcup h_i) = \bot$ \\
-\ooooo By continuity, $\bigsqcup_i k\;v_i\;h_i = \bot$ \\
-\ooooo Therefore for all $i$, $k\;v_i\;h_i = \bot$ \\
-\oooo So for all $k \in Approx(Q)$ and $i$, we know $k\;v_i\;h_i = \bot$ \\
-\oooo This is equivalent to $\forall i.\; \lnot(\exists k \in Approx(Q).\; k\;v_i\;h_i = \top)$\\
-\oooo Therefore, for all $i$, we know $Best(Q)\;v_i\;h_i = \bot$ \\
-\oooo Therefore, we know $\bigsqcup_i Best(Q)\;v_i\;h_i = \bot$ \\
-\oooo So we conclude $\bigsqcup_i Best(Q)\;v_i\;h_i = Best(Q)\;(\sqcup v_i)\;(\sqcup h_i)$\\
-\end{tabbedproof}
-\end{itemize}
-This establishes that $Best(Q)$ is a continuous function. 
-
-Now we will prove a minor lemma about this function, which shows that we
-are interpreting the Sierpinski lattice such that the bottom element
-is truth, and the top element is falsehood.
-
-\begin{lemma}{(Lattice Order Reverses Approximation Order)}
-Suppose $Q$ and $Q'$ are $A$-predicates in $\interp{A} \to \powerset{H}$, and that
-for all $a \in \interp{A}$, $Q(a) \subseteq Q'(a)$. Then $\mathit{Best}(Q') \sqsubseteq \mathit{Best}(Q)$. 
-\end{lemma}
-
-\begin{tabbedproof}
-\oo We want to show $\mathit{Best}(Q') \sqsubseteq \mathit{Best}(Q)$ \\
-\oo First, we will observe that $\mathit{Approx}(Q') \subseteq \mathit{Approx}(Q)$ \\
-\oo So, suppose that $k \in \mathit{Approx}(Q')$. We want to show $k \in \mathit{Approx}(Q)$. \\
-\ooo We want to show that for all $a \in \interp{A}$ and $h \in Q(a)$, $k\;a\;h = \bot$.  \\
-\ooo Assume that $a \in \interp{A}$ and $h \in Q(a)$. \\ 
-\oooo We know that since $Q(a) \subseteq Q'(a)$, we have $h \in Q'(a)$.  \\
-\oooo Therefore since $k \in \mathit{Approx}(Q')$, we know $k\;a\;h = \bot$ \\
-\oo Now, we want to show that $\mathit{Approx}(Q') \subseteq \mathit{Approx}(Q)$ \\
-\oo So we want to show that for all $a \in \interp{A}$ and $h \in H$, $\mathit{Approx}(Q')\;a\;h \subseteq \mathit{Approx}(Q)\;a\;h$ \\
-\oo Assume we have $a \in \interp{A}$ and $h \in H$ \\
-\ooo Suppose $\mathit{Approx}(Q')\;a\;h = \top$: \\
-\oooo Therefore there is a $k\in\mathit{Approx}(Q')$ such that $k\;a\;h = \top$ \\
-\oooo Therefore $k \in \mathit{Approx}(Q)$, and so $\mathit{Approx}(Q)\;a\;h = \top$ \\
-\ooo Suppose $\mathit{Approx}(Q')\;a\;h = \bot$: \\
-\oooo Therefore for all $k \in \mathit{Approx}(Q')$, we have $k\;a\;h = \top$ \\
-\oooo Therefore for all $k \in \mathit{Approx}(Q)$, we have $\mathit{Approx}(Q)\;a\;h = \bot$ \\
-
-\end{tabbedproof}
-
-\subsubsection{Basic Boolean Hoare Triples}
-
-Supposing that $p$ is an element of the BI algebra $\powerset{H}$, $c$ is an element
-of the domain of commands $(A \to K) \to K$, and $q$ is an $A$-indexed predicate, of
-type $A \to \powerset{H}$, then we can define the basic boolean Hoare triple 
-$\basicspec{p}{c}{a:A}{q}$:
-
-\begin{displaymath}
-  \basicspec{p}{c}{a:A}{q(a)} \triangleq
-    \forall h \in p.\; \left(c\;Best(q)\;h = \bot\right)
-\end{displaymath}
-
-If $c$ is given a continuation which will run forever (i.e., equals
-$\bot$) whenever it receives a heap in $q$, then given a heap $h \in
-p$, $c$ with that continuation and that heap will also run forever.
-
-The reason that we interpret triples this way is to make the fixed
-point induction rule a sound rule of inference.
-
-
-
-\subsection{Kripke Interpretation}
-
-Now, we can give the Kripke interpretation of semantic triples. Given a semantic
-assertion $p$, an element $c$ of the domain of $A$-commands $(A \to K) \to K$, 
-and a $A$-predicate $q \in A \to \powerset{H}$, we define the meaning of a 
-semantic triple as: 
+Given an assertion $p \in \powerset{H}$, an element $c$ of the domain
+of $A$-commands $(A \to K) \to K$, and an assertion $q \in U(A) \to
+\powerset{H}$, we define the meaning of a Kripke triple as:
 
 \begin{displaymath}
   \spec{p}{c}{a:A}{q(a)} \triangleq
     \comprehend{ r \in \powerset{H} }
-               {\forall s \sqsupseteq r.\; \basicspec{p * s}{c}{a:A}{q(a) * s}}
+               {\forall s \succeq r.\; \basicspec{p * s}{c}{a:A}{q(a) * s}}
 \end{displaymath}
 
-\begin{lemma}{(Semantic Triples are Specifications)}
+The intuition behind this definition is that the meaning of a
+specification is the set of assertions which can be framed onto it,
+and hence a true specification allows anything to be framed onto it,
+since the topmost element of the specification lattice is the set of 
+all assertions. We confirm that Kripke triples are indeed elements of
+the specification lattice below. 
+
+\begin{lemma}{(Kripke Triples are Specifications)}
   For suitable $p,c,A$, and $q$, we have that 
-$\spec{p}{c}{a:A}{q(a)} \in \upset{\powerset{H}}$
+\begin{displaymath}
+\spec{p}{c}{a:A}{q(a)} \in \upset{\powerset{H}}
+\end{displaymath}
 \end{lemma}
 
 \begin{proof}
 \begin{tabbedproof}
 \oo We want to show $\spec{p}{c}{a:A}{q(a)} \in \upset{\powerset{H}}$ \\
-\oo This is equivalent to $\forall r,s$ if $r \in \spec{p}{c}{a:A}{q(a)}$ and $s \sqsupseteq r$,
+\oo This is equivalent to $\forall r,s$ if $r \in \spec{p}{c}{a:A}{q(a)}$ and $s \succeq r$,
 then $s \in \spec{p}{c}{a:A}{q}$ \\
-\oo Assume $r,s, r \in \spec{p}{c}{a:A}{q(a)}$, and $s \sqsupseteq r$ \\
+\oo Assume $r,s, r \in \spec{p}{c}{a:A}{q(a)}$, and $s \succeq r$ \\
 \ooo $r \in \spec{p}{c}{a:A}{q(a)}$ is equivalent to 
-     $\forall s \sqsupseteq r.\; \basicspec{p * s}{c}{a:A}{q(a) * s}$ \\
+     $\forall s \succeq r.\; \basicspec{p * s}{c}{a:A}{q(a) * s}$ \\
 \ooo We want to show $s \in \spec{p}{c}{a:A}{q}$ \\
 \ooo This is equivalent to showing 
-     $\forall t \sqsupseteq s.\; \basicspec{p * t}{c}{a:A}{q(a) * t}$ \\
-\ooo Assume $t$, $t \sqsupseteq s$ \\
-\oooo By transitivity with $t \sqsupseteq s$ and $s \sqsupseteq r$, we know $t \sqsupseteq r$ \\
+     $\forall t \succeq s.\; \basicspec{p * t}{c}{a:A}{q(a) * t}$ \\
+\ooo Assume $t$, $t \succeq s$ \\
+\oooo By transitivity with $t \succeq s$ and $s \succeq r$, we know $t \succeq r$ \\
 \oooo Instantiating quantifier in line 4 with $t$, $\basicspec{p * t}{c}{a:A}{q(a) * t}$ \\
-\ooo Therefore $\forall t \sqsupseteq s.\; \basicspec{p * t}{c}{a:A}{q(a) * t}$ \\
+\ooo Therefore $\forall t \succeq s.\; \basicspec{p * t}{c}{a:A}{q(a) * t}$ \\
 \ooo Therefore $s \in \spec{p}{c}{a:A}{q}$ \\
-\oo Therefore $\forall r,s$ if $r \in \spec{p}{c}{a:A}{q(a)}$ and $s \sqsupseteq r$,
+\oo Therefore $\forall r,s$ if $r \in \spec{p}{c}{a:A}{q(a)}$ and $s \succeq r$,
     then $s \in \spec{p}{c}{a:A}{q}$ \\
 \oo We have shown $\spec{p}{c}{a:A}{q(a)} \in \upset{\powerset{H}}$ \\ 
 \end{tabbedproof}
@@ -1047,9 +1150,11 @@ then $s \in \spec{p}{c}{a:A}{q}$ \\
 
 \subsubsection{Fixed Point Induction}
 
-The reason we have gone to all this trouble of using continuous
+The reason we have gone to the trouble of using continuous
 approximations to the postcondition is to create an admissibility
 property which will allow us to justify a fixed point induction rule.
+We will now cash in that work by giving a proof that the fixed point
+induction rule is sound. 
 
 \begin{lemma}{(Bottom Satisfies All Specifications)}
 We have that $\spec{p}{\bot}{a:A}{q(a)} = \powerset{H}$. 
@@ -1060,15 +1165,15 @@ We have that $\spec{p}{\bot}{a:A}{q(a)} = \powerset{H}$.
 \oo It suffices to show $\forall r \in \powerset{H}, r \in \spec{p}{\bot}{a:A}{q(a)}$ \\
 \oo Assume $r \in \powerset{H}$ \\
 \ooo We want to show $r \in \spec{p}{\bot}{a:A}{q(a)}$, which is equivalent to 
-     $\forall s \sqsupseteq r.\; \basicspec{p*s}{\bot}{a:A}{q(a) * s}$ \\
-\ooo Assume $s \sqsupseteq r$ \\
+     $\forall s \succeq r.\; \basicspec{p*s}{\bot}{a:A}{q(a) * s}$ \\
+\ooo Assume $s \succeq r$ \\
 \oooo We want to show $\basicspec{p*s}{\bot}{a:A}{q(a) * s}$ \\
 \oooo This is equivalent to $\forall h \in p. \bot\;Best(q)\;h = \bot$ \\
 \oooo Assume $h \in p$ \\
 \ooooo  By definition of least element, $\bot\;Best(q)\;h = \bot$ \\
 \oooo Therefore $\forall h \in p. \bot\;Best(q)\;h = \bot$ \\
 \oooo Therefore $\basicspec{p*s}{\bot}{a:A}{q(a) * s}$ \\
-\ooo Therefore $\forall s \sqsupseteq r.\; \basicspec{p*s}{\bot}{a:A}{q(a) * s}$ \\
+\ooo Therefore $\forall s \succeq r.\; \basicspec{p*s}{\bot}{a:A}{q(a) * s}$ \\
 \ooo Therefore $r \in \spec{p}{\bot}{a:A}{q(a)}$ \\
 \oo Therefore $\forall r \in \powerset{H}, r \in \spec{p}{\bot}{a:A}{q(a)}$ \\
 \oo Therefore $\spec{p}{\bot}{a:A}{q(a)} = \powerset{H}$ \\
@@ -1092,12 +1197,12 @@ $\spec{p}{\sqcup_i c_i}{a:A}{q(a)}$.
 \begin{proof}
 \begin{tabbedproof}
 \oo Suppose we have a chain $c_i \in \spec{p}{-}{a:A}{q(a)}$. \\
-\ooo We want to show that $\sqcup_i c_i \in \spec{p}{\sqcup_i c_i}{a:A}{q(a)}$ \\
+\ooo We want to show that $\sqcup_i c_i \in \spec{p}{-}{a:A}{q(a)}$ \\
 \ooo This is equivalent to $\spec{p}{\sqcup c_i}{a:A}{q(a)} = \powerset{H}$ \\
 \ooo This is equivalent to 
-     $\forall r \in \powerset{H}, s \sqsupseteq r.\; 
+     $\forall r \in \powerset{H}, s \succeq r.\; 
          \basicspec{p * s}{\sqcup c_i}{a:A}{q(a) * s}$ \\
-\ooo Assume $r \in \powerset{H}, s \sqsupseteq r$ \\
+\ooo Assume $r \in \powerset{H}, s \succeq r$ \\
 \oooo We want to show $\basicspec{p * s}{\sqcup c_i}{a:A}{q(a) * s}$ \\
 \oooo This is equivalent to $\forall h \in p * s.\; (\sqcup c_i)\; Best(\semfun{a}{q(a)*s})\;h = \bot$ \\
 \oooo Assume $h \in p * s$ \\ 
@@ -1106,22 +1211,22 @@ $\spec{p}{\sqcup_i c_i}{a:A}{q(a)}$.
 \ooooo Suppose $c$ is an element of the chain of $c_i$ \\
 \oooooo Then we know $c \in \spec{p}{-}{a:A}{q}$ \\
 \oooooo This is equivalent to $\spec{p}{c}{a:A}{q} = \powerset{H}$ \\
-\oooooo This is equivalent to $\forall r, s \sqsupseteq r.\; \basicspec{p*s}{c}{a:A}{q(a)*s}$ \\
-\oooooo This is equivalent to $\forall r, s \sqsupseteq r, h \in p*s, c\;Best(\semfun{a}{q(a)*s})\;h = \bot$ \\
+\oooooo This is equivalent to $\forall r, s \succeq r.\; \basicspec{p*s}{c}{a:A}{q(a)*s}$ \\
+\oooooo This is equivalent to $\forall r, s \succeq r, h \in p*s, c\;Best(\semfun{a}{q(a)*s})\;h = \bot$ \\
 \oooooo Instantiating quantifiers with $r$, $s$, and $h$, we get $c\;Best(\semfun{a}{q(a)*s})\;h = \bot$\\
 \ooooo Therefore $\forall c \in \comprehend{c_i}{i \in \N}$, $c\;Best(\semfun{a}{q(a)*s})\;h = \bot$ \\
 \ooooo Therefore $\bigsqcup (c_i\;Best(\semfun{a}{q(a)*s})\;h) = \bot$ \\
 \ooooo Therefore $(\sqcup c_i)\;Best(\semfun{a}{q(a)*s})\;h = \bot$ \\
 \oooo Therefore $\forall h \in p * s.\; (\sqcup c_i)\; Best(\semfun{a}{q(a)*s})\;h = \bot$ \\
 \oooo Therefore $\basicspec{p * s}{\sqcup c_i}{a:A}{q(a) * s}$ \\
-\ooo Therefore $\forall r \in \powerset{H}, s \sqsupseteq r.\; 
+\ooo Therefore $\forall r \in \powerset{H}, s \succeq r.\; 
                    \basicspec{p * s}{\sqcup c_i}{a:A}{q(a) * s}$ \\
 \ooo Therefore $\spec{p}{\sqcup c_i}{a:A}{q(a)} = \powerset{H}$ \\
 \ooo Therefore $\sqcup_i c_i \in \spec{p}{\sqcup_i c_i}{a:A}{q(a)}$ \\
 \end{tabbedproof}
 \end{proof}
 
-\begin{lemma}{(Semantic Fixed Point Induction)}
+\begin{lemma}{(Fixed Point Induction)}
 If we know that for all $x$, $\spec{p}{x}{a:A}{q(a)} = \powerset{H}$ implies $\spec{p}{f(x)}{a:A}{q(a)}) = \powerset{H}$, then we know that $\spec{p}{\mathit{fix}(f)}{a:A}{q(a)} = \powerset{H}$
 \end{lemma}
 
@@ -1166,9 +1271,7 @@ $\sqcup f^n(\bot) \in \spec{p}{-}{a:A}{q(a)}$. Since $\sqcup f^n(\bot) = fix(f)$
 know that $\spec{p}{\mathit{fix}(f)}{a:A}{q(a)} = \powerset{H}$. 
 \end{proof}
 
-
-
-\section{The Framing Operator}
+\subsection{The Framing Operator}
 
 One nice feature of the Kripke-style interpretation of specifications
 is that it naturally validates higher-order frame rules.  We define
@@ -1190,19 +1293,19 @@ our Heyting algebra of specification truth values, and second, we want
 the frame rule to be sound -- we want $S$ to always imply $S \otimes
 p$.
 
-\begin{lemma}{(Framing is a Lattice Operation)}
+\begin{lemma}{(Framing is a Lattice Operation on Specifications)}
 For all $S$ and $p$, we have that $S \otimes p$ is in $\upset{W(\powerset{H}})$,
 and that $S \subseteq S \otimes p $.
 \end{lemma}
 \begin{proof}
 To show that $S \otimes p \in \upset{W(\powerset{H})}$, we need to show that for all 
-$x,y$, if $x \in S \otimes p$ and $y \sqsupseteq x$, then $y \in S \otimes p$. 
+$x,y$, if $x \in S \otimes p$ and $y \succeq x$, then $y \in S \otimes p$. 
 
 \begin{tabbedproof}
-\oo We want to show for all $x,y$, if $x \in S \otimes p$ and $y \sqsupseteq x$, then $y \in S \otimes p$ \\
-\oo Assume $x, y, x \in S \otimes p, y \sqsupseteq x$ \\
+\oo We want to show for all $x,y$, if $x \in S \otimes p$ and $y \succeq x$, then $y \in S \otimes p$ \\
+\oo Assume $x, y, x \in S \otimes p, y \succeq x$ \\
 \ooo From $x \in S \otimes p$, we know $x * p \in S$ \\
-\ooo From $y \sqsupseteq x$, we know $\exists r.\; y = x * r$ \\
+\ooo From $y \succeq x$, we know $\exists r.\; y = x * r$ \\
 \ooo Let $r$ be the witness so that $y = x * r$ \\
 \oooo Since $S$ is upward closed, $x * p * r \in S$ \\
 \oooo Since $x * p * r = (x * r) *p$, we know  $y * p \in S$ \\
@@ -1212,15 +1315,15 @@ $x,y$, if $x \in S \otimes p$ and $y \sqsupseteq x$, then $y \in S \otimes p$.
 \noindent To show $S \subseteq S \otimes p$, we need to show that if $x \in S$, then $x \in S \otimes p$. 
 \begin{tabbedproof}
 \oo Assume $x \in S$ \\
-\ooo Since $\sqsubseteq$ is the extension ordering, $x \sqsubseteq x * p$ \\   
+\ooo Since $\preceq$ is the extension ordering, $x \preceq x * p$ \\   
 \ooo Since $S$ is upward closed, $x * p \in S$\\
 \ooo Therefore $x \in S \otimes p$ 
 \end{tabbedproof}
 \end{proof}
 
-\subsection{Framing Commutes With Logical Operators}
+\subsubsection{Framing Commutes With Logical Operators}
 
-\begin{lemma}{(Framing onto Semantic Triples)}
+\begin{lemma}{(Framing onto Kripke Triples)}
 We have that 
 \begin{displaymath}
 \spec{p}{c}{a:A}{q(a)} \otimes r = \spec{p * r}{c}{a:A}{q(a) * r}  
@@ -1236,32 +1339,32 @@ only if $s \in \spec{p * r}{c}{a:A}{q(a) * r}$. \\
 \oooo $\To$ direction: \\
 \ooooo Assume $s \in (\spec{p}{c}{a:A}{q(a)} \otimes r)$ \\
 \oooooo This means $s * r \in \spec{p}{c}{a:A}{q(a)}$ \\
-\oooooo This means $\forall t \sqsupseteq s * r.\; \basicspec{p * t}{c}{a:A}{q * t}$ \\
+\oooooo This means $\forall t \succeq s * r.\; \basicspec{p * t}{c}{a:A}{q * t}$ \\
 \oooooo We want to show $s \in \spec{p * r}{c}{a:A}{q(a) * r}$ \\
-\oooooo So we want $\forall t' \sqsupseteq s.\; \basicspec{p * r * t'}{c}{a:A}{q(a) * r * t'}$\\
-\oooooo Assume $t' \in \sqsupseteq s$ \\
-\ooooooo Clearly, $t' * r \sqsupseteq s * r$ \\
+\oooooo So we want $\forall t' \succeq s.\; \basicspec{p * r * t'}{c}{a:A}{q(a) * r * t'}$\\
+\oooooo Assume $t' \succeq s$ \\
+\ooooooo Clearly, $t' * r \succeq s * r$ \\
 \ooooooo Instantiate quantifier in 7 with $t' * r$ to conclude
          $\basicspec{p * t' * r}{c}{a:A}{q * t' * r}$ \\
 \ooooooo Rearranging, we get $\basicspec{p * r * t'}{c}{a:A}{q * r * t'}$ \\
-\oooooo Therefore $\forall t' \sqsupseteq s.\; \basicspec{p * r * t'}{c}{a:A}{q(a) * r * t'}$\\
+\oooooo Therefore $\forall t' \succeq s.\; \basicspec{p * r * t'}{c}{a:A}{q(a) * r * t'}$\\
 \oooooo Therefore $s \in \spec{p * r}{c}{a:A}{q(a) * r}$ \\[0.5em]
 
 \oooo $\Leftarrow$ direction: \\
 \ooooo Assume $s \in \spec{p * r}{c}{a:A}{q(a) * r}$. \\
-\oooooo This means $\forall t \sqsupseteq s.\; \basicspec{p * r * t}{c}{a:A}{q(a) * r * t}$ \\
+\oooooo This means $\forall t \succeq s.\; \basicspec{p * r * t}{c}{a:A}{q(a) * r * t}$ \\
 \oooooo We want to show $s \in (\spec{p}{c}{a:A}{q(a)} \otimes r)$ \\
 \oooooo So we want $s * r \in \spec{p}{c}{a:A}{q(a)}$ \\
-\oooooo So we want $\forall t \sqsupseteq s * r.\; \basicspec{p * t}{c}{a:A}{q * t}$ \\
-\oooooo Assume $t \sqsupseteq s * r$ \\
-\ooooooo Since $t \sqsupseteq s * r$, we know $\exists u.\; t = s * r * u$ \\
+\oooooo So we want $\forall t \succeq s * r.\; \basicspec{p * t}{c}{a:A}{q * t}$ \\
+\oooooo Assume $t \succeq s * r$ \\
+\ooooooo Since $t \succeq s * r$, we know $\exists u.\; t = s * r * u$ \\
 \ooooooo Let $u$ be the witness such that $t = s * r * u$ \\
-\ooooooo Now, note that $s * u \sqsupseteq s$ \\
+\ooooooo Now, note that $s * u \succeq s$ \\
 \ooooooo Instantiate quantifier in 18 with $s * u$, so 
          $\basicspec{p * r * s * u}{c}{a:A}{q(a) * r * s * u}$ \\
 \ooooooo Rearranging, $\basicspec{p * s * r * u}{c}{a:A}{q(a) * s * r * u}$ \\
 \ooooooo By equality in 24, $\basicspec{p * t}{c}{a:A}{q * t}$ \\
-\oooooo Therefore $\forall t \sqsupseteq s * r.\; \basicspec{p * t}{c}{a:A}{q * t}$ \\
+\oooooo Therefore $\forall t \succeq s * r.\; \basicspec{p * t}{c}{a:A}{q * t}$ \\
 \oooooo Therefore $s * r \in \spec{p}{c}{a:A}{q(a)}$ \\
 \oooooo Therefore $s \in (\spec{p}{c}{a:A}{q(a)} \otimes r)$ 
 \end{tabbedproof}
@@ -1363,33 +1466,33 @@ only if $r \in [(S_1 \otimes p) \implies (S_2 \otimes p)]$.
 \ooo $\To$ direction:\\
 \oooo Assume $r \in [(S_1 \implies S_2) \otimes p]$ \\
 \ooooo This means $r * p \in (S_1 \implies S_2)$ \\
-\ooooo This means $\forall s \sqsupseteq r * p,$ if $s \in S_1$ then $s \in S_2$ \\
+\ooooo This means $\forall s \succeq r * p,$ if $s \in S_1$ then $s \in S_2$ \\
 \ooooo We want to show $r \in [(S_1 \otimes p) \implies (S_2 \otimes p)]$ \\
-\ooooo So we want $\forall s \sqsupseteq r,$ if  $s \in S_1 \otimes p$ then $s \in S_2 \otimes p$ \\
-\ooooo Assume $s \sqsupseteq r$ and $s \in S_1 \otimes p$ \\
+\ooooo So we want $\forall s \succeq r,$ if  $s \in S_1 \otimes p$ then $s \in S_2 \otimes p$ \\
+\ooooo Assume $s \succeq r$ and $s \in S_1 \otimes p$ \\
 \oooooo From this $s * p \in S_1$ \\ 
-\oooooo Since $s * p \sqsupseteq s$ and $s \sqsupseteq r$, we have $s * p \sqsupseteq r$ \\
+\oooooo Since $s * p \succeq s$ and $s \succeq r$, we have $s * p \succeq r$ \\
 \oooooo Instantiating line 5 with $s * p$, we have if $s * p \in S_1$ then $s * p \in S_2$ \\
 \oooooo Using this and line 9, we have $s * p \in S_2$ \\
 \oooooo From this, we have $s \in S_2 \otimes p$ \\
-\ooooo Therefore $\forall s \sqsupseteq r,$ if  $s \in S_1 \otimes p$ then $s \in S_2 \otimes p$ \\
+\ooooo Therefore $\forall s \succeq r,$ if  $s \in S_1 \otimes p$ then $s \in S_2 \otimes p$ \\
 \ooooo Therefore $r \in [(S_1 \otimes p) \implies (S_2 \otimes p)]$ \\
 
 \ooo $\From$ direction: \\
 \oooo Assume $r \in [(S_1 \otimes p) \implies (S_2 \otimes p)]$ \\
-\ooooo From this, $\forall s \sqsupseteq r,$ if $s \in (S_1 \otimes p)$, then $s \in (S_2 \otimes p)$ \\
+\ooooo From this, $\forall s \succeq r,$ if $s \in (S_1 \otimes p)$, then $s \in (S_2 \otimes p)$ \\
 \ooooo We want to show $r \in [(S_1 \implies S_2) \otimes p]$ \\
 \ooooo So we want $r * p \in (S_1 \implies S_2)$ \\
-\ooooo So we want $\forall s \sqsupseteq r * p$, if $s \in S_1$ then $s \in S_2$ \\
-\ooooo Assume $s \sqsupseteq r * p$ and $s \in S_1$ \\
+\ooooo So we want $\forall s \succeq r * p$, if $s \in S_1$ then $s \in S_2$ \\
+\ooooo Assume $s \succeq r * p$ and $s \in S_1$ \\
 \oooooo From this, $\exists t.\; s = t * r * p$ \\
 \oooooo Let $t$ be the witness such that $s = t * r * p$ \\ 
-\ooooooo Note $t * r \sqsupseteq r$ \\
+\ooooooo Note $t * r \succeq r$ \\
 \ooooooo Instantiating 18 with $t * r$, we get if $t * r \in (S_1 \otimes p)$, then $t * r \in (S_2 \otimes p)$ \\
 \ooooooo From this, we have if $t * r * p \in S_1$ then $t * r * p \in S_2$ \\
 \ooooooo So we have if $s \in S_1$, then $s \in S_2$ \\
 \ooooooo From this and 22, we have $s \in S_2$ \\
-\ooooo Therefore $\forall s \sqsupseteq r * p$, if $s \in S_1$ then $s \in S_2$ \\
+\ooooo Therefore $\forall s \succeq r * p$, if $s \in S_1$ then $s \in S_2$ \\
 \ooooo Therefore $r * p \in (S_1 \implies S_2)$ \\
 \ooooo Therefore $r \in [(S_1 \implies S_2) \otimes p]$ 
 \end{tabbedproof}
@@ -1398,12 +1501,12 @@ only if $r \in [(S_1 \otimes p) \implies (S_2 \otimes p)]$.
 \section{Syntax of Assertions and Specifications}
 
 In this section, we will give the syntax of specifications and
-assertions, and then we will give their semantics. The syntactic
+assertions, and then we will give their interpretations. The syntactic
 categories are given in Figure~\ref{logic-syntax}. The sorts of our
 logic are ranged over by $\omega$, and include the kinds $\kappa$, the
-types $A$, and the propositional sorts $\upsilon$.  The propositional
-sorts $\omega$ include $\assert$, the sort $\upsilon \To \omega$,
-which are the sort of propositional functions, and the sort
+polymorphic types $A$, and the propositional sorts $\upsilon$.  The
+propositional sorts $\omega$ include $\assert$, the sort $\upsilon \To
+\omega$, which are the sort of propositional functions, and the sort
 $\forallsort{\alpha}{\kappa}{\upsilon}$, which are
 type-constructor-indexed families.
  
@@ -1423,7 +1526,6 @@ predicate for polymorphic lists can be given as $\mathsf{listprop} :
 \forallsort{\alpha}{\star}{\listtype{\alpha} \To \seqsort{\alpha} \To
   \assert}$.
 
-
 The terms (for which we will use $p$ $q$ as metavariables) which are
 categorized by our sorts are also given in Figure~\ref{logic-syntax}.
 They include lambda-abstraction and application for the two function
@@ -1442,10 +1544,16 @@ $A$.
 The quantifiers $\forall u:\omega.\; p$ and $\exists u:\omega.\; p$
 are higher-order quantifiers. They can range over all sorts, including
 the sort of assertions $\assert$, and so we have the full power of
-higher-order separation logic available.  Finally, we have the
-\emph{specification embedding assertion} $\validprop{S}$.  This is an
-\emph{assertion} that the specification $S$ is true, and is useful for
-writing assertions that include facts about the behavior of code.
+higher-order separation logic available.  One way in which we will use
+this expressive power is by taking advantage of the definability of
+many mathematical types (such as numbers, sequences, trees, finite
+sets, subsets, etc.) in higher-order logic, to augment our sorts with
+these types on an as-needed basis.
+
+Finally, we have the \emph{specification embedding assertion}
+$\validprop{S}$.  This is an \emph{assertion} that the specification
+$S$ is true, and is useful for writing assertions that include facts
+about the behavior of code.
 
 The specifications $S$ begin with the basic Hoare triple
 $\spec{p}{c}{a:A}{q}$, which says that the computation $c$, when run
@@ -1454,16 +1562,22 @@ return value named by $a$. Similarly, we have the monadic Hoare triple
 form $\mspec{p}{e}{a:A}{q}$ which says that the suspended monadic
 computation $e$ (of type $\monad{A}$), will take a pre-state $p$ to a
 post-state $q$ if it were to be run. The specification $\setof{p}$ is
-the assertion-embedding specification, which says that $p$ is a
-tautology of separation logic. 
+the assertion-embedding specification, which says that $p$ is a truth
+of separation logic.
 
 This does mean that assertions and specifications are mutually
 recursive, which means that we will have to give the semantics of
 these two syntaxes simultaneously. This is one of the reasons we spent
 the first half of this chapter developing the semantics with no
-reference to the intended syntax at all -- I wanted to make sure the
-semantic domains were all well-defined before giving the
+reference to the intended syntax at all --- I wanted to ensure the
+semantic domains were well-defined before giving the
 mutually-recursive semantics of the program logic.
+
+We also can form conjunctions $S \specand S'$, disjunctions $S \specor S'$
+and implications $S \specimp S'$ over specifications, as well as universal
+$\forall u:\omega.\;S$ and existential $\exists u:\omega.\;S$ quantification
+over specifications, with the legitimate domains of quantifications being
+the same sorts as for the assertion language. 
 
 \begin{figure}
 \begin{displaymath}
@@ -1498,28 +1612,27 @@ S & ::= & \spec{p}{c}{a:A}{q} \bnfalt \mspec{p}{e}{a:A}{q} \bnfalt \setof{P} \\
 
 A propositional context $\Delta$ is a sequence of sorted variables of
 the form $u:\omega$. However, due to the fact that the sorts contain
-types, we need a judgement to establish whether a sort is well-formed
-with respect to a context of kind variables, and likewise we will need
-a judgement to establish whether the propositional context is
-well-formed with respect to a context of kind variables.
+types, we need a judgment to establish whether a sort is well-formed
+with respect to a context of kind variables, since types can contain
+type variables. 
 
-In Figure~\ref{logic-sort-ok}, we give the judgement
+In Figure~\ref{logic-sort-ok}, we give the judgment
 $\judgeSort{\omega}$ used to decide whether or not a given sort is
-well-formed or not. The judgement $\judgeACtx{\Delta}$, also given in
+well-formed or not. The judgment $\judgeACtx{\Delta}$, also given in
 Figure~\ref{logic-sort-ok}, then uses the well-sorting judgment to
 establish whether a particular context is well-formed or not. 
 
-Finally, we need an equality judgement for sorts, since we have an
-equality theory for types. The judgement
+Finally, we need an equality judgment for sorts, since we have an
+equality theory for types. The judgment
 $\judgeSortEq{\omega}{\omega'}$, defined in
 Figure~\ref{logic-sort-ok}, judges whether two sorts are equal, by
-means of an almost-congruence. That is, the rules of this judgement
+means of an almost-congruence. That is, the rules of this judgment
 are all congruence rules, except for the single case
-\textsc{SortEqType}, which inherits the equality judgement for
-polytypes.
+\textsc{SortEqType}, which inherits the equality judgment for
+polytypes defined in the previous chapter. 
 
 Now that we have defined what the sorts are, we define what it means
-for a term to be well-sorted in context with the judgement
+for a term to be well-sorted in context with the judgment
 $\judgeA{p}{\omega}$, defined in Figure~\ref{logic-prop-ok}.
 
 \begin{figure}
@@ -1697,12 +1810,12 @@ $\judgeA{p}{\omega}$, defined in Figure~\ref{logic-prop-ok}.
 \label{logic-prop-ok}
 \end{figure}
 
-In the rules \textsc{TType} and \textsc{TExpr}, we simply
-inherit well-kindedness and well-typedness from the corresponding
-judgements for types and terms.  The rule \textsc{THyp} is the
-hypothesis rule for propositional variables. (Type and program
-expression variables can only be referenced through the
-\textsc{TType} and \textsc{TExpr} rules.)
+In the rules \textsc{TType} and \textsc{TExpr}, we simply inherit
+well-kindedness and well-typedness from the corresponding judgments
+for types and terms, defined in the previous chapter.  The rule
+\textsc{THyp} is the hypothesis rule for propositional
+variables. (Type and program expression variables can only be
+referenced through the \textsc{TType} and \textsc{TExpr} rules.)
 
 
 %
@@ -1769,11 +1882,11 @@ depending on whether the variable is a type, term or propositional
 variable.  The points-to $e \pointsto_A e'$ and equality $p =_\omega
 q$ each require that their arguments be of the correct sort. Note that
 $e \pointsto_A e'$ is restricted to program types, as expected,
-whereas equality is valid at any sort.
+whereas equality is permitted at any sort.
 
 Finally, we have the rule $\textsc{TSpec}$ for the
 specification-embedding assertion $\validprop{S}$, which recursively
-invokes the well-sorted specification $\judgeS{S}$. This judgement is
+invokes the well-sorted specification $\judgeS{S}$. This judgment is
 defined in Figure~\ref{logic-spec-ok}, and consists of a handful of
 rules. The \textsc{SpecTriple} rule asserts that $\spec{p}{c}{a:A}{q}$
 is well-kinded when $A$ is a type, $p$ is an assertion, $c$ is a
@@ -1783,7 +1896,7 @@ same job for monadic expressions, saying that $\mspec{p}{e}{a:A}{q}$,
 saying that $e$ must be a term of monadic type $\monad{A}$, but
 otherwise as in the \textsc{SpecTriple} rule.  Finally, the remaining
 atomic proposition \textsc{SpecAssert} rule recursively calls back into the
-assertion well-kinding judgement.
+assertion well-kinding judgment.
 
 The \textsc{SpecBinary} rules gives well-formedness conditions for the
 conjunction ($S \specand S'$), disjunction ($S \specor S'$), and
@@ -1849,16 +1962,14 @@ possible to form program expressions which depend on subexpressions of
 logical type, such as writing an expression of monadic type
 $\monad{\N}$ like $\comp{P(x \pointsto y)}$.
 
-This is because the restriction operations ensure that program
-expressions never use variables whose of logical type, and since the
-sort of $P$ is neither a kind nor a type, it cannot appear within a
-term typed by the \textsc{TExpr} rule.
-
-By requiring program expressions to only contain programmatic
-subexpressions, we effectively forbid the use of ``ghost expressions''
-in our programs. This restriction greatly simplify the semantics of
-the program logic. I intend for the sorts of our logic to be
-interpreted in Set, but the terms of our programming language are
+This restriction ensures that program expressions never use variables
+of logical type, and so any term expression can be typed using only
+type and term variables, without any dependence on variables drawn
+from the logical sorts. By requiring program expressions to only
+contain programmatic subexpressions, we forbid the use of ``ghost
+expressions'' in our programs. This restriction greatly simplify the
+semantics of the program logic. I intend for the sorts of our logic to
+be interpreted in Set, but the terms of our programming language are
 interpreted in CPO. It is not trivial to intermingle logical and
 program expressions, and so the simplest course is to forbid this
 mixing.
@@ -1881,7 +1992,7 @@ and semantic substitution properties together.
 
 Now, we will consider the interpretation of the syntax. To do this,
 we will proceed in stages. First, we will show how to interpret sorts and
-contexts by sets, and show that the equality judgement for sorts is
+contexts by sets, and show that the equality judgment for sorts is
 sound. Using this, we will then give interpretation of terms and
 specifications, and show that the interpretation is sound with respect
 to substitution.
@@ -1940,7 +2051,7 @@ family of sets, with the index extendeding the context.
 
 
 % Therefore, we will need to give a mutually-recursive definition
-% between the interpretation the two judgements $\judgeACtx{\Delta}$ and
+% between the interpretation the two judgments $\judgeACtx{\Delta}$ and
 % $\judgeA{\Delta}{\omega}$.
 % 
 % \begin{displaymath}
@@ -1983,7 +2094,7 @@ family of sets, with the index extendeding the context.
 % Now, this means that the domain of the interpretation function
 % $\interp{\judgeACtx{\Delta}}$ is always well-defined, given a $\judgeSort{\omega}$. Next,
 % we need to establish that we get the same result, regardless of \emph{which} derivation
-% of this judgement we found. 
+% of this judgment we found. 
 % 
 % \begin{lemma}{(Uniqueness of Interpretations)}
 % We have that:
@@ -2000,9 +2111,9 @@ family of sets, with the index extendeding the context.
 %   The proof is at the end of the chapter.
 % \end{proof}
 % 
-% \subsubsection{Interpretation of Equality Judgement on Sorts}
+% \subsubsection{Interpretation of Equality Judgment on Sorts}
 % 
-% Now, we will show that our equality judgement on sorts $\judgeSortEq{\omega}{\omega'}$ is
+% Now, we will show that our equality judgment on sorts $\judgeSortEq{\omega}{\omega'}$ is
 % sound. 
 % 
 % \begin{lemma}{(Soundness of Sort Equality)}
@@ -2015,9 +2126,9 @@ family of sets, with the index extendeding the context.
 
 \subsection{Interpretation of Terms and Specifications}
 
-The term judgement $\judgeA{p}{\omega}$ is mutually recursively
-defined with the specification judgement $\judgeS{S}$. Therefore, when
-we give the semantics of these judgements, we need to define them
+The term judgment $\judgeA{p}{\omega}$ is mutually recursively
+defined with the specification judgment $\judgeS{S}$. Therefore, when
+we give the semantics of these judgments, we need to define them
 together. The definition of the interpretation of these two judgments
 is given in Figures~\ref{term-interpretation} and
 \ref{spec-interpretation}.
@@ -2381,7 +2492,7 @@ extra premise in the final three cases handles the slight non-syntax-directednes
 
 \and
   \inferrule*[right=AxConsequence]
-             {\validS{\spec{p'}{c}{a:A}{q'}} \\ \validP{p \implies p'} \\ \validP{q' \implies q}}
+             {\validS{\spec{p'}{c}{a:A}{q'}} \\ \validP{p \implies p'} \\ \validP[\Theta; \Gamma, a:A; \Delta]{q' \implies q}}
              {\validS{\spec{p}{c}{a:A}{q}}}
   
 \and
@@ -2467,7 +2578,7 @@ extra premise in the final three cases handles the slight non-syntax-directednes
           {\judgeEqA{p}{q}{\omega} \\ \judgeSortEq{\omega}{\omega'}}
           {\judgeEqA{p}{q}{\omega'}}
 \end{mathpar}
-\caption{Equality Judgement for Assertions}
+\caption{Equality Judgment for Assertions}
 \label{assertion-equality}  
 \end{figure}
 
@@ -2641,7 +2752,7 @@ theorem:
 \begin{proof}
   The proof of these three theorems follows from a mutual structural
   induction.  The soundness of each atomic rule for the two validity
-  judgements is proven in the next section. The soundness of the rules
+  judgments is proven in the next section. The soundness of the rules
   for equality are a consequence of the equality rules we have already
   proven, and the cartesian closure of Set.  
 \end{proof}
@@ -2756,9 +2867,9 @@ though different classes can be given entirely different invariants.
 While this is clearly a very natural idea for the specification of
 object-oriented programs, I think that a richer language of
 specifications and a more conventional interpretation of existentials
-and universals is likely to be desirable in practice. This is because
-modern OO languages like C\# and Scala also contain support for
-first-class functions, which means that program logics should directly
+and universals is likely to be desirable in practice. Modern OO
+languages like C\# and Scala also contain support for first-class
+functions, which means that program logics will need features to
 support reasoning about higher-order programs.
 
 \subsubsection{Hoare Type Theory}
@@ -2770,7 +2881,7 @@ monadic discipline to control effects.  Unlike our work, HTT takes
 advantage of type dependency to directly integrate specifications into
 the types of computation terms.
 
-Nanevski, Ahmad, Morisett and Birkedal~\cite{abstract-htt} have
+Nanevski, Ahmed, Morisett and Birkedal~\cite{abstract-htt} have
 proposed using the existential quantification of their type theory to
 hide data representations, giving examples such as a malloc/free style
 memory allocator. \citet{nanevski-victor-10} also give
@@ -5070,8 +5181,8 @@ $\judgeS{\spec{e \pointsto_A -}{e := e'}{a:\unittype}{e \pointsto_A e'}}$ is val
     \oooo Let $E' = \interp{\judgeE[\Theta]{\Gamma}{e'}{A}}\;\theta\;\gamma$ \\
     \oooo let $Q = \semfun{v}{\interp{\judgeA{e \pointsto_A e'}{\assert}}\;\theta\;(\gamma, v)\;\delta}$ \\
     \oooo We want to show $r \in \spec{P}{C}{a:A}{Q(a)}$ \\
-    \oooo We want to show $\forall s \sqsupseteq r.\; \basicspec{P * s}{C}{a:A}{Q(a) * s}$ \\
-    \oooo Assume $s \sqsupseteq r$ \\
+    \oooo We want to show $\forall s \succeq r.\; \basicspec{P * s}{C}{a:A}{Q(a) * s}$ \\
+    \oooo Assume $s \succeq r$ \\
     \ooooo We want to show $\basicspec{P * s}{C}{a:A}{Q(a) * s}$ \\
     \ooooo We want to show $\forall h \in (P * s).\; C\;Best(\semfun{a}{Q(a) * s})\;h = \bot$ \\
     \ooooo Assume $h \in P * s$ \\
@@ -5106,7 +5217,7 @@ $\judgeS{\spec{e \pointsto_A -}{e := e'}{a:\unittype}{e \pointsto_A e'}}$ is val
     \oooooo Therefore $Best(\semfun{a}{Q(a) * s})\;\unit\;[h_1 \cdot h_2|E:E'] = \bot$ \\
     \ooooo Therefore $\forall h \in (P * s).\; C\;Best(\semfun{a}{Q(a) * s})\;h = \bot$ \\
     \ooooo Therefore $\basicspec{P * s}{C}{a:A}{Q(a) * s}$ \\
-    \oooo Therefore $\forall s \sqsupseteq r.\; \basicspec{P * s}{C}{a:A}{Q(a) * s}$ \\
+    \oooo Therefore $\forall s \succeq r.\; \basicspec{P * s}{C}{a:A}{Q(a) * s}$ \\
     \oooo Therefore $r \in \spec{P}{C}{a:A}{Q(a)}$ \\
     \ooo Therefore $\forall r.\; r \in \interp{\judgeS{\spec{e \pointsto_A -}{e := e'}{a:\unittype}{e \pointsto_A e'}}}\;\theta\;\gamma\;\delta$ \\
     \ooo Therefore $\interp{\judgeS{\spec{e \pointsto_A -}{e := e'}{a:\unittype}{e \pointsto_A e'}}}\;\theta\;\gamma\;\delta = \top$ \\
@@ -5129,8 +5240,8 @@ If $\judgeS{\spec{\emp}{\newref{A}{e}}{a:\reftype{A}}{a \pointsto e}}$ is valid
     \oooo Let $E = \interp{\judgeE{\Gamma}{e}{A}\;\theta}\;\gamma$ \\
     \oooo Let $Q = \semfun{v}{\interp{\judgeA[\Delta, a:\reftype{A}]{a \pointsto_A e}{\assert}}\;\theta\;(\gamma, v)\;\delta}$ \\
     \oooo So we want to show $r \in \spec{I}{C}{a:A}{Q(a)}$ \\
-    \oooo So we want to show $\forall s \sqsupseteq r.\; \basicspec{s}{C}{a:A}{Q(a)*s}$ \\
-    \oooo Assume $s \sqsupseteq r$ \\
+    \oooo So we want to show $\forall s \succeq r.\; \basicspec{s}{C}{a:A}{Q(a)*s}$ \\
+    \oooo Assume $s \succeq r$ \\
     \ooooo We want to show $\basicspec{s}{C}{a:A}{Q(a)*s}$ \\
     \ooooo We want to show $\forall h \in s.\; C\;Best(\semfun{a}{Q(a)*s})\;h = \bot$ \\
     \ooooo Assume $h \in s$ \\
@@ -5153,7 +5264,7 @@ If $\judgeS{\spec{\emp}{\newref{A}{e}}{a:\reftype{A}}{a \pointsto e}}$ is valid
     \oooooo Therefore $\forall k \in Approx(\semfun{a}{Q(l)*s}).\;k\;l\;[h|l:E] = \bot)$ \\
     \ooooo Therefore $\forall h \in s.\; C\;Best(\semfun{a}{Q(a)*s})\;h = \bot$ \\
     \ooooo Therefore $\basicspec{s}{C}{a:A}{Q(a)*s}$ \\
-    \oooo Therefore $\forall s \sqsupseteq r.\; \basicspec{s}{C}{a:A}{Q(a)*s}$ \\
+    \oooo Therefore $\forall s \succeq r.\; \basicspec{s}{C}{a:A}{Q(a)*s}$ \\
     \oooo Therefore $r \in \spec{I}{C}{a:A}{Q(a)}$ \\
     \ooo Therefore $\forall r.\; r \in \interp{\judgeS{\spec{\emp}{\newref{A}{e}}{a:\reftype{A}}{a \pointsto e}}}\theta\;\gamma\;\delta$ \\
     \ooo Therefore $\interp{\judgeS{\spec{\emp}{\newref{A}{e}}{a:\reftype{A}}{a \pointsto e}}}\theta\;\gamma\;\delta = \top$ \\
@@ -5175,8 +5286,8 @@ We have that $\judgeS{\spec{e \pointsto_A e'}{!e}{a:A}{e \pointsto_A e' \land a 
     \oooo Let $E' = \interp{\judgeE{\Gamma}{e'}{A}\;\theta}\;\gamma$ \\
     \oooo Let $Q = \semfun{v}{\interp{\judgeA[\Theta; \Gamma, a:\reftype{A}; \Delta]{e \pointsto_A e' \land a = e'}{\assert}}\;\theta\;(\gamma, v)\;\delta}$ \\
     \oooo So we want to show $r \in \spec{P}{C}{a:A}{Q(a)}$ \\
-    \oooo So we want to show $\forall s \sqsupseteq r.\; \basicspec{P*s}{C}{a:A}{Q(a)*s}$ \\
-    \oooo Assume $s \sqsupseteq r$ \\
+    \oooo So we want to show $\forall s \succeq r.\; \basicspec{P*s}{C}{a:A}{Q(a)*s}$ \\
+    \oooo Assume $s \succeq r$ \\
     \ooooo We want to show $\basicspec{P*s}{C}{a:A}{Q(a)*s}$ \\
     \ooooo We want to show $\forall h \in P*s.\; C\;Best(\semfun{a}{Q(a)*s})\;h = \bot$ \\
     \ooooo Assume $h \in P*s$ \\
@@ -5208,7 +5319,7 @@ We have that $\judgeS{\spec{e \pointsto_A e'}{!e}{a:A}{e \pointsto_A e' \land a 
     \oooooo Therefore $Best(\semfun{a}{Q(a)*s})\;(h\;E)\;h = \bot$ \\
     \ooooo Therefore $\forall h \in P*s.\; C\;Best(\semfun{a}{Q(a)*s})\;h = \bot$ \\
     \ooooo Therefore $\basicspec{P*s}{C}{a:A}{Q(a)*s}$ \\
-    \oooo Therefore $\forall s \sqsupseteq r.\; \basicspec{P*s}{C}{a:A}{Q(a)*s}$ \\
+    \oooo Therefore $\forall s \succeq r.\; \basicspec{P*s}{C}{a:A}{Q(a)*s}$ \\
     \oooo Therefore $r \in \spec{P}{C}{a:A}{Q(a)}$ \\
     \ooo Therefore $\forall r.\; r \in \interp{\judgeS{\spec{e \pointsto_A e'}{!e}{a:A}{e \pointsto e' \land a = e'}}}\theta\;\gamma\;\delta$ \\
     \ooo Therefore $\interp{\judgeS{\spec{e \pointsto_A e'}{!e}{a:A}{e \pointsto e' \land a = e'}}}\theta\;\gamma\;\delta = \top$ \\
@@ -5238,15 +5349,15 @@ Suppose $\judgeS{\mspec{p}{e}{x:A}{q}}$ is valid, and $\judgeS[\Delta,x:A]{\spec
     \ooooo By semantics, $C = F^*(E)$ \\
     \ooooo By definition of monadic lift, $C = \semfun{k}{E\;(\semfun{v}{F\;v\;k})}$ \\
     \ooooo So we want to show $t \in \spec{P}{C}{a:A}{R'(a)}$ \\
-    \ooooo So we want $\forall u \sqsupseteq t.\; \basicspec{P * u}{C}{a:A}{(R'(a) * u)}$ \\
-    \ooooo Assume $u \sqsupseteq t$ \\
+    \ooooo So we want $\forall u \succeq t.\; \basicspec{P * u}{C}{a:A}{(R'(a) * u)}$ \\
+    \ooooo Assume $u \succeq t$ \\
     \oooooo So we want to show $\forall h \in P * u.\; C\;Best(\semfun{a}{R'(a) * u})\;h = \bot$\\
     \oooooo Assume $h \in P * u$ \\
     \ooooooo So we want to show $E\;(\semfun{v}{F\;v\;Best(\semfun{a}{R'(a)*u})})\;h = \bot$ \\
     \ooooooo We know $\judgeS{\mspec{p}{e}{x:A}{q}}$ is valid \\
     \ooooooo Instantiating with the environment $\theta\;\gamma\;\delta$, we get $\forall t.\; t \in \spec{P}{E}{a:A}{Q(a)}$ \\
-    \ooooooo Thus $\forall t, u \sqsupseteq t.\; \basicspec{P * u}{E}{a:A}{Q(a) * u}$ \\
-    \ooooooo Thus $\forall t, u \sqsupseteq t, h \in P * u, E\;Best(\semfun{a}{Q(a) * u})\;h = \bot$ \\
+    \ooooooo Thus $\forall t, u \succeq t.\; \basicspec{P * u}{E}{a:A}{Q(a) * u}$ \\
+    \ooooooo Thus $\forall t, u \succeq t, h \in P * u, E\;Best(\semfun{a}{Q(a) * u})\;h = \bot$ \\
     \ooooooo Instantiating, we get $E\;Best(\semfun{a}{Q(a) * u})\;h = \bot$ \\
     \ooooooo So it suffices to show $(\semfun{v}{F\;v\;Best(\semfun{a}{R'(a)*u})}) \sqsubseteq 
                                 Best(\semfun{a}{Q(a) * u})$ \\
@@ -5255,7 +5366,7 @@ Suppose $\judgeS{\mspec{p}{e}{x:A}{q}}$ is valid, and $\judgeS[\Delta,x:A]{\spec
     \ooooooo Assume $v, h \in Q(v) * u$ \\
     \oooooooo We know $\judgeS[\Delta,x:A]{\spec{q}{c}{a:B}{r}}$ is valid\\
     \oooooooo Instantiating with the environment $\theta\;(\gamma, v)\;\delta$, we get \\
-    \oooooooox $\forall v, t, u \sqsupseteq t, h \in Q(v) * u, (F\;v)\;Best(\semfun{a}{R\;v\;a * u})\;h = \bot$ \\
+    \oooooooox $\forall v, t, u \succeq t, h \in Q(v) * u, (F\;v)\;Best(\semfun{a}{R\;v\;a * u})\;h = \bot$ \\
     \oooooooo Instantiating, we get $(F\;v)\;Best(\semfun{a}{R\;v\;a * u})\;h = \bot$ \\
     \oooooooo By equality, we get $(F\;v)\;Best(\semfun{a}{R'(a) * u})\;h = \bot$ \\
     \ooooooo Therefore $\forall v, h \in Q(v) * u, F\;v\;Best(\semfun{a}{R'(a)*u})\;h = \bot$ \\
@@ -5264,7 +5375,7 @@ Suppose $\judgeS{\mspec{p}{e}{x:A}{q}}$ is valid, and $\judgeS[\Delta,x:A]{\spec
     \ooooooo Therefore $(\semfun{v}{F\;v\;Best(\semfun{a}{R'(a)*u})}) \in Approx(\semfun{a}{Q(a) * u})$ \\                        
     \ooooooo Therefore $E\;(\semfun{v}{F\;v\;Best(\semfun{a}{R'(a)*u})})\;h = \bot$ \\
     \oooooo Therefore $\forall h \in P * u.\; C\;Best(\semfun{a}{R'(a) * u})\;h = \bot$\\
-    \ooooo Therefore $\forall u \sqsupseteq t.\; \basicspec{P * u}{C}{a:A}{(R'(a) * u)}$ \\
+    \ooooo Therefore $\forall u \succeq t.\; \basicspec{P * u}{C}{a:A}{(R'(a) * u)}$ \\
     \ooooo Therefore $t \in \spec{P}{C}{a:A}{R'(a)}$ \\
     \oooo Therefore $\forall t.\; t \in \interp{\judgeS{\spec{p}{\letv{x}{e}{c}}{a:B}{r}}}\theta\;\gamma\;\delta$ \\
     \oooo Therefore $\interp{\judgeS{\spec{p}{\letv{x}{e}{c}}{a:B}{r}}}\theta\;\gamma\;\delta = \top$\\
@@ -5297,13 +5408,13 @@ is valid.
     \ooo So we want to show $\spec{P}{C}{a:A}{Q(a)} = \top$ \\
     \ooo We know $\interp{S}\;\theta\;\gamma\;\delta = \top$ \\
     \ooo Thus for all $v$, we know $\interp{\mspec{p}x{a:A}{q(a)} \specimp \mspec{p}{e}{a:A}{q}}\;\theta\;(\gamma, v)\;\delta = \top$ \\
-    \ooo Thus we know for all $v$, $r$, and $s \sqsupseteq r$, \\
+    \ooo Thus we know for all $v$, $r$, and $s \succeq r$, \\
     \ooox if $s \in \interp{\mspec{p}x{a:A}{q(a)}}\;\theta\;(\gamma, v)\;\delta$ then $s \in \interp{\mspec{p}{e}{a:A}{q}}\;\theta\;(\gamma, v)\;\delta$ \\
     \ooo Since $x \not\in \FV{p}$, we know for all $v$, 
          $\interp{\judgeA[\Theta; \Gamma,x:\monad{A}; \Delta]{p}{\assert}}\;\theta\;(\gamma, v)\;\delta = P$ \\
     \ooo Since $x \not\in \FV{q}$, we know for all $v$, 
          $\semfun{v'}{\interp{\judgeA[\Theta; \Gamma, x:\monad{A}, a:A; \Delta]{q}{\assert}}\;\theta\;(\gamma,v,v') \;\delta} = Q$ \\
-    \ooo Thus we know for all $v$, $r$, and $s \sqsupseteq r$, \\
+    \ooo Thus we know for all $v$, $r$, and $s \succeq r$, \\
     \ooox if $s \in  \spec{P}{v}{a:A}{Q(a)}$ then 
              $s \in \spec{P}{F(v)}{a:A}{Q(a)}$ \\
     \ooo This implies that for all $v$, if $\spec{P}{F(v)}{a:A}{Q(a)} = \top $ 
@@ -5512,8 +5623,8 @@ then $\judgeS{\spec{p \vee p'}{c}{a:A}{q \vee q'}}$ is valid.
     \oooo Let $C = \interp{\judgeE{\Gamma}{[c]}{\monad{A}}}\;\theta\;\gamma$ \\
     \oooo Let $Q'' = \semfun{v}{\interp{\judgeA[\Theta; \Gamma,a:A; \Delta]{q \vee q'}{\assert}}\;\theta\;(\gamma, v)\;\delta}$ \\
     \oooo So we want to show $r \in \spec{P''}{C}{a:A}{Q''(a)}$ \\
-    \oooo So we want to show $\forall s \sqsupseteq r.\; \basicspec{P'' * s}{C}{a:A}{Q''(a) * s}$ \\
-    \oooo Assume $s \sqsupseteq r$ \\
+    \oooo So we want to show $\forall s \succeq r.\; \basicspec{P'' * s}{C}{a:A}{Q''(a) * s}$ \\
+    \oooo Assume $s \succeq r$ \\
     \ooooo We want to show $\basicspec{P'' * s}{C}{a:A}{Q''(a) * s}$ \\
     \ooooo We want to show $\forall h \in P'' * s.\; C\;Best(\semfun{a}{Q''(a) * s})\;h = \bot$ \\
     \ooooo Assume $h \in P'' * s$ \\
@@ -5610,7 +5721,7 @@ Then $\judgeS{\mspec{p}{\Case{e}{x}{e_A}{y}{e_B}}{a:C}{q}}$ is valid.
 
 \begin{lemma}{(The Rule of Consequence)}
 If $\judgeS{\spec{p}{c}{a:A}{q}}$ is valid and $\judgeA{p' \implies p}{\assert}$ is valid
-and $\judgeA{q \implies q'}{\assert}$ is valid, then $\judgeS{\spec{p'}{c}{a:A}{q'}}$ is valid.
+and $\judgeA[\Theta; \Gamma,a:A; \Delta]{q \implies q'}{\assert}$ is valid, then $\judgeS{\spec{p'}{c}{a:A}{q'}}$ is valid.
 \end{lemma}
 \begin{proof}
 \begin{tabbedproof}
@@ -5623,12 +5734,12 @@ and $\judgeA{q \implies q'}{\assert}$ is valid, then $\judgeS{\spec{p'}{c}{a:A}{
 \ooox $P = \interp{\judgeA{p}{\assert}}\theta\;\gamma\;\delta$ \\
 \ooox $P' = \interp{\judgeA{p'}{\assert}}\theta\;\gamma\;\delta$ \\
 \ooox $C = \interp{\judgeC{\Gamma}{c}{A}}\;\theta\;\gamma$ \\
-\ooox $Q = \semfun{v}{\interp{\judgeA[\Delta,a:A]{q}{\assert}}\;\theta\;(\gamma, v)\;\delta}$ \\
-\ooox $Q' = \semfun{v}{\interp{\judgeA[\Delta,a:A]{q}{\assert}}\;\theta\;(\gamma, v)\;\delta}$ \\
-\ooo We know $\interp{\judgeA{p' \implies p}{\assert}}\;\delta = P' \implies P$. \\
-\ooo We know $\interp{\judgeA{q \implies q'}{\assert}}\;\delta = Q \implies Q'$. \\
-\ooo So we want to show that $\forall s \sqsupseteq r.\; \basicspec{P' * s}{C}{a:A}{Q'(a) * s}$ \\
-\ooo Assume $s \sqsupseteq r$, and $h \in P' * s$ \\
+\ooox $Q = \semfun{v}{\interp{\judgeA[\Theta; \Gamma,a:A; \Delta]{q}{\assert}}\;\theta\;(\gamma, v)\;\delta}$ \\
+\ooox $Q' = \semfun{v}{\interp{\judgeA[\Theta; \Gamma,a:A; \Delta]{q}{\assert}}\;\theta\;(\gamma, v)\;\delta}$ \\
+\ooo We know $\interp{\judgeA{p' \implies p}{\assert}}\;\theta\;\gamma\;\delta = P' \implies P$. \\
+\ooo We know for all $v$, $\interp{\judgeA[\Theta; \Gamma,a:A; \Delta]{q \implies q'}{\assert}}\;\theta\;(\gamma,v)\;\delta = Q(v) \implies Q'(v)$. \\
+\ooo So we want to show that $\forall s \succeq r.\; \basicspec{P' * s}{C}{a:A}{Q'(a) * s}$ \\
+\ooo Assume $s \succeq r$, and $h \in P' * s$ \\
 \oooo Hence $\exists$ $h_1$ and $h_2$ such that $h_1 \# h_2$ and $h = h_1 \cdot h_2$ 
      and $h_1 \in P'$ and $h_2 \in s$ \\
 \oooo Since $P'$ is a subset of $P$, $h_1 \in P$. So $h \in P * s$ \\
@@ -5636,7 +5747,7 @@ and $\judgeA{q \implies q'}{\assert}$ is valid, then $\judgeS{\spec{p'}{c}{a:A}{
 \oooo For any $a$, we know that $Q(a) \subseteq Q'(a)$ \\
 \oooo Hence  we know that $\mathit{Best}(\semfun{a}{Q'(a) * s}) \sqsupseteq \mathit{Best}(\semfun{a}{Q(a) * s})$ \\
 \oooo Hence by continuity, $C\;\mathit{Best}(\semfun{a}{Q'(a) * s})\;h = \bot$ \\
-\ooo Hence $\forall s \sqsupseteq r.\; \basicspec{P' * s}{C}{a:A}{Q'(a) * s}$ \\
+\ooo Hence $\forall s \succeq r.\; \basicspec{P' * s}{C}{a:A}{Q'(a) * s}$ \\
 \ooo Hence $\forall r.\; r \in \interp{\judgeS{\spec{p'}{c}{a:A}{q'}}}\;\theta\;\gamma\;\delta$ \\
 
 
@@ -5773,26 +5884,70 @@ $\interp{\judgeS{\Frame{S}{r}}}\;\theta\;\gamma\;\delta =
         \oox $\Frame{\interp{\judgeS{S_1 \oplus S_2}}\;\theta\;\gamma\;\delta}{(\interp{\judgeA{r}{\assert}}\;\theta\;\gamma\;\delta)}$ \\
       \end{tabbedproof}
 
-    \item Case \textsc{SpecQuantify}:
+    \item Case \textsc{SpecQuantify1}:
       \begin{tabbedproof}
-        \oo We know $\judgeS{Q u:\omega.\; S}$, where $Q \in \setof{\forall, \exists}$ \\
-        \oo We also know that $\Frame{(Q u:\omega.\; S)}{r} = Q u:\omega.\; (\Frame{S}{r})$ \\
-        \oo By the semantics, we know that $\interp{\judgeS{Q u:\omega.\; (\Frame{S}{r)}}}\;\delta = $ \\
-        \oox $\interp{Q}_{v \in \interp{\judgeSort{\omega}}\;\delta} \interp{\judgeS[\Delta, u:\omega]{\Frame{S}{r}}}\;\theta\;(\gamma, v)\;\delta$\\
-        \oo By induction, we know that for all appropriate $\delta'$, 
-               $\interp{\judgeS[\Delta, u:\omega]{\Frame{S}{r}}}\;\delta' = $ \\
-        \oox $\Frame{\interp{\judgeS[\Delta, u:\omega]{S}}\;\delta'}{\interp{\judgeA[\Delta, u:\omega]{r}{\assert}}\;\delta'}$ \\
-        \oo Now, if $\delta' = \theta\;(\gamma, v)\;\delta$, then $\interp{\judgeA[\Delta, u:\omega]{r}{\assert}}\;\delta' = 
-                                                   \interp{\judgeA{r}{\assert}}\;\delta$ since $u \not\in \FV{r}$ \\
-        \oo So we know $\interp{\judgeS{Q u:\omega.\; (\Frame{S}{r)}}}\;\delta = $ \\
-        \oox $\interp{Q}_{v \in \interp{\judgeSort{\omega}}\;\delta} (\Frame{\interp{\judgeS[\Delta, u:\omega]{S}}\;\theta\;(\gamma, v)\;\delta}{\interp{\judgeA{r}{\assert}}\;\delta})$ \\
-        \oo Since framing distributes through meets, we know $\interp{\judgeS{Q u:\omega.\; (\Frame{S}{r)}}}\;\delta = $ \\
-        \oox $\Frame{(\interp{Q}_{v \in \interp{\judgeSort{\omega}}\;\delta} \interp{\judgeS[\Delta, u:\omega]{S}}\;\theta\;(\gamma, v)\;\delta)}{\interp{\judgeA{r}{\assert}}\;\delta})$ \\
-        \oo So we know $\interp{\judgeS{Q u:\omega.\; (\Frame{S}{r)}}}\;\delta = $ \\
-        \oox $\Frame{\interp{\judgeS{Q u:\omega.\;S}}\;\delta}{(\interp{\judgeA{r}{\assert}}\;\delta)}$ \\
-        \oo So we know $\interp{\judgeS{\Frame{(Q u:\omega.\; S)}{r}}}\;\delta = $ \\
-        \oox $\Frame{\interp{\judgeS{Q u:\omega.\;S}}\;\delta}{(\interp{\judgeA{r}{\assert}}\;\delta)}$ \\
-        
+        \oo We know $\judgeS{Q u:\upsilon.\; S}$, where $Q \in \setof{\forall, \exists}$ \\
+        \oo We also know that $\Frame{(Q u:\upsilon.\; S)}{r} = Q u:\upsilon.\; (\Frame{S}{r})$ \\
+        \oo By the semantics, we know that $\interp{\judgeS{Q u:\upsilon.\; (\Frame{S}{r)}}}\;\theta\;\gamma\;\delta = $ \\
+        \oox $\interp{Q}_{v \in \interp{\judgeSort{\upsilon}}\;\theta} \interp{\judgeS[\Theta; \Gamma; \Delta, u:\upsilon]{\Frame{S}{r}}}\;\theta\;\gamma\;(\delta, v)$\\
+        \oo By induction, we know that for all appropriate $\theta\;\gamma\;\delta'$, 
+               $\interp{\judgeS[\Theta; \Gamma; \Delta, u:\upsilon]{\Frame{S}{r}}}\;\theta\;\gamma\;\delta' = $ \\
+        \oox $\Frame{\interp{\judgeS[\Theta; \Gamma; \Delta, u:\upsilon]{S}}\;\theta\;\gamma\;\delta'}{\interp{\judgeA[\Delta, u:\upsilon]{r}{\assert}}\;\theta\;\gamma\;\delta'}$ \\
+        \oo Now, choosing $\theta, \gamma,$ and  $\delta' = (\delta,v)$, \\
+        \oox then $\interp{\judgeA[\Theta;\Gamma;\Delta, u:\upsilon]{r}{\assert}}\;\theta\;\gamma\;\delta' = 
+                                                   \interp{\judgeA{r}{\assert}}\;\theta\;\gamma\;\delta$ since $u \not\in \FV{r}$ \\
+        \oo So we know $\interp{\judgeS{Q u:\upsilon.\; (\Frame{S}{r)}}}\;\theta\;\gamma\;\delta = $ \\
+        \oox $\interp{Q}_{v \in \interp{\judgeSort{\upsilon}}\;\theta} (\Frame{\interp{\judgeS[\Theta;\Gamma;\Delta, u:\upsilon]{S}}\;\theta\;\gamma\;(\delta,v)}{\interp{\judgeA{r}{\assert}}\;\theta\;\gamma\;\delta})$ \\
+        \oo Since framing distributes through meets, we know $\interp{\judgeS{Q u:\upsilon.\; (\Frame{S}{r)}}}\;\theta\;\gamma\;\delta = $ \\
+        \oox $\Frame{(\interp{Q}_{v \in \interp{\judgeSort{\upsilon}}\;\delta} \interp{\judgeS[\Theta; \Gamma; \Delta, u:\upsilon]{S}}\;\theta\;\gamma\;(\delta, v))}{(\interp{\judgeA{r}{\assert}}\;\theta\;\gamma\;\delta)}$ \\
+        \oo So we know $\interp{\judgeS{Q u:\upsilon.\; (\Frame{S}{r)}}}\;\theta\;\gamma\;\delta = $ \\
+        \oox $\Frame{\interp{\judgeS{Q u:\upsilon.\;S}}\;\theta\;\gamma\;\delta}{(\interp{\judgeA{r}{\assert}}\;\theta\;\gamma\;\delta)}$ \\
+        \oo So we know $\interp{\judgeS{\Frame{(Q u:\upsilon.\; S)}{r}}}\;\theta\;\gamma\;\delta = $ \\
+        \oox $\Frame{\interp{\judgeS{Q u:\upsilon.\;S}}\;\theta\;\gamma\;\delta}{(\interp{\judgeA{r}{\assert}}\;\theta\;\gamma\;\delta)}$ \\        
+      \end{tabbedproof}
+
+    \item Case \textsc{SpecQuantify3}:
+      \begin{tabbedproof}
+        \oo We know $\judgeS{Q y:B.\; S}$, where $Q \in \setof{\forall, \exists}$ \\
+        \oo We also know that $\Frame{(Q y:B.\; S)}{r} = Q y:B.\; (\Frame{S}{r})$ \\
+        \oo By the semantics, we know that $\interp{\judgeS{Q y:B.\; (\Frame{S}{r)}}}\;\theta\;\gamma\;\delta = $ \\
+        \oox $\interp{Q}_{v \in \interp{\judgeSort{B}}\;\theta} \interp{\judgeS[\Theta; \Gamma, y:B; \Delta]{\Frame{S}{r}}}\;\theta\;(\gamma, v)\;\delta$\\
+        \oo By induction, we know that for all appropriate $\theta\;\gamma'\;\delta$, 
+               $\interp{\judgeS[\Theta; \Gamma, y:B; \Delta]{\Frame{S}{r}}}\;\theta\;\gamma'\;\delta = $ \\
+        \oox $\Frame{\interp{\judgeS[\Theta; \Gamma, y:B; \Delta]{S}}\;\theta\;\gamma'\;\delta}{\interp{\judgeA[\Delta, y:B]{r}{\assert}}\;\theta\;\gamma'\;\delta}$ \\
+        \oo Now, choosing $\theta, \delta$ and $\gamma' = (\gamma, v)$, \\
+        \oox then $\interp{\judgeA[\Theta;\Gamma;\Delta, y:B]{r}{\assert}}\;\theta\;\gamma'\;\delta = 
+                                                   \interp{\judgeA{r}{\assert}}\;\theta\;\gamma\;\delta$ since $u \not\in \FV{r}$ \\
+        \oo So we know $\interp{\judgeS{Q y:B.\; (\Frame{S}{r)}}}\;\theta\;\gamma\;\delta = $ \\
+        \oox $\interp{Q}_{v \in \interp{\judgeSort{B}}\;\theta} (\Frame{\interp{\judgeS[\Theta;\Gamma;\Delta, y:B]{S}}\;\theta\;(\gamma, v)\;\theta\;\gamma\;\delta}{\interp{\judgeA{r}{\assert}}\;\theta\;\gamma\;\delta})$ \\
+        \oo Since framing distributes through meets, we know $\interp{\judgeS{Q y:B.\; (\Frame{S}{r)}}}\;\theta\;\gamma\;\delta = $ \\
+        \oox $\Frame{(\interp{Q}_{v \in \interp{\judgeSort{B}}\;\delta} \interp{\judgeS[\Theta; \Gamma, y:B; \Delta]{S}}\;\theta\;(\gamma, v)\;\theta\;\gamma\;\delta)}{(\interp{\judgeA{r}{\assert}}\;\theta\;\gamma\;\delta})$ \\
+        \oo So we know $\interp{\judgeS{Q y:B.\; (\Frame{S}{r)}}}\;\theta\;\gamma\;\delta = $ \\
+        \oox $\Frame{\interp{\judgeS{Q y:B.\;S}}\;\theta\;\gamma\;\delta}{(\interp{\judgeA{r}{\assert}}\;\theta\;\gamma\;\delta)}$ \\
+        \oo So we know $\interp{\judgeS{\Frame{(Q y:B.\; S)}{r}}}\;\theta\;\gamma\;\delta = $ \\
+        \oox $\Frame{\interp{\judgeS{Q y:B.\;S}}\;\theta\;\gamma\;\delta}{(\interp{\judgeA{r}{\assert}}\;\theta\;\gamma\;\delta)}$ \\        
+      \end{tabbedproof}
+
+    \item Case \textsc{SpecQuantify2}:
+      \begin{tabbedproof}
+        \oo We know $\judgeS{Q \alpha:\kappa.\; S}$, where $Q \in \setof{\forall, \exists}$ \\
+        \oo We also know that $\Frame{(Q \alpha:\kappa.\; S)}{r} = Q \alpha:\kappa.\; (\Frame{S}{r})$ \\
+        \oo By the semantics, we know that $\interp{\judgeS{Q \alpha:\kappa.\; (\Frame{S}{r)}}}\;\theta\;\gamma\;\delta = $ \\
+        \oox $\interp{Q}_{\tau \in \interp{\judgeSort{\kappa}}\;\theta} \interp{\judgeS[\Theta, \alpha:\kappa; \Gamma; \Delta]{\Frame{S}{r}}}\;(\theta, \tau)\;\gamma\;\delta$\\
+        \oo By induction, we know that for all appropriate $\theta'\;\gamma\;\delta$, 
+               $\interp{\judgeS[\Theta, \alpha:\kappa; \Gamma; \Delta]{\Frame{S}{r}}}\;\theta\;\gamma\;\delta = $ \\
+        \oox $\Frame{\interp{\judgeS[\Theta, \alpha:\kappa; \Gamma; \Delta]{S}}\;\theta\;\gamma\;\delta}{\interp{\judgeA[\Delta, \alpha:\kappa]{r}{\assert}}\;\theta\;\gamma\;\delta}$ \\
+        \oo Now, choosing $\theta' = (\theta, \tau)$ and $\gamma, \delta$ \\
+        \oox then $\interp{\judgeA[\Theta, \alpha:\kappa;\Gamma;\Delta]{r}{\assert}}\;\theta'\;\gamma\;\delta = 
+                                                   \interp{\judgeA{r}{\assert}}\;\theta\;\gamma\;\delta$ since $\alpha \not\in \FV{r, \Gamma, \Delta}$ \\
+        \oo So we know $\interp{\judgeS{Q \alpha:\kappa.\; (\Frame{S}{r)}}}\;\theta\;\gamma\;\delta = $ \\
+        \oox $\interp{Q}_{\tau \in \interp{\judgeSort{\kappa}}\;\theta} (\Frame{\interp{\judgeS[\Theta;\Gamma;\Delta, \alpha:\kappa]{S}}\;(\theta, \tau)\;\gamma\;\delta}{\interp{\judgeA{r}{\assert}}\;\theta\;\gamma\;\delta})$ \\
+        \oo Since framing distributes through meets, we know $\interp{\judgeS{Q \alpha:\kappa.\; (\Frame{S}{r)}}}\;\theta\;\gamma\;\delta = $ \\
+        \oox $\Frame{(\interp{Q}_{\tau \in \interp{\judgeSort{\kappa}}\;\theta} \interp{\judgeS[\Theta; \alpha:\kappa; \Gamma; \Delta]{S}}\;(\theta, \tau)\;\gamma\;\delta)}{\interp{\judgeA{r}{\assert}}\;\theta\;\gamma\;\delta})$ \\
+        \oo So we know $\interp{\judgeS{Q \alpha:\kappa.\; (\Frame{S}{r)}}}\;\theta\;\gamma\;\delta = $ \\
+        \oox $\Frame{\interp{\judgeS{Q \alpha:\kappa.\;S}}\;\theta\;\gamma\;\delta}{(\interp{\judgeA{r}{\assert}}\;\theta\;\gamma\;\delta)}$ \\
+        \oo So we know $\interp{\judgeS{\Frame{(Q \alpha:\kappa.\; S)}{r}}}\;\theta\;\gamma\;\delta = $ \\
+        \oox $\Frame{\interp{\judgeS{Q \alpha:\kappa.\;S}}\;\theta\;\gamma\;\delta}{(\interp{\judgeA{r}{\assert}}\;\theta\;\gamma\;\delta)}$ \\        
       \end{tabbedproof}
   \end{itemize}
 \end{proof}
