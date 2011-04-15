@@ -34,16 +34,17 @@ invariant must have ownership over the subject's data (its
 the subject. This direction of ownership is natural to verify with
 separation logic.
 
-However, we must explicitly maintain the \emph{other} direction of
-dependency as well --- we track everything which depends upon the
-subject, and modify them appropriately whenever the subject changes.
-However, the natural program invariant now becomes a global property:
-we need to know the full dependency graph covering all subjects and
-observers, so that we can say that the reads and is-read-by relations
-are relational transposes of one another. The global nature of this
-invariant means that a naive correctness proof will not respect the
-modular structure of the program --- if we modify the dependency graph
-in any way, we now have to re-verify the entire program!
+In addition, these programs must also explicitly maintain the
+\emph{other} direction of dependency as well --- we track everything
+which depends upon the subject, and modify them appropriately whenever
+the subject changes.  The natural program invariant now becomes a
+global property: we need to know the full dependency graph covering
+all subjects and observers, so that we can say that the reads and
+is-read-by relations are relational transposes of one another. The
+global nature of this invariant means that a naive correctness proof
+will not respect the modular structure of the program --- if we modify
+the dependency graph in any way, we now have to re-verify the entire
+program!
 
 However, the intention of the subject-observer pattern is precisely to
 allow the program to remain oblivious to the exact number and nature
@@ -72,25 +73,30 @@ Concretely, our contributions are as follows:
     command, and the program state which can depends upon that
     footprint. The lemmas are then phrased so that they refer only to
     the direct footprint of each command in the API. In addition, we
-    structure our lemmas to justify an unusual frame property for our
+    structure our lemmas to justify a ramified frame property for our
     abstract semantics, which we can use to verify different parts of
     an imperative dataflow network separately.
 
-    Unlike typical frame properties, the frame in our frame rule is
-    not the same in the pre- and the post-states. Instead, the two
-    sides of the frame are related by a \emph{ramification operator}
-    (so named in analogy to the ``ramification problem'' in AI), which
-    explains how local changes can alter our knowledge of the rest of
-    the heap.
+    To do this, we follow the recipe of the previous chapter, only now
+    in a more complicated setting. We introduce a domain-specific
+    separation logic of dataflow cells, and show how to specify cells
+    in such a way that they only mention their footprint, and use a
+    ramification operator to specify their effect on the rest of the
+    heap. In addition to the ramification operator itself, we also
+    need to specify several predicates and operators to let us reason
+    about the state of the dataflow heap.
 
-  \item To illustrate the utility of this proof technique, we verify
-    an imperative implementation of combinators implementing stream
-    transducers in the style of functional reactive programming. 
+  \item To show that this is actually a good technique for specifying
+    libraries, we use our specification to verify an imperative
+    implementation of combinators implementing stream transducers in
+    the style of functional reactive programming. This proof does not
+    need to know about the implementation of the dataflow library; it
+    works entirely in terms of the specification of dataflow cells.
 
-    Ultimately, clients can reason about the behavior of the imperative
-    implementation ``as if'' it were purely functional, even though it
-    is implemented using local state and imperative callback
-    procedures.
+    Ultimately, clients can reason about the behavior of the
+    imperative implementation ``as if'' it were purely functional,
+    even though it is implemented using local state and imperative
+    callback procedures.
 \end{itemize}
 
 \section{Demand-Driven Notification Networks}
@@ -135,7 +141,7 @@ $\ctext{read}\;a = [$\=$\letv{o}{\comp{!a.value}}{}$ \nextline
                      \>      \>                     \>$\letv{(v,r)}{exp}{}$ \nextline
                      \>      \>                     \>$\letv{\_}{\comp{a.value := v}}{}$\nextline
                      \>      \>                     \>$\letv{\_}{\comp{a.reads := r}}{}$ \nextline
-                     \>      \>                     \>$\letv{\_}{\ctext{setiter}\;(\ctext{add\_observer}\;a)\;r}{}$ \nextline
+                     \>      \>                     \>$\letv{\_}{\ctext{iterset}\;(\ctext{add\_observer}\;a)\;r}{}$ \nextline
                      \>      \>                     \>$\;\pair{v}{\ctext{singleton}\;a}])$ \nextline[1em]
 
 $\getref : \forall \alpha : \reftype{\alpha} \to \codetype{\alpha}$ \nextline
@@ -200,10 +206,16 @@ The type $\codetype{A}$ is a monadic type, representing the type of
 computations that can read cells. It supports the usual operations
 $\return e$ and $\bind e\; (\semfun{x}{e'})$, which embed a pure value
 into the $\ctext{code}$ type and implement sequential composition,
-respectively. In addition, the primitive operations on this monad 
-include reading a cell with the $\readcell cell$ function call, and 
-reading and modifying local state with the $\getref r$ and $\setref r\;v$
-operations. 
+respectively. In addition, the primitive operations on this monad
+include reading a cell with the $\readcell cell$ function call, and
+reading and modifying local state with the $\getref r$ and $\setref
+r\;v$ operations.
+
+The difference between $\readcell$ and $\getref$ or $\setref$ is that
+the first operation reads a cell, possibly furthere executing the code
+in that cell. In contrast, $\getref$ and $\setref$ are just the
+operations to update primitive pointers, lifted to live within the
+$\codetype{A}$ monad.
  
 The actual implementation is also given in
 Figure~\ref{notification-implementation}. The abstract type of code is
@@ -238,9 +250,13 @@ The $\return$ operation for the library simply returns its argument
 value and the empty set, since it doesn't read any cells. Likewise,
 $\bind e\;f$ will evaluate the first argument and pass the returned
 value to the function $f$. It will return the function's return value,
-together with the union of the two read sets. $\getref r$ and $\setref r\;v$
-simply read and update the reference, and return empty read sets, since
-neither of them read any cells. 
+together with the union of the two read sets. $\getref r$ and $\setref
+r\;v$ simply read and update the reference, and return empty read
+sets, since neither of them read any cells. The only reason we need 
+these operations in our interface is for typing reasons; we are defining
+a user-defined monad, and $\getref$ and $\setref$ lift the read and
+write operations of the underlying language into this monad, adding 
+the extra plumbing associated with it.
 
 Interesting things first happen with the $\readcell e$ operation. This
 function will first check to see if the cell has a memoized value
@@ -388,7 +404,7 @@ formula.}
 $Inv(H, \phi) \triangleq $ \\
 \;\;\= $$\=$ R_H^\dagger = O_H \land R_H^+ \mbox{ strict partial order }$ \\
     \> \> $\land\; R_H \subseteq V_H \times V_H \land unique(H)$ \\
-    \> \> $\land\; \satisfies{H}{\phi} \land heap(H)$ \\
+    \> \> $\land\; \satisfies{H}{\phi} \land heap(H) * \mathit{refs}(\phi)$ \\
 \end{tabbing}
 
 The auxiliary definitions we used in this definition are all given in
@@ -425,15 +441,19 @@ relation follows the general style of separation logic quite closely;
 in a sense, our abstract heap formulas are giving a domain-specific
 version of separation logic.
 
-The last clause $heap(H)$ finally connects the cell heap, which is a purely
-mathematical object, to the actual low-level heap the implementation
-uses. We ask that the global counter reference $counter$ point to an integer
-field equal to the size of the cell heap, and then use the iterated
-separating conjunction $\forall^*$ to require that for each cell in
-the cell heap, we have pointers to the appropriate code, value, read
-and observer fields. The read and observer fields point to values of
-type $\cellset$, each of which represent the appropriate sets of cells. 
-
+The last clause $heap(H)$ finally connects the cell heap, which is a
+purely mathematical object, to the actual low-level heap the
+implementation uses. We ask that the global counter reference
+$counter$ point to an integer field equal to the size of the cell
+heap, and then use the iterated separating conjunction $\forall^*$ to
+require that for each cell in the cell heap, we have pointers to the
+appropriate code, value, read and observer fields. The read and
+observer fields point to values of type $\cellset$, each of which
+represent the appropriate sets of cells.  Since none of the prior
+clauses say anything about the local state, we also use the
+$\mathit{refs}(\phi)$ function to take a formula, and assemble a
+collection of points-to assertions $r \pointsto v$ from each
+$\localref{r}{v}$ in our formula.
 
 \begin{figure}
 \mbox{}
@@ -459,7 +479,7 @@ $O_{(D, h)} = \comprehend{(c,c') \in D}{ c' \in obs(h(c)) }$ \\[1em]
 $unique(D,h) = \exists$\=$i : Fin(|D|) \to D.$\\
                        \>$i \circ (identity \circ h) = id \; \land (identity \circ h) \circ i = id$ \\[1em]
 
-$\satisfies{(D,h)}{\phi} = sat((D,h), D, h)$ \\[1em]
+$\satisfies{(D,h)}{\phi} = sat((D,h), D, \phi)$ \\[1em]
 
 $sat(H, D, \localref{r}{v}) = \top$ \\
 $sat(H, D, I) = \top$ \\
@@ -482,7 +502,13 @@ $heap(D,h) = $ \\
                          \>$c.obs   \pointsto v_o \;* $ \\
                          \>$c.id    = identity(h(cell)) \;\land$ \\
                          \>$set(D, v_r, reads(h(cell))) \;\land$ \\
-                         \>$set(D, v_o, obs(h(cell)))$ 
+                         \>$set(D, v_o, obs(h(cell)))$ \\[1em]
+
+$\mathit{refs}(I) \qquad\qquad\qquad$\=$= \emp$ \\
+$\mathit{refs}(\phi \otimes \psi) $\>$= \mathit{refs}(\phi) * \mathit{refs}(\psi)$ \\
+$\mathit{refs}(\cellneg{c}{e}) $\>$= \emp$ \\
+$\mathit{refs}(\cellpos{c}{e}{v}{r}) $\>$= \emp$ \\
+$\mathit{refs}(\localref{r}{v}) $\>$= r \pointsto v$ \\
 \end{tabbing}
 
 \caption{Definitions for Heap Invariant}
@@ -526,6 +552,13 @@ the traditional safety monotonicity and frame lemmas. For example, the
 $\updatecell$ operation certainly does not act locally --- it
 recursively traverses the observers set, possibly mutating a very
 large part of the cell graph.
+
+\subsection{Correctness of $\newcell$ and $\updatecell$}
+
+In this subsection, I will prove the correctness of the two operations
+in our interface which lie outside the $\codetype{A}$
+monad. Specifications and proofs of the operations in the monad will
+follow, afterwards.
 
 \subsubsection{Correctness of $\updatecell$}
 
@@ -1014,7 +1047,7 @@ Then we can hide $H'$ behind an existential to establish the postcondition.
 \label{ramify-def}
 \end{figure}
 
-\subsection{Ramified Frame Properties}
+\section{Ramified Frame Properties}
 
 Ironically, this strategy is sufficient for $\newcell$and
 $\updatecell$, but is not adequate for defining a frame property
@@ -1405,10 +1438,7 @@ that construct and produce notifications.
 \end{figure}
 
 
-
-
-
-\subsubsection{Proving the correctness of \textsc{AUnit}}
+\subsection{Proving the correctness of \textsc{AUnit}}
 \begin{prop*}{(The \textsc{AUnit} specification is sound)}
 The following triple is derivable:
 \begin{displaymath}
@@ -1428,7 +1458,7 @@ The following triple is derivable:
 \end{tabbedproof}
 \end{proof}
 
-\subsubsection{Proving the correctness of \textsc{ABind}}
+\subsection{Proving the correctness of \textsc{ABind}}
 
 \begin{prop*}{(The \textsc{ABind} specification is sound)}
 The following specification is derivable:
@@ -1472,16 +1502,16 @@ specimp \\
 \end{tabbedproof}
 \end{proof}
 
-\subsubsection{Proving the correctness of \textsc{AReady}}
+\subsection{Proving the correctness of \textsc{AReady}}
 
 In this subsection, we will prove the following proposition: 
 
 \begin{prop*}{(The \textsc{AReady} specification is sound)}
 The following specification holds: 
 \begin{displaymath}
-\begin{array}{ll}
-  \setof{\ready{\phi}{c}{v}} \specimp \\
-& \forall \psi.\; \mspec{G(\phi \otimes \psi)}
+\begin{array}{l}
+\setof{\ready{\phi}{c}{v}} \specimp \\
+\;\;\;\forall \psi.\; \mspec{G(\phi \otimes \psi)}
                        {\readcell c}
                        {a}{G(\phi \otimes \psi) \land \exists z.\;a = (v, z) \land \mathit{set}(\setof{c}, z, \setof{c})} 
 \end{array}
@@ -1506,30 +1536,29 @@ The following specification holds:
 \end{tabbedproof}
 \end{proof}
 
-\subsubsection{Proving the correctness of \textsc{AUnready}}
+\subsection{Proving the correctness of \textsc{AUnready}}
 
 In this subsection, we will prove the following proposition:
 
 \begin{prop*}{(Soundness of the \text{AUnready} specification)}
 The following triple holds:
 \begin{displaymath}
+\begin{array}{l}
+\setof{\unready{\phi \otimes \celleither{c}{e}}{c}} \specand \\
+\forall \psi.\; \mspec{G(\phi \otimes \psi)}
+                     {e}
+                     {a}{G(\phi' \otimes R(u, \psi)) \land \exists z.\; a = (v, z) \land \mathit{set}(r, z, r)} \\
+\specimp \\
 \begin{array}{ll}
-\mbox{\textsc{AUnready}} & 
-  \setof{\unready{\phi \otimes \celleither{c}{e}}{c}} \specand \\
-& \forall \psi.\; \mspec{G(\phi \otimes \psi)}
-                       {e}
-                       {a}{G(\phi' \otimes R(u, \psi)) \land \exists z.\; a = (v, z) \land \mathit{set}(r, z, r)} \\
-& \specimp \\
-& \begin{array}{ll}
-   \forall \psi. & \left<G(\phi \otimes \celleither{c}{e} \otimes \psi)\right> \\
-                 & \readcell c \\
-                 & \left<a.\; 
-                     \begin{array}{l}
-                       G(R(\setof{c}, \phi') \otimes \cellpos{c}{e}{v}{r} \otimes R(u \cup \setof{c}, \psi)) 
-                        \;\land \\
-                        \exists z.\;a = (v, z) \land \mathit{set}(\setof{c}, z, \setof{c})
-                     \end{array}\right> 
-  \end{array}
+ \forall \psi. & \left<G(\phi \otimes \celleither{c}{e} \otimes \psi)\right> \\
+               & \readcell c \\
+               & \left<a.\; 
+                   \begin{array}{l}
+                     G(R(\setof{c}, \phi') \otimes \cellpos{c}{e}{v}{r} \otimes R(u \cup \setof{c}, \psi)) 
+                      \;\land \\
+                      \exists z.\;a = (v, z) \land \mathit{set}(\setof{c}, z, \setof{c})
+                   \end{array}\right> 
+\end{array}
 \end{array}
 \end{displaymath}
 \end{prop*}
@@ -1739,23 +1768,22 @@ Then it follows that for $H' = (D,h')$, we have $H', D' \models R(\setof{c}, \ph
 \begin{prop*}{(Soundness of the \text{AUnready} specification)}
 The following triple holds:
 \begin{displaymath}
+\begin{array}{l}
+\setof{\unready{\phi \otimes \celleither{c}{e}}{c}} \specand \\
+\forall \psi.\; \mspec{G(\phi \otimes \psi)}
+                     {e}
+                     {a}{G(\phi' \otimes R(u, \psi)) \land \exists z.\; a = (v, z) \land \mathit{set}(r, z, r)} \\
+\specimp \\
 \begin{array}{ll}
-\mbox{\textsc{AUnready}} & 
-  \setof{\unready{\phi \otimes \celleither{c}{e}}{c}} \specand \\
-& \forall \psi.\; \mspec{G(\phi \otimes \psi)}
-                       {e}
-                       {a}{G(\phi' \otimes R(u, \psi)) \land \exists z.\; a = (v, z) \land \mathit{set}(r, z, r)} \\
-& \specimp \\
-& \begin{array}{ll}
-   \forall \psi. & \left<G(\phi \otimes \celleither{c}{e} \otimes \psi)\right> \\
-                 & \readcell c \\
-                 & \left<a.\; 
-                     \begin{array}{l}
-                       G(R(\setof{c}, \phi') \otimes \cellpos{c}{e}{v}{r} \otimes R(u \cup \setof{c}, \psi)) 
-                        \;\land \\
-                        \exists z.\;a = (v, z) \land \mathit{set}(\setof{c}, z, \setof{c})
-                     \end{array}\right> 
-  \end{array}
+ \forall \psi. & \left<G(\phi \otimes \celleither{c}{e} \otimes \psi)\right> \\
+               & \readcell c \\
+               & \left<a.\; 
+                   \begin{array}{l}
+                     G(R(\setof{c}, \phi') \otimes \cellpos{c}{e}{v}{r} \otimes R(u \cup \setof{c}, \psi)) 
+                      \;\land \\
+                      \exists z.\;a = (v, z) \land \mathit{set}(\setof{c}, z, \setof{c})
+                   \end{array}\right> 
+\end{array}
 \end{array}
 \end{displaymath}
 \end{prop*}
@@ -1797,7 +1825,7 @@ The following triple holds:
 \ooo Furthermore we know that this $H'$ preserves the relevant order structure \\
 \ooo $\letv{\_}{[a.value := v']}{}$ \\
 \ooo $\letv{\_}{[a.reads := z]}{}$ \\
-\ooo $\letv{\_}{\mathsf{setiter}\;(\mathsf{add\_observer}\;a)\;z}{}$ \\
+\ooo $\letv{\_}{\mathsf{iterset}\;(\mathsf{add\_observer}\;a)\;z}{}$ \\
 \ooo These commands establish $\mathit{heap}(H')$ \\
 \ooo The last requires an induction based on the size of $r$ \\ 
 \oox and the unfolding axiom in the cellset interface \\
@@ -1808,7 +1836,7 @@ The following triple holds:
 \end{tabbedproof}
 \end{proof}
 
-\subsubsection{Proving the correctness of \textsc{AConseq}}
+\subsection{Proving the correctness of \textsc{AConseq}}
 
 \begin{prop*}{(The correctness of the \textsc{AConseq} specification)}
 The following specification is valid:
@@ -1835,6 +1863,76 @@ The following specification is valid:
 \ooo So we know there is an $H$ such that $\mathit{Inv}(H, \theta \otimes \psi)$ \\
 \ooo Since $\theta \vdash \theta'$, we know that $\mathit{Inv}(H, \theta' \otimes \psi)$ \\
 \ooo Hiding the existential, we get the poststate $G(\theta'\otimes R(u, \psi)) \land Q$ \\
+\end{tabbedproof}
+\end{proof}
+
+\subsection{Proving the correctness of \textsc{AGetRef}}
+\begin{prop*}
+The following specification is valid: 
+\begin{displaymath}
+\begin{array}{ll}
+    \forall \psi.\; 
+    &  \left<G(\localref{r}{v} \otimes \psi)\right> \\
+    &  \getref r \\
+    &  \left<a.\; G(\localref{r}{v} \otimes \psi) 
+                  \land  \exists z.\;a = (v,z) \land \mathit{set}(\emptyset, z, \emptyset)
+       \right> \\
+     \end{array}
+\end{displaymath}
+\end{prop*}
+\begin{proof}
+\begin{tabbedproof}
+\oo Assume we are in a prestate $G(\localref{r}{v} \otimes \psi)$ \\
+\oo So there is an $H = (D,h)$ such that $Inv(H, \localref{r}{v} \otimes \psi)$ holds \\
+\oo The spatial part of $Inv$ is $heap(H) * \mathit{refs}(\localref{r}{v} \otimes \psi)$ \\
+\oo This is the same as $heap(H) * {r}\pointsto{v} * \mathit{refs}(psi)$ \\
+\oo $[letv{x}{[!r]}{}$ \\
+\oo This leaves us in $Inv(H, \localref{r}{v} \otimes \psi) \land x = v$ \\
+\oo $\pair{v}{\ctext{emptyset}}]$ \\
+\oo $G(\localref{r}{v} \otimes \psi) \land a = \pair{v}{\ctext{emptyset}}$ \\
+\end{tabbedproof}
+\end{proof}
+
+\subsection{Proving the correctness of \textsc{ASetRef}}
+
+\begin{lemma}{(Preservation of Satisfiability under Local Store Changes)}
+We need $\satisfies{H}{\localref{r}{v} \otimes \psi}$ if and only if $\satisfies{H}{\localref{r}{v'} \otimes \psi}$ holds.
+\end{lemma}
+\begin{proof}
+This follows by an easy induction on $\psi$, since $sat(H, D, \localref{r}{v}) = \top$. 
+\end{proof}
+
+\ \\
+
+\begin{prop*}
+The following specification is valid:
+\begin{displaymath}
+\begin{array}{ll}
+\forall \psi.\; 
+  &    \left<G(\localref{r}{v'} \otimes \psi)\right> \\
+  &    \setref r\;v \\
+  &    \left<a.\; G(\localref{r}{v} \otimes \psi) 
+                  \land  \exists z.\;a = (v,z) \land \mathit{set}(\emptyset, z, \emptyset)
+       \right> 
+\end{array}
+\end{displaymath}
+\end{prop*}
+
+\begin{proof}
+\begin{tabbedproof}
+\oo Assume we are in a prestate $G(\localref{r}{v'} \otimes \psi)$ \\
+\oo Then there is an $H$ such that $R^\dagger_H$ and  $R^+_H$ is a strict partial order, \\
+\oo and $R_H \subseteq V_H \times V_H$ and $\mathit{unique}(H)$ and $\satisfies{H}{\localref{r}{v'} \otimes \phi}$ \\
+\oo and spatially $\mathit{heap}(H) * \mathit{refs}(\localref{r}{v'} \otimes \phi)$\\
+\oo The spatial part is equivalent to $\mathit{heap}(H) * r \pointsto v' * \mathit{refs}(\phi)$ \\
+\oo $[\letv{()}{[r := v]}{}$ \\
+\oo Hence $\mathit{heap}(H) * r \pointsto v * \mathit{refs}(\phi)$ \\
+\oo Hence $\mathit{heap}(H) * \mathit{refs}(\localref{r}{v} \otimes \phi)$ \\
+\oo By lemma, $\satisfies{H}{\localref{r}{v} \otimes \phi}$ \\
+\oo Hence $Inv(H, \localref{r}{v} \otimes \phi)$ \\
+\oo Hence $G(\localref{r}{v} \otimes \phi)$ \\
+\oo $\pair{\unit}{\ctext{emptyset}}]$ \\
+\oo Hence $G(\localref{r}{v} \otimes \phi) \land a = \pair{\unit}{\ctext{emptyset}}$ \\
 \end{tabbedproof}
 \end{proof}
 
