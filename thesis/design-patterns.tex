@@ -99,20 +99,26 @@ iterators. The operations the collection type supports are 1) creating
 new mutable collections, 2) adding new elements to an existing
 collection, and 3) querying a collection for its size. Adding new
 elements to a collection is a destructive operation which modifies the
-existing collection, whereas getting a collections size does not
+existing collection, whereas getting a collection's size does not
 modify the collection.
 
-The interface that the iterator type supports are 1) creating a new
-iterator on a collection, 2) destructively getting the next element
-from an iterator (returning an error value if the iterator is
-exhausted), and 3) operations to produce new iterators from old. The
-iterator transformations we support are 1) a filter operation, which
-takes an iterator along with a boolean predicate, and returns an
-iterator which enumerates the elements satisfying the predicate, and
-2) a parallel map operation, which takes two iterators and a
-two-argument function, and returns an iterator which returns the
-result of enumerating the elements of the two iterators in parallel,
-and applying the function to each pair of elements. 
+The interface that the iterator type supports includes:
+\begin{enumerate}
+\item creating a new iterator on a collection,
+\item destructively getting the next element from an iterator
+  (returning an error value if the iterator is exhausted), and
+\item transformations producing new iterators from old. The 
+  transformations we support are:
+  \begin{enumerate}
+  \item a filter operation, which takes an iterator along with a
+    boolean predicate, and returns an iterator which enumerates the
+    elements satisfying the predicate, and
+  \item a parallel map operation, which takes two iterators and a
+    two-argument function, and returns an iterator which returns the
+    result of enumerating the elements of the two iterators in
+    parallel, and applying the function to each pair of elements.
+  \end{enumerate}
+\end{enumerate}
 
 The aliasing protocol that our iterator protocol will satisfy is
 essentially the same as the one the Java standard libraries specify in
@@ -127,7 +133,7 @@ their documentation.
 
 \item An iterator is valid as long as none of its underlying state has
   been destructively modified from the time of the iterator's creation. An
-  iterators underlying state consists of any collections it depends
+  iterator's underlying state consists of any collections it depends
   on, as well as any iterators it was constructed from.
 
 \item It is legal to call functions on an iterator only when it 
@@ -206,10 +212,11 @@ the abstract state unchanged from pre- to post-condition, whereas
 destructive operations (such as adding or removing elements) will
 change the abstract state.
 
-On line \ref{decl:iterpred}, we assert the existence of the iterator predicate
-$\iterpred$.  It is also a four-place predicate, and has sort $\Pi
-\alpha:\star.\; \colltype(\alpha) \To \seqsort{\alpha} \To
-\powerset{\assert} \To \assert$, which we will write using an
+On line \ref{decl:iterpred}, we assert the existence of the iterator
+predicate $\iterpred$.  It is also a four-place predicate, and has
+sort $\Pi \alpha:\star.\; \colltype(\alpha) \To \seqsort{\alpha} \To
+\powerset{\Sigma \beta:\star.\;\colltype(\beta) \times \seqsort{\beta}
+  \times \;\assert} \To \assert$, which we will write using an
 expression like $\iterpred_\alpha(i, xs, S)$.
 
 The first argument (in our example, $\alpha$) is a type argument
@@ -224,13 +231,12 @@ more elements.
 
 Finally, we have a state argument for iterators, as well. In contrast
 to the case for collections, this argument is a set of propositions,
-representing an entire set of abstract states! The reason for this is
-that our interface will also support operations which allow building
-new iterators from old, and so an iterator might read many different
-collections to produce a single new element. As a result, we have to
-track the abstract state of each collection the iterator depends on,
-so that we can verify that we do not ever need to read a modified
-collection.
+representing an entire set of collection states. Since our interface
+supports operations which allow building new iterators from old, an
+iterator may access many different collections to produce a single new
+element. As a result, we have to track the state of each collection
+the iterator depends on, so that we can verify that we do not ever
+need to read a modified collection.
 
 \begin{figure}
 \mbox{}
@@ -244,7 +250,7 @@ $\exists \collpred :
         \Pi \alpha:\star.\; \colltype(\alpha) \To \seqsort{\alpha} \To \assert \To \assert.$ 
 \nextlinelabel{decl:iterpred}
 $\exists iter : 
-        \Pi \alpha:\star.\; \itertype(\alpha) \To \seqsort{\alpha} \To \powerset{\assert} \To \assert.$ 
+        \Pi \alpha:\star.\; \itertype(\alpha) \To \seqsort{\alpha} \To \powerset{\Sigma \alpha:\star.\; \colltype{\alpha} \times \seqsort{\alpha} \times \assert} \To \assert.$ 
 \nextlinelabel[0.5em]{decl:newcoll-type}
 $\exists \newcoll : 
          \forall \alpha:\star.\; \monad{(\colltype(\alpha))}.$
@@ -266,104 +272,108 @@ $\exists \newcoll :
                                  \to \monad{(\itertype(\alpha))}.$ 
 \nextlinelabel{decl:zip-type}
 $\exists$\=$ \mergeiter : 
-         \forall \alpha:\star.\; (\alpha \to \alpha \to \alpha) \times
+         \forall \alpha,\beta,\gamma:\star.\; (\alpha \to \beta \to \gamma) \times
                                  \itertype(\alpha) \times \itertype(\beta) 
-                                   \to \monad{(\itertype(\alpha))}.$
+                                   \to \monad{(\itertype(\gamma))}.$
 \nextlinelabel{decl:next-type}
 $\exists$\=$\nextiter : 
          \forall \alpha:\star.\; \itertype(\alpha) \to \monad{(\opttype{(\alpha)})}.$  
 \nextlinelabel[0.5em]{decl:newcoll-spec}
 
-\> $\forall \alpha.\; \spec{\emp}{\run{\newcoll[\alpha]}}
+\> $\forall \alpha.\; \mspec{\emp}{{\newcoll[\alpha]}}
                                  {a:\colltype(\alpha)}{\exists P.\; \collpred_\alpha(a, \epsilon,P)}$ $\specand$ 
 \nextlinelabel[0.5em]{decl:size-spec}
 
 \> $\forall \alpha, c, P, xs.\;$\=
-         $\setof{\collpred_\alpha(c, xs, P)}$
+         $\angles{\collpred_\alpha(c, xs, P)}$
 \nextline
-\> \>  $\run{\sizecoll[\alpha](c)}$ 
+\> \>  ${\addcoll[\alpha](c)}$ 
 \nextline
-\> \>  $\setof{a:\N.\; \collpred_\alpha(c, xs, P) \land a = |xs|}$  $\specand$ 
+\> \>  $\angles{a:\N.\; \collpred_\alpha(c, xs, P) \land a = |xs|}$  $\specand$ 
 \nextlinelabel[0.5em]{decl:add-spec}
 
  \> $\forall \alpha, c, P, x, xs.\;$\=
-               $\setof{\collpred_\alpha(c, xs, P)}$ 
+               $\angles{\collpred_\alpha(c, xs, P)}$ 
 \nextline
-\>\>         $\run{\sizecoll[\alpha](c, x)}$
+\>\>         ${\sizecoll[\alpha](c, x)}$
 \nextline
-\>\>         $\setof{a:1.\; \exists Q.\; \collpred_\alpha(c, x\cdot xs, Q)}$ $\specand$ 
+\>\>         $\angles{a:1.\; \exists Q.\; \collpred_\alpha(c, x\cdot xs, Q)}$ $\specand$ 
 
 \nextlinelabel[0.5em]{decl:remove-spec-1}
 
 \> $\forall \alpha, c, P.\; \spec{\collpred_\alpha(c, \epsilon, P)}
-                                        {\run{\removecoll[\alpha](c)}}
+                                        {{\removecoll[\alpha](c)}}
                                         {a:\opttype{(\alpha)}}
                                         {\collpred_\alpha(c, \epsilon, P) \land a = \None}$
 $\specand$ 
 \nextlinelabel{decl:remove-spec-2}
 \> $\forall \alpha, c, x, xs, P.$\=
-          $\setof{\collpred_\alpha(c, x\cdot xs, P)}$ 
+          $\angles{\collpred_\alpha(c, x\cdot xs, P)}$ 
 \nextline
-\>\> $\run{\removecoll[\alpha](c)}$ 
+\>\> ${\removecoll[\alpha](c)}$ 
 \nextline
-\>\> $\setof{a:\opttype{(\alpha)}.\;
+\>\> $\angles{a:\opttype{(\alpha)}.\;
              \exists Q.\;\collpred_\alpha(c, xs, Q) \land a = \Some(x)}$ 
 \nextlinelabel[0.5em]{decl:newiter-spec}
 
 \> $\specand \forall \alpha, c, P, xs.\;$\=
-            $\setof{\collpred_\alpha(c, xs, P)}$ 
+            $\angles{\collpred_\alpha(c, xs, P)}$ 
 \nextline
-\>\>$\run{\newiter[\alpha](c)}$
+\>\>${\newiter[\alpha](c)}$
 \nextline
-\>\>$\setof{a:A_i.\; \collpred(c, xs, P) * \iterpred(a, xs, \setof{P})}$ $\specand$ 
+\>\>$\angles{a:A_i.\; \collpred(c, xs, P) * \iterpred(a, xs, \setof{(\alpha, c, xs, P)})}$ $\specand$ 
 \nextlinelabel[0.5em]{decl:filter-spec}
 
  \> $\forall \alpha, p, i, S, xs.\;$\=
-         $\setof{\iterpred_\alpha(i, xs, S)}$ 
+         $\angles{\iterpred_\alpha(i, xs, S)}$ 
 \nextline
-\>\>   $\run{\filteriter[\alpha](p, i)}$
+\>\>   ${\filteriter[\alpha](p, i)}$
 \nextline
-\>\>   $\setof{a:A_i.\; \iterpred_\alpha(a, \mathit{filter}\; p\;xs, S)}$ $\specand$ 
+\>\>   $\angles{a:A_i.\; \iterpred_\alpha(a, \mathit{filter}\; p\;xs, S)}$ $\specand$ 
 \nextlinelabel[0.5em]{decl:zip-spec}
 
  \> $\forall \alpha, f, i, S,$\=$ xs, i', S', xs'.\;$ 
 \nextline
  \> \> 
-     $\setof{\iterpred_\alpha(i, S, xs) * \iterpred_\beta(i', S', xs')}$ 
+     $\angles{\iterpred_\alpha(i, S, xs) * \iterpred_\beta(i', S', xs') \land S \cap S' = \emptyset}$ 
 \nextline
- \> \> $\run{\mergeiter[\alpha](f, i, i')}$ 
+ \> \> ${\mergeiter[\alpha\;\beta\;\gamma](f, i, i')}$ 
 \nextline
- \> \> $\setof{a:A_i.\; \iterpred_{\alpha}(a, S \cup S', \mathit{map2}\;f\;xs\;xs')}$ $\specand$ 
+ \> \> $\angles{a:\itertype(\gamma).\; \iterpred_{\gamma}(a, S \cup S', \mathit{map2}\;f\;xs\;xs')}$ $\specand$ 
 \nextlinelabel[0.5em]{decl:next-spec-1}
 
- \> $\forall i, C, S.\;$\=
-      $\setof{\mathit{colls}(C, S) * \iterpred_\alpha(i, S, \epsilon)}$
+ \> $\forall i, S.\;$\=
+      $\angles{\mathit{colls}(S) * \iterpred_\alpha(i, S, \epsilon)}$
 \nextline  
-\>\>$\run{\nextiter(i)}$ 
+\>\>${\nextiter(i)}$ 
 \nextline
-\>\>$\setof{a:\opttype{(\alpha)}.\; \mathit{colls}(S) * \collpred_\alpha(i, S, \epsilon) \land a = \None}$ $\specand$ 
+\>\>$\angles{a:\opttype{(\alpha)}.\; \mathit{colls}(S) * \collpred_\alpha(i, S, \epsilon) \land a = \None}$ $\specand$ 
 \nextlinelabel[0.5em]{decl:next-spec-2}
 
- \> $\forall i,C, $\=$ S, x, xs.\;$ \= 
-      $\setof{\mathit{colls}(C, S) * \iterpred_\alpha(i, S, x \cdot xs)}$
+ \> $\forall i, $\=$ S, x, xs.\;$ \= 
+      $\angles{\mathit{colls}(S) * \iterpred_\alpha(i, x \cdot xs, S)}$
 \nextline
-\>\>\>$\run{\nextiter(i)}$
+\>\>\>${\nextiter(i)}$
 \nextline
-\>\>\>$\setof{a:\opttype{(\alpha)}.\; 
-              \mathit{colls}(C, S) * \iterpred_\alpha(i, S, xs) \land a = (\Some\;x)}$ 
+\>\>\>$\angles{a:\opttype{(\alpha)}.\; 
+              \mathit{colls}(S) * \iterpred_\alpha(i, S, xs) \land a = (\Some\;x)}$ 
 
 \end{specification}
 \caption{Interface to the Iterator Library}
 \label{iterator-interface}
 \end{figure}
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 \begin{figure}
 \mbox{}
 \begin{specification}
 \nextline
-$\mathit{colls}(\emptyset, \emptyset) \qquad\qquad\qquad\qquad\;\;$ \=$\equiv\;$\= $\emp$ 
+$\mathit{colls}(\emptyset) \qquad\qquad\qquad\qquad\;\;$ \=$\equiv\;$\= $\emp$ 
 \nextline
-$\mathit{colls}(\setof{(c,xs)} \cup C, \setof{P} \cup S)$ \> $\equiv$ \> $\collpred(c, xs, P) * \mathit{colls}(C, S)$ 
+$\mathit{colls}(\setof{(\alpha, c,xs , P)} \uplus S)$ \> $\equiv$ \> $\collpred_\alpha(c, xs, P) * \mathit{colls}(S)$ 
 
 \nextlinelabel[0.5em]{decl:mathfilter-impl}
 $\mathit{filter}\;p\;\epsilon \qquad\quad$\=$\equiv \epsilon$
@@ -417,26 +427,23 @@ this way, the abstract state behaves a bit like a time stamp, changing
 to some new state whenever a modification is made to the collection. 
 
 Similarly, the function call $\removecoll[\alpha](c)$ (declared on
-line \ref{decl:remove-decl}) removes an element from the collection
+line \ref{decl:remove-type}) removes an element from the collection
 $c$. We give this procedure two specifications, on lines
 \ref{decl:remove-spec-1} and \ref{decl:remove-spec-2}, corresponding
-to when the collection is empty, or not. 
-
-In the first specification (on line \ref{decl:remove-spec-1}), we
-begin with the precondition $\collpred_\alpha(c, \epsilon, P)$, and
-end in the postcondition $\collpred_\alpha(c, \epsilon, P) \land a =
-\None$. The fact that the abstract state remains $P$ means the
-collection is unchanged, and the return value $a$ equals $\None$, 
-an element of option type, indicating that there was no element to remove.
-
-In the second specification (on line \ref{decl:remove-spec-2}), we
-begin with the precondition $\collpred_\alpha(c, x\cdot xs, P)$, from
-which we can see that the collection is nonempty. Then, the postcondition
-is $\exists Q.\; \collpred_\alpha(c, xs, Q) \land a = \Some(x)$. 
-The value $\Some(x)$ is returned as the return value of the function,
-and the state of the collection changes to reflect that the element $x$
-has been removed --- including a change to the abstract state of the 
-collection. 
+to when the collection is empty, or not.  In the first specification
+(on line \ref{decl:remove-spec-1}), we begin with the precondition
+$\collpred_\alpha(c, \epsilon, P)$, and end in the postcondition
+$\collpred_\alpha(c, \epsilon, P) \land a = \None$. The fact that the
+abstract state remains $P$ means the collection is unchanged, and the
+return value $a$ equals $\None$, an element of option type, indicating
+that there was no element to remove.  In the second specification (on
+line \ref{decl:remove-spec-2}), we begin with the precondition
+$\collpred_\alpha(c, x\cdot xs, P)$, from which we can see that the
+collection is nonempty. Then, the postcondition is $\exists Q.\;
+\collpred_\alpha(c, xs, Q) \land a = \Some(x)$.  The value $\Some(x)$
+is returned as the return value of the function, and the state of the
+collection changes to reflect that the element $x$ has been removed
+--- including a change to the abstract state of the collection.
 
 As an aside, in practice it is usually more convenient to specify a
 procedure with a single Hoare triple, rather than multiple Hoare
@@ -489,8 +496,8 @@ a specification must have access to its footprint, and so we can hide
 state inside a predicate to control which operations are allowed.
 
 The $\mergeiter$ function is declared on line $\ref{decl:zip-type}$, and
-has type $\forall \alpha:\star.\; (\alpha \to \alpha \to \alpha) \times \itertype(\alpha) \times
-\itertype(\beta) \to \monad{(\itertype(\alpha \times \beta))}$.  Thus,
+has type $\forall \alpha,\beta,\gamma:\star.\; (\alpha \to \beta \to \gamma) \times \itertype(\alpha) \times
+\itertype(\beta) \to \monad{(\itertype(\gamma))}$.  Thus,
 a call $\mergeiter[\alpha](f, i_1, i_2)$ takes a function and two 
 iterators, and constructs a new iterator which steps over the two inputs in parallel,
 returning the result of $f$ applied to each pair of elements of $i_1$ and $i_2$. 
@@ -499,19 +506,20 @@ We specify calls $\mergeiter[\alpha](f, i_1, i_2)$ on line
 $\ref{decl:zip-spec}$, and it takes a precondition
 $\iterpred_\alpha(i_1, xs, S_1) * \iterpred_\alpha(i_2, ys, S_2)$.
 This means that we have state associated with two separate iterators,
-which we take to the postcondition $\iterpred_{\alpha\times\beta}(a,
+which we take to the postcondition $\iterpred_{\gamma}(a,
 \mathit{map2}\;f\;xs\;ys, S_1 \cup S_2)$. As with the $\filteriter$ function, 
 we consume the two input iterators to produce the return value iterator. 
 And also as with $\filteriter$, we use a mathematical function $\mathit{map2}$
 to specify the action on mathematical sequences. 
 
 One point worth noting is that it is important that the two argument
-iterators are separate from one another. In a functional program,
-there is no difficulty with a program $\mathit{map2}\;f\;xs\;xs$, because
-we are free to re-traverse a list multiple times. However, since
-traversing an iterator is a destructive operation, a call like
-$\mergeiter[\tau]\;f\;i\;i$ could (if it were allowed) give the wrong answer,
-for example by pairing consecutive elements of the iterator.
+iterators have separate state from one another. In a functional
+program, there is no difficulty with a program
+$\mathit{map2}\;f\;xs\;xs$, because we are free to re-traverse a list
+multiple times. However, since traversing an iterator is a destructive
+operation, a call like $\mergeiter[\alpha,\alpha,\beta]\;f\;i\;i$
+could (if it were allowed) give the wrong answer, for example by
+pairing consecutive elements of the iterator.
 
 The final operation in our interface is the $\nextiter$ function,
 declared on line \ref{decl:next-type}. The type of this function
@@ -529,22 +537,22 @@ on line \ref{decl:next-spec-2}, we give the specification for when
 the iterator is not exhausted.  
 
 In either case, the precondition for the function contains as one part
-the predicate $\mathit{colls}(C, S)$.  The assertion-level function
-$\mathit{colls}(C,S)$ is a function that iterates over a set of
-abstract states, and re-associates them with collection predicates
-(coming from the argument $C$) in the precondition, to form a
-predicate $\collpred_{\tau_1}(c_1, xs_1, S_1) * \ldots *
-\collpred_{\tau_n}(c_n, xs_n, S_n)$.  This expresses the requirement
-that we need \emph{all} of the collections $i$ depends on, all in the
-correct abstract state.
-
-This function is defined in Figure~\ref{iterator-interface-aux}.\footnote{Technically, 
-this is an abuse of notation, since primitive recursion is not well defined on
-sets, and so this ``function'' is nondeterministic.  The proper way
-to do this would be to introduce a three-place relation
-$\mathit{colls(C, S, R)}$ and put $R$ in the precondition
-state. However, as no confusion is possible I will retain the
-functional form.}
+the predicate $\mathit{colls}(S)$.  The assertion-level function
+$\mathit{colls}(S)$ is a function that iterates over a set of abstract
+states, and re-associates them with collection predicates (coming from
+the argument $S$) in the precondition, to form a predicate
+$\collpred_{\tau_1}(c_1, xs_1, S_1) * \ldots * \collpred_{\tau_n}(c_n,
+xs_n, S_n)$.  This expresses the requirement that we need access to
+\emph{all} of the collections $i$ depends on, all in the correct
+abstract state, in order to use it. 
+This function is defined in
+Figure~\ref{iterator-interface-aux}.\footnote{Technically, this is an
+  abuse of notation, since primitive recursion is not well defined on
+  sets.  The proper way to do this would be to introduce a binary
+  relation $\mathit{colls(S, R)}$ between state sets and predicates,
+  and putting $R$ in the precondition state. However, since the
+  separating conjunction is commutative, no confusion is possible and
+  I will retain the functional form.}
 
 In line \ref{decl:next-spec-1}, $\mathit{colls}(C, S)$ is joined with 
 the specification of the iterator, $\iterpred_\alpha(i, \epsilon, S)$. Note
@@ -566,15 +574,15 @@ style:
 2 \> $\letv{c_1}{\newcoll()}{}$ \\
 3 \> $\setof{\exists P'_1.\; coll(c_1, \epsilon, P'_1)}$ \\
 4 \> $\setof{coll(c_1, \epsilon, P_1)}$ \\
-5 \> $\letv{()}{\sizecoll(c_1, 4)}{}$ \\
+5 \> $\letv{()}{\addcoll(c_1, 4)}{}$ \\
 6 \> $\setof{\exists P'_2.\; coll(c_1, 4\cdot\epsilon, P'_2)}$ \\
 7 \> $\setof{coll(c_1, 4\cdot\epsilon, P_2)}$ \\
-8 \> $\letv{()}{\sizecoll(c_1, 3)}{}$ \\
-9 \> $\letv{()}{\sizecoll(c_1, 2)}{}$ \\
+8 \> $\letv{()}{\addcoll(c_1, 3)}{}$ \\
+9 \> $\letv{()}{\addcoll(c_1, 2)}{}$ \\
 10 \> $\setof{coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}$ \\
 11 \> $\letv{c_2}{\newcoll()}{}$ \\
-12 \> $\letv{()}{\sizecoll(c_2, 3)}{}$ \\
-13 \> $\letv{()}{\sizecoll(c_2, 5)}{}$ \\
+12 \> $\letv{()}{\addcoll(c_2, 3)}{}$ \\
+13 \> $\letv{()}{\addcoll(c_2, 5)}{}$ \\
 14\> $\setof{coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}$ \\
 15\> $\letv{i_1}{\newiter(c_1)}{}$ \\
 16\> $\{$\=$iter(i_1, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}, 2\cdot3\cdot4\cdot\epsilon)$
@@ -599,7 +607,7 @@ iter(i, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilo
 26 \> $\{$\= $n = 2 \land x = \ctext{Some }7 \;\land $\\
 \> \> $iter(i, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilon, Q_2)}, 7\cdot\epsilon)$ \\
 \> \> $*\; coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
-27 \> $\sizecoll(c_2, 17)$ \\
+27 \> $\addcoll(c_2, 17)$ \\
 28 \> $\{$\= $n = 2 \land x = \ctext{Some }7 \;\land $\\
 \> \> $iter(i, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilon, Q_2)}, 7\cdot\epsilon)$ \\ 
 \> \> $* \; (\exists Q_3.\; coll(c_2, 17\cdot5\cdot3\cdot\epsilon, Q_3)) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
@@ -623,7 +631,7 @@ $P_1$.\footnote{A useful analogy is the existential elimination rule
   existential by showing that our program is well-typed no matter what
   the contents of the existential are.}
 
-This permits us to $\sizecoll$ the element 4 to $c_1$ on line 5. Its
+This permits us to $\addcoll$ the element 4 to $c_1$ on line 5. Its
 specification puts the predicate $coll()$ on line 6 again into an
 existentially quantified state $P'_2$. So we again replace $P'_2$ with
 a fresh variable $P_2$ on line 7, and will elide these existential
@@ -660,7 +668,7 @@ On line 23, the $\sizecoll$ call on $c_2$ illustrates that we can
 call non-destructive methods while iterators are active. The call to
 $\nextiter(i)$ on line 24 binds $\ctext{Some }7$ to $x$, and the
 the iterator's sequence argument (line 27) shrinks by one element. On
-line 28, we call $\sizecoll(c_2, 17)$ the state of $c_2$ changes to
+line 28, we call $\addcoll(c_2, 17)$ the state of $c_2$ changes to
 $\exists Q_3.\; coll(c, 17\cdot 5 \cdot 3\cdot\epsilon, Q_3)$ (line
 27). So we can no longer call $\nextiter(i)$, since it needs $c_2$
 to be in the state $Q_2$.
@@ -710,11 +718,14 @@ $\colltype(\tau)$. Unlike the typical definition of purely functional
 linked lists in ML, the tails of a list are mutable references, rather
 than list values.
 
-The type of iterators, given in line \ref{decl:itertype-impl}, is very
-simple -- an iterator is just a pointer to a list. This type arises as
-follows. Since the tails of a linked list are themselves lists, we can
-represent an interior pointer to a list with a pointer to list, giving
-us the type of a pointer to a list as the type of iterators. 
+The type of iterators, given in line \ref{decl:itertype-impl}, is an
+inductive datatype, with one clause for each of the possible ways to
+construct a new iterator from an old one. This type arises as
+follows. When we filter an iterator (or merge two iterators), we
+simply store a function together with the iterator (or two iterators)
+that are given as inputs. For an iterator into a single collection, we
+store an interior pointer into the argument list, giving us the type
+of a pointer to a list as the type of the $\One$ constructor.
 
 Then, on line \ref{decl:listpred-impl}, we define the auxilliary
 predicate $\listpred(\tau, c, xs)$, which asserts that $c$ is a list
@@ -730,7 +741,7 @@ and whose tail is a collection representing $ys$.
 \nextlinelabel{decl:colltype-impl}
 $\Listcontent(\alpha) = \Nil \bnfalt \Cons\; \alpha \times \reftype{\Listcontent(\alpha)}$ 
 \nextline
-$\ctext{colltype}(\alpha) = \reftype{(\ctext{listcontent}(\alpha))}$ 
+$\ctext{colltype}(\alpha) = \reftype{(\Listcontent(\alpha))}$ 
 \nextlinelabel[0.5em]{decl:itertype-impl}
 $\itertype{(\alpha)} =$\=$\;\One\;\reftype{(\colltype{(\alpha)})} \bnfalt 
                           \Filter\;(\alpha \to bool) \times \itertype{(\alpha)}$
@@ -747,7 +758,7 @@ $\listcontentpred(\tau, \Cons(y,c), xs)$ \> $\equiv$ \>
 $collpred_\tau$\=$(c, xs, P) \equiv list(\tau, c, xs) \land P \land \mbox{exact}(P)$ 
 
 \nextlinelabel[0.5em]{decl:iterpred-impl}
-$\iterpred_\tau(\One\;i, xs, \setof{P}) \qquad\qquad$\=$\equiv \exists c.\; i \pointsto c * (P \wand (P \land (\top * \listpred(\tau, c, xs))))$ 
+$\iterpred_\tau(\One\;i, xs, \setof{(\tau, \_, \_, P)}) \qquad\qquad$\=$\equiv \exists c.\; i \pointsto c * (P \wand (P \land (\top * \listpred(\tau, c, xs))))$ 
 \nextline
 $\iterpred_\tau(\Filter(p, i), xs, S)$ \>$\equiv 
   \exists ys.\; \iterpred_\tau(i, ys, S) \land xs = \mathit{filter}\;p\;ys$ 
@@ -756,7 +767,7 @@ $\iterpred_{\tau}(\Merge(f, i_1, i_2), xs, S)$ \>$\equiv
   \exists S_1, ys, S_2, zs.$ 
 \nextline
   \> \qquad \= $\iterpred_\tau(i_1, ys, S_1) * \iterpred_\tau(i_2, zs, S_2) \;\land$
-\nextline \> \>$S = S_1 \cup S_2 \land xs = \mathit{map2}\;f\;ys\;zs$ 
+\nextline \> \>$S = S_1 \uplus S_2 \land xs = \mathit{map2}\;f\;ys\;zs$ 
 \end{specification}
 \caption{Type and Predicate Definitions of the Iterator Implementation}
 \label{iterator-pred-impl}
@@ -770,7 +781,7 @@ $\newcoll[\alpha] \equiv \comp{\newref{\alpha}{\Nil}}$
 \nextlinelabel[0.5em]{decl:sizecoll-impl}
 $\sizecoll[\alpha](c) \equiv $\=
          $[$\=$\letv{p}{\comp{!c}}{}$ 
-\nextline\> \>$\Run\;
+\nextline\> \>$\;
                \Listcase($\=$p,$ 
 \nextline\> \>                   \>$\Nil \to \comp{0},$
 \nextline\> \>                   \>$\Cons(\_, tl) \to 
@@ -779,7 +790,7 @@ $\sizecoll[\alpha](c) \equiv $\=
 \nextlinelabel[0.5em]{decl:addcoll-impl}
 $\addcoll[\alpha](c, x) \equiv [$
           \=$\letv{p}{\comp{!c}}{}$ 
-\nextline \>$\letv{c'}{\newref{\ctext{listcontent}(\alpha)}{p}}{}$ 
+\nextline \>$\letv{c'}{\newref{\Listcontent(\alpha)}{p}}{}$ 
 \nextline \>$c := \Cons(x, c')]$ 
 
 \nextlinelabel[0.5em]{decl:removecoll-impl}
@@ -846,7 +857,7 @@ iterator over a single collection, in the $\One(i)$ case.  Here,
 we have the following assertion: 
 
 \begin{displaymath}
-  \iterpred_\tau(\One(i), xs, P) \equiv 
+  \iterpred_\tau(\One(i), xs, \setof{(\tau, \_, \_, P)}) \equiv 
     \exists c.\; i \pointsto c * P \wand (P \land (\top * \listpred(\tau, c, xs)))
 \end{displaymath}
 
@@ -951,8 +962,8 @@ We have that
 \begin{displaymath}
 \forall \alpha, c, xs, P.\; \spec{\collpred_\alpha(c, xs, P)}{\sizecoll[\alpha](c)}{a:\N}
                                   {\collpred_\alpha(c, xs, P) \land a = |xs|}
-is valid.   
 \end{displaymath}
+is valid.   
 \end{lemma}
 
 \begin{proof}
@@ -1178,10 +1189,10 @@ Figure~\ref{iterator-implementation}. Assume $f, i, xs, S, i', xs', S'$ as
 hypotheses, and proceed with the proof as follows: 
 
 \begin{specification}
-\nextline $\setof{\iterpred_\alpha(i, xs, S) * \iterpred_\alpha(i',xs',S')}$ 
+\nextline $\setof{\iterpred_\alpha(i, xs, S) * \iterpred_\alpha(i',xs',S') \land S \cap S' = \emptyset}$ 
 \nextline $\Merge(f, i, i')$
 \nextline $\setof{\iterpred_\alpha(i, xs, S) * \iterpred_\alpha(i',xs',S') \land a = \Merge(f, i', i')}$ 
-\nextline $\{$\=$\iterpred_\alpha(i, xs, S) * \iterpred_\alpha(i',xs',S') \land S \cup S' = S \cup S' \land \mergemath\;f\;xs\;xs' = \mergemath\;f\;xs\;xs'$
+\nextline $\{$\=$\iterpred_\alpha(i, xs, S) * \iterpred_\alpha(i',xs',S') \land S \cup S' = S \uplus S' \land \mergemath\;f\;xs\;xs' = \mergemath\;f\;xs\;xs'$
 \nextline \> $\land a = \Merge(f, i', i')\}$ 
 \nextline $\{$\=$\exists i, i', S, S'.\; \iterpred_\alpha(i, xs, S) * \iterpred_\alpha(i',xs',S') \land S \cup S' = S \cup S' \land \mergemath\;f\;xs\;xs' = \mergemath\;f\;xs\;xs'$ 
 \nextline \> $\land a = \Merge(f, i', i')\}$ 
@@ -1192,15 +1203,15 @@ hypotheses, and proceed with the proof as follows:
 \begin{lemma}{(Correctness of $\nextiter$)}
 We have that 
 \begin{displaymath}
-  \forall \alpha, i, C, S, xs.\; 
+  \forall \alpha, i, S, xs.\; 
   \begin{array}{l}
-    \setof{\iterpred_\alpha(i, xs, S) * \mathit{colls}(C,S)} \\
+    \setof{\iterpred_\alpha(i, xs, S) * \mathit{colls}(S)} \\
     \nextiter[\alpha](i) \\
     \{a:\opttype{(\alpha)}.\; \\
       \qquad [(a = \None \land xs = \epsilon \land \iterpred_\alpha(i, xs, S)) \vee \\
       \qquad (\exists y, ys.\; a = \Some(y) \land xs = y\cdot ys \land \iterpred_\alpha(i, ys, S))]
        \\
-      \qquad * \mathit{colls}(C,S)\} \\
+      \qquad * \mathit{colls}(S)\} \\
   \end{array}
 \end{displaymath}
 \end{lemma}
@@ -1211,7 +1222,7 @@ of Figure~\ref{iterator-implementation}. To prove this, we will use fixed point 
 and assume that the specification above holds for an identifier named $\nextiter$, and
 use it to prove the correctness for the body of the function. 
 
-Assuming $\alpha, i, C, S, xs$, this proof will proceed by cases, on
+Assuming $\alpha, i, S, xs$, this proof will proceed by cases, on
 the structure of $i$. Then we can exploit the fact that we can unroll fixed
 points and beta-reduce expression to avoid proving the impossible branches (which
 in typical Hoare logic proofs are ruled out by getting false as a precondition). 
@@ -1220,8 +1231,8 @@ in typical Hoare logic proofs are ruled out by getting false as a precondition).
 \item Suppose $i = \One(i')$. Then, we proceed with an annotated proof as 
 follows: 
 \begin{specification}
-\nextline $\setof{\iterpred_\alpha(\One(i'), xs, S) * \mathit{colls}(C,S)}$ 
-\nextline $\setof{\exists P.\; \iterpred_\alpha(\One(i'), xs, \setof{P}) * \mathit{colls}_\alpha(C,\setof{P})}$ 
+\nextline $\setof{\iterpred_\alpha(\One(i'), xs, S) * \mathit{colls}(S)}$ 
+\nextline $\setof{\exists P.\; \iterpred_\alpha(\One(i'), xs, \setof{(\alpha, c, ys, P)}) * \mathit{colls}_\alpha(\setof{(\alpha, c, ys, P)})}$ 
 \nextline $\setof{\exists P.\; \iterpred_\alpha(\One(i'), xs, \setof{P}) * \collpred_\alpha(c, ys, P)}$
 \nextline $\setof{\exists c'.\; i' \pointsto c' * (P \wand (P \land (\top * \listpred(\alpha, c', xs)))) * \listpred(\alpha,c, ys) \land P \land \exact{P}}$ 
 \nextline $\setof{\exists c'. i' \pointsto c' * P \land \listpred(\alpha, c, ys) \land (\top * \listpred(\alpha, c', xs)) \land \exact{P}}$ 
@@ -1240,7 +1251,7 @@ follows:
 \nextline \> \> $\setof{a = \None \land ys = \epsilon \land i' \pointsto c' * P \land \listpred(\alpha, c, ys)  \land (\top * \listpred(\alpha, c', xs)) }$ 
 \nextline \> \> Restoring frame $\exact{P}$ 
 \nextline \> \> $\setof{a = \None \land xs = \epsilon \land i' \pointsto c' * P \land \listpred(\alpha, c, ys) \land (\top * \listpred(\alpha, c', xs)) \land \exact{P}}$ 
-\nextline \> \> $\setof{a = \None \land xs = \epsilon \land \iterpred_\alpha(i, xs, \setof{P}) * colls(C, \setof{P})}$
+\nextline \> \> $\setof{a = \None \land xs = \epsilon \land \iterpred_\alpha(i, xs, \setof{(\alpha, c, ys, P)}) * colls(\setof{(\alpha, c, ys, P)})}$
 \nextline \> $\Cons(z, c'') \to$ 
 \nextline \> \> Framing $\exact{P}$
 \nextline \> \> $\setof{v = \Cons(z, c'') \land i' \pointsto c' * P \land \listpred(\alpha,c,ys) \land (\top * c' \pointsto v * \listcontentpred(\alpha, v, xs))}$  
@@ -1254,83 +1265,83 @@ follows:
 \nextline \> \> Restoring frame $\exact{P}$ 
 \nextline \> \> $\setof{xs = z\cdot zs \land i' \pointsto c'' * P \land \listpred(\alpha,c,ys) \land (\top * \listpred(\alpha, c'', xs)) \land \exact{P}}$  
 \nextline \> \> $\setof{xs = z\cdot zs \land i' \pointsto c'' * (P \land \listpred(\alpha,c,ys) \land \exact{P}) * (P \wand (P \land (\top * \listpred(\alpha, c'', xs))))}$  
-\nextline \> \> $\setof{xs = z\cdot zs \land \collpred_\alpha(c, zs, P) * \iterpred_\alpha(\One(i'),zs,\setof{P})}$  
+\nextline \> \> $\setof{xs = z\cdot zs \land \collpred_\alpha(c, zs, P) * \iterpred_\alpha(\One(i'),zs,\setof{(\alpha, c, zs, P)})}$  
 \nextline \> \> $\Some(z)]$ 
-\nextline \> \> $\setof{a. \exists z, zs.\; xs = z\cdot zs \land a = \Some(z) \land \collpred_\alpha(c, zs, P) * \iterpred_\alpha(\One(i'),zs,\setof{P})}$  
+\nextline \> \> $\setof{a. \exists z, zs.\; xs = z\cdot zs \land a = \Some(z) \land \collpred_\alpha(c, zs, P) * \iterpred_\alpha(\One(i'),zs,\setof{(\alpha, c, zs, P)})}$  
 \end{specification}
 
 \item Suppose $i = \Filter(p, i')$. Then, we proceed with an annotated proof as 
 follows: 
 \begin{specification}
-\nextline $\setof{\iterpred_\alpha(\Filter(p, i'), xs, S) * \mathit{colls}(C,S)}$ 
+\nextline $\setof{\iterpred_\alpha(\Filter(p, i'), xs, S) * \mathit{colls}(S)}$ 
 \nextline $\setof{\exists ys. \iterpred_\alpha(i', ys, S) \land 
                               xs = \mathit{filter}\;p\;ys * 
-                              \mathit{colls}(C,S)}$   
+                              \mathit{colls}(S)}$   
 \nextline $\setof{xs = \mathit{filter}\;p\;ys \land
                   \iterpred_\alpha(i', ys, S) *
-                  \mathit{colls}(C,S)}$
+                  \mathit{colls}(S)}$
 \nextline $[\letv{v}{\nextiter[\alpha](i')}{}$ 
 \nextline \{\=$[(ys = \epsilon \land v = \None) \vee 
                 (\exists z, zs.\; ys = z\cdot zs \land v = \Some(z))] \land
                xs = \mathit{filter}\;p\;ys \;\land$ 
-\contline $\iterpred_\alpha(i', ys, S) * \mathit{colls}(C,S)$\}
+\contline $\iterpred_\alpha(i', ys, S) * \mathit{colls}(S)$\}
 \nextline \;$\Run$\=$\;\Listcase(v,$ 
 \nextline \> $\None$\=$ \to [\None]$ 
 \nextline \> \{$a = \None \land 
                (ys = \epsilon \land v = \None) \land 
                 xs = \mathit{filter}\;p\;ys \;\land
-                \iterpred_\alpha(i', ys, S) * \mathit{colls}(C,S)$\}
+                \iterpred_\alpha(i', ys, S) * \mathit{colls}(S)$\}
 \nextline \> \{$a = \None \land xs = \epsilon \land
                 xs = \mathit{filter}\;p\;ys \;\land
-                \iterpred_\alpha(i', ys, S) * \mathit{colls}(C,S)$\}
+                \iterpred_\alpha(i', ys, S) * \mathit{colls}(S)$\}
 \nextline \> \{$a = \None \land xs = \epsilon \land
                 \exists ys.\;
                 xs = \mathit{filter}\;p\;ys \;\land
-                \iterpred_\alpha(i', ys, S) * \mathit{colls}(C,S)$\}
+                \iterpred_\alpha(i', ys, S) * \mathit{colls}(S)$\}
 \nextline \> \{$a = \None \land xs = \epsilon \land
-                \iterpred_\alpha(\Filter(p, i'), xs, S) * \mathit{colls}(C,S)$\}
+                \iterpred_\alpha(\Filter(p, i'), xs, S) * \mathit{colls}(S)$\}
 \nextline \> $\Some(z)$\=$\to$
 \nextline \> \;\;\{\=$\exists zs.\; ys = z\cdot zs \land v = \Some(z) \land
                   xs = \mathit{filter}\;p\;(z\cdot zs) \;\land$ 
-\\ \> \> \>      $\iterpred_\alpha(i', zs, S) * \mathit{colls}(C,S)$\}
+\\ \> \> \>      $\iterpred_\alpha(i', zs, S) * \mathit{colls}(S)$\}
 \nextline \> \;\;\{\=$ys = z\cdot zs \land v = \Some(z) \land
                    xs = \mathit{filter}\;p\;(z\cdot zs) \;\land$ 
-\\ \> \> \>      $\iterpred_\alpha(i', zs, S) * \mathit{colls}(C,S)$\}
+\\ \> \> \>      $\iterpred_\alpha(i', zs, S) * \mathit{colls}(S)$\}
 \nextline \> \;\;$\ctext{if}($\=$p\;z,$ 
 \nextline \> \> \{\=$p\;z = \True \land ys = z\cdot zs \land v =\Some(z) \land
                    xs = \mathit{filter}\;p\;(z\cdot zs) \;\land$ 
-\\ \> \> \>      $\iterpred_\alpha(i', zs, S) * \mathit{colls}(C,S)$\}
+\\ \> \> \>      $\iterpred_\alpha(i', zs, S) * \mathit{colls}(S)$\}
 \nextline \> \> \{\=$ys = z\cdot zs \land v =\Some(z) \land
                    xs = z\cdot(\mathit{filter}\;p\;zs) \;\land$ 
-\\ \> \> \>      $\iterpred_\alpha(i', zs, S) * \mathit{colls}(C,S)$\}
+\\ \> \> \>      $\iterpred_\alpha(i', zs, S) * \mathit{colls}(S)$\}
 \nextline \> \> \{\=$v =\Some(z) \land
                    xs = z\cdot(\mathit{filter}\;p\;zs) \;\land
-                   \iterpred_\alpha(i', zs, S) * \mathit{colls}(C,S)$\}
+                   \iterpred_\alpha(i', zs, S) * \mathit{colls}(S)$\}
 \nextline \> \> \{\=$v =\Some(z) \land
                    xs = z\cdot(\mathit{filter}\;p\;zs) \;\land
                    \mathit{filter}\;p\;zs = \mathit{filter}\;p\;zs \;\land
-                   \iterpred_\alpha(i', zs, S) * \mathit{colls}(C,S)$\}
+                   \iterpred_\alpha(i', zs, S) * \mathit{colls}(S)$\}
 \nextline \> \> \{\=$v =\Some(z) \land
                    xs = z\cdot(\mathit{filter}\;p\;zs) \;\land
-                   \iterpred_\alpha(i', \mathit{filter}\;p\;zs, S) * \mathit{colls}(C,S)$\}
+                   \iterpred_\alpha(i', \mathit{filter}\;p\;zs, S) * \mathit{colls}(S)$\}
 \nextline \> \> \{\=$\exists z', zs'.\; v =\Some(z') \land
                      xs = z'\cdot zs' \land
-                   \iterpred_\alpha(i', zs', S) * \mathit{colls}(C,S)$\}
+                   \iterpred_\alpha(i', zs', S) * \mathit{colls}(S)$\}
 \nextline \> \> $[v],$
 \nextline \> \> \{\=$\exists z', zs'.\; a = \Some(z') \land
                      xs = z'\cdot zs' \land
-                   \iterpred_\alpha(i', zs', S) * \mathit{colls}(C,S)$\}
+                   \iterpred_\alpha(i', zs', S) * \mathit{colls}(S)$\}
 \\ \> \> \> (Now the else-branch)
 \nextline \> \> \{\=$p\;z = \False \land ys = z\cdot zs \land a = \Some(z) \land
                    xs = \mathit{filter}\;p\;(z\cdot zs) \;\land$ 
-\\ \> \> \>      $\iterpred_\alpha(i', zs, S) * \mathit{colls}(C,S)$\}
+\\ \> \> \>      $\iterpred_\alpha(i', zs, S) * \mathit{colls}(S)$\}
 \nextline \> \> \{\=$xs = \mathit{filter}\;p\; zs \;\land
-                     \iterpred_\alpha(i', zs, S) * \mathit{colls}(C,S)$\}
-\nextline \> \> \{\=$\iterpred_\alpha(\Filter(p, i'), xs, S) * \mathit{colls}(C,S)$\}
+                     \iterpred_\alpha(i', zs, S) * \mathit{colls}(S)$\}
+\nextline \> \> \{\=$\iterpred_\alpha(\Filter(p, i'), xs, S) * \mathit{colls}(S)$\}
 \nextline \> \> $\nextiter[\alpha](\Filter(p, i'))))$ 
-\nextline \> \> \{\=$(xs = \epsilon \land a = \None \land \iterpred_\alpha(\Filter(p, i'), xs, S) * \mathit{colls}(C,S)) \;\vee$ 
+\nextline \> \> \{\=$(xs = \epsilon \land a = \None \land \iterpred_\alpha(\Filter(p, i'), xs, S) * \mathit{colls}(S)) \;\vee$ 
 \contline \> \>  $(\exists z, zs. xs = z\cdot zs \land a = \Some(Z) \land
-                    \iterpred_\alpha(\Filter(p, i'), zs, S) * \mathit{colls}(C,S))$\}   
+                    \iterpred_\alpha(\Filter(p, i'), zs, S) * \mathit{colls}(S))$\}   
 \end{specification}
 
 Note that this is not a structural induction on $i$; the
@@ -1341,146 +1352,146 @@ use of fixed-point induction in our proof of $\nextiter$.
 annotated proof as follows:
 
 \begin{specification}
-\nextline $\setof{\iterpred_\alpha(\Merge(f, i_1, i_2), xs, S) * \mathit{colls}(C,S)}$ 
+\nextline $\setof{\iterpred_\alpha(\Merge(f, i_1, i_2), xs, S) * \mathit{colls}(S)}$ 
 \nextline $\setof{\exists S_1, ys, S_2, zs.\; 
                     xs = \mathit{map2}\;f\;ys\;zs \land 
-                    S = S_1 \cup S_2 \land
+                    S = S_1 \uplus S_2 \land
                     \iterpred_\alpha(i_1, ys, S_1) * 
                     \iterpred_\alpha(i_2, zs, S_2) * 
-                    \mathit{colls}(C, S)}$ 
+                    \mathit{colls}(S)}$ 
 \nextline \{$xs = \mathit{map2}\;f\;ys\;zs \land 
-                  S = S_1 \cup S_2 \land$ 
+                  S = S_1 \uplus S_2 \land$ 
 \\ \>\;     $\iterpred_\alpha(i_1, ys, S_1) * 
                   \iterpred_\alpha(i_2, zs, S_2) * 
                   \mathit{colls}(C,S)$\}
 \nextline \{$xs = \mathit{map2}\;f\;ys\;zs \land 
-                  S = S_1 \cup S_2 \land$ 
+                  S = S_1 \uplus S_2 \land$ 
 \\ \>\;     $\iterpred_\alpha(i_1, ys, S_1) * 
                   \iterpred_\alpha(i_2, zs, S_2) * 
-                  \mathit{colls}(C,S_1) * \mathit{colls}(C, S - S_1)$\}
+                  \mathit{colls}(S_1) * \mathit{colls}(S_2)$\}
 \nextline $\letv{v_1}{\nextiter[\alpha](i_1)}{}$
 \nextline \{$xs = \mathit{map2}\;f\;ys\;zs \land 
-                  S = S_1 \cup S_2 \land$ 
+                  S = S_1 \uplus S_2 \land$ 
 \\ \>\;     $[(ys = \epsilon \land v_1 = \None \land \iterpred_\alpha(i_1, ys, S_1))$ 
 \\ \>\;\;    $\vee\; (\exists b, bs.\; ys = b\cdot bs \land v_1 = \Some(b) \land 
                                 \iterpred_\alpha(i, bs, S_1))] \;*$ 
 \\ \>\;     $\iterpred_\alpha(i_2, zs, S_2) * 
-             \mathit{colls}(C,S_1) * \mathit{colls}(C, S - S_1)$\}
+             \mathit{colls}(S_1) * \mathit{colls}(S_2)$\}
 \nextline \{$xs = \mathit{map2}\;f\;ys\;zs \land 
-                  S = S_1 \cup S_2 \land$ 
+                  S = S_1 \uplus S_2 \land$ 
 \\ \>\;     $[(ys = \epsilon \land v_1 = \None \land \iterpred_\alpha(i_1, ys, S_1))$ 
 \\ \>\;\;    $\vee\; (\exists b, bs.\; ys = b\cdot bs \land v_1 = \Some(b) \land 
                                 \iterpred_\alpha(i_1, bs, S_1))] \;*$ 
 \\ \>\;     $\iterpred_\alpha(i_2, zs, S_2) * 
-             \mathit{colls}(C,S_2) * \mathit{colls}(C, S - S_2)$\}
+             \mathit{colls}(S_1) * \mathit{colls}(S_2)$\}
 \nextline $\letv{v_2}{\nextiter[\alpha](i_2)}{}$ 
 \nextline \{$xs = \mathit{map2}\;f\;ys\;zs \land 
-                  S = S_1 \cup S_2 \land$ 
+                  S = S_1 \uplus S_2 \land$ 
 \\ \>\;     $[(ys = \epsilon \land v_1 = \None \land \iterpred_\alpha(i_1, ys, S_1))$ 
 \\ \>\;\;    $\vee\; (\exists b, bs.\; ys = b\cdot bs \land v_1 = \Some(b) \land 
                                 \iterpred_\alpha(i_1, bs, S_1))] \;*$ 
 \\ \>\;     $[(zs = \epsilon \land v_2 = \None \land \iterpred_\alpha(i_2, zs, S_2))$ 
 \\ \>\;\;    $\vee\; (\exists c, cs.\; ys = c\cdot cs \land v_2 = \Some(c) \land 
                                 \iterpred_\alpha(i_2, cs, S_2))] \;*$ 
-\\ \>\;     $\mathit{colls}(C,S_2) * \mathit{colls}(C, S - S_2)$\}
+\\ \>\;     $\mathit{colls}(S_2) * \mathit{colls}(S_1)$\}
 \nextline \{$xs = \mathit{map2}\;f\;ys\;zs \land 
-                  S = S_1 \cup S_2 \land$ 
+                  S = S_1 \uplus S_2 \land$ 
 \\ \>\;     $[(ys = \epsilon \land v_1 = \None \land \iterpred_\alpha(i_1, ys, S_1))$ 
 \\ \>\;\;    $\vee\; (\exists b, bs.\; ys = b\cdot bs \land v_1 = \Some(b) \land 
                                 \iterpred_\alpha(i_1, bs, S_1))] \;*$ 
 \\ \>\;     $[(zs = \epsilon \land v_2 = \None \land \iterpred_\alpha(i_2, zs, S_2))$ 
 \\ \>\;\;    $\vee\; (\exists c, cs.\; ys = c\cdot cs \land v_2 = \Some(c) \land 
                                 \iterpred_\alpha(i_2, cs, S_2))] \;*$ 
-\\ \>\;     $\mathit{colls}(C,S)$\}
+\\ \>\;     $\mathit{colls}(S)$\}
 \nextline $\Optcase(v_1$ 
 \nextline \;\;\; $\None$\=$ \to $ 
 \nextline \> \{$xs = \mathit{map2}\;f\;ys\;zs \land 
-                  S = S_1 \cup S_2 \land$ 
+                  S = S_1 \uplus S_2 \land$ 
 \\ \> \>\;     $(ys = \epsilon \land v_1 = \None \land \iterpred_\alpha(i_1, ys, S_1)) * $ 
 \\ \> \>\;     $[(zs = \epsilon \land v_2 = \None \land \iterpred_\alpha(i_2, zs, S_2))$ 
 \\ \> \>\;\;    $\vee\; (\exists c, cs.\; ys = c\cdot cs \land v_2 = \Some(c) \land 
                                 \iterpred_\alpha(i_2, cs, S_2))] \;*$ 
-\\ \> \>\;     $\mathit{colls}(C,S)$\}
+\\ \> \>\;     $\mathit{colls}(S)$\}
 \nextline \> \{$xs = \epsilon \land xs = \mathit{map2}\;f\;ys\;zs \land 
-                  S = S_1 \cup S_2 \land$ 
+                  S = S_1 \uplus S_2 \land$ 
 \\ \> \>\;     $(ys = \epsilon \land v_1 = \None \land \iterpred_\alpha(i_1, ys, S_1)) * $ 
 \\ \> \>\;     $[(zs = \epsilon \land v_2 = \None \land \iterpred_\alpha(i_2, zs, S_2))$ 
 \\ \> \>\;\;    $\vee\; (\exists c, cs.\; ys = c\cdot cs \land v_2 = \Some(c) \land 
                                 \iterpred_\alpha(i_2, cs, S_2))] \;*$ 
-\\ \> \>\;     $\mathit{colls}(C,S)$\}
+\\ \> \>\;     $\mathit{colls}(S)$\}
 \\ \> \>     The next line follows because it holds in either branch of the disjunction 
 \nextline \> \{$xs = \epsilon \land \iterpred_\alpha(\Merge(f, i_1, i_2), xs, S)
-               * \; \mathit{colls}(C,S)$\}
+               * \; \mathit{colls}(S)$\}
 \nextline \> $\None$ 
 \nextline \> \{$a = \None \land xs = \epsilon \land \iterpred_\alpha(\Merge(f, i_1, i_2), xs, S)
-               * \mathit{colls}(C,S) $\}
+               * \mathit{colls}(S) $\}
 \nextline \;\;\;$\Some(b)$\=$ \to $ 
 \nextline \> \{$xs = \mathit{map2}\;f\;ys\;zs \land 
-                  S = S_1 \cup S_2 \land$ 
+                  S = S_1 \uplus S_2 \land$ 
 \\ \> \>\;\;    $(\exists bs.\; ys = b\cdot bs \land v_1 = \Some(b) \land 
                                 \iterpred_\alpha(i_1, bs, S_1)) \;*$ 
 \\ \> \>\;     $[(zs = \epsilon \land v_2 = \None \land \iterpred_\alpha(i_2, zs, S_2))$ 
 \\ \> \>\;\;    $\vee\; (\exists c, cs.\; ys = c\cdot cs \land v_2 = \Some(c) \land 
                                 \iterpred_\alpha(i_2, cs, S_2))] \;*$ 
-\\ \> \>\;     $\mathit{colls}(C,S)$\}
+\\ \> \>\;     $\mathit{colls}(S)$\}
 \nextline \> $\Optcase(v_2,$ 
 \nextline \> \;\;\; $\None$\=$\to$ 
 \nextline \> \> \{$xs = \mathit{map2}\;f\;ys\;zs \land 
-                  S = S_1 \cup S_2 \land$ 
+                  S = S_1 \uplus S_2 \land$ 
 \\ \> \> \>\;\;    $(\exists bs.\; ys = b\cdot bs \land v_1 = \Some(b) \land 
                                 \iterpred_\alpha(i_1, bs, S_1)) \;*$
 \\ \> \> \>\;     $(zs = \epsilon \land v_2 = \None \land \iterpred_\alpha(i_2, zs, S_2))$ 
-\\ \> \> \>\;     $\mathit{colls}(C,S)$\}
+\\ \> \> \>\;     $\mathit{colls}(S)$\}
 
 \nextline \> \> \{$xs = \epsilon \land xs = \mathit{map2}\;f\;ys\;zs \land 
-                  S = S_1 \cup S_2 \land$ 
+                  S = S_1 \uplus S_2 \land$ 
 \\ \> \> \>\;\;    $(\exists bs.\; ys = b\cdot bs \land v_1 = \Some(b) \land 
                                 \iterpred_\alpha(i_1, bs, S_1)) \;*$
 \\ \> \> \>\;     $(zs = \epsilon \land v_2 = \None \land \iterpred_\alpha(i_2, zs, S_2))$ 
-\\ \> \> \>\;     $\mathit{colls}(C,S)$\}
+\\ \> \> \>\;     $\mathit{colls}(S)$\}
 
 \nextline \> \> \{$xs = \epsilon \land \iterpred_\alpha(\Merge(f, i_1, i_2), xs, S) * 
-                   \mathit{colls}(C,S)$\}
+                   \mathit{colls}(S)$\}
 \nextline \> \> $\None$,
 \nextline \> \> \{$a = \None \land xs = \epsilon \land \iterpred_\alpha(\Merge(f, i_1, i_2), xs, S) * 
-                   \mathit{colls}(C,S)$\}
+                   \mathit{colls}(S)$\}
 
 \nextline \> \;\;\; $\Some(c)$\=$ \to $ 
 \nextline \> \> \{$xs = \mathit{map2}\;f\;ys\;zs \land 
-                  S = S_1 \cup S_2 \land$ 
+                  S = S_1 \uplus S_2 \land$ 
 \\ \> \> \>\;\;    $(\exists bs.\; ys = b\cdot bs \land v_1 = \Some(b) \land 
                                 \iterpred_\alpha(i_1, bs, S_1)) \;*$
 \\ \> \> \>\;\;    $(\exists cs.\; ys = c\cdot cs \land v_2 = \Some(c) \land 
                                 \iterpred_\alpha(i_2, cs, S_2)) \;*$
 
-\\ \> \> \>\;     $\mathit{colls}(C,S)$\}
+\\ \> \> \>\;     $\mathit{colls}(S)$\}
 \nextline \> \> \{$xs = \mathit{map2}\;f\;ys\;zs \land 
-                  S = S_1 \cup S_2 \land$ 
+                  S = S_1 \uplus S_2 \land$ 
 \\ \> \> \>\;    $(ys = b\cdot bs \land v_1 = \Some(b) \land 
                                 \iterpred_\alpha(i_1, bs, S_1)) \;*$
 \\ \> \> \>\;    $(zs = c\cdot cs \land v_2 = \Some(c) \land 
                                 \iterpred_\alpha(i_2, cs, S_2)) \;*$
 
-\\ \> \> \>\;     $\mathit{colls}(C,S)$\}
+\\ \> \> \>\;     $\mathit{colls}(S)$\}
 
 \nextline \> \> \{$xs = (f\;b\;c) \cdot \mathit{map2}\;f\;bs\;cs \land 
-                  S = S_1 \cup S_2 \land$ 
+                  S = S_1 \uplus S_2 \land$ 
 \\ \> \> \>\;    $\iterpred_\alpha(i_1, bs, S_1)) * \iterpred_\alpha(i_2, cs, S_2)) \;*$
 
-\\ \> \> \>\;     $\mathit{colls}(C,S)$\}
+\\ \> \> \>\;     $\mathit{colls}(S)$\}
 
 \nextline \> \> \{$xs = (f\;b\;c) \cdot \mathit{map2}\;f\;bs\;cs \; \land$
 \\ \> \> \>\;    $\iterpred_\alpha(\Merge(f, i_1, i_2), \mathit{map2}\;f\;bs\;cs, S) \;*$
-\\ \> \> \>\;     $\mathit{colls}(C,S)$\}
+\\ \> \> \>\;     $\mathit{colls}(S)$\}
 
 \nextline \> \> $\Some(f\;b\;c)))$ 
 \nextline \> \> \{$a = (f\;b\;c) \land xs = (f\;b\;c) \cdot \mathit{map2}\;f\;bs\;cs \; \land$
 \\ \> \> \>\;    $\iterpred_\alpha(\Merge(f, i_1, i_2), \mathit{map2}\;f\;bs\;cs, S) \;*$
-\\ \> \> \>\;     $\mathit{colls}(C,S)$\}
+\\ \> \> \>\;     $\mathit{colls}(S)$\}
 
 \nextline \> \> \{$\exists v, vs.\; a = v \land xs = v \cdot vs \; \land$
 \\ \> \> \>\;    $\iterpred_\alpha(\Merge(f, i_1, i_2), vs, S) \;*$
-\\ \> \> \>\;     $\mathit{colls}(C,S)$\}
+\\ \> \> \>\;     $\mathit{colls}(S)$\}
 
 
 \end{specification}
@@ -1551,14 +1562,14 @@ Flyweight$($\=$I : (\ctext{char} \rightharpoonup \ctext{glyph}) \to \assert,\;\;
 % \\[0.5em]
 
 1 \qquad\=  $\forall$\=$c, h.\;$\=
-         $\{I(h)\}$ \\
-  \>\>\>$\run{\ctext{newglyph}(c)}$ \\
-  \>\>\>$\setof{a:\ctext{glyph}.\; I([h|c:a]) \land (c \in \domain{h} \implies a = h(c))}$ \\
+         $\angles{I(h)}$ \\
+  \>\>\>${\ctext{newglyph}(c)}$ \\
+  \>\>\>$\angles{a:\ctext{glyph}.\; I([h|c:a]) \land (c \in \domain{h} \implies a = h(c))}$ \\
   \> \!$\specand$ \\
 2 \> $\forall l, h, c.\;$\=
-     $\setof{I(h) \land l = h(c)}$ \\
-\>\> $\run{\ctext{getdata}(l)}$ \\
-\>\> $\setof{a:\chartp \times \fonttp.\;  I(h) \land a = (c,f)}$
+     $\angles{I(h) \land l = h(c)}$ \\
+\>\> ${\ctext{getdata}(l)}$ \\
+\>\> $\angles{a:\chartp \times \fonttp.\;  I(h) \land a = (c,f)}$
 %   \> \!$\specand$ \\
 % 4 \> $\{\forall l, l', c, c'.\;$\=$I \land glyph(l,c,f) \land glyph(l',c',f')
 %  \implies $ \\
@@ -1629,12 +1640,12 @@ Below, we define $\ctext{make\_flyweight}$ and its predicates:
 \nextline            \> $\lambda f:$\=$\fonttp.\;$
 \nextline \> $[$\=$\letv{t}{\ctext{newtable}()}{}$ 
 \nextline \> \> $\ctext{letv\;}$\=$\mathit{newglyph} =$ 
-\nextline \> \> \> \!\!$[\lambda c.[$\=$\ctext{letv}\; x = \ctext{lookup}(t, c)\ctext{ in}$
+\nextline \> \> \> \!\!$[\lambda c.[$\=$\ctext{letv}\; x = \ctext{lookup}(t, c)\;\ctext{in}$
 \nextline \> \>\>\> $\ctext{run}\;\ctext{case}(x,$\=
-$\None \to [$\=$\ctext{letv}\; r = [\newref{\ctext{glyph}}{c,f}] \ctext{ in}$
-\nextline \> \>\>\>\>\> $\ctext{letv } \_ = \ctext{update}(t, c, r) \ctext{ in }r],$ 
-\nextline \> \>\>\>\> $\Some(r) \to [r])] \ctext{ in}$ 
-\nextline \> \> $\ctext{letv\;}\mathit{getdata} = [\lambda r.\; [!r]] \ctext{ in}$ 
+$\None \to [$\=$\ctext{letv}\; r = [\newref{\ctext{glyph}}{c,f}] \;\ctext{in}$
+\nextline \> \>\>\>\>\> $\ctext{letv } \_ = \ctext{update}(t, c, r) \;\ctext{ in }\;r],$ 
+\nextline \> \>\>\>\> $\Some(r) \to [r])] \;\ctext{in}$ 
+\nextline \> \> $\ctext{letv\;}\mathit{getdata} = [\lambda r.\; [!r]] \;\ctext{in}$ 
 \nextline \> \> $(\mathit{newglyph}, \mathit{getdata})]$
 \\
 
@@ -1760,6 +1771,7 @@ of the frame rule, together with the dereference rule.
 Now, we can prove the correctness of the $\mathsf{make\_flyweight}$ function. To do
 this, we will assume a font argument $f$, and then prove the correctness of the body
 of the function.
+
 \begin{proof}
 \begin{tabbedproof}
 \oo We begin with an assumed $\emp$ precondition. \\
@@ -1815,16 +1827,16 @@ We give a specification for the subject-observer pattern below:
 3 \> $\exists \ctext{register} : A_s \times (\N \to \monad{1}) \to \monad{1},$ \\
 4 \> $\exists \ctext{broadcast} : A_s \times \N \to \monad{1}.$ \\
 \\[0.5em]
-5 \>$\forall n.\; \spec{\emp}{\run{\ctext{newsub}(n)}}{a:A_s}{sub(a, n, \epsilon)}$ \\
+5 \>$\forall n.\; \mspec{\emp}{{\ctext{newsub}(n)}}{a:A_s}{sub(a, n, \epsilon)}$ \\
 \> $\specand$ \\
-6 \> $\forall f, O, s, n, os. $\=$(\forall i, k. \spec{O(i)}{\run{f(k)}}{a:1}{O(k)})$ \\
-7\> \>$\specimp$\=$\setof{sub(s, n, os)}$ \\
-8\> \>          \>$\run{\ctext{register}(s, f)}$ \\
-9 \> \>          \>$\setof{a:1.\; sub(s, n, (O,f)\cdot os)}$ \\
+6 \> $\forall f, O, s, n, os. $\=$(\forall i, k. \mspec{O(i)}{{f(k)}}{a:1}{O(k)})$ \\
+7\> \>$\specimp$\=$\angles{sub(s, n, os)}$ \\
+8\> \>          \>${\ctext{register}(s, f)}$ \\
+9 \> \>          \>$\angles{a:1.\; sub(s, n, (O,f)\cdot os)}$ \\
 \> $\specand$ \\
-10 \> $\forall s,i,os,k.\; $\=$\setof{sub(s, i, os) * obs(os)}$ \\
-  \>                       \>$\run{\ctext{broadcast}}(s,k)$ \\
-  \>                       \>$\setof{a:1.\; sub(s, k, os) * obs\_at(os, k)}$ 
+10 \> $\forall s,i,os,k.\; $\=$\angles{sub(s, i, os) * obs(os)}$ \\
+  \>                       \>${\ctext{broadcast}}(s,k)$ \\
+  \>                       \>$\angles{a:1.\; sub(s, k, os) * obs\_at(os, k)}$ 
 \\[0.5em]
 $obs(\epsilon) \;\qquad\qquad $\=$\equiv \emp$ \\
 $obs((O,f)\cdot os) $\>$\equiv (\exists i.\; O(i)) * obs(os)$ 
@@ -1839,7 +1851,7 @@ On line 1 we assert the existence of a three-place predicate $sub(s,
 n, os)$. The first argument is the subject $s$'s whose state this
 predicate represents. The second argument $n$ is the data the
 observers depend on, and the field $os$ is a sequence of callbacks
-paired their invariants. That is, $os$ is a sequence of pairs,
+paired with their invariants. That is, $os$ is a sequence of pairs,
 consisting of the observer functions which act on a state, along with
 the predicate describing what that state should be.
 
@@ -1910,15 +1922,13 @@ The implementation follows:
 
 In line 1, we state concrete type of the subject $A_s$ is a pair of a
 pointer to a reference, and a pointer to a list of callback
-functions. (This is \emph{not} an existential quantifier.  Since our
-language is simply typed, we have no form of type abstraction and
-simply use $A_s$ as an abbreviation.)  On line 2, we define the
-three-place subject predicate, $sub(s,n,os)$. The first two subclauses
-of the predicate's body describe the physical layout of the subject,
-and assert that the first component of $s$ should point to $n$, and
-that the second component of $s$ should be a linked list containing
-the function pointers in $os$. (The $list$ predicate is described in
-Section 3, when we give the definition of the iterator predicates.)
+functions. On line 2, we define the three-place subject predicate,
+$sub(s,n,os)$. The first two subclauses of the predicate's body
+describe the physical layout of the subject, and assert that the first
+component of $s$ should point to $n$, and that the second component of
+$s$ should be a linked list containing the function pointers in
+$os$. (The $list$ predicate is described in Section 3, when we give
+the definition of the iterator predicates.)
 
 Then we require that $os$ be ``Good''. $Good$-ness is defined on lines
 3 and 4, and says a sequence of predicates and functions is good when
@@ -2015,7 +2025,7 @@ invariant.
 \subsubsection{Proof of the $\ctext{register}$ Function}
 \begin{proof}
 \begin{tabbedproof}
-\oo Assume we have $f, O, s, cs, n, os$ and the specification $\forall i,k.\;\spec{O(i)}{\run{f(k)}}{a:1}{O(k)}$ \\
+\oo Assume we have $f, O, s, cs, n, os$ and the specification $\forall i,k.\;\mspec{O(i)}{{f(k)}}{a:1}{O(k)}$ \\
 \ooo Assume we are in the prestate $\setof{\mathit{sub}((s,cs), n, os)}$ \\
 \ooo This state is equivalent to $s \pointsto n * \mathit{list}(cs, \mathit{map}\;\snd{}\;os) \land \mathit{Good}(os)$ \\
 \ooo By the definition of $\mathit{list}$, we know \\
@@ -2149,16 +2159,39 @@ these programs, and have demonstrated several examples including a verification
 of a subject-observer pattern specified along these lines. The tool includes
 automatic generation of loop invariants. 
 
+The style of invariant in our work and Parkinson's is very similar,
+and subject to similar limitations. Since each subject needs to know
+what its observers are, verifying programs with chains of
+subject-observers is extremely cumbersome. This is especially
+problematic given that GUI programs --- which are one of the primary
+uses of the subject-observer pattern --- rely upon chains of subjects
+and observers. 
+
 The work of Barnett and Naumann is also capable of reasoning about the
 subject-observer pattern, but only if all of the possible observers
 are known at verification.  Leino and Schulte~\cite{boogie-sub-obs}
 made use of Liskov and Wing's concept of history invariants or
 monotonic predicates~\cite{liskov-wing} to give a more modular
-solution. More recently, Shaner, Naumann and Leavens~\cite{ShanerLN07}
-gave a ``gray-box'' treatment of the subject-observer pattern.
-Instead of tracking the specifications of the observers in the
-predicate, they give a model program that should approximates the
-behavior of any actual notification method.
+solution. The idea in this work is to require the changes that a
+subject makes to ``increase the truth'' of the observer's predicate
+along some partial order. This is less flexible than the approach we
+took, though perhaps a little easier to use when it is
+applicable. Unfortunately, this work is not merely heavyweight, but
+entirely inapplicable for event-driven programs such as GUIs, since
+there is no natural partial order on user actions.
+
+More recently, Shaner, Naumann and Leavens~\cite{ShanerLN07} gave a
+``gray-box'' treatment of the subject-observer pattern.  Instead of
+tracking the specifications of the observers in the predicate, they
+give a model program that should approximates the behavior of any
+actual notification method. This works as long as the runtime
+dependencies are known statically enough to include them in the model
+programs --- again, a limitation which is problematic in the case of
+GUIs.
+
+Lest the reader get too depressed, in the following two chapters, I
+will give a solution to the problem of verifying invariants across
+dynamic chains of dependencies.
 
 Pierik, Clarke and de Boer~\cite{creational-invariants} formalize another
 extension to the Boogie framework which they name \emph{creation
