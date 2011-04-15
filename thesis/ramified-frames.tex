@@ -54,20 +54,20 @@ then, is to find a way of taking this piece of practical software
 engineering wisdom, and casting it into formal terms amenable to
 proof.
 
-Concretely, our contributions are as follows: 
+Concretely, this chapter's contributions are as follows: 
 
 \begin{itemize}
-  \item We define a library with a monadic API for writing
+  \item I define a library with a monadic API for writing
     demand-driven computations with dynamic dependencies and local
     state, and which is implemented as higher-order functions
     dynamically creating networks of imperative callbacks.
 
-    We then give an ``abstract semantics'' for this
-    library, structured as a set of separation logic lemmas about our
-    dataflow library. These lemmas permit \emph{modular} correctness
-    proofs about programs using this API, even in the face of the fact
-    that the program invariants must be defined globally upon the
-    whole callback network.
+    I give an ``abstract semantics'' for this library, structured as a
+    set of separation logic lemmas about our dataflow library. These
+    lemmas permit \emph{modular} correctness proofs about programs
+    using this API, even in the face of the fact that the program
+    invariants must be defined globally upon the whole callback
+    network.
 
     The key idea is to distinguish between the direct footprint of a
     command, and the program state which can depends upon that
@@ -77,17 +77,17 @@ Concretely, our contributions are as follows:
     abstract semantics, which we can use to verify different parts of
     an imperative dataflow network separately.
 
-    To do this, we follow the recipe of the previous chapter, only now
-    in a more complicated setting. We introduce a domain-specific
-    separation logic of dataflow cells, and show how to specify cells
-    in such a way that they only mention their footprint, and use a
-    ramification operator to specify their effect on the rest of the
-    heap. In addition to the ramification operator itself, we also
-    need to specify several predicates and operators to let us reason
-    about the state of the dataflow heap.
+    To do this, I follow the recipe laid out in the previous chapter,
+    only now in a more complicated setting. I introduce a
+    domain-specific separation logic of dataflow cells, and show how
+    to specify cells in such a way that they only mention their
+    footprint, and use a ramification operator to specify their effect
+    on the rest of the heap. In addition to the ramification operator
+    itself, we also need to specify several predicates and operators
+    to let us reason about the state of the dataflow heap.
 
   \item To show that this is actually a good technique for specifying
-    libraries, we use our specification to verify an imperative
+    libraries, I use this specification to verify an imperative
     implementation of combinators implementing stream transducers in
     the style of functional reactive programming. This proof does not
     need to know about the implementation of the dataflow library; it
