@@ -143,7 +143,22 @@ in the union-find algorithm.
                      \land (\ufcontains{\phi}{u}{v})}
             {\union(x, u)}
             {a:1}
-            {H(R([y/v], \phi))}$
+            {H(R([y/v], \phi))}$ 
+    \\ \> $\specand$
+    \nextline
+      $\setof{\forall \phi, a,b,x,y.\;H(\phi \otimes \elt{a}{b} \otimes \elt{x}{y}) \implies a \not= x}$
+    \\ \> $\specand$
+    \nextline
+      $\setof{\forall \phi.\;H(\phi) \implies H(I)}$
+    \\ \> $\specand$
+    \nextline
+      $\setof{\forall \phi, \psi.\;H(\phi \otimes \psi) \iff H(\psi \otimes \phi)}$
+    \\ \> $\specand$
+    \nextline
+      $\setof{\forall \phi.\;H(I \otimes \phi) \iff H(\phi)}$
+    \\ \> $\specand$
+    \nextline
+      $\setof{\forall \phi, \psi, \theta.\;H(\phi \otimes (\psi \otimes \theta)) \iff H((\phi \otimes \psi) \otimes \theta)}$
   \end{specification}
 
 \caption{Specification of Union Find Algorithm}
@@ -174,7 +189,7 @@ this little logic. There is also an atomic formula $\elt{x}{y}$, which
 says that $x$ is a term whose canonical representative is $y$. These
 formulas have the usual resource-aware interpretation of separation
 logic, so that $\elt{x}{y} \otimes \elt{a}{b}$ implies that $x \not=
-a$. \todo{Add these entailments as axioms} 
+a$. % \todo{Add these entailments as axioms} 
 
 We also give a simple judgement on formulas $\ufcontains{\phi}{x}{y}$,
 which lets us say that $\phi$ entails drawing the conclusion that
@@ -213,16 +228,21 @@ other than $x$. However, due to path compression, we can modify
 many other nodes in the forest, a fact which our domain-specific
 logic conceals. 
 
-Finally, on line 8, we give the specification of $\union$. Here, 
-we say that if $x$'s witness is $y$, and $u$'s witness is $v$, then 
-calling $\union(x,u)$ will equate the two equivalence classes, setting
-$x$'s witness to $v$. Furthermore, since this is globally visible, we
-need to push this ramification over the entire set of known 
-nodes $\phi$. Observe that unlike in the previous function we do not
-want local reasoning, since the purpose the $\union$ operation 
-is to globally broadcast the update. But the use of a ramification
-operator does \emph{structure} this update. 
+On line 8, we give the specification of $\union$. Here, we say that if
+$x$'s witness is $y$, and $u$'s witness is $v$, then calling
+$\union(x,u)$ will equate the two equivalence classes, setting $x$'s
+witness to $v$. Furthermore, since this is globally visible, we need
+to push this ramification over the entire set of known nodes
+$\phi$. Observe that unlike in the previous function we do not want
+local reasoning, since the purpose the $\union$ operation is to
+globally broadcast the update. But the use of a ramification operator
+does \emph{structure} this update.
 
+On lines 9-13, we add axioms corresponding to our domain-specific
+logic.  On line 9, we say that disjoint elements are disjoint, and on
+line 10 we say that we can forget the existence of elements (i.e., that
+this logic is like intuitionistic separation logic). On lines 11-13,
+we simply say that formulas are commutative, unital and associative. 
 
 \begin{figure}
 \mbox{}
@@ -381,7 +401,35 @@ two properties to verify the program itself, in an annotated specification style
   This proof follows from an easy induction on the derivation of $\ufcontains{\phi}{u}{v}$. 
 \end{proof}
 
+\begin{lemma}{(Disjointness of Elements)}
+  The formula $\forall \psi,a,b,x,y.\;H(\phi \otimes \elt{a}{b} \otimes \elt{x}{y}) \implies a \not= x$
+  is valid.   
+\end{lemma}
+\begin{proof}
+  \begin{tabbedproof}
+    \oo Assume $\psi,a,b,x,y$ and $H(\phi \otimes \elt{a}{b} \otimes \elt{x}{y})$ \\
+    \ooo So we know that there are $D, p,$ and $w$ such that $D, p, w \models \phi \otimes \elt{a}{b} \otimes \elt{x}{y}$ \\
+    \ooo By the definition of $\otimes$, we know that there are disjoint $D_1, D_2$ and $D_3$, such that\\
+    \ooox $D_1, p, w \models \phi$ \\
+    \ooox $D_2, p, w \models \elt{a}{b}$ \\
+    \ooox $D_3, p, w \models \elt{x}{y}$ \\
+    \ooo So we know $a \in D_2$ and $x \in D_3$ \\
+    \ooo Since $D_2$ and $D_3$ are disjoint, $a \not= x$ 
+  \end{tabbedproof}
+\end{proof}
 
+\begin{lemma}{(Structural Properties)}
+The following properties are valid:
+\begin{itemize}
+\item $\forall \phi.\;H(\phi) \implies H(I)$
+\item $\forall \phi,\psi.\;H(\phi \otimes \psi) \iff H(\psi \otimes \phi)$
+\item $\forall \phi.\;H(I \otimes \phi) \iff H(\phi)$
+\item $\forall \phi,\psi,\theta.\;H(\phi \otimes (\psi \otimes \theta)) \iff H((\phi \otimes \psi) \otimes \theta)$
+\end{itemize}
+\end{lemma}
+\begin{proof}
+These properties follow immediately from the semantics of assertions. 
+\end{proof}
 
 \subsection{Proof of $\ctext{find}$}
 
@@ -548,8 +596,8 @@ Then $D \cup \setof{x}, f, [w|x:x] \models \phi \otimes \elt{x}{x}$
 
 \begin{proof}
 \begin{tabbedproof}
-\oo To prove this, we want to exhibit $D_1, D_2$ such that $D \cup \setof{x} = D_1 \uplus D_2$, 
-   and $D_1, f, [w|x:x] \models phi$ and $D_2, f, [w|x:x] \models \elt{x}{x}$. \\ 
+\oo To prove this, we want to exhibit $D_1, D_2$ such that $D \cup \setof{x} = D_1 \uplus D_2$, \\
+\ox and $D_1, f, [w|x:x] \models \phi$ and $D_2, f, [w|x:x] \models \elt{x}{x}$. \\ 
 \oo Take $D_1 = D$ and $D_2 = \setof{x}$, which are disjoint since $x \not\in D$. \\ 
 \oo Note that $\setof{x}, f, [w|x:x] \models \elt{x}{x}$, since:  \\
 \oox $x \in \setof{x}$  \\
