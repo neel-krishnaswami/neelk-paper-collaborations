@@ -8,5 +8,5 @@ thesis:
 	bibtex thesis
 	pdflatex thesis
 	pdflatex thesis
-	scp thesis.pdf neelk@linux.gp.cs.cmu.edu:/afs/cs/users/neelk/www/thesis.pdf
+	scp thesis.pdf neelk@linux.gp.cs.cmu.edu:/afs/cs/user/neelk/www/thesis.pdf
 
