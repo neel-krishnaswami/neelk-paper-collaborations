@@ -51,7 +51,7 @@ syntax of types is given in figure~\ref{lang-type-syntax}.
 
 The basic kind structure of the language is given with the kinds
 $\kappa$, which range over the kind $\star$, the kind of ground
-monotypes, and higher kinds built from it $\kappa \to kappa$. We write
+monotypes, and higher kinds $\kappa \to \kappa$ built from it. We write
 all of these constructors with the letters $\tau$ and $\sigma$. The
 monotype constructors are the unit type $\unittype$, pair types $\tau
 \times \sigma$, sums $\tau + \sigma$, function space $\tau \to
@@ -443,9 +443,9 @@ set-theoretic semantics of the kinds as follows.
 
 \begin{displaymath}
   \begin{array}{l}
-    \interp{\kappa} = \comprehend{\tau}{\tau \mbox{ is $\beta$-normal, $\eta$-long} 
+    \interpset{\kappa} = \comprehend{\tau}{\tau \mbox{ is $\beta$-normal, $\eta$-long} 
                                         \mbox{ and } \judgeWK[\cdot]{\tau}{\kappa} } \\
-    \interp{\bigstar} = \comprehend{A}{A \mbox{ is $\beta$-normal, $\eta$-long} 
+    \interpset{\bigstar} = \comprehend{A}{A \mbox{ is $\beta$-normal, $\eta$-long} 
                                        \mbox{ and } \judgeWK[\cdot]{A}{\bigstar} }
   \end{array}
 \end{displaymath}
@@ -457,8 +457,8 @@ contexts to be a tuple of kinds, in the usual way:
 
 \begin{displaymath}
   \begin{array}{lcl}
-    \interp{\cdot} & = & \unittype \\
-    \interp{\Theta, \alpha:\kappa} & = & \interp{\Theta} \times \interp{\kappa} \\
+    \interpset{\cdot} & = & \unittype \\
+    \interpset{\Theta, \alpha:\kappa} & = & \interpset{\Theta} \times \interpset{\kappa} \\
   \end{array}
 \end{displaymath}
 
@@ -467,9 +467,10 @@ function taking the environment into the interpretation of kinds:
 
 \begin{displaymath}
   \begin{array}{lcl}
-    \interp{\judgeWK{\tau}{\kappa}} & \in & \interp{\Theta} \to \interp{\kappa} \\
-    \interp{\judgeWK{\tau}{\kappa}} & = & \semfun{\theta \in \interp{\Theta}}{\normalize{\theta_\Theta(\tau)}} \\
-    \interp{\judgeWK{A}{\bigstar}} & = & \semfun{\theta \in \interp{\Theta}}{\normalize{\theta_\Theta(A)}} \\
+    \interpset{\judgeWK{\tau}{\kappa}} & \in & \interpset{\Theta} \to \interpset{\kappa} \\
+    \interpset{\judgeWK{\tau}{\kappa}} & = & \semfun{\theta \in \interpset{\Theta}}{\normalize{\theta_\Theta(\tau)}} \\[1em]
+    \interpset{\judgeWK{A}{\bigstar}} & \in & \interpset{\Theta} \to \interpset{\bigstar} \\
+    \interpset{\judgeWK{A}{\bigstar}} & = & \semfun{\theta \in \interpset{\Theta}}{\normalize{\theta_\Theta(A)}} \\
   \end{array}
 \end{displaymath}
 
@@ -586,8 +587,8 @@ continuations.
 \end{displaymath}
 \begin{displaymath}
 \begin{array}{lcl}
-\mbox{Monotype} & = & \interp{\star} \\
-Loc    & = & \N \times \interp{\bigstar} \\
+\mbox{Monotype} & = & \interpset{\star} \\
+Loc    & = & \N \times \interpset{\bigstar} \\
 Loc(A) & = & \comprehend{(n, B) \in Loc}{A = B} \\[1em]
 % Loc    & = & \bigcup \setof{X \;|\; \exists A.\; (\judgeWK[\cdot]{A}{\bigstar}) \;\land\;X = Loc(A)} \\[1em]
 
@@ -608,7 +609,7 @@ Loc(A) & = & \comprehend{(n, B) \in Loc}{A = B} \\[1em]
   \interpmono{\judgeWK[\cdot]{\tau}{\star}}(K_-, K_+) \to
   \interpmono{\judgeWK[\cdot]{\sigma}{\star}}(K_+, K_-) \\
 
-\interpmono{\judgeWK[\cdot]{\reftype{A}}{\star}}(K_+, K_-) & = & Loc(A) \\
+\interpmono{\judgeWK[\cdot]{\reftype{A}}{\star}}(K_+, K_-) & = & Loc(\normalize{A}) \\
 
 % \interpmono{\judgeWK[\cdot]{\cont{\tau}}{\star}}(K_+, K_-) & = & 
 %     \interpmono{\judgeWK[\cdot]{\tau}{\star}}(K_-,K_+) \to K_+ \\
@@ -691,7 +692,7 @@ definition is given in Figure~\ref{interp-polytypes}.
 
 \begin{figure}
 \begin{displaymath}
-\begin{array}{lcl}\interp{\judgeWK{A}{\bigstar}} &\in& \interp{\Theta} \to (CPO_\bot \times CPO^{op}_\bot) \to CPO 
+\begin{array}{lcl}\interp{\judgeWK{A}{\bigstar}} &\in& \interpset{\Theta} \to (CPO_\bot \times CPO^{op}_\bot) \to CPO 
 \\[1em]
 \interp{\judgeWK{\tau}{\bigstar}}\;\theta\;(K_+,K_-) & = & 
     \interpmono{\judgeWK[\cdot]{\theta(\tau)}{\star}}(K_+, K_-) 
@@ -727,7 +728,7 @@ definition is given in Figure~\ref{interp-polytypes}.
 \interp{\judgeWK{\monad{A}}{\bigstar}}\;\theta\;(K_+,K_-) & = & 
    (\interp{\judgeWK{A}{\bigstar}}\;\theta\;(K_+,K_-) \to K_-) \to K_+
 \\
-\interp{\judgeWK{\reftype{A}}{\star}}\;\theta\;(K_+, K_-) & = & Loc(\normalize{\theta(A)}) 
+\interp{\judgeWK{\reftype{A}}{\star}}\;\theta\;(K_+, K_-) & = & Loc(\interpset{\judgeWK{A}{\bigstar}}\;\theta)
 \\
 \end{array}
 \end{displaymath}
