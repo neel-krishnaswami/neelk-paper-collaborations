@@ -483,9 +483,9 @@ denotes a function which turns it back into a substitution:
   \end{array}
 \end{displaymath}
 
-We then take the substitution $\theta_\Theta$ and substitutes for each
-of the free variables in $\tau$ (or $A$), and $\normalize{\tau}$
-computes the normal form of the type constructor $\tau$.
+The substitution $\theta_\Theta$ can be used to substitute for each of
+the free variables in $\tau$ (or $A$), and $\normalize{\tau}$ computes
+the normal form of the type constructor $\tau$.
 
 This means that the following theorems about the equality theory on
 type constructors are true: 
@@ -1909,7 +1909,8 @@ given in figure~\ref{lang-syntax}.
           {\judgeE{\Gamma}{e\;e'}{B}}
 \\
 \inferrule*[right=ETLam]
-          {\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e}{A}}
+          {\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e}{A} \\
+           \judgectx{\Theta}{\Gamma}}
           {\judgeE{\Gamma}{(\Fun{\alpha}{\kappa}{e})}{(\forall \alpha:\kappa.\;A)}}
 \and
 \inferrule*[right=ETapp]
@@ -2026,10 +2027,18 @@ We give the interpretation of contexts in
 Figure~\ref{lang-context-interp}. In this definition, we take the
 usual liberties in not explicitly giving the isomorphisms necessary to
 implement structural rules like Exchange. The definitions of the two
-mutually recursive interpretation functions, $\interpE{\judgeE{\Gamma}{e}{A}}$
-and $\interpC{\judgeC{\Gamma}{c}{A}}$, which interpret pure expressions and
-computations respectively, are given in
+mutually recursive interpretation functions,
+$\interpE{\judgeE{\Gamma}{e}{A}}$ and
+$\interpC{\judgeC{\Gamma}{c}{A}}$, which interpret pure expressions
+and computations respectively, are given in
 figure~\ref{lang-pure-interp} and figure~\ref{lang-monadic-interp}.
+
+In the types I give for these interpretation, for readability I elide
+occurences of $(K,K)$, since they never change and should be obvious
+from context. Furthemore, I confuse $n$-ary and iterated products, and 
+sometimes suppress contexts (e.g., write $\interp{A}\;\theta$ instead
+of $\interp{\judgeWK{A}{\bigstar}}\;\theta$) when it would either be
+cluttered or run off the page. 
 
 We also give a set of rules for deriving equalities between program
 expressions, in the figures from \ref{lang-pure-eq-1} to
@@ -2071,8 +2080,9 @@ judgments, and give their proofs in the following subsection.
 \begin{figure}
 \begin{displaymath}
   \begin{array}{lcl}
+    \interpE{\judgeE{\Gamma}{e}{A}} & \in & \Pi\; \theta:\interpset{\Theta}.\; \interp{\Theta \vdash \Gamma}\;\theta\to \interp{\judgeWK{A}{\bigstar}}\;\theta \\[1em] 
     \interpE{\judgeE{x_1:A_1, \ldots, x_n:A_n}{x_i}{A_i}}\;\theta\;\gamma
-       & = & \pi_i(\gamma)
+       & = & \pi_{x_1:A_1, \ldots, x_n:A_n \vdash x_i:A_i}(\gamma)
     \\
     \interpE{\judgeE{\Gamma}{\fun{x}{A}{e}}{A \to B}}\;\theta\;\gamma
        & = & \semfun{v}{\interpE{\judgeE{\Gamma, x:A}{e}{B}}\;\theta\;(\gamma, v)} \\
@@ -2138,7 +2148,7 @@ judgments, and give their proofs in the following subsection.
     & &\mbox{let } 
           s = \semfun{v}{\interpE{\judgeE{\Gamma,x:A}{e_1}{A}}\;\theta\;(\gamma,v)}  
        \mbox{ in}\\
-    & &\mbox{ }iter_A[i, s](a)
+    & &\mbox{ }\mathit{iter}_A[i, s](a)
    \\
    \interpE{\judgeE{\Gamma}{\comp{c}}{\monad{A}}}\;\theta\;\gamma
    & = & 
@@ -2176,8 +2186,11 @@ judgments, and give their proofs in the following subsection.
    \interpE{\judgeE{\Gamma}{e}{B}}\;\theta\;\gamma 
    & = & 
      \interpE{\judgeE{\Gamma}{e}{A}}\;\theta\;\gamma \mbox{ when } \judgeKeq{A}{B}{\bigstar}
-     \mbox{ by EKeq}
-   \\
+     \mbox{ by EKeq} \\[2em]
+  \mathit{iter}_A[i,f](0) & = & i \\
+  \mathit{iter}_A[i,f](n+1) & = & f(\mathit{iter}_A[i,f](n)) \\[1em]
+  \pi_{x_i} & = & \mbox{project the component corresponding to $x_i$ in a context $x_1:A_1, \ldots, x:_n:A_n$}\\
+
   \end{array}
 \end{displaymath}
 \caption{Interpretation of Pure Terms}
@@ -2187,16 +2200,18 @@ judgments, and give their proofs in the following subsection.
 \begin{figure}
 \begin{displaymath}
   \begin{array}{lcl}
+    \interpC{\judgeC{\Gamma}{c}{A}} 
+    & \in & \Pi \; \theta:\interpset{\Theta}.\; \interp{\Theta \vdash \Gamma}\;\theta\to T(\interp{\judgeWK{A}{\bigstar}}\;\theta) \\[1em] 
     \interpC{\judgeC{\Gamma}{e}{A}}\;\theta
     & = & 
-    \eta_{\interp{A}\;\theta} \circ \interpE{\judgeE{\Gamma}{e}{A}}\;\theta
+    \eta_{\interp{A}\;\theta} \circ (\interpE{\judgeE{\Gamma}{e}{A}}\;\theta)
     \\
     \interpC{\judgeC{\Gamma}{\letv{x}{e}{c}}{B}}\;\theta\;\gamma
     & = & 
-       \mbox{let }c : \interp{\monad{A}}\theta = \interpE{\judgeE{\Gamma}{e}{\monad{A}}}\;\theta\;\gamma \mbox{ in}\\
+       \mbox{let }m : \interp{\monad{A}}\theta = \interpE{\judgeE{\Gamma}{e}{\monad{A}}}\;\theta\;\gamma \mbox{ in}\\
     && \mbox{let }f : \interp{A}\theta \to \interp{\monad{B}}\theta = 
                   \lambda v.\;\interpE{\judgeE{\Gamma, x:A}{c}{B}}\;\theta\; (\gamma, v) \mbox{ in}\\
-    && \;\; f^{*}(c)
+    && \;\; f^{*}(m)
     \\
     \interpC{\judgeC{\Gamma}{!e}{A}}\;\theta\;\gamma
     & = &
@@ -2313,7 +2328,7 @@ judgments, and give their proofs in the following subsection.
           {\judgeE{\Gamma}{e}{A+B} \\
            \judgeE{\Gamma, z:A+B}{e'}{C}}
           {\judgeEq{\Gamma}{[e/z]e'}{\Case{e}{x}{[\inl{\;x}/z]e'}
-                                             {y}{[\inr{\;x}/z]e'}}{C}}
+                                             {y}{[\inr{\;y}/z]e'}}{C}}
 \\
 \inferrule*[right=EqMonad]
           {\judgeEqC{\Gamma}{c}{c'}{A}}
@@ -2439,6 +2454,7 @@ judgments, and give their proofs in the following subsection.
 \end{figure}
 
 \begin{lemma}{(Soundness of Weakening)}
+\label{soundness-of-weakening}
   Suppose $\judgeE[\Theta]{\Gamma}{e}{A}$. 
   \begin{enumerate}
    \item It is the case that 
@@ -2452,24 +2468,26 @@ judgments, and give their proofs in the following subsection.
 
 
 \begin{lemma}{(Soundness of Type Substitution)}
+\label{soundness-of-type-substitution}
 If we know that $\judgeWK{\tau}{\kappa}$, then 
-\begin{itemize}
+\begin{enumerate}
 \item If $\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e}{A}$, then 
-       $\interpE{\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e}{A}}\;(\theta,[\theta(\tau)])\;\gamma$ is
+       $\interpE{\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e}{A}}\;(\theta,\interpset{\tau}\;\theta)\;\gamma$ is
        equal to \\ $\interpE{\judgeE{[\tau/\alpha]\Gamma}{[\tau/\alpha]e}{[\tau/\alpha]A}}\;\theta\;\gamma$
 \item If $\judgeC[\Theta, \alpha:\kappa]{\Gamma}{c}{A}$, then 
-       $\interpC{\judgeC[\Theta, \alpha:\kappa]{\Gamma}{c}{A}}\;(\theta,[\theta(\tau)])\;\gamma$ 
+       $\interpC{\judgeC[\Theta, \alpha:\kappa]{\Gamma}{c}{A}}\;(\theta,\interpset{\tau}\;\theta)\;\gamma$ 
        is equal to \\ $\interpC{\judgeC{[\tau/\alpha]\Gamma}{[\tau/\alpha]c}{[\tau/\alpha]A}}\;\theta\;\gamma$
-\end{itemize}
+\end{enumerate}
 \end{lemma}\ \\
 
 
 \begin{lemma}{(Soundness of Substitution)}
+\label{soundness-of-substitution}
 \begin{enumerate}
 \item If we know that $\judgeE{\Gamma, y:A, \Gamma'}{e}{B}$ and $\judgeE{\Gamma}{e'}{A}$
   and $\Theta \vdash \theta$, 
   then \\ $\interpE{\judgeE{\Gamma}{[e'/y]e}{B}}\;\theta\;(\gamma,\gamma') = 
-        \interpE{\judgeE{\Gamma, y:A}{e}{B}}\;\theta 
+        \interpE{\judgeE{\Gamma, y:A, \Gamma'}{e}{B}}\;\theta 
                 \;\left(\gamma, 
                         \interpE{\judgeE{\Gamma}{e'}{A}}\;\theta\;\gamma,
                         \gamma'
@@ -2478,7 +2496,7 @@ If we know that $\judgeWK{\tau}{\kappa}$, then
 \item If we know that $\judgeC{\Gamma, y:A, \Gamma'}{c}{B}$ and $\judgeE{\Gamma}{e'}{A}$
   and $\Theta \vdash \theta$, 
   then \\ $\interpC{\judgeE{\Gamma}{[e'/y]c}{B}}\;\theta\;(\gamma,\gamma') = 
-        \interpC{\judgeC{\Gamma, y:A}{c}{B}}\;\theta \;
+        \interpC{\judgeC{\Gamma, y:A, \Gamma'}{c}{B}}\;\theta \;
                 \left(\gamma,
                       \interpC{\judgeE{\Gamma}{e'}{A}}\;\theta\;\gamma,
                       \gamma'
@@ -2487,6 +2505,7 @@ If we know that $\judgeWK{\tau}{\kappa}$, then
 \end{lemma}\ \\
 
 \begin{lemma}{(Soundness of Equality Rules)}
+\label{soundness-of-equality-rules}
 We have that:
 \begin{enumerate}
 \item If $\judgeEq{\Gamma}{e}{e'}{A}$, then $\judgeE{\Gamma}{e}{A}$ and 
@@ -2497,13 +2516,12 @@ $\interpE{\judgeE{\Gamma}{e}{A}} = \interpE{\judgeE{\Gamma}{e'}{A}}$.
 $\judgeC{\Gamma}{c'}{A}$ and 
 $\interpC{\judgeC{\Gamma}{c}{A}} = \interpC{\judgeC{\Gamma}{c'}{A}}$.
 \end{enumerate}
-\end{lemma}\ \\
-
+\end{lemma}
 
 
 \subsection{Proofs}
 
-\begin{lemma*}{(Soundness of Weakening)}
+\begin{lemma*}{(\ref{soundness-of-weakening}, page \pageref{soundness-of-weakening}: Soundness of Weakening)}
   Suppose $\judgeE[\Theta]{\Gamma}{e}{A}$. 
   \begin{enumerate}
    \item It is the case that 
@@ -2520,7 +2538,68 @@ $\interpC{\judgeC{\Gamma}{c}{A}} = \interpC{\judgeC{\Gamma}{c'}{A}}$.
 \end{proof}\\
 
 
-\begin{lemma*}{(Soundness of Substitution)}
+\begin{lemma*}{(\ref{soundness-of-type-substitution}, page \pageref{soundness-of-type-substitution}: Soundness of Type Substitution)}
+If we know that $\judgeWK{\tau}{\kappa}$, then 
+\begin{itemize}
+\item If $\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e}{A}$, then 
+       $\interpE{\judgeE[\Theta, \alpha:\kappa, \Theta']{\Gamma}{e}{A}}\;(\theta,\interpset{\tau}\;\theta, \theta')\;\gamma$ is
+       equal to \\ $\interpE{\judgeE{[\tau/\alpha]\Gamma}{[\tau/\alpha]e}{[\tau/\alpha]A}}\;\theta\;\gamma$
+\item If $\judgeC[\Theta, \alpha:\kappa]{\Gamma}{c}{A}$, then 
+       $\interpC{\judgeC[\Theta, \alpha:\kappa]{\Gamma}{c}{A}}\;(\theta,\interpset{\tau}\;\theta, \theta')\;\gamma$ 
+       is equal to \\ $\interpC{\judgeC{[\tau/\alpha]\Gamma}{[\tau/\alpha]c}{[\tau/\alpha]A}}\;\theta\;\gamma$
+\end{itemize}
+\end{lemma*}
+
+\begin{proof}
+  The proof is by induction on the structure of the typing derivation. The
+interesting case is: 
+
+\begin{itemize}
+\item case EHyp: 
+
+  \begin{eqnproof}
+        [\interpE{\judgeE[\Theta, \alpha:\kappa, \Theta']
+                         {\Gamma}
+                         {x_i}{A_i}}\;(\theta, \interpset{\tau}(\theta), \theta')\;\gamma]
+    \eline{\pi_{x_i}(\gamma)}
+          {Semantics}
+  \end{eqnproof}
+
+\noindent Now, observe that the tuple $\gamma$ is an element of $\interp{\Theta,\alpha:\kappa,\Theta' \vdash \Gamma}\;(\theta, \interpset{\tau}\;\theta, \theta')$.
+
+  \begin{eqnproof}[\interp{\Theta,\alpha:\kappa \vdash \Gamma}\;(\theta, \interpset{\tau}\;\theta) =]
+     \eline{\interp{\interp{\judgeWK[\Theta,\alpha:\kappa, \Theta']{A_1}{\bigstar}}\;
+                       (\theta, \interpset{\tau}\;\theta, \theta') 
+                    \times \ldots \times 
+                    \interp{\judgeWK[\Theta,\alpha:\kappa]{A_n}{\bigstar}}\;
+                       (\theta, \interpset{\tau}\;\theta, \theta')}}
+           {}
+     \eline{\interp{\judgeWK{[\tau/\alpha]A_1}{\bigstar}}\;(\theta, \theta')
+            \times \ldots \times 
+            \interp{\judgeWK{[\tau/\alpha]A_n}{\bigstar}}\;(\theta, \theta')}
+           {}
+     \eline{\interp{\Theta \vdash [\tau/\alpha]\Gamma}\;(\theta,\theta')}
+           {}
+  \end{eqnproof}
+
+So $\gamma$ is also an element of $\interp{\Theta,\Theta' \vdash [\tau/\alpha]\Gamma}\;(\theta,\theta')$ as well, and so 
+
+  \begin{eqnproof}[\interpE{\judgeE{[\tau/\alpha]\Gamma}{x_i}{[\tau/\alpha]A_i}}\;\theta\;\gamma=]
+    \eline{\pi_{x_i}(\gamma)}
+          {Semantics}
+    \eline{\interpE{\judgeE[\Theta, \alpha:\kappa, \Theta']
+                         {\Gamma}
+                         {x_i}{A_i}}\;(\theta, \interpset{\theta}\;\tau, \theta')\;\gamma}
+          {}
+  \end{eqnproof}
+
+\item other cases: 
+These all follow the structure of the derivation. 
+\end{itemize}
+\end{proof}\\
+
+
+\begin{lemma*}{(\ref{soundness-of-substitution}, page \pageref{soundness-of-substitution}: Soundness of Substitution)}
 \begin{enumerate}
 \item If we know that $\judgeE{\Gamma, y:A, \Gamma'}{e}{B}$ and $\judgeE{\Gamma}{e'}{A}$
   and $\Theta \vdash \theta$, 
@@ -2561,9 +2640,9 @@ $\interpE{\judgeE{\Gamma}{e}{A}}\;\theta$.)
     \begin{eqnproof}
       \eline{\interpE{\judgeE{\Gamma, \Gamma'}{x_i}{B}}\;\theta\;(\gamma, \gamma')}
             { Subst.}
-      \eline{\pi_i(\gamma, \gamma')}
+      \eline{\pi_{x_i}(\gamma, \gamma')}
             { Semantics}
-      \eline{\pi_i(\gamma, \interpE{\judgeE{\Gamma}{e'}{A}}\;\theta\;\gamma, \gamma')}
+      \eline{\pi_{x_i}(\gamma, \interpE{\judgeE{\Gamma}{e'}{A}}\;\theta\;\gamma, \gamma')}
             { Adjusting $i$ }
       \eline{\interpE{\judgeE{\Gamma, y:A, \Gamma'}{x_i}{B}}\;\theta\;(\gamma, \interpE{\judgeE{\Gamma}{e'}{A}}\;\theta, \gamma')}
             { Semantics}
@@ -3209,69 +3288,10 @@ Now, the cases for the computation terms follow.
 \end{proof}
 
 
-\begin{lemma*}{(Soundness of Type Substitution)}
-If we know that $\judgeWK{\tau}{\kappa}$, then 
-\begin{itemize}
-\item If $\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e}{A}$, then 
-       $\interpE{\judgeE[\Theta, \alpha:\kappa]{\Gamma}{e}{A}}\;(\theta,\tau(\theta))\;\gamma$ is
-       equal to \\ $\interpE{\judgeE{[\tau/\alpha]\Gamma}{[\tau/\alpha]e}{[\tau/\alpha]A}}\;\theta\;\gamma$
-\item If $\judgeC[\Theta, \alpha:\kappa]{\Gamma}{c}{A}$, then 
-       $\interpC{\judgeC[\Theta, \alpha:\kappa]{\Gamma}{c}{A}}\;(\theta,\tau(\theta))\;\gamma$ 
-       is equal to \\ $\interpC{\judgeC{[\tau/\alpha]\Gamma}{[\tau/\alpha]c}{[\tau/\alpha]A}}\;\theta\;\gamma$
-\end{itemize}
-\end{lemma*}
-
-\begin{proof}
-  The proof is by induction on the structure of the typing derivation. The
-interesting case is: 
-
-\begin{itemize}
-\item case EHyp: 
-
-  \begin{eqnproof}
-        [\interpE{\judgeE[\Theta, \alpha:\kappa]
-                         {\Gamma}
-                         {x_i}{A_i}}\;(\theta, {\tau(\theta)})\;\gamma]
-    \eline{\pi_i(\gamma)}
-          {Semantics}
-  \end{eqnproof}
-
-\noindent Now, observe that the tuple $\gamma$ is an element of $\interp{\Theta,\alpha:\kappa \vdash \Gamma}\;(\theta, \tau(\theta))$.
-
-  \begin{eqnproof}[\interp{\Theta,\alpha:\kappa \vdash \Gamma}\;(\theta, {\tau(\theta)}) =]
-     \eline{\interp{\interp{\judgeWK[\Theta,\alpha:\kappa]{A_1}{\bigstar}}\;
-                       (\theta, \tau(\theta)) 
-                    \times \ldots \times 
-                    \interp{\judgeWK[\Theta,\alpha:\kappa]{A_n}{\bigstar}}\;
-                       (\theta, \tau(\theta))}}
-           {}
-     \eline{\interp{\judgeWK{[\tau/\alpha]A_1}{\bigstar}}\;\theta 
-            \times \ldots \times 
-            \interp{\judgeWK{[\tau/\alpha]A_n}{\bigstar}}\;\theta}
-           {}
-     \eline{\interp{\Theta \vdash [\tau/\alpha]\Gamma}\;\theta}
-           {}
-  \end{eqnproof}
-
-So $\gamma$ is also an element of $\interp{\Theta \vdash [\tau/\alpha]\Gamma}\;\theta$ as well, and so 
-
-  \begin{eqnproof}[\interpE{\judgeE{[\tau/\alpha]\Gamma}{x_i}{[\tau/\alpha]A_i}}\;\theta\;\gamma=]
-    \eline{\pi_i(\gamma)}
-          {Semantics}
-    \eline{\interpE{\judgeE[\Theta, \alpha:\kappa]
-                         {\Gamma}
-                         {x_i}{A_i}}\;(\theta, \left<\theta(\tau)\right>)\;\gamma}
-          {}
-  \end{eqnproof}
-
-\item other cases: 
-These all follow the structure of the derivation. 
-\end{itemize}
-\end{proof}\\
 
 
 
-\begin{lemma*}{(Soundness of Equality Rules)}
+\begin{lemma*}{(\ref{soundness-of-equality-rules}, page \pageref{soundness-of-equality-rules}: Soundness of Equality Rules)}
 We have that:
 \begin{enumerate}
 \item If $\judgeEq{\Gamma}{e}{e'}{A}$, then $\judgeE{\Gamma}{e}{A}$ and 
@@ -3309,14 +3329,14 @@ proceed as follows:
 \item case EqPairFst: From $\judgeEq{\Gamma}{\fst{\pair{e_1}{e_2}}}{e_1}{A_1}$, we have:
 
   \begin{eqnproof}
-    \eclaim[1]{\judgeEq{\Gamma}{\fst{\pair{e_1}{e_2}}}{e_1}{A_1}}
+    \eclaim[1]{\judgeEq{\Gamma}{\fst{\pair{e_1}{e_2}}}{e_2}{A_1}}
               {Hypothesis}
     \eclaim[2]{\judgeE{\Gamma}{\pair{e_1}{e_2}}{A_1\times A_2}}
            {By inversion on 1}
     \eclaim[3]{\judgeE{\Gamma}{e_1}{A_1}}
               {By inversion on 2}
     \eclaim[4]{\judgeE{\Gamma}{\fst{\pair{e_1}{e_2}}}{A_1}}
-              {By rule EFst on 2}
+              {By rule ESnd on 2}
   \end{eqnproof}
 
   \begin{eqnproof}[\interpE{\judgeE{\Gamma}{\fst{\pair{e_1}{e_2}}}{A_1}}\;\theta\;\gamma =]
@@ -3415,27 +3435,27 @@ proceed as follows:
            {Hypothesis}
     \eclaim[2]{\judgeEq{\Gamma, x:A}{e\;x}{e'\;x}{B}}
               {Inversion}
-    \eclaim[3]{\judgeE{\Gamma,x:A}{e}{B}}
+    \eclaim[3]{\judgeE{\Gamma,x:A}{e\;x}{B}}
               {Induction}
-    \eclaim[4]{\judgeE{\Gamma,x:A}{e'}{B}}
+    \eclaim[4]{\judgeE{\Gamma,x:A}{e'\;}{B}}
               {Induction}
-    \eclaim[5]{\judgeE{\Gamma}{e}{B}}
-              {since $x\not \in FV(e)$}
-    \eclaim[6]{\judgeE{\Gamma}{e'}{B}}
-              {since $x\not \in FV(e')$}
+    \eclaim[5]{\judgeE{\Gamma}{e}{A \to B}}
+              {Inversion and $x\not \in FV(e)$}
+    \eclaim[6]{\judgeE{\Gamma}{e'}{A \to B}}
+              {Inversion and $x\not \in FV(e')$}
   \end{eqnproof}
   \begin{eqnproof}[\mbox{For arbitrary }v,]
-    \eline[\interpE{\judgeE{\Gamma,x:A}{e'}{B}}\;\theta\;(\gamma,v)]
-          {\interpE{\judgeE{\Gamma,x:A}{e}{B}}\;\theta\;(\gamma,v)}
+    \eline[\interpE{\judgeE{\Gamma,x:A}{e'\;x}{B}}\;\theta\;(\gamma,v)]
+          {\interpE{\judgeE{\Gamma,x:A}{e\;x}{B}}\;\theta\;(\gamma,v)}
           {Induction}
-    \eline[\interpE{\judgeE{\Gamma,x:A}{e}{B}}\;\theta\;(\gamma,v)]
-          {\interpE{\judgeE{\Gamma}{e}{B}}\;\theta\;\gamma}
-          {since $x\not \in FV(e)$}
-    \eline[\interpE{\judgeE{\Gamma,x:A}{e'}{B}}\;\theta\;(\gamma,v)]
-          {\interpE{\judgeE{\Gamma}{e'}{B}}\;\theta\;\gamma}
-          {since $x\not \in FV(e')$}
-    \eline[\interpE{\judgeE{\Gamma}{e'}{B}}\;\theta\;\gamma]
-          {\interpE{\judgeE{\Gamma}{e}{B}}\;\theta\;\gamma}
+    \eline[\interpE{\judgeE{\Gamma,x:A}{e}{A \to B}}\;\theta\;(\gamma,v)\;v]
+          {\interpE{\judgeE{\Gamma}{e}{A \to B}}\;\theta\;\gamma}
+          {Semantics, $x\not \in FV(e)$}
+    \eline[\interpE{\judgeE{\Gamma,x:A}{e'}{A \to B}}\;\theta\;(\gamma,v)\;v]
+          {\interpE{\judgeE{\Gamma}{e'}{A \to B}}\;\theta\;\gamma}
+          {Semantics, $x\not \in FV(e')$}
+    \eline[\interpE{\judgeE{\Gamma}{e'}{A \to B}}\;\theta\;\gamma]
+          {\interpE{\judgeE{\Gamma}{e}{A \to B}}\;\theta\;\gamma}
           {Transitivity}
   \end{eqnproof}
 

@@ -397,7 +397,7 @@ $U$ to $H$, to forget the partial order structure and leaving us with
 $U(H)$, the ordinary set of heaps.
 \begin{displaymath}
 U(H) = \sum L \in \powersetfin{Loc}.\; (\prod \sempair{n}{A} \in L.\;
-\interp{\judgeWK[\cdot]{A}{\bigstar}}\;(*)\;(K,K))
+\interp{\judgeWK[\cdot]{A}{\bigstar}}\;\left<\right>\;(K,K))
 \end{displaymath}
 However, in what follows we will suppress the $U$, in order to reduce
 clutter. Now, we can define the operations on it as follows:
@@ -760,11 +760,11 @@ $\mathit{Best}(Q') \sqsubseteq \mathit{Best}(Q)$.
 Supposing that $P$ is an element of the BI algebra $\powerset{H}$, $C$ is an element
 of the domain of commands $(A \to K) \to K$, and $Q$ is an $A$-indexed assertion, of
 type $A \to \powerset{H}$, then we can define the basic boolean Hoare triple 
-$\basicspec{p}{c}{a:A}{q(a)}$:
+$\basicspec{P}{C}{a:A}{Q(a)}$:
 
 \begin{displaymath}
   \basicspec{P}{C}{a:A}{Q(a)} \triangleq
-    \forall h \in P.\; \left(C\;Best(Q)\;h = \bot\right)
+    \forall h \in P.\; \left(C\;(Best\;Q)\;h = \bot\right)
 \end{displaymath}
 
 If $C$ is given a continuation which will run forever (i.e., yields
@@ -1481,7 +1481,7 @@ only if $r \in [(S_1 \otimes p) \implies (S_2 \otimes p)]$.
 \ooooo So we want $\forall s \succeq r,$ if  $s \in S_1 \otimes p$ then $s \in S_2 \otimes p$ \\
 \ooooo Assume $s \succeq r$ and $s \in S_1 \otimes p$ \\
 \oooooo From this $s * p \in S_1$ \\ 
-\oooooo Since $s * p \succeq s$ and $s \succeq r$, we have $s * p \succeq r$ \\
+\oooooo Since $s \succeq r$, we have $s * p \succeq r * p$ \\
 \oooooo Instantiating line 5 with $s * p$, we have if $s * p \in S_1$ then $s * p \in S_2$ \\
 \oooooo Using this and line 9, we have $s * p \in S_2$ \\
 \oooooo From this, we have $s \in S_2 \otimes p$ \\
@@ -1515,8 +1515,8 @@ assertions, and then we will give their interpretations. The syntactic
 categories are given in Figure~\ref{logic-syntax}. The sorts of our
 logic are ranged over by $\omega$, and include the kinds $\kappa$, the
 polymorphic types $A$, and the propositional sorts $\upsilon$.  The
-propositional sorts $\omega$ include $\assert$, the sort $\upsilon \To
-\omega$, which are the sort of propositional functions, and the sort
+propositional sorts $\omega$ include $\assert$, the sort $\omega \To
+\upsilon$, which are the sort of propositional functions, and the sort
 $\forallsort{\alpha}{\kappa}{\upsilon}$, which are
 type-constructor-indexed families.
  
@@ -1544,8 +1544,8 @@ $\forallsort{\alpha}{\kappa}{\upsilon}$, terms $e$ for the sorts $A$,
 type expressions $\tau$ for the sorts $\kappa$.
 
 Finally, we also have the assertions of separation logic for the sort
-$\assert$.  These include the usual propositional logical connectives
---- $\top, p \land q, p \implies q, \bot, p \vee q$ -- as well as the
+$\assert$.  These include the usual propositional logical connectives,
+$\top, p \land q, p \implies q, \bot, p \vee q$, as well as the
 spatial connectives $\emp, p * q, p \wand q$, and $e \pointsto_A
 e'$. Note that the points-to proposition is typed; it indicates that
 $e$ is a reference of type $\reftype{A}$ with contents $e'$ of type
@@ -1621,10 +1621,9 @@ S & ::= & \spec{p}{c}{a:A}{q} \bnfalt \mspec{p}{e}{a:A}{q} \bnfalt \setof{p} \\
 
 
 A propositional context $\Delta$ is a sequence of sorted variables of
-the form $u:\omega$. However, due to the fact that the sorts contain
-types, we need a judgment to establish whether a sort is well-formed
-with respect to a context of kind variables, since types can contain
-type variables. 
+the form $u:\upsilon$. However, due to the fact that the sorts contain
+variables, we need a judgment to establish whether a sort is
+well-formed with respect to a context of type constructor variables.
 
 In Figure~\ref{logic-sort-ok}, we give the judgment
 $\judgeSort{\omega}$ used to decide whether or not a given sort is
@@ -1684,7 +1683,17 @@ $\judgeA{p}{\omega}$, defined in Figure~\ref{logic-prop-ok}.
 \inferrule*[right=SortImp]
           {\judgeSort[\Theta, \alpha:\kappa]{\upsilon}}
           {\judgeSort{\forallsort{\alpha}{\kappa}{\upsilon}}}
-
+\\
+\boxed{\judgeACtx{\Delta}}
+\\
+\inferrule*[right=SortCtxNil]
+          { } 
+          {\judgeACtx{\cdot}}
+\and 
+\inferrule*[right=SortCtxCons]
+          {\judgeACtx{\Delta} \\
+           \judgeSort{\upsilon}}
+          {\judgeACtx{\Delta, u:\upsilon}}
 \\
 \boxed{\judgeSortEq{\omega}{\omega'}}
 \\
@@ -1738,6 +1747,7 @@ $\judgeA{p}{\omega}$, defined in Figure~\ref{logic-prop-ok}.
 %           {\judgeA{A}{\bigstar}}
 \inferrule*[right=THyp]
           {\judgeACtx{\Delta} \\
+           \judgectx{\Theta}{\Gamma} \\
            u:\omega \in \Delta }
           {\judgeA{u}{\omega}}
 \and
@@ -1976,13 +1986,20 @@ This restriction ensures that program expressions never use variables
 of logical type, and so any term expression can be typed using only
 type and term variables, without any dependence on variables drawn
 from the logical sorts. By requiring program expressions to only
-contain programmatic subexpressions, we forbid the use of ``ghost
-expressions'' in our programs. This restriction greatly simplify the
-semantics of the program logic. I intend for the sorts of our logic to
-be interpreted in Set, but the terms of our programming language are
-interpreted in CPO. It is not trivial to intermingle logical and
-program expressions, and so the simplest course is to forbid this
-mixing.
+contain programs as subexpressions, we prevent the use of ``ghost
+expressions'' in our programs. That is, there are no commands or
+expressions in the programming language which manipulate purely
+logical values.
+
+For first-order programs, it is relatively straightforward to
+distinguish between ghost variables and actual variables, but this is
+a distinction which breaks down in the presence of higher-order
+expressions. As a result, prohibiting these programs greatly
+simplifies the semantics of the program logic. I intend the sorts of
+our logic to be interpreted in Set, but the terms of our programming
+language are interpreted in CPO. Since there are no logical
+subexpressions of programs, then the forgetful functor $U$ supplies
+sufficient tools to perform this embedding. 
 
 However, this does not restrict the expressiveness of our program
 logic reasoning, since our program logic is a full specification
@@ -2000,27 +2017,46 @@ and semantic substitution properties together.
 
 \section{Semantics}
 
-Now, we will consider the interpretation of the syntax. To do this,
-we will proceed in stages. First, we will show how to interpret sorts and
-contexts by sets, and show that the equality judgment for sorts is
-sound. Using this, we will then give interpretation of terms and
-specifications, and show that the interpretation is sound with respect
-to substitution.
+Now, we will consider the interpretation of the syntax. To do this, we
+will proceed in stages. First, we will show how to interpret sorts and
+contexts by sets. Then, we will give a mutually-recursive
+interpretation of terms and specifications (since they each embed in
+the other), and finally we will prove that the semantics satisfies a 
+substitution theorem. 
+
+Then, in the next section, we will be in a position to give the actual
+axioms of the program logic, and show them sound. 
 
 \subsection{Interpretation of Sorts}
 
-We will start by explaining how to interpret the sorts. Essentially,
-we are going to define assertions to be the powerset of heaps, and
-specifications to be upward closed sets of assertions, but because we
-allow types as sorts, and types may have free type variables, we will
-need to give a pair of indexed, recursive definitions to make
-everything work properly. We give these definitions in
-Figure~\ref{sort-interpretation}. 
+We will start by explaining how to interpret the sorts. We interpret
+sorts as sets, but since sorts can have free variables, we need to
+give an interpretation of sorts-in-context, as is usual in categorical
+logic. We give the definitions in Figure~\ref{sort-interpretation}.
+
+A well-sortedness derivation is interpreted as a function from a tuple
+representing the type constructor environment $\theta$ (under the
+syntactic semantics) into a set. The interpretation of a kind $\kappa$
+is just its set-theoretic semantics, defined in the previous
+chapter. The interpretation of a type $A$ is the domain-theoretic
+interpretation at the environment $\theta$, then hit with the
+forgetful functor $U$ to get its underlying set of points.  
+
+Propositions $\assert$ are interpreted as the powerset of heaps, and
+the function space $\omega \To \upsilon$ is just the set-theoretic
+function space between the two sorts. The type-indexed sort
+$\forallsort{\alpha}{\kappa}{\upsilon}$ is interpreted by an indexed
+family of sets, with the index extending the context.
+
+Finally, we use this interpretation of sorts to give an interpretation
+of propositional contexts as a function from the type constructor
+environment into a nested tuple of sorts.
+
 
 \begin{figure}
 \begin{displaymath}
   \begin{array}{lcl}
-    \interp{\judgeSort{\omega}} & \in & \interp{\Theta} \to \mathrm{Set} \\[0.5em]
+    \interp{\judgeSort{\omega}} & \in & \interpset{\Theta} \to \mathrm{Set} \\[0.5em]
     \interp{\judgeSort{\kappa}} \;\theta
     & = & \interp{\kappa} 
     \\
@@ -2031,15 +2067,15 @@ Figure~\ref{sort-interpretation}.
     & = & \powerset{H}
     \\
     \interp{\judgeSort{\omega \To \upsilon}}\;\theta
-    & = & \interp{\judgeSort{\omega}}\;\theta \to \interp{\judgeSort{\omega}}\;\theta
+    & = & \interp{\judgeSort{\omega}}\;\theta \to \interp{\judgeSort{\upsilon}}\;\theta
     \\
     \interp{\judgeSort{\forallsort{\alpha}{\kappa}{\upsilon}}}\;\theta
     & = & \Pi \tau \in \interp{\kappa}.\;\interp{\judgeSort[\Theta, \alpha:\kappa]{\upsilon}}\;(\theta,\tau)
     \\[2em]
-    \interp{\judgeACtx{\Delta}} & \in & \interp{\Theta} \to \mathrm{Set} \\[0.5em]
+    \interp{\judgeACtx{\Delta}} & \in & \interpset{\Theta} \to \mathrm{Set} \\[0.5em]
     \interp{\judgeACtx{\cdot}}\;\theta & = & 1 \\
     \interp{\judgeACtx{\Delta, u:\upsilon}}\;\theta & = & \interp{\judgeACtx{\Delta}}\;\theta \times
-                                                          \interp{\judgeSort{\upsilon}\;\theta}
+                                                          \interp{\judgeSort{\upsilon}}\;\theta
 
   \end{array}
 \end{displaymath}
@@ -2047,17 +2083,6 @@ Figure~\ref{sort-interpretation}.
 \label{sort-interpretation}  
 \end{figure}
 
-A well-sorting derivation is interpreted as a function from a tuple
-representing the type constructor environment into a set. The
-interpretation of a kind $\kappa$ is just its set-theoretic semantics,
-defined in the previous chapter. The interpretation of a type $A$ is
-its domain-theoretic interpretation, hit with the forgetful functor
-$U$ to get only its underlying set of points.  The interpretation of
-propositions $\assert$ is the powerset of heaps, and the function
-space $\omega \To \upsilon$ is just the set-theoretic function space
-between the two sorts. The type-indexed sort
-$\forallsort{\alpha}{\kappa}{\upsilon}$ is interpreted by an indexed
-family of sets, with the index extendeding the context.
 
 
 % Therefore, we will need to give a mutually-recursive definition
@@ -2167,18 +2192,18 @@ We state the main soundness theorems below.
 \interp{\judgeA{e}{A}}\;\theta\,\gamma\,\delta & = &  U(\interp{\judgeE{\Gamma}{e}{A}}\;\theta)\;\gamma \\
 
 \interp{\judgeA{\pfun{u}{\upsilon'}{p}}{\upsilon' \To \upsilon}}\;\theta\,\gamma\,\delta & = & 
-   \semfun{v \in \interp{\judgeSort{\upsilon'}}}
+   \semfun{v \in \interp{\judgeSort{\upsilon'}}\;\theta}
           {\interp{\judgeA[\Theta; \Gamma; \Delta,u:\upsilon']{p}{\upsilon}}\;\theta\,\gamma\,(\delta, v)} \\
 
 \interp{\judgeA{\pfun{x}{A}{p}}{A \To \upsilon}}\;\theta\,\gamma\,\delta & = & 
-   \semfun{v \in \interp{\judgeSort{A}}}
+   \semfun{v \in \interp{\judgeSort{A}}\;\theta}
           {\interp{\judgeA[\Theta;\Gamma,x:A;\Delta]{p}{\upsilon}}\;\theta\,(\gamma,v)\,\delta} \\
 
 \interp{\judgeA{\pfun{\alpha}{\kappa}{p}}{\kappa \To \upsilon}}\;\theta\,\gamma\,\delta & = & 
-   \semfun{\tau \in \interp{\judgeSort{\kappa}}}
+   \semfun{\tau \in \interp{\judgeSort{\kappa}}\;\theta}
           {\interp{\judgeA[\Theta, \alpha:\kappa;\Gamma;\Delta]{p}{\upsilon}}\;(\theta,\tau)\,\gamma\,\delta} \\
 
-\interp{\judgeA{p\;q}{\upsilon}}\;\delta & = & 
+\interp{\judgeA{p\;q}{\upsilon}}\;\theta\;\gamma\;\delta & = & 
    (\interp{\judgeA{p}{\omega \To \upsilon}}\;\delta)\;(\interp{\judgeA{q}{\omega}}\;\delta) \\
 
 \interp{\judgeA{\pfunall{\alpha}{\kappa}{p}}{\forallsort{\alpha}{\kappa}{\upsilon}}}\;\theta\,\gamma\,\delta & = &
@@ -2242,7 +2267,7 @@ We state the main soundness theorems below.
 \interp{\forall}^\infty & = & \bigwedge \\
 \interp{\exists}^\infty & = & \bigvee \\[1em]
 
-l \pointsto v & = & \setof{(\setof{l}, \semfun{loc}{v \mbox{ when } loc = l})}
+l \pointsto v & = & \setof{(\setof{l}, \semfun{\mathit{loc} \in \setof{l}}{v})}
 \end{array}
 \end{displaymath}
 \caption{ Interpretation of Terms }
@@ -2354,6 +2379,7 @@ extra premise in the final three cases handles the slight non-syntax-directednes
 \ \\
 
 \begin{lemma}{(Substitution for Terms and Specifications)}
+\label{term-substitution}
 \begin{enumerate}
 \item Suppose $\judgeWK{\tau}{\kappa}$.
   \begin{enumerate}
@@ -2455,7 +2481,7 @@ extra premise in the final three cases handles the slight non-syntax-directednes
 \and
 
   \inferrule*[right=AxFix]
-            {\validS{(\forall x:\monad{A}.\; \mspec{p}x{a:A}{q(a)}) \specimp \mspec{p}{e}{a:A}{q})}}
+            {\validS{(\forall x:\monad{A}.\; \mspec{p}x{a:A}{q}) \specimp \mspec{p}{e}{a:A}{q})}}
             {\validS{\mspec{p}{\fix{x:\monad{A}}{e}}{a:A}{q}}}
 \end{mathpar}
 \caption{Basic Axioms of Specification Logic}
@@ -2496,9 +2522,9 @@ extra premise in the final three cases handles the slight non-syntax-directednes
 
 \and
   \inferrule*[right=AxEquality]
-             {\validS{\setof{r} \specimp \spec{p}{c[e/x]}{a:A}{q}} \\
+             {\validS{\setof{r} \specimp \spec{p}{[e/x]c}{a:A}{q}} \\
               \validP{r \implies e =_A e'} }
-             {\judgeS{\setof{r} \specimp \spec{p}{c[e'/x]}{a:A}{q}}}
+             {\judgeS{\setof{r} \specimp \spec{p}{[e'/x]c}{a:A}{q}}}
 
 \and
   \inferrule*[right=AxConsequence]
@@ -2606,24 +2632,24 @@ My program logic consists of three judgments:
 
 \noindent The semantics of these three judgments is given as follows:
 \begin{enumerate}
-\item An assertion $\judgeP{\Delta}{p}{\assert}$ is valid, if and only
+\item An assertion $\judgeA{p}{\assert}$ is valid, if and only
   if for all $\theta \in \interp{\theta}, \gamma \in
   \interp{\judgectx{\Theta}{\Gamma}}\theta$, and $\delta \in
   \interp{\judgeACtx{\Delta}}\theta$, we have
-  $\interp{\judgeP{\Delta}{p}{\assert}}\;\theta\;\gamma\;\delta = \top$.
+  $\interp{\judgeA{p}{\assert}}\;\theta\;\gamma\;\delta = \top_{\powerset{H}}$.
 
 \item Similarly, a specification $\judgeS{S}$ is valid if and only
 if, for all $\theta \in \interp{\theta}, \gamma \in
   \interp{\judgectx{\Theta}{\Gamma}}\theta$, and $\delta \in
   \interp{\judgeACtx{\Delta}}\theta$, we have
-$\interp{\judgeS{S}}\;\delta = \top$.
+$\interp{\judgeS{S}}\;\theta\;\gamma\;\delta = \top_{\upset{W(\powerset{H})}}$.
 
 \item Finally, two assertion terms $\judgeA{p}{\omega}$ and
 $\judgeA{q}{\omega}$ are validly equal, if and only if for all 
 $\theta \in \interp{\theta}, \gamma \in
   \interp{\judgectx{\Theta}{\Gamma}}\theta$, and $\delta \in
   \interp{\judgeACtx{\Delta}}\theta$, we have that
-$\interp{\judgeP{\Delta}{p}{\assert}}\;\delta = \interp{\judgeP{\Delta}{p}{\assert}}\;\delta$
+$\interp{\judgeP{\Delta}{p}{\omega}}\;\theta\;\gamma\;\delta = \interp{\judgeP{\Delta}{p}{\omega}}\;\theta\;\gamma\;\delta$
 \end{enumerate}
 
 So this says that for any assignment of the free variables, a valid
@@ -2738,8 +2764,17 @@ Figure~\ref{assertion-logic-axioms}, I give only three rules tailored
 to this particular program logic. One for embedding specifications in
 assertions, another for extracting assertions out of specifications,
 and the last says that equality derivations entail equality
-assertions. All the other rules are just the axioms of higher-order
-separation logic.
+assertions. 
+
+All the other rules are just the axioms of higher-order separation
+logic~\cite{hosl}. These include all the axioms of separation logic,
+and all the axioms of higher-order logic. In addition, many modal
+properties such as purity can be expressed internally using
+higher-order predicates. (For example, we can define purity as the
+second-order predicate $\mathit{Pure}(P) \equiv \forall Q:\assert.\;P
+* Q \iff P \land Q$.) The only caveat worth mentioning is that when
+forming sets by comprehension, the comprehending predicate must be a
+pure one.
 
 Likewise, the valid equality judgment in
 Figure~\ref{assertion-equality} is fairly minimal: it contains the
@@ -2797,7 +2832,7 @@ programming language, with features like higher-order store. This has
 worked fantastically well. The semantics of the logic of this
 dissertation is (suprisingly) \emph{simpler} than original
 specification logic, even though the programming language itself is a
-much more complex one than idealized Algol.
+much more complex one than Idealized Algol.
 
 In particular, one of the main sources of complexity in usages of
 specification logic have simply vanished from this logic. Algol has
@@ -2830,13 +2865,15 @@ admissible predicates (which is especially problematic in a setting
 with predicate variables).
 
 Finally, nested triples are very useful for specifying the properties
-of higher-order programs: it is very useful to be able put the
+of higher-order programs. It is very useful to be able put the
 specification of the contents of a reference into an assertion.  In
 this chapter, I have given a ``cheap and cheerful'' embedding of
-assertions in specifications and vice-versa, become true
-specifications. This approach has the virtues of first, being very
-technically easy to implement, and second, sufficient for all of the
-examples I have considered.
+assertions in specifications and vice-versa, where the embedding (in
+either direction) sends the topmost element of the source lattice to
+the topmost element of the target lattice, and maps all other lattice
+elements to the bottom element. This approach has the virtues of
+first, being very technically easy to implement, and second,
+sufficient for all of the examples I have considered.
 
 However, more sophisticated approaches are certainly
 possible. \citet{nested-hoare-triples} describe how to unify the
@@ -2968,7 +3005,7 @@ The equality relation I use is simply the equality inherited from the
 
 \subsection{Substitution Theorems}
 
-\begin{lemma*}{(Substitution for Terms and Specifications)}
+\begin{lemma*}{(\ref{term-substitution}, page \ref{term-substitution}: Substitution for Terms and Specifications)}
 \begin{enumerate}
 \item Suppose $\judgeWK{\tau}{\kappa}$.
   \begin{enumerate}
