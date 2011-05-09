@@ -39,6 +39,8 @@ All the best,
 page 7, line 9 from bottom - "kappa" should be "\kappa".  The expression
 "\kappa\rightarrow\kappa" should be moved back to before "built".
 
+-- fixed
+
 page 11, next to last display.  The last equation here says that
 [[Theta |- A:bigstar]] is a function from [[\Theta]] to normal forms.
 The first equation on page 14 says that exactly the same entity is a function
@@ -47,13 +49,19 @@ must change one of these notations.  As I suggested before, I'd add a
 superscript "s" (for set-theoretic semantics, or even "syntactic" semantics)
 to all uses of emphatic brackets defined on page 11.
 
+-- fixed
+
 Also in the next to last display, shouldn't
 
    [[Theta |- A:bigstar]] in [[Theta]] -> [[bigstar]]
 
 be added?
 
+-- fixed
+
 page 11, sentence before last display - theta(tau) should be theta.
+
+-- no, but the sentence was badly written. Fixed.
 
 page 28, Rule ETLam - This rule must be restricted to avoid an instance such
 as
@@ -67,6 +75,8 @@ type in Gamma, or add the premiss Theta |- Gamma.  This seems to be more than
 the Barendregt convention.  Notice that the corresponding side condition occurs
 in Rule TAbsAll in Figure 3.3 on page 82.
 
+-- fixed
+
 page 30, Figure 2.12 - At the beginning of this figure, you might state
 
    [[Theta;Gamma |- e:A]]^e theta in
@@ -76,24 +86,39 @@ page 30, Figure 2.12 - At the beginning of this figure, you might state
 (where the arrows denote domains of continuous functions).  Notice that I
 have elided the occurrences of (K,K).
 
+-- fixed
+
 In the first equation, pi_i(gamma) isn't quite right, since gamma belongs
 to an iterated binary product, not an n-ary product.  You should probably
 write (and explain) (gamma)_Gamma, using the same kind of abbreviation as was
 defined in the last display on page 11.
 
+-- I tried to explain this better, but no substantial change. I also explicitly 
+   mention earlier that I suppress many tuple isomorphisms. 
+
 You should also define the notation iter_A[i,s].
+
+-- fixed
 
 Whenever v or tau is bound by a lambda, you should indicate the domain of the
 function being described.
 
+-- whenever it didn't damage readability more, I did.
+
 In the last line, Theta |- A == B:bigstar is a premiss of rule EKeq, not
 a conclusion.  I suspect you mean all of the rules in Figure 2.5.
 
+-- the semantic function interprets derivations, and this is the interpretation 
+   of the EKeq rule. We get the equality by deconstructing the derivation. I 
+   couldn't figure out a clearer way of putting this, sorry. 
+   
 page 31, Figure 2.13 - At the beginning of this figure, you should state
 
    [[Theta;Gamma |- c div A]]^e theta in
 
      [[Theta |- Gamma]]theta -> (([[Theta |- A:bigstar]]theta -> K) -> K)
+
+-- fixed
 
 I presume that [[A]]theta abbreviates
 
@@ -102,72 +127,114 @@ I presume that [[A]]theta abbreviates
 (with (K,K) elided).  If you use this abbreviation, you should remark on it,
 making it clear that Theta is implicit.
 
+-- fixed 
+
 In the first equation, should the subscript on eta be [[A]] instead of
 [[A]]theta?
 
+-- no. I added parens to make it clearer
+
 In the second equation, you should rename c to avoid the collision of
 metavariables.
+
+-- fixed 
 
 page 31 - In each of the bullet points below the figure, "theta,[theta(tau)]"
 should be "[theta,theta(tau)]".  Also, why use bullet points here when you
 enumerate the two cases in the next two lemmas.
 
+-- fixed
+
 page 31, Lemma 10 - There are missing occurrences of Gamma' in the third and
 fifth lines.
+
+-- fixed
 
 It would improve readabilty if the statement of Lemma 10 were as similar as
 possible to that of Lemma 9.  Is there a reason why the extra pair in the
 kinding contexts in Lemma 9 can appear only at the end, while the extra pair
 in the typing contexts in Lemma 10 can occur anywhere in the context?
 
+-- fixed
+
 Also, in the last line of Lemma 10, "c:B" should be "c div B".
+
+-- fixed
 
 page 32, Figure 2.14 - In the conclusion of rule EqSumEta, inr x should be
 inr y.
+
+-- fixed 
 
 pp. 34-54 - It would be helpful to include the numbers of the lemmas.  Is
 there a reason why the proofs are in a different order than the statements
 of the lemmas in the previous section?
 
+-- reordered lemmas, and added page numbers and page references
+
 page 42, case EqPairSnd - In line 1 the last occurrence of e_1 should be e_2.
 In line 4 EFst should be ESnd.
+
+-- fixed
 
 page 43, case EqFunEta - Something is wrong, since you want to conclude
 that e and e' have type A -> B.
 
+-- fixed
+
 page 62, first displayed equation - Since * is a kind, it shouldn't be used
 here.  It would be better to write () or (cdot).
 
+-- fixed 
+
 page 67, third line of 3.3.2 - p should be P and q should be Q.
+
+-- fixed
 
 page 67, displayed equation - It would be wise to parenthesize Best(Q),
 so that one doesn't read this as (C Best)(Q)h.
 
+-- fixed 
+
 page 79, line numbered 10 - In order for line 11 to hold, line 10 must
 give s*p preceq r*p.
+
+-- fixed
 
 page 79, lines 4-5 of Section 3.5 - All occurrences of "sort" should be
 "sorts".  Also, "v => omega" should be "omega => v".
 
+-- fixed
+
 page 80, line 3 - This looks like the minus sign is a logical connective.
 You should at least change it to a long dash, or better, replace both dashes
 by commas.
+
+-- fixed 
 
 page 80, line 15 from bottom - This appears to say that any sort can appear
 in a propositional context, but the grammar in Figure 3.1 says that only
 propositional sorts can appear in a propositional context.  This is very
 confusing.  I'm assuming that the grammar is right.
 
+-- fixed 
+
 page 80, line 11 from bottom - The judgement Theta rhd Delta is not defined in
 Figure 3.2.
+
+-- fixed 
 
 page 81, Figure 3.2 - This is the first time that I've noticed that
 well-formedness rules allow formations that are forbidden by the syntax.
 According to the rules, prop => A is a sort.  You really need two kinds of
 judgements - for sorts and for propositional sorts.
 
+-- No, the rules don't allow it. 
+
 page 82, Figure 3.3 - Why does Theta |- Gamma occur as a premiss in TType
 but not in THyp?
+
+-- fixed 
 
 Unless I've overlooked some, you have seven different varieties of lambda
 expressions, described by the rules KLam, ELam, ETLam, TAbs1, TAbs2, TAbs3, and
@@ -178,23 +245,36 @@ I think the lambda expressions in TAbs3 are abbreviations for those in TAbsAll
 where alpha does not occur free in v.  If so, you might remark on this.  You
 might even eliminate TAbs3.
 
+-- Added explanation, but kept the two lambdas. It is redundant, but removing it
+   actually increases the number of rules. :(
+
 page 83, line 7 - It is confusing to use top and bot both as domain elements
 and as truth values, particularly when top and bot in the Sierpinski space
 carry the connotation of false and true respectively.  Why have (typically
 boldface) true and false gone out of style?
 
+-- sorry
+
 page 83, line 3 from bottom - Is a "programmatic subexpression" just a
 "program subexpression"?   What is a "ghost expression"?  It doesn't seem
 anything like a ghost variable.
+
+-- fixed/explained
 
 page 85, line 3 of the display - (K,K) has been elided here.  Unless I missed
 it, I don't think you've ever explained this useful elision, which happens
 fairly often.
 
+-- explained 
+
 page 85, line 5 of the display - The last occurrence of omega should be v.
+
+-- fixed
 
 page 85, line 9 of the display - The last occurrence of theta should be
 outside the emphatic brackets.
+
+-- fixed 
 
 page 85, Section 3.6 - The beginning of this section doesn't mesh well with the
 actual presentation, which is
@@ -211,9 +291,15 @@ about "a pair of indexed, recursive definitions" seems to refer to Figure 3.6
 and 3.7 rather than 3.5, i.e., (2) above rather than (1).  Also, what does
 "indexed" refer to?
 
+-- it's one of the substitution properties of sorts in Lemma 26
+
 page 85, line 3 from bottom - Should "well-sorting" be "well-sorted"?
 
+-- fixed
+
 page 86, line 4 - "extendeding" should be "extending".
+
+-- fixed
 
 page 86, Section 3.6.3 - For lack of time, I'm skipping these three lemmas.
 
@@ -223,33 +309,55 @@ that start at the left margin.)
    lines 5, 6, and 7 - theta should occur after the first emphatic right
    bracket.
 
+-- fixed 
+
    line 8 - the three occurences of delta should each be "theta gamma delta"
    (if line 1 is to be believed).
 
+-- fixed 
+
    line 11 - See my comment about pi_i(gamma) on page 30.
 
+-- No change; see above
+
    last line - "lambda loc. v when loc = l" should be "lambda loc in {l}. v".
+
+-- Nice change
 
 page 88, Figure 3.7 - Shouldn't S \otimes r occur in this figure (and in
 Figure 3.4)?
 
+-- No. It's not part of the grammar; it's a syntactic operator on assertions. 
+
 page 90, Figure 3.8 - In AxFix, q(a) should be q.  
+
+-- fixed 
 
 page 91, Figure 3.9 - In AxEquality, shouldn't c[e/x] be [e/x]c, and
 similarly for c[e'x]?
 
+-- fixed 
+
 page 92, Figure 3.10 - What are the "axioms of higher-order separation logic"?
+
+-- TODO: add references
 
 page 93, first item in last enumeration - "Delta|-" should be
 "Theta;Gamma;Delta\rhd".
 
+-- fixed 
+
 page 93, second item in last enumeration - the last occurrence of delta should
 be "theta gamma delta".
+
+-- fixed 
 
 page 93, third item in last enumeration - the last two occurrences of "delta|-"
 should be "theta gamma delta\rhd".  If this is meant to hold for terms of all
 sorts, you should drop the word "assertion" and replace the occurrences of
 "prop" by omega.
+
+-- fixed 
 
 You might subscript the two occurrences of top in the second list to remind
 the reader that they have different meanings.  More generally, there are so
@@ -257,9 +365,17 @@ many different domains running around in this thesis that top and bot should
 frequently be subscripted, just to remind the reader which domain he is
 currently living in.
 
+-- fixed 
+
 page 95, line 17 - "idealized" should be "Idealized".
+
+-- fixed 
 
 page 95, line 5 before bottom - "it" should be "It".
 
+-- fixed 
+
 page 95, line 3 before bottom  - "become true specifications" doesn't
 make sense.
+
+-- fixed 
