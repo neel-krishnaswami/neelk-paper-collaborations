@@ -587,14 +587,14 @@ applications when they are obvious in context.)
  $\setof{\exists P'_1.\; coll(c_1, \epsilon, P'_1)}$  \nextlinelabel{label:iterclient:dropp1ex}
  $\setof{coll(c_1, \epsilon, P_1)}$  \nextlinelabel{label:iterclient:addc1}
  $\letv{()}{\addcoll(c_1, 4)}{}$  \nextline
- $\setof{\exists P_2.\; coll(c_1, 4\cdot\epsilon, P_2)}$  \nextline{label:iterclient:dropp2ex}
+ $\setof{\exists P_2.\; coll(c_1, 4\cdot\epsilon, P_2)}$  \nextlinelabel{label:iterclient:dropp2ex}
   $\setof{coll(c_1, 4\cdot\epsilon, P_2)}$  \nextlinelabel{label:iterclient:addc1again}
  $\letv{()}{\addcoll(c_1, 3)}{}$  \nextline
  $\letv{()}{\addcoll(c_1, 2)}{}$  \nextline
  $\setof{coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}$  \nextlinelabel{label:iterclient:makec2}
  $\letv{c_2}{\newcoll()}{}$  \nextline
  $\letv{()}{\addcoll(c_2, 3)}{}$  \nextlinelabel{label:iterclient:finishc2}
- $\letv{()}{\addcoll(c_2, 5)}{}$  \nextline{label:iterclient:c2state}
+ $\letv{()}{\addcoll(c_2, 5)}{}$  \nextlinelabel{label:iterclient:c2state}
  $\setof{coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}$  \nextlinelabel{label:iterclient:makei1}
  $\letv{i_1}{\newiter(c_1)}{}$  \nextlinelabel{label:iterclient:i1pred}
  $\{$\=$iter(i_1, 2\cdot3\cdot4\cdot\epsilon, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)})$
@@ -606,10 +606,10 @@ applications when they are obvious in context.)
  $\letv{i_2}{\newiter(c_2)}{}$  \nextlinelabel{label:iterclient:i2state}
  $\{$\=$iter(i'_1, 2\cdot4\cdot\epsilon, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)})$ \nextline
   \>$*\;iter(i_2, 5\cdot3\cdot\epsilon, \setof{(c_2, 5\cdot3\cdot\epsilon, Q_2)})$  \nextline
- \>$*\;coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$  \nextline{label:iterclient:mapi}
+ \>$*\;coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$  \nextlinelabel{label:iterclient:mapi}
  $\letv{i}{\ctext{map2}(plus, i'_1, i_2)}{}$  \nextline
  $\{$\=$iter(i, 7\cdot7\cdot\epsilon, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilon, Q_2)})$  \nextline
- \> $*\; coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$  \nextline{label:iterclient:sizecoll}
+ \> $*\; coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$  \nextlinelabel{label:iterclient:sizecoll}
  $\letv{n}{\sizecoll(c_2)}{}$  \nextline
  $\{$\=$n = 2 \;\land
 iter(i, 7\cdot7\cdot\epsilon, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilon, Q_2)})$ \nextline
