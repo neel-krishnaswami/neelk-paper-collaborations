@@ -1793,6 +1793,7 @@ and $f^*$ in terms of the internal language of CPO as follows:
 \end{proof}
 
 \section{The Programming Language}
+\label{chap2:sec:proglang}
 
 We have given the semantics of types in domain-theoretic terms. Now,
 we'll give the syntax and typing of the programming language. Then,
@@ -1983,6 +1984,11 @@ The typing rules for all of these forms are given in
 figure~\ref{lang-typing-pure}, and the computation forms of the
 language are given in figure~\ref{lang-typing-monadic}.
 
+One abbreviation we will make use of is to write $\Run(e)$ for
+$\letv{[x]}{e}{x}$. Just as $[c]$ embeds a computation of type $A$ into
+an expression term of type $\monad{A}$, the abbreviation $\Run(e)$
+does the reverse, giving a computation of type $A$ from an expression
+of type $\monad{A}$.
 
 \begin{figure}
 \begin{mathpar}

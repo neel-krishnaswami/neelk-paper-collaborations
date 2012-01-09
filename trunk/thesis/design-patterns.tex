@@ -697,7 +697,8 @@ line~\ref{label:iterclient:add}, we call $\addcoll(c_2, 17)$ the state
 of $c_2$ changes to $\exists Q_3.\; coll(c, 17\cdot 5 \cdot
 3\cdot\epsilon, Q_3)$ (line~\ref{label:iterclient:q3state}). So we can
 no longer call $\nextiter(i)$, since it needs $c_2$ to be in the state
-$Q_2$. (On the following 
+$Q_2$. (On the following line, we repack all of the existentials, in
+accordance with the \textsc{AxForgetEx} rule of the program logic.)
 
 \textbf{Discussion.} This example shows a pleasant synergy between
 higher-order quantification and separation logic. We can give a
@@ -769,30 +770,33 @@ $\Listcontent(\alpha) = \Nil \bnfalt \Cons\; \alpha \times \reftype{\Listcontent
 \nextline
 $\ctext{colltype}(\alpha) = \reftype{(\Listcontent(\alpha))}$ 
 \nextlinelabel[0.5em]{decl:itertype-impl}
-$\itertype{(\alpha)} =$\=$\;\One\;\reftype{(\colltype{(\alpha)})} \bnfalt 
-                          \Filter\;(\alpha \to bool) \times \itertype{(\alpha)}$
-\nextline
-                       \>$\bnfalt \Merge\; (\alpha \to \alpha \to \alpha) \times \itertype(\alpha) \times \itertype(\alpha)$
+$\itertype{(\alpha)} $\=$=  \One\;\reftype{(\colltype{(\alpha)})}$ \nextline
+                       \>$ \bnfalt 
+                          \Filter\;(\alpha \to bool) \times \itertype{(\alpha)}$ \nextline
+                       \>$\bnfalt \Merge\; \exists \beta, \gamma:\star.\; (\beta \to \gamma \to \alpha) \times \itertype(\beta) \times \itertype(\gamma)$
 \nextlinelabel[0.5em]{decl:listpred-impl}
-$\listpred(\tau, c, xs)$ \qquad\= $\equiv \exists v.\; c \pointsto_\tau v * \listcontentpred(\tau, v, xs)$ 
+$\listpred(\tau, c, xs)$ \qquad\qquad\qquad\= $\equiv \exists v.\; c \pointsto_\tau v * \listcontentpred(\tau, v, xs)$ 
 \nextline
-$\listcontentpred(\tau, \Nil, xs)$ \qquad\qquad\= $\equiv$ \= $xs = \epsilon$ 
+$\listcontentpred(\tau, \Nil, xs)$ \> $\equiv$ \= $xs = \epsilon$ 
 \nextline
 $\listcontentpred(\tau, \Cons(y,c), xs)$ \> $\equiv$ \> 
    $\exists ys.\; xs = y\cdot ys \land \listpred(\tau, c, ys)$ 
 \nextlinelabel[0.5em]{decl:collpred-impl}
-$collpred_\tau$\=$(c, xs, P) \equiv list(\tau, c, xs) \land P \land \mbox{exact}(P)$ 
+$\collpred_\tau$\=$(c, xs, P) \equiv list(\tau, c, xs) \land P \land \mbox{exact}(P)$ 
 
 \nextlinelabel[0.5em]{decl:iterpred-impl}
 $\iterpred_\tau(\One\;i, xs, \setof{(\tau, \_, \_, P)}) \qquad\qquad$\=$\equiv \exists c.\; i \pointsto c * (P \wand (P \land (\top * \listpred(\tau, c, xs))))$ 
 \nextline
+$\iterpred_\tau(\One\;i, xs, S) \qquad\qquad$\>$\equiv \bot$
+\nextline
+
 $\iterpred_\tau(\Filter(p, i), xs, S)$ \>$\equiv 
   \exists ys.\; \iterpred_\tau(i, ys, S) \land xs = \mathit{filter}\;p\;ys$ 
 \nextline
-$\iterpred_{\tau}(\Merge(f, i_1, i_2), xs, S)$ \>$\equiv 
+$\iterpred_{\tau}(\Merge(\tau_1, \tau_2, f, i_1, i_2), xs, S)$ \>$\equiv 
   \exists S_1, ys, S_2, zs.$ 
 \nextline
-  \> \qquad \= $\iterpred_\tau(i_1, ys, S_1) * \iterpred_\tau(i_2, zs, S_2) \;\land$
+  \> \qquad \= $\iterpred_{\tau_1}(i_1, ys, S_1) * \iterpred_{\tau_2}(i_2, zs, S_2) \;\land$
 \nextline \> \>$S = S_1 \uplus S_2 \land xs = \mathit{map2}\;f\;ys\;zs$ 
 \end{specification}
 \caption{Type and Predicate Definitions of the Iterator Implementation}
@@ -808,7 +812,7 @@ $\newcoll_\alpha \equiv \comp{\newref{\alpha}{\Nil}}$
 $\sizecoll_\alpha(c) \equiv $\=
          $[$\=$\letv{p}{\comp{!c}}{}$ 
 \nextline\> \>$\;
-               \Listcase($\=$p,$ 
+               \Run\; \Listcase($\=$p,$ 
 \nextline\> \>                   \>$\Nil \to \comp{0},$
 \nextline\> \>                   \>$\Cons(\_, tl) \to 
                                      \comp{\letv{n}{\sizecoll_\alpha(tl)}{n+1}})]$
@@ -850,9 +854,9 @@ $\nextiter_\alpha(\Filter(p, i)) \equiv [$\=
 \nextline\>\> $\None \to \comp{\None},$ 
 \nextline\>\> $\Some\;x \to \IfThenElse{p\;x}{\comp{v}}{\nextiter_\alpha(\Filter(p,i))})]$ 
 \nextlinelabel{decl:next-merge-impl}
-$\nextiter_\alpha(\Merge(f, i_1, i_2)) \equiv [$\=
-            $\letv{x_1}{\nextiter_\alpha(i_1)}{}$ 
-\nextline\> $\letv{x_2}{\nextiter_\alpha(i_2)}{}$ 
+$\nextiter_\alpha(\Merge(\beta, \gamma, f, i_1, i_2)) \equiv [$\=
+            $\letv{x_1}{\nextiter_\beta(i_1)}{}$ 
+\nextline\> $\letv{x_2}{\nextiter_\gamma(i_2)}{}$ 
 \nextline\> $\Optcase($\=$x_1,$ 
 \nextline\> \>           $\None \to \None,$ 
 \nextline\> \>           $\Some\;v_1 \to \Optcase($\=$x_2,$ 
@@ -896,9 +900,14 @@ collection, and so will be an exact predicate. So the conclusion
 of the magic wand, $(P \land (\top * \listpred(\tau, c, xs)))$, says
 that the state is $P$, and can also be viewed as containing the 
 list starting at $c$ and representing the sequence $xs$. 
+Since $c$ is an interior pointer, there may be more collection state
+occurring before $c$, though we don't care about the details of that 
+state --- this is why $\top$ is conjoined to the list predicate. However,
+the collection state does depend on the whole list, which is why $P$ 
+is conjoined with the state $\top * \listpred(\tau, c, xs)$. 
 
-Adding the magic wand to the formula , so that we get $(P \land (\top
-* \listpred(\tau, c, xs)))$, ends up meaning, ``if you give me the
+Adding the magic wand to the formula , so that we get $P \wand (P \land (\top
+* \listpred(\tau, c, xs)))$, intuitively means ``if you give me the
 collection state $P$, then I promise to you that it contains $c$,
 which represents $xs$.'' In this way, we express the fact that the
 iterator's invariant depends on having controlled access to the state
@@ -926,13 +935,17 @@ there is at most one satisfying heap. This lets us treat the wand as a
 possibly a connection to Parkinson's ``septraction''
 operator~\cite{parkinson-septraction}. 
 
+On the next line, we have a catch-all case saying that the predicate
+is false whenever a $\One$ iterator has other than a single collection
+it depends upon. 
+
 One the next line, we give the case for $\iterpred_\tau(\Filter(p, i),
 xs, S)$.  This is a very simple formula; we simply assert that $i$ is
 an iterator yielding some other sequence $ys$, which when filtered with
 the predicate $p$ is $xs$. There are no changes to the set of abstract
 states. 
 
-On the line after that, we give the case for $\iterpred_\tau(\Merge(f, i_1, i_2), xs, S)$. 
+On the line after that, we give the case for $\iterpred_\tau(\Merge(\tau_1, \tau_2, f, i_1, i_2), xs, S)$. 
 This case says we can divide the abstract state into two parts, one of which is 
 used by $i_1$, and the other of which is used by $i_2$,  which 
 yield sequences $ys$ and $zs$ respectively, and which can be merged using
@@ -950,13 +963,14 @@ we can largely avoid that effort.
 
 Now that we know the definitions of the types and predicates, we can
 give the correctness proofs for the operations defined in
-Figure~\ref{iterator-implementation}. 
+Figure~\ref{iterator-implementation}.\footnote{These definitions make
+use of the $\Run$ abbreviation defined in Section~\ref{chap2:sec:proglang}.}
 
 \begin{lemma}{(Correctness of $\newcoll$)}
   We have that 
   \begin{displaymath}
-    \forall \alpha.\; \spec{\emp}
-                           {\run{\newcoll_\alpha}}
+    \forall \alpha.\; \mspec{\emp}
+                           {\newcoll_\alpha}
                            {a:\colltype(\alpha)}{\exists P.\; \collpred_\alpha(a, \epsilon,P)}
   \end{displaymath}
   is valid. 
@@ -979,14 +993,14 @@ program in annotated program style.
 
 Line 4 follows from 3, because of the definition of the list predicate. Line 5 
 follows from 4, because this is an axiomatic property of all predicates -- if
-a predicate holds, there is always at least one heap in which it holds. Line 6 
+a predicate holds in a heap, there is an exact predicate describing that heap. Line 6 
 is a quantifier manipulation, and line 7 follows from the definition of the predicate.
 \end{proof}
 
 \begin{lemma}{(Correctness of $\sizecoll$)}
 We have that 
 \begin{displaymath}
-\forall \alpha, c, xs, P.\; \spec{\collpred_\alpha(c, xs, P)}{\sizecoll_\alpha(c)}{a:\N}
+\forall \alpha, c, xs, P.\; \mspec{\collpred_\alpha(c, xs, P)}{\sizecoll_\alpha(c)}{a:\N}
                                   {\collpred_\alpha(c, xs, P) \land a = |xs|}
 \end{displaymath}
 is valid.   
@@ -1028,7 +1042,7 @@ Now, assume we have $\alpha, c, xs,$ and $P$:
 \begin{lemma}{(Specification of $\addcoll$)}
 We have that for 
 \begin{displaymath}
-  \forall \alpha, x, c, xs, P.\; \spec{\collpred_\alpha(c, xs, P)}{\addcoll_\alpha(c, x)}
+  \forall \alpha, x, c, xs, P.\; \mspec{\collpred_\alpha(c, xs, P)}{\addcoll_\alpha(c, x)}
                                       {a:\unittype}{\exists Q.\; \collpred_\alpha(c, x\cdot xs, Q)}
 \end{displaymath}
 \end{lemma}
@@ -1056,10 +1070,10 @@ annotated specification style.
 \end{specification}
 \end{proof}
 
-\begin{lemma}
+\begin{lemma}{(Correctness of $\removecoll$, part 1)}
 We have that 
 \begin{displaymath}
-  \forall \alpha, c, P.\; \spec{\collpred_\alpha(c, \epsilon, P)}
+  \forall \alpha, c, P.\; \mspec{\collpred_\alpha(c, \epsilon, P)}
                                {\removecoll_\alpha(c)}{a:\opttype{(\alpha)}}
                                {\collpred_\alpha(c, \epsilon, P) \land a = \None}
 \end{displaymath}
@@ -1093,7 +1107,7 @@ We have that
 \begin{lemma}{(Correctness of $\removecoll$, part 2)}
 We have that 
 \begin{displaymath}
-  \forall \alpha, c, x, xs, P.\; \spec{\collpred_\alpha(c, x\cdot xs, P)}
+  \forall \alpha, c, x, xs, P.\; \mspec{\collpred_\alpha(c, x\cdot xs, P)}
                                       {\removecoll_\alpha(c)}
                                       {a:\opttype{(\alpha)}}
                                       {\exists Q.\; \collpred_\alpha(c, xs, Q) 
@@ -1140,7 +1154,7 @@ as follows:
 \begin{lemma}{(Correctness of $\newiter$)}
 We have that
 \begin{displaymath}
-\forall \alpha, c, xs, P.\; \spec{\collpred_\alpha(c, xs, P)}
+\forall \alpha, c, xs, P.\; \mspec{\collpred_\alpha(c, xs, P)}
                                  {\newiter_\alpha(c)}
                                  {a:\itertype(\alpha)}
                                  {\collpred_\alpha(c, xs, P) * 
@@ -1177,7 +1191,7 @@ entails $P \wand P$ on line 6. Then, because $P$ is strict exact, we know that f
 We have that
 \begin{displaymath}
   \forall \alpha, p, i, xs, S.\; \spec{\iterpred_\alpha(i, xs, S)}
-                                      {\filteriter_\alpha(i)}
+                                      {\filteriter_\alpha(p, i)}
                                       {a:\itertype(\alpha)}
                                       {\iterpred_\alpha(a, \filtermath\;p\;xs, S)}
 \end{displaymath}
@@ -1200,11 +1214,11 @@ $\alpha, p, i, xs$, and $S$.
 \begin{lemma}{(Correctness of $\mergeiter$)}
 We have that 
 \begin{displaymath}
-  \forall \alpha, f, i, xs, S, i', xs', S'.\; 
+  \forall \alpha, \beta, \gamma, f, i, xs, S, i', xs', S'.\; 
   \begin{array}{l}
-    \setof{\iterpred_\alpha(i, xs, S) * \iterpred_\alpha(i',xs',S')} \\
-    \mergeiter_\alpha(f, i, i') \\
-    \setof{a:\itertype(\alpha).\; \iterpred_\alpha(a, \mergemath\;f\;xs\;xs', S \cup S')}\\
+    \setof{\iterpred_\alpha(i, xs, S) * \iterpred_\beta(i',xs',S') \land S \cap S' = \emptyset} \\
+    \mergeiter_{\alpha\;\beta\;\gamma}(f, i, i') \\
+    \setof{a:\itertype(\gamma).\; \iterpred_\gamma(a, \mergemath\;f\;xs\;xs', S \cup S')}\\
   \end{array}
 \end{displaymath}
 \end{lemma}
@@ -1215,13 +1229,13 @@ Figure~\ref{iterator-implementation}. Assume $f, i, xs, S, i', xs', S'$ as
 hypotheses, and proceed with the proof as follows: 
 
 \begin{specification}
-\nextline $\setof{\iterpred_\alpha(i, xs, S) * \iterpred_\alpha(i',xs',S') \land S \cap S' = \emptyset}$ 
-\nextline $\Merge(f, i, i')$
-\nextline $\setof{\iterpred_\alpha(i, xs, S) * \iterpred_\alpha(i',xs',S') \land a = \Merge(f, i', i')}$ 
-\nextline $\{$\=$\iterpred_\alpha(i, xs, S) * \iterpred_\alpha(i',xs',S') \land S \cup S' = S \uplus S' \land \mergemath\;f\;xs\;xs' = \mergemath\;f\;xs\;xs'$
-\nextline \> $\land a = \Merge(f, i', i')\}$ 
+\nextline $\setof{\iterpred_\alpha(i, xs, S) * \iterpred_\beta(i',xs',S') \land S \cap S' = \emptyset}$ 
+\nextline $\Merge(\alpha, \beta, f, i, i')$
+\nextline $\setof{\iterpred_\alpha(i, xs, S) * \iterpred_\beta(i',xs',S') \land S \cap S' = \emptyset \land a = \Merge(\alpha, \beta, f, i, i')}$ 
+\nextline $\{$\=$\iterpred_\alpha(i, xs, S) * \iterpred_\beta(i',xs',S') \land S \cup S' = S \uplus S' \land \mergemath\;f\;xs\;xs' = \mergemath\;f\;xs\;xs'$
+\nextline \> $\land a = \Merge(f, i, i')\}$ 
 \nextline $\{$\=$\exists i, i', S, S'.\; \iterpred_\alpha(i, xs, S) * \iterpred_\alpha(i',xs',S') \land S \cup S' = S \cup S' \land \mergemath\;f\;xs\;xs' = \mergemath\;f\;xs\;xs'$ 
-\nextline \> $\land a = \Merge(f, i', i')\}$ 
+\nextline \> $\land a = \Merge(f, i, i')\}$ 
 \nextline $\setof{\iterpred_\alpha(a, \mergemath\;f\;xs\;xs', S \cup S')}$
 \end{specification}
 \end{proof}
@@ -1255,9 +1269,11 @@ in typical Hoare logic proofs are ruled out by getting false as a precondition).
 
 \begin{itemize}
 \item Suppose $i = \One(i')$. Then, we proceed with an annotated proof as 
-follows: 
+follows.  
 \begin{specification}
 \nextline $\setof{\iterpred_\alpha(\One(i'), xs, S) * \mathit{colls}(S)}$ 
+\nextline When $S$ has other than one element, the precondition is false, so we only need to \nextline
+          consider the one-element case:
 \nextline $\setof{\exists P.\; \iterpred_\alpha(\One(i'), xs, \setof{(\alpha, c, ys, P)}) * \mathit{colls}_\alpha(\setof{(\alpha, c, ys, P)})}$ 
 \nextline $\setof{\exists P.\; \iterpred_\alpha(\One(i'), xs, \setof{P}) * \collpred_\alpha(c, ys, P)}$
 \nextline $\setof{\exists c'.\; i' \pointsto c' * (P \wand (P \land (\top * \listpred(\alpha, c', xs)))) * \listpred(\alpha,c, ys) \land P \land \exact{P}}$ 
