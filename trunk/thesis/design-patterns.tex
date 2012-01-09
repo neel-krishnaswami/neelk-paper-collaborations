@@ -470,7 +470,7 @@ iterator over that type, possibly creating auxilliary data structures.
 A call $\newiter_\alpha(c)$ is specified on line
 \ref{decl:newiter-spec}, and beginning from a precondition state
 $\collpred_\alpha(c, xs, P)$, it goes to a postcondition state
-$\collpred_\alpha(c, xs, P) * \iterpred_\alpha(a, xs, \setof{P})$.
+$\collpred_\alpha(c, xs, P) * \iterpred_\alpha(a, xs, \setof{(c, xs, P)})$.
 This means that given access to a collection $c$, our function will
 return an iterator object (bound to $a$), which will enumerate the
 elements of $c$ (that is, it will produce the elements
@@ -508,13 +508,13 @@ state inside a predicate to control which operations are allowed.
 The $\mergeiter$ function is declared on line $\ref{decl:zip-type}$, and
 has type $\forall \alpha,\beta,\gamma:\star.\; (\alpha \to \beta \to \gamma) \times \itertype(\alpha) \times
 \itertype(\beta) \to \monad{(\itertype(\gamma))}$.  Thus,
-a call $\mergeiter_\alpha(f, i_1, i_2)$ takes a function and two 
+a call $\mergeiter_{\alpha\;\beta\;\gamma}(f, i_1, i_2)$ takes a function and two 
 iterators, and constructs a new iterator which steps over the two inputs in parallel,
 returning the result of $f$ applied to each pair of elements of $i_1$ and $i_2$. 
 
-We specify calls $\mergeiter_\alpha(f, i_1, i_2)$ on line
+We specify calls $\mergeiter_{\alpha\;\beta\;\gamma}(f, i_1, i_2)$ on line
 $\ref{decl:zip-spec}$, and it takes a precondition
-$\iterpred_\alpha(i_1, xs, S_1) * \iterpred_\alpha(i_2, ys, S_2)$.
+$\iterpred_\alpha(i_1, xs, S_1) * \iterpred_\beta(i_2, ys, S_2)$.
 This means that we have state associated with two separate iterators,
 which we take to the postcondition $\iterpred_{\gamma}(a,
 \mathit{map2}\;f\;xs\;ys, S_1 \cup S_2)$. As with the $\filteriter$ function, 
@@ -577,123 +577,139 @@ postcondition (line 15).
 \subsubsection{Example Client}
 
 Below, we give an example use of this module in annotated program
-style: 
+style. (Here, and in what follows, we suppress explicit type
+applications when they are obvious in context.)
 
-\begin{tabbing}
-1 \qquad \= $\setof{\emp}$ \\
-2 \> $\letv{c_1}{\newcoll()}{}$ \\
-3 \> $\setof{\exists P'_1.\; coll(c_1, \epsilon, P'_1)}$ \\
-4 \> $\setof{coll(c_1, \epsilon, P_1)}$ \\
-5 \> $\letv{()}{\addcoll(c_1, 4)}{}$ \\
-6 \> $\setof{\exists P'_2.\; coll(c_1, 4\cdot\epsilon, P'_2)}$ \\
-7 \> $\setof{coll(c_1, 4\cdot\epsilon, P_2)}$ \\
-8 \> $\letv{()}{\addcoll(c_1, 3)}{}$ \\
-9 \> $\letv{()}{\addcoll(c_1, 2)}{}$ \\
-10 \> $\setof{coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}$ \\
-11 \> $\letv{c_2}{\newcoll()}{}$ \\
-12 \> $\letv{()}{\addcoll(c_2, 3)}{}$ \\
-13 \> $\letv{()}{\addcoll(c_2, 5)}{}$ \\
-14\> $\setof{coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}$ \\
-15\> $\letv{i_1}{\newiter(c_1)}{}$ \\
-16\> $\{$\=$iter(i_1, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}, 2\cdot3\cdot4\cdot\epsilon)$
-\\ 
-  \>\>$*\; coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
-17 \> $\letv{i'_1}{\filteriter(even?, i_1)}{}$ \\
-18 \> $\{$\=$iter(i'_1, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}, 2\cdot4\cdot\epsilon)$ \\
-   \>\>$*\; coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$\\
-19 \> $\letv{i_2}{\newiter(c_2)}{}$ \\
-20 \> $\{$\=$iter(i'_1, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}, 2\cdot4\cdot\epsilon)$\\
-  \>\>$*\;iter(i_2, \setof{(c_2, 5\cdot3\cdot\epsilon, Q_2)}, 5\cdot3\cdot\epsilon)$ \\
-  \>\>$*\;coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
-21 \> $\letv{i}{\ctext{map2}(plus, i'_1, i_2)}{}$ \\
-22 \> $\{$\=$iter(i, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilon, Q_2)}, 7\cdot7\cdot\epsilon)$ \\
-\> \> $*\; coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
-23 \> $\letv{n}{\sizecoll(c_2)}{}$ \\
-24 \> $\{$\=$n = 2 \;\land
-iter(i, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilon, Q_2)}, 7\cdot7\cdot\epsilon)$\\
-\>\>$*\;coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
+\begin{specification}
+\nextline
+ $\setof{\emp}$  \nextlinelabel{label:iterclient:makec1}
+ $\letv{c_1}{\newcoll()}{}$  \nextline
+ $\setof{\exists P'_1.\; coll(c_1, \epsilon, P'_1)}$  \nextlinelabel{label:iterclient:dropp1ex}
+ $\setof{coll(c_1, \epsilon, P_1)}$  \nextlinelabel{label:iterclient:addc1}
+ $\letv{()}{\addcoll(c_1, 4)}{}$  \nextline
+ $\setof{\exists P_2.\; coll(c_1, 4\cdot\epsilon, P_2)}$  \nextline{label:iterclient:dropp2ex}
+  $\setof{coll(c_1, 4\cdot\epsilon, P_2)}$  \nextlinelabel{label:iterclient:addc1again}
+ $\letv{()}{\addcoll(c_1, 3)}{}$  \nextline
+ $\letv{()}{\addcoll(c_1, 2)}{}$  \nextline
+ $\setof{coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}$  \nextlinelabel{label:iterclient:makec2}
+ $\letv{c_2}{\newcoll()}{}$  \nextline
+ $\letv{()}{\addcoll(c_2, 3)}{}$  \nextlinelabel{label:iterclient:finishc2}
+ $\letv{()}{\addcoll(c_2, 5)}{}$  \nextline{label:iterclient:c2state}
+ $\setof{coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)}$  \nextlinelabel{label:iterclient:makei1}
+ $\letv{i_1}{\newiter(c_1)}{}$  \nextlinelabel{label:iterclient:i1pred}
+ $\{$\=$iter(i_1, 2\cdot3\cdot4\cdot\epsilon, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)})$
+ \nextline 
+ \>$*\; coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$  \nextlinelabel{label:iterclient:makeevens}
+ $\letv{i'_1}{\filteriter(even?, i_1)}{}$  \nextlinelabel{label:iterclient:evenspred}
+ $\{$\=$iter(i'_1, 2\cdot4\cdot\epsilon, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)})$  \nextline
+  \>$*\; coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \nextlinelabel{label:iterclient:makei2}
+ $\letv{i_2}{\newiter(c_2)}{}$  \nextlinelabel{label:iterclient:i2state}
+ $\{$\=$iter(i'_1, 2\cdot4\cdot\epsilon, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)})$ \nextline
+  \>$*\;iter(i_2, 5\cdot3\cdot\epsilon, \setof{(c_2, 5\cdot3\cdot\epsilon, Q_2)})$  \nextline
+ \>$*\;coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$  \nextline{label:iterclient:mapi}
+ $\letv{i}{\ctext{map2}(plus, i'_1, i_2)}{}$  \nextline
+ $\{$\=$iter(i, 7\cdot7\cdot\epsilon, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilon, Q_2)})$  \nextline
+ \> $*\; coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$  \nextline{label:iterclient:sizecoll}
+ $\letv{n}{\sizecoll(c_2)}{}$  \nextline
+ $\{$\=$n = 2 \;\land
+iter(i, 7\cdot7\cdot\epsilon, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilon, Q_2)})$ \nextline
+\>$*\;coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$  \nextlinelabel{label:iterclient:nexti}
 
-25 \> $\letv{x}{\nextiter(i)}{}$ \\
-26 \> $\{$\= $n = 2 \land x = \ctext{Some }7 \;\land $\\
-\> \> $iter(i, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilon, Q_2)}, 7\cdot\epsilon)$ \\
-\> \> $*\; coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
-27 \> $\addcoll(c_2, 17)$ \\
-28 \> $\{$\= $n = 2 \land x = \ctext{Some }7 \;\land $\\
-\> \> $iter(i, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilon, Q_2)}, 7\cdot\epsilon)$ \\ 
-\> \> $* \; (\exists Q_3.\; coll(c_2, 17\cdot5\cdot3\cdot\epsilon, Q_3)) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$ \\
-\end{tabbing}
+ $\letv{x}{\nextiter(i)}{}$  \nextline
+ $\{$\= $n = 2 \land x = \ctext{Some }7 \;\land $ \nextlinelabel{label:iterclient:istate}
+ \> $iter(i, 7\cdot\epsilon, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilon, Q_2)})$  \nextline
+ \> $*\; coll(c_2, 5\cdot3\cdot\epsilon, Q_2) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$  \nextlinelabel{label:iterclient:add}
+ $\addcoll(c_2, 17)$  \nextline
+ $\{$\= $n = 2 \land x = \ctext{Some }7 \;\land $ \nextline
+ \> $iter(i, 7\cdot\epsilon, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilon, Q_2)})$  \nextlinelabel{label:iterclient:q3state}
+ \> $* \; (\exists Q_3.\; coll(c_2, 17\cdot5\cdot3\cdot\epsilon, Q_3)) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$  \nextline
+ $\{$\= $\exists Q_2, Q_3, P_4. n = 2 \land x = \ctext{Some }7 \;\land $ \nextline
+ \> $iter(i, 7\cdot\epsilon, \setof{(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4), (c_2, 5\cdot3\cdot\epsilon, Q_2)})$  \nextline 
+ \> $* \; coll(c_2, 17\cdot5\cdot3\cdot\epsilon, Q_3) * coll(c_1, 2\cdot3\cdot4\cdot\epsilon, P_4)\}$  
+\end{specification}
 
 
-In line 1 of this example, we begin in an empty heap. In line 2, we
-create a new collection $c_1$, which yields us the state $\exists
-P'_1.\; coll(c_1, \epsilon, P'_1)$, with an existentially quantified
-abstract state.
+In line 1 of this example, we begin in an empty heap. In
+line~\ref{label:iterclient:makec1}, we create a new collection $c_1$,
+which yields us the state $\exists P'_1.\; coll(c_1, \epsilon, P'_1)$,
+with an existentially quantified abstract state.
 
 Because $P'_1$ is existentially quantified, we do not know what value
 it actually takes on. However, if we prove the rest of the program
 using a freshly-introduced variable $P_1$, then we know that the rest
 of the program will work for \emph{any} value of $P_1$, because free
 variables are implicitly universally quantified.  So it will work with
-whatever value $P'_1$ had. So we drop the quantifier on line 4, and
+whatever value $P'_1$ had. So we drop the quantifier on line~\ref{label:iterclient:dropp1ex}, and
 try to prove this program with the universally-quantified
 $P_1$.\footnote{A useful analogy is the existential elimination rule
   in the polymorphic lambda calculus: we prove that we can use an
   existential by showing that our program is well-typed no matter what
   the contents of the existential are.}
 
-This permits us to $\addcoll$ the element 4 to $c_1$ on line 5. Its
-specification puts the predicate $coll()$ on line 6 again into an
-existentially quantified state $P'_2$. So we again replace $P'_2$ with
-a fresh variable $P_2$ on line 7, and will elide these existential
-introductions and unpackings henceforth.
+This permits us to $\addcoll$ the element 4 to $c_1$ on
+line~\ref{label:iterclient:addc1}. Its specification puts the
+predicate $coll()$ on line 6 again into an existentially quantified
+state $P_2$. So we again replace $P_2$ with a fresh variable $P_2$ on
+line~\ref{label:iterclient:dropp2ex}, and will elide these existential introductions and unpackings
+henceforth.
 
-In lines 8-9, we add two more elements to $c_1$, and on lines 11-13,
+Starting on line~\ref{label:iterclient:addc1again}, we add two more
+elements to $c_1$, and on
+lines~\ref{label:iterclient:makec2}-\ref{label:iterclient:finishc2},
 we create another collection $c_2$, and add $3$ and $5$ to it, as can
-be seen in the state predicate on line 14. On line 15, we create the
-iterator $i_1$ on the collection $c_1$. The $iter$ predicate on line
-16 names $i_1$ as its value, and lists $c_1$ in state $P_4$ as its
-support, and promises to enumerate the elements 2, 3, and 4.
+be seen in the state predicate on
+line~\ref{label:iterclient:c2state}. On
+line~\ref{label:iterclient:makei1}, we create the iterator $i_1$ on
+the collection $c_1$. The $iter$ predicate on
+line~\ref{label:iterclient:i1pred} names $i_1$ as its value, and lists
+$c_1$ in state $P_4$ as its support, and promises to enumerate the
+elements 2, 3, and 4.
 
-On line 17, $\filteriter(even?, i_1)$ creates the new iterator
-$i'_1$. This iterator yields only the even elements of $i_1$, and so
-will only yield 2 and 4. On line 18, $i_1$'s iterator state has been
+On line~\ref{label:iterclient:makeevens}, $\filteriter(even?, i_1)$
+creates the new iterator $i'_1$. This iterator yields only the even
+elements of $i_1$, and so will only yield 2 and 4. On
+line~\ref{label:iterclient:evenspred}, $i_1$'s iterator state has been
 consumed to make $i'_1$'s state. We can no longer call
-$\nextiter(i_1)$, since we do not have the resource invariant
-needed to prove anything about that call. Thus, we cannot write a
-program that would break $i'_1$'s representation invariant.
+$\nextiter(i_1)$, since we do not have the resource invariant needed
+to prove anything about that call. Thus, we cannot write a program
+that would break $i'_1$'s representation invariant.
 
-On line 19, we create a third iterator $i_2$ enumerating the elements
-of $c_2$. The state on line 20 now has predicates for $i'_1$, $i_2$,
-$c_1$ and $c_2$. On line 21, $\ctext{map2}(plus, i'_1, i_2)$ creates a
-new iterator $i$, which produces the pairwise sum of the elements of
-$i'_1$ and $i_2$, and consumes the iterator states for $i'_1$ and
-$i_2$ to yield the state for the new iterator $i$. Note that the 
-invariant for $i$ does not make any mention of what it was constructed
-from, naming only the collections it needs as support. 
+On line~\ref{label:iterclient:makei2}, we create a second iterator
+$i_2$ enumerating the elements of $c_2$. The state on line~\ref{label:iterclient:i2state} now has
+predicates for $i'_1$, $i_2$, $c_1$ and $c_2$. On line~\ref{label:iterclient:mapi},
+$\ctext{map2}(plus, i'_1, i_2)$ creates a new iterator $i$, which
+produces the pairwise sum of the elements of $i'_1$ and $i_2$, and
+consumes the iterator states for $i'_1$ and $i_2$ to yield the state
+for the new iterator $i$. Note that the invariant for $i$ does not
+make any mention of what it was constructed from, naming only the
+collections it needs as support.
 %Furthermore, the support of $i$ is the union of the
 %supports of $i'_1$ and $i_2$ -- namely, the two collections $c_1$ and
 %$c_2$.
 
-On line 23, the $\sizecoll$ call on $c_2$ illustrates that we can
-call non-destructive methods while iterators are active. The call to
-$\nextiter(i)$ on line 24 binds $\ctext{Some }7$ to $x$, and the
-the iterator's sequence argument (line 27) shrinks by one element. On
-line 28, we call $\addcoll(c_2, 17)$ the state of $c_2$ changes to
-$\exists Q_3.\; coll(c, 17\cdot 5 \cdot 3\cdot\epsilon, Q_3)$ (line
-27). So we can no longer call $\nextiter(i)$, since it needs $c_2$
-to be in the state $Q_2$.
+On line~\ref{label:iterclient:sizecoll}, the $\sizecoll$ call on $c_2$
+illustrates that we can call non-destructive methods while iterators
+are active. The call to $\nextiter(i)$ on
+line~\ref{label:iterclient:nexti} binds $\ctext{Some }7$ to $x$, and
+the the iterator's sequence argument
+(line~\ref{label:iterclient:istate}) shrinks by one element. On
+line~\ref{label:iterclient:add}, we call $\addcoll(c_2, 17)$ the state
+of $c_2$ changes to $\exists Q_3.\; coll(c, 17\cdot 5 \cdot
+3\cdot\epsilon, Q_3)$ (line~\ref{label:iterclient:q3state}). So we can
+no longer call $\nextiter(i)$, since it needs $c_2$ to be in the state
+$Q_2$. (On the following 
 
 \textbf{Discussion.} This example shows a pleasant synergy between
 higher-order quantification and separation logic. We can give a
 relatively simple specification to the clients of the collection
-library, even though the internal invariant is quite subtle (as the
-use of the magic wand suggests). Higher-order logic also lets us
-freely define new data types, and so our specifications can take
-advantage of the pure, non-imperative nature of the mathematical
-world, as can be seen in the specifications of the $\filteriter$
-and $\ctext{map2}$ functions -- we can use equational reasoning on
-purely functional lists in our specifications, even though our
-algorithms are imperative.
+library, even though the internal invariant is quite subtle (as we
+will see in the next section, it will use the magic wand). Higher-order
+logic also lets us freely define new data types, and so our
+specifications can take advantage of the pure, non-imperative nature
+of the mathematical world, as can be seen in the specifications of the
+$\filteriter$ and $\ctext{map2}$ functions -- we can use equational
+reasoning on purely functional lists in our specifications, even
+though our algorithms are imperative.
 
 
 \subsection{Example Implementation}
