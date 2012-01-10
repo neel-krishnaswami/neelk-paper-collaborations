@@ -785,9 +785,11 @@ $\listcontentpred(\tau, \Cons(y,c), xs)$ \> $\equiv$ \>
 $\collpred_\tau$\=$(c, xs, P) \equiv list(\tau, c, xs) \land P \land \mbox{exact}(P)$ 
 
 \nextlinelabel[0.5em]{decl:iterpred-impl}
-$\iterpred_\tau(\One\;i, xs, \setof{(\tau, \_, \_, P)}) \qquad\qquad$\=$\equiv \exists c.\; i \pointsto c * (P \wand (P \land (\top * \listpred(\tau, c, xs))))$ 
+$\iterpred_\tau(\One\;i, xs, \setof{(\tau, c, ys, P)}) \qquad\qquad$\=$\equiv \exists c'.\;$\=$i \pointsto c \;*$ \nextline
+                                                                   \>                      \>$(\collpred(c, ys, P) \wand $\=$\collpred(c, ys, P) \;\land $\nextline
+                                                                   \>                      \>                             \>$(\top * \listpred(c', xs)))$ 
 \nextline
-$\iterpred_\tau(\One\;i, xs, S) \qquad\qquad$\>$\equiv \bot$
+$\iterpred_\tau(\One\;i, xs, S) \qquad\qquad$\>$\equiv \bot$ (defined when $|S| \not= 1$)
 \nextline
 
 $\iterpred_\tau(\Filter(p, i), xs, S)$ \>$\equiv 
@@ -885,39 +887,28 @@ The iterator predicate, defined on line \ref{decl:iterpred-impl} is
 given as a recursive definition. The base case is when we have an 
 iterator over a single collection, in the $\One(i)$ case.  Here, 
 we have the following assertion: 
-
 \begin{displaymath}
-  \iterpred_\tau(\One(i), xs, \setof{(\tau, \_, \_, P)}) \equiv 
-    \exists c.\; i \pointsto c * P \wand (P \land (\top * \listpred(\tau, c, xs)))
+  \iterpred_\tau(\One(i), xs, \setof{(\tau, c, ys, P)}) \equiv 
+    \exists c'.\; i \pointsto c' * (\collpred(c,ys,P) \wand (\collpred(c, ys, P) \land (\top * \listpred(c', xs))))
 \end{displaymath}
 
 The $i \pointsto c$ clause says that $i$ is a pointer to a linked
 list.  The second clause of this invariant is more complex, and its
 purpose is to say that $c$ is an interior pointer into a collection.
 
-Note that $P$ will come from the abstract predicate field of some
-collection, and so will be an exact predicate. So the conclusion 
-of the magic wand, $(P \land (\top * \listpred(\tau, c, xs)))$, says
-that the state is $P$, and can also be viewed as containing the 
-list starting at $c$ and representing the sequence $xs$. 
-Since $c$ is an interior pointer, there may be more collection state
-occurring before $c$, though we don't care about the details of that 
-state --- this is why $\top$ is conjoined to the list predicate. However,
-the collection state does depend on the whole list, which is why $P$ 
-is conjoined with the state $\top * \listpred(\tau, c, xs)$. 
-
-Adding the magic wand to the formula , so that we get $P \wand (P \land (\top
-* \listpred(\tau, c, xs)))$, intuitively means ``if you give me the
-collection state $P$, then I promise to you that it contains $c$,
-which represents $xs$.'' In this way, we express the fact that the
-iterator's invariant depends on having controlled access to the state
-of the collection. However, we are also able to avoid giving the
-iterator state direct ownership of the collection; the magic wand
-ensures that we can follow the pointer $c$ when we are given the
+It says that if we are ownership of the collection state $\collpred(c,
+ys, P)$ is transferred to us, then we will get it back, along with the
+additional information that $\listpred(c', xs)$ is within the same
+state. In this way, we express the fact that the iterator's invariant
+depends on having controlled access to the state of the
+collection. However, we are also able to avoid giving the iterator
+state direct ownership of the collection; the magic wand lets us say
+that we don't own the collection currently, but rather that if we get
+it, then we  can follow the pointer $c$ when we are given the
 collection state of the collection.
 
 The reason we go to this effort is to simplify the specification and
-proof of client programs -- we could eliminate the use of the magic
+proof of client programs --- we could eliminate the use of the magic
 wand in the base case if iterators owned their collections, but this
 would complicate verifying programs that use multiple iterators over
 the same collection, or which want to call pure methods on the
@@ -933,7 +924,7 @@ the magic wand work correctly. The semantics of the magic wand $p
 there is at most one satisfying heap. This lets us treat the wand as a
 ``subtraction'' operator, which is ordinarily not legitimate. There is
 possibly a connection to Parkinson's ``septraction''
-operator~\cite{parkinson-septraction}. 
+operator~\cite{parkinson-septraction}.
 
 On the next line, we have a catch-all case saying that the predicate
 is false whenever a $\One$ iterator has other than a single collection
@@ -1171,20 +1162,24 @@ give the following proof:
 
 \begin{specification}
 \nextline $\setof{\collpred_\alpha(c, xs, P)}$ 
-\nextline $\setof{\listpred(\alpha, c, xs, P) \land P \land \exact{P}}$ 
+\nextline $\setof{\listpred(c, xs, P) \land P \land \exact{P}}$ 
+\nextline $\setof{\listpred(c, xs, P) \land P \land \exact{P}  \land \exact{\listpred(c, xs, P) \land P \land \exact{P}}}$ 
+\nextline $\setof{\collpred(c, xs, P) \land \exact{\collpred(c, xs, P)}}$ 
 \nextline $\letv{i}{\comp{\newref{\colltype(\alpha)}{c}}}{}$ 
-\nextline $\setof{\listpred(\alpha, c, xs) \land P \land \exact{P} * i \pointsto c}$ 
-\nextline $\setof{\listpred(\alpha, c, xs) \land P \land \exact{P} * i \pointsto c * \emp}$ 
-\nextline $\setof{\listpred(\alpha, c, xs) \land P \land \exact{P} * i \pointsto c * (P \wand P)}$
-\nextline $\setof{\listpred(\alpha, c, xs) \land P \land \exact{P} * i \pointsto c * P \wand (P \land \listpred(\alpha, c, xs))}$ 
+\nextline $\setof{i \pointsto c * \collpred(c, xs, P) \land \exact{\collpred(c, xs, P)}}$ 
+\nextline $\setof{i \pointsto c * ((\top * \collpred(c, xs, P)) \land \collpred(c, xs, P)) \land \exact{\collpred(c, xs, P)}}$ 
+\nextline $\setof{i \pointsto c * (\collpred(c, xs, P) \wand (\top * \collpred(c, xs, P)) \land \collpred(c, xs, P)) * \collpred(c, xs, P)}$ 
 \nextline $\One(i)$ 
-\nextline $\setof{\listpred(\alpha, c, xs) \land P \land \exact{P} * i \pointsto c * P \wand (P \land \listpred(\alpha, c, xs)) \land a = \One(i)}$ 
-\nextline $\setof{\listpred(\alpha, c, xs) \land P \land \exact{P} * \iterpred_\alpha(a, xs, \setof{P})}$
-\nextline $\setof{\collpred_\alpha(c, xs, P) * \iterpred_\alpha(a, xs, \setof{P})}$
+\nextline $\setof{a.\; \exists i.\; a = \One(i) \land \iterpred(\One(i), xs, \setof{(\alpha, c, xs, P)})}$ 
+\nextline $\setof{a.\; \iterpred(a, xs, \setof{(\alpha, c, xs, P)})}$ 
+
 \end{specification}
 
-The key steps in this proof are from lines 5 to 7. On line 5, we introduce an extra $\emp$, which
-entails $P \wand P$ on line 6. Then, because $P$ is strict exact, we know that for any $Q$, either $P \land Q = \bot$ or $P \land Q = P$. This justifies changing the formula to $P \wand (P \land \listpred(\alpha, c, xs))$ in line 7. If $P \land \listpred(\alpha, c, xs)$ is false, then the whole formula is false, since it occurs as part of the whole assertion. Otherwise, it's an equality, and we can rewrite the conclusion of the magic wand without changing the meaning of the assertion.
+The key idea in this proof is that if $P$ is exact, then $P \land Q$
+is also exact, no matter what $Q$ is.  This lets us use the exactness
+of the abstract state to ``subtract'' the predicate $\collpred(c, xs, P)$
+and keep the iterator and collection state separate. 
+
 \end{proof}
 
 \begin{lemma}{(Correctness of $\filteriter$)}
@@ -1274,42 +1269,44 @@ follows.
 \nextline $\setof{\iterpred_\alpha(\One(i'), xs, S) * \mathit{colls}(S)}$ 
 \nextline When $S$ has other than one element, the precondition is false, so we only need to \nextline
           consider the one-element case:
-\nextline $\setof{\exists P.\; \iterpred_\alpha(\One(i'), xs, \setof{(\alpha, c, ys, P)}) * \mathit{colls}_\alpha(\setof{(\alpha, c, ys, P)})}$ 
-\nextline $\setof{\exists P.\; \iterpred_\alpha(\One(i'), xs, \setof{P}) * \collpred_\alpha(c, ys, P)}$
-\nextline $\setof{\exists c'.\; i' \pointsto c' * (P \wand (P \land (\top * \listpred(\alpha, c', xs)))) * \listpred(\alpha,c, ys) \land P \land \exact{P}}$ 
-\nextline $\setof{\exists c'. i' \pointsto c' * P \land \listpred(\alpha, c, ys) \land (\top * \listpred(\alpha, c', xs)) \land \exact{P}}$ 
+\nextline $\setof{\exists c, ys, P.\; S = \setof{(c, ys, P)} \land \iterpred_\alpha(\One(i'), xs, \setof{(\alpha, c, ys, P)}) * \mathit{colls}_\alpha(\setof{(\alpha, c, ys, P)})}$ 
+\nextline We will use the existential rule and then frame off the definition of $S$:
+\nextline $\setof{\iterpred(\One(i'), xs, \setof{(c, ys, P)}) * \collpred(c, ys, P)}$ 
+\nextline $\setof{\exists c'.\; i' \pointsto c' * (\top * list(c', xs)) \land \collpred(c, ys, P)}$
 \nextline $\letv{c'}{\comp{!i'}}{}$ 
-\nextline $\setof{i' \pointsto c' * P \land \listpred(\alpha, c, ys) \land (\top * \listpred(\alpha, c', xs)) \land \exact{P}}$ 
-\nextline $\setof{i' \pointsto c' * P \land \listpred(\alpha, c, ys) \land (\top * \exists v.\; c' \pointsto v * \listcontentpred(\alpha, v, xs)) \land \exact{P}}$ 
+\nextline $\setof{i' \pointsto c' * (\top * list(c', xs)) \land \collpred(c, ys, P)}$
+\nextline $\setof{\exists p.\; i' \pointsto c' * (\top * c' \pointsto p * \listcontentpred(p, xs)) \land \collpred(c, ys, P)}$
 \nextline $\letv{v}{\comp{!c'}}{}$ 
-\nextline $\setof{i' \pointsto c' * P \land \listpred(\alpha, c, ys) \land (\top * c' \pointsto v * \listcontentpred(\alpha, v, xs)) \land \exact{P}}$ 
-\nextline $\Run\;$\=$\Listcase(v,$ 
+\nextline $\setof{i' \pointsto c' * (\top * c' \pointsto p * \listcontentpred(p, xs)) \land \collpred(c, ys, P)}$
+\nextline $\Run\;$\=$\Listcase(p,$ 
 \nextline \> $\Nil $\=$\to$ 
-\nextline \> \> Framing $\exact{P}$
-\nextline \> \> $\setof{v = \Nil \land i' \pointsto c' * P \land \listpred(\alpha, c, ys) \land (\top * c' \pointsto v * \listcontentpred(\alpha, v, xs))}$ 
-\nextline \> \> $\setof{i' \pointsto c' * P \land \listpred(\alpha, c, ys) \land (\top * c' \pointsto \Nil * xs = \epsilon}$ 
+\nextline \> \> $\setof{p = \Nil \land i' \pointsto c' * (\top * c' \pointsto p * \listcontentpred(p, xs)) \land \collpred(c, ys, P)}$
+\nextline \> \> $\setof{xs = \epsilon \land i' \pointsto c' * (\top * c' \pointsto p * \listcontentpred(p, xs)) \land \collpred(c, ys, P)}$
+\nextline \> \> $\setof{xs = \epsilon \land \iterpred(i, xs, \setof{(c, ys, P)}) * \collpred(c, ys, P)}$
+\nextline \> \> Restoring the definition of $S$:
+\nextline \> \> $\setof{xs = \epsilon \land \iterpred(i, xs, S) * \mathit{colls}(S)}$
 \nextline \> \> $\comp{\None}$ 
-\nextline \> \> $\setof{a = \None \land i' \pointsto c' * P \land \listpred(\alpha, c, ys) \land (\top * c' \pointsto \Nil * xs = \epsilon}$ 
-\nextline \> \> $\setof{a = \None \land ys = \epsilon \land i' \pointsto c' * P \land \listpred(\alpha, c, ys)  \land (\top * \listpred(\alpha, c', xs)) }$ 
-\nextline \> \> Restoring frame $\exact{P}$ 
-\nextline \> \> $\setof{a = \None \land xs = \epsilon \land i' \pointsto c' * P \land \listpred(\alpha, c, ys) \land (\top * \listpred(\alpha, c', xs)) \land \exact{P}}$ 
-\nextline \> \> $\setof{a = \None \land xs = \epsilon \land \iterpred_\alpha(i, xs, \setof{(\alpha, c, ys, P)}) * colls(\setof{(\alpha, c, ys, P)})}$
+\nextline \> \> $\setof{a.\; a = \None \land xs = \epsilon \land \iterpred(i, xs, S) * \mathit{colls}(S)}$
 \nextline \> $\Cons(z, c'') \to$ 
-\nextline \> \> Framing $\exact{P}$
-\nextline \> \> $\setof{v = \Cons(z, c'') \land i' \pointsto c' * P \land \listpred(\alpha,c,ys) \land (\top * c' \pointsto v * \listcontentpred(\alpha, v, xs))}$  
-\nextline \> \> $\setof{i' \pointsto c' * P \land \listpred(\alpha,c,ys) \land (\top * c' \pointsto \Cons(z,c'') * \listcontentpred(\alpha, \Cons(z,c''), xs))}$  
-\nextline \> \> $\setof{i' \pointsto c' * P \land \listpred(\alpha,c,ys) \land (\top * c' \pointsto \Cons(z,c'') * \exists zs.\; xs = z\cdot zs \land \listpred(\alpha, c'', xs))}$  
-\nextline \> \> $\setof{i' \pointsto c' * P \land \listpred(\alpha,c,ys) \land (\top * c' \pointsto \Cons(z,c'') * xs = z\cdot zs \land \listpred(\alpha, c'', xs))}$  
+\nextline \> \> $\setof{p = \Cons(z, c'') \land i' \pointsto c' * (\top * c' \pointsto p * \listcontentpred(p, xs)) \land \collpred(c, ys, P)}$
+\nextline \> \> $\{$\=$\exists zs.\; xs = z\cdot zs \land p = \Cons(z, c'') \land i' \pointsto c' \;*$ 
+\nextline \> \>     \>$(\top * c' \pointsto \Cons(z, c'') * \listpred(c'', zs)) \land \collpred(c, ys, P)\}$
+\nextline \> \> $\setof{\exists zs.\; xs = z\cdot zs \land i' \pointsto c'\land
+                       (\top * \listpred(c'', zs)) \land \collpred(c, ys, P)}$
 \nextline \> \> $[\letv{\_}{i' := c''}{}$ 
-\nextline \> \> $\setof{i' \pointsto c'' * P \land \listpred(\alpha,c,ys) \land (\top * c' \pointsto \Cons(z,c'') * xs = z\cdot zs \land \listpred(\alpha, c'', xs))}$  
-\nextline \> \> $\setof{i' \pointsto c'' * P \land \listpred(\alpha,c,ys) \land (\top * xs = z\cdot zs \land \listpred(\alpha, c'', xs))}$  
-\nextline \> \> $\setof{xs = z\cdot zs \land i' \pointsto c'' * P \land \listpred(\alpha,c,ys) \land (\top * \listpred(\alpha, c'', xs))}$  
-\nextline \> \> Restoring frame $\exact{P}$ 
-\nextline \> \> $\setof{xs = z\cdot zs \land i' \pointsto c'' * P \land \listpred(\alpha,c,ys) \land (\top * \listpred(\alpha, c'', xs)) \land \exact{P}}$  
-\nextline \> \> $\setof{xs = z\cdot zs \land i' \pointsto c'' * (P \land \listpred(\alpha,c,ys) \land \exact{P}) * (P \wand (P \land (\top * \listpred(\alpha, c'', xs))))}$  
-\nextline \> \> $\setof{xs = z\cdot zs \land \collpred_\alpha(c, zs, P) * \iterpred_\alpha(\One(i'),zs,\setof{(\alpha, c, zs, P)})}$  
-\nextline \> \> $\Some(z)]$ 
-\nextline \> \> $\setof{a. \exists z, zs.\; xs = z\cdot zs \land a = \Some(z) \land \collpred_\alpha(c, zs, P) * \iterpred_\alpha(\One(i'),zs,\setof{(\alpha, c, zs, P)})}$  
+\nextline \> \> $\setof{\exists zs.\; xs = z\cdot zs \land i' \pointsto c'' \land
+                       (\top * \listpred(c'', zs)) \land \collpred(c, ys, P)}$
+\nextline \> \> $\setof{\exists zs.\; xs = z\cdot zs \land
+                        \iterpred(\One(i'), zs, \setof{(c, ys, P)}) * \collpred(c, ys, P)}$ 
+\nextline \> \> Restoring the definition of $S$:
+\nextline \> \> $\setof{\exists zs.\; xs = z\cdot zs \land
+                        \iterpred(\One(i'), zs, S) * \mathit{colls}(S)}$ 
+\nextline \> \> $\Some(z)])$ 
+\nextline \> \> $\setof{\exists z, zs.\; a = \Some(z) \land xs = z\cdot zs \land
+                        \iterpred(i, zs, S) * \mathit{colls}(S)}$ 
+\nextline $\{a.\;$\=$((a = \None \land xs = \epsilon \land \iterpred(i, xs, S)) \; \vee$ 
+\nextline         \>$(\exists z, zs.\; a = \Some(z) \land xs = z\cdot zs \land \iterpred(i, zs, S))) \;*$ 
+\nextline         \>$\mathit{colls}(S)\}$
 \end{specification}
 
 \item Suppose $i = \Filter(p, i')$. Then, we proceed with an annotated proof as 
@@ -1322,73 +1319,55 @@ follows:
 \nextline $\setof{xs = \mathit{filter}\;p\;ys \land
                   \iterpred_\alpha(i', ys, S) *
                   \mathit{colls}(S)}$
+\nextline Since it is pure, we can pull $xs = \mathit{filter}\;p\;ys$ out of the precondition. 
+\nextline $\setof{\iterpred_\alpha(i', ys, S) * \mathit{colls}(S)}$
 \nextline $[\letv{v}{\nextiter_\alpha(i')}{}$ 
-\nextline \{\=$[(ys = \epsilon \land v = \None) \vee 
-                (\exists z, zs.\; ys = z\cdot zs \land v = \Some(z))] \land
-               xs = \mathit{filter}\;p\;ys \;\land$ 
-\contline $\iterpred_\alpha(i', ys, S) * \mathit{colls}(S)$\}
+\nextline \{\=$[(ys = \epsilon \land v = \None \land \iterpred_\alpha(i', ys, S)) \vee 
+                (\exists z, zs.\; ys = z\cdot zs \land v = \Some(z) \land \iterpred_\alpha(i', ys, S))]$
+\nextline \> $ * \mathit{colls}(S)$\}
 \nextline \;$\Run$\=$\;\Listcase(v,$ 
-\nextline \> $\None$\=$ \to [\None]$ 
-\nextline \> \{$a = \None \land 
-               (ys = \epsilon \land v = \None) \land 
-                xs = \mathit{filter}\;p\;ys \;\land
-                \iterpred_\alpha(i', ys, S) * \mathit{colls}(S)$\}
-\nextline \> \{$a = \None \land xs = \epsilon \land
-                xs = \mathit{filter}\;p\;ys \;\land
-                \iterpred_\alpha(i', ys, S) * \mathit{colls}(S)$\}
-\nextline \> \{$a = \None \land xs = \epsilon \land
-                \exists ys.\;
-                xs = \mathit{filter}\;p\;ys \;\land
-                \iterpred_\alpha(i', ys, S) * \mathit{colls}(S)$\}
-\nextline \> \{$a = \None \land xs = \epsilon \land
-                \iterpred_\alpha(\Filter(p, i'), xs, S) * \mathit{colls}(S)$\}
-\nextline \> $\Some(z)$\=$\to$
-\nextline \> \;\;\{\=$\exists zs.\; ys = z\cdot zs \land v = \Some(z) \land
-                  xs = \mathit{filter}\;p\;(z\cdot zs) \;\land$ 
-\\ \> \> \>      $\iterpred_\alpha(i', zs, S) * \mathit{colls}(S)$\}
-\nextline \> \;\;\{\=$ys = z\cdot zs \land v = \Some(z) \land
-                   xs = \mathit{filter}\;p\;(z\cdot zs) \;\land$ 
-\\ \> \> \>      $\iterpred_\alpha(i', zs, S) * \mathit{colls}(S)$\}
-\nextline \> \;\;$\ctext{if}($\=$p\;z,$ 
-\nextline \> \> \{\=$p\;z = \True \land ys = z\cdot zs \land v =\Some(z) \land
-                   xs = \mathit{filter}\;p\;(z\cdot zs) \;\land$ 
-\\ \> \> \>      $\iterpred_\alpha(i', zs, S) * \mathit{colls}(S)$\}
-\nextline \> \> \{\=$ys = z\cdot zs \land v =\Some(z) \land
-                   xs = z\cdot(\mathit{filter}\;p\;zs) \;\land$ 
-\\ \> \> \>      $\iterpred_\alpha(i', zs, S) * \mathit{colls}(S)$\}
-\nextline \> \> \{\=$v =\Some(z) \land
-                   xs = z\cdot(\mathit{filter}\;p\;zs) \;\land
-                   \iterpred_\alpha(i', zs, S) * \mathit{colls}(S)$\}
-\nextline \> \> \{\=$v =\Some(z) \land
-                   xs = z\cdot(\mathit{filter}\;p\;zs) \;\land
-                   \mathit{filter}\;p\;zs = \mathit{filter}\;p\;zs \;\land
-                   \iterpred_\alpha(i', zs, S) * \mathit{colls}(S)$\}
-\nextline \> \> \{\=$v =\Some(z) \land
-                   xs = z\cdot(\mathit{filter}\;p\;zs) \;\land
-                   \iterpred_\alpha(i', \mathit{filter}\;p\;zs, S) * \mathit{colls}(S)$\}
-\nextline \> \> \{\=$\exists z', zs'.\; v =\Some(z') \land
-                     xs = z'\cdot zs' \land
-                   \iterpred_\alpha(i', zs', S) * \mathit{colls}(S)$\}
-\nextline \> \> $[v],$
-\nextline \> \> \{\=$\exists z', zs'.\; a = \Some(z') \land
-                     xs = z'\cdot zs' \land
-                   \iterpred_\alpha(i', zs', S) * \mathit{colls}(S)$\}
-\\ \> \> \> (Now the else-branch)
-\nextline \> \> \{\=$p\;z = \False \land ys = z\cdot zs \land a = \Some(z) \land
-                   xs = \mathit{filter}\;p\;(z\cdot zs) \;\land$ 
-\\ \> \> \>      $\iterpred_\alpha(i', zs, S) * \mathit{colls}(S)$\}
-\nextline \> \> \{\=$xs = \mathit{filter}\;p\; zs \;\land
-                     \iterpred_\alpha(i', zs, S) * \mathit{colls}(S)$\}
-\nextline \> \> \{\=$\iterpred_\alpha(\Filter(p, i'), xs, S) * \mathit{colls}(S)$\}
-\nextline \> \> $\nextiter_\alpha(\Filter(p, i'))))$ 
-\nextline \> \> \{\=$(xs = \epsilon \land a = \None \land \iterpred_\alpha(\Filter(p, i'), xs, S) * \mathit{colls}(S)) \;\vee$ 
-\contline \> \>  $(\exists z, zs. xs = z\cdot zs \land a = \Some(Z) \land
-                    \iterpred_\alpha(\Filter(p, i'), zs, S) * \mathit{colls}(S))$\}   
+\nextline \> $\None$\=$ \to $ 
+\nextline \> \> $\{$\=$[(ys = \epsilon \land v = \None \land \iterpred_\alpha(i', ys, S)) \vee $
+\nextline \> \>     \>$(\exists z, zs.\; ys = z\cdot zs \land v = \Some(z) \land \iterpred_\alpha(i', ys, S))] * \mathit{colls}(S) \land v = \None\}$
+\nextline \> \> $\{$\=$ys = \epsilon \land \iterpred_\alpha(i', ys, S) * \mathit{colls}(S)\}$
+\nextline \> \> Since $xs = \mathit{filter}\;p\;ys = \epsilon$, we know
+\nextline \> \> $\{$\=$xs = \epsilon \land \iterpred_\alpha(i, xs, S) * \mathit{colls}(S)\}$
+\nextline \> \> $[\None]$ 
+\nextline \> \> $\{a.\; a = \None \land xs = \epsilon \land \iterpred_\alpha(i, xs, S) * \mathit{colls}(S)\}$
+\nextline \> $\Some(z)\to$
+\nextline \> \> $\{$\=$[(ys = \epsilon \land v = \None \land \iterpred_\alpha(i', ys, S)) \vee $
+\nextline \> \> \> $(\exists z, zs.\; ys = z\cdot zs \land v = \Some(z) \land \iterpred_\alpha(i', ys, S))] * \mathit{colls}(S) \land v = \Some(z)\}$
+\nextline \> \> $\{\exists zs.\; ys = z\cdot zs \land v = \Some(z) \land \iterpred_\alpha(i', ys, S) * \mathit{colls}(S)\}$
+\nextline \> \> $\{ys = z\cdot zs \land v = \Some(z) \land \iterpred_\alpha(i', ys, S) * \mathit{colls}(S)\}$
+\nextline \> \> $\Run\;\ctext{if}($\=$p\;z,$ 
+\nextline \> \> \> $\{p\;z = \True \land ys = v\cdot zs \land \iterpred_\alpha(i', ys, S) * \mathit{colls}(S)\}$
+\nextline \> \> \> Hence $xs = \mathit{filter}\;p\;ys = v\cdot(\mathit{filter}\;p\;zs)$. So 
+\nextline \> \> \> $\{xs = v\cdot(\mathit{filter}\;p\;zs) \land \iterpred_\alpha(i', zs, S) * \mathit{colls}(S)\}$
+\nextline \> \> \> $\{\exists xs'.\; xs = v\cdot xs' \land \iterpred_\alpha(\Filter(p, i'), xs', S) * \mathit{colls}(S)\}$
+\nextline \> \> \> $\{\exists xs'.\; xs = v\cdot xs' \land \iterpred_\alpha(i, xs', S) * \mathit{colls}(S)\}$
+\nextline \> \> \> $[v],$
+\nextline \> \> \> $\{a.\; \exists x', xs'.\; xs = x'\cdot xs' \land a = \Some(x') \land \iterpred_\alpha(i, xs', S) * \mathit{colls}(S)\}$
+\nextline \> \> \> $\{a.\;$\=$((a = \None \land xs = \epsilon \land \iterpred(i, xs, S)) \; \vee$ 
+\nextline \> \> \>         \>$(\exists z, zs.\; a = \Some(z) \land xs = z\cdot zs \land \iterpred(i, zs, S))) \;*$ 
+\nextline \> \> \>         \>$\mathit{colls}(S)\}$
+\nextline \> \> \> Now, the else-branch:
+\nextline \> \> \> $\{p\;z = \False \land ys = v\cdot zs \land \iterpred_\alpha(i', ys, S) * \mathit{colls}(S)\}$
+\nextline \> \> \> Hence $xs = \mathit{filter}\;p\;ys = \mathit{filter}\;p\;zs$. So 
+\nextline \> \> \> $\{xs = \mathit{filter}\;p\;zs \land \iterpred_\alpha(i', zs, S) * \mathit{colls}(S)\}$
+\nextline \> \> \> $\{\iterpred_\alpha(\Filter(p, i'), xs, S) * \mathit{colls}(S)\}$
+\nextline \> \> \> $\{\iterpred_\alpha(i, xs, S) * \mathit{colls}(S)\}$
+\nextline \> \> \> $\nextiter_\alpha(i))))]$ 
+\nextline \> \> \> $\{a.\;$\=$((a = \None \land xs = \epsilon \land \iterpred(i, xs, S)) \; \vee$ 
+\nextline \> \> \>         \>$(\exists z, zs.\; a = \Some(z) \land xs = z\cdot zs \land \iterpred(i, zs, S))) \;*$ 
+\nextline \> \> \>         \>$\mathit{colls}(S)\}$
+\nextline $\{a.\;$\=$((a = \None \land xs = \epsilon \land \iterpred(i, xs, S)) \; \vee$ 
+\nextline         \>$(\exists z, zs.\; a = \Some(z) \land xs = z\cdot zs \land \iterpred(i, zs, S))) \;*$ 
+\nextline         \>$\mathit{colls}(S)\}$
 \end{specification}
 
-Note that this is not a structural induction on $i$; the
-$\Filter(p,i)$ case has a non-structural recursive call. Here, we make
-use of fixed-point induction in our proof of $\nextiter$. 
+Note that this is not a structural induction on $i$; we make a
+non-structural recursive call when the test of $p$ fails. Here, we
+make use of fixed-point induction in our proof of $\nextiter$.
 
 \item Suppose $i = \Merge(f, i_1, i_2)$. Then, we proceed with an
 annotated proof as follows:
