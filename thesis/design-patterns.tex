@@ -1374,21 +1374,21 @@ annotated proof as follows:
 
 \begin{specification}
 \nextline $\setof{\iterpred_\alpha(\Merge(f, i_1, i_2), xs, S) * \mathit{colls}(S)}$ 
-\nextline $\setof{\exists S_1, ys, S_2, zs.\; 
-                    xs = \mathit{map2}\;f\;ys\;zs \land 
-                    S = S_1 \uplus S_2 \land
-                    \iterpred_\alpha(i_1, ys, S_1) * 
-                    \iterpred_\alpha(i_2, zs, S_2) * 
-                    \mathit{colls}(S)}$ 
-\nextline \{$xs = \mathit{map2}\;f\;ys\;zs \land 
+\nextline $\{$\=$\exists \beta, \gamma, S_1, ys, S_2, zs.\; 
+                  xs = \mathit{map2}\;f\;ys\;zs \land 
+                    S = S_1 \uplus S_2 \land$ 
+\\\>     \>$   \iterpred_\beta(i_1, ys, S_1) * 
+                    \iterpred_\gamma(i_2, zs, S_2) * 
+                    \mathit{colls}(S)\}$ 
+\nextline $\{xs = \mathit{map2}\;f\;ys\;zs \land 
                   S = S_1 \uplus S_2 \land$ 
-\\ \>\;     $\iterpred_\alpha(i_1, ys, S_1) * 
-                  \iterpred_\alpha(i_2, zs, S_2) * 
+\\ \>\;     $\iterpred_\beta(i_1, ys, S_1) * 
+                  \iterpred_\gamma(i_2, zs, S_2) * 
                   \mathit{colls}(C,S)$\}
 \nextline \{$xs = \mathit{map2}\;f\;ys\;zs \land 
                   S = S_1 \uplus S_2 \land$ 
-\\ \>\;     $\iterpred_\alpha(i_1, ys, S_1) * 
-                  \iterpred_\alpha(i_2, zs, S_2) * 
+\\ \>\;     $\iterpred_\beta(i_1, ys, S_1) * 
+                  \iterpred_\gamma(i_2, zs, S_2) * 
                   \mathit{colls}(S_1) * \mathit{colls}(S_2)$\}
 \nextline $\letv{v_1}{\nextiter_\alpha(i_1)}{}$
 \nextline \{$xs = \mathit{map2}\;f\;ys\;zs \land 
@@ -1396,13 +1396,6 @@ annotated proof as follows:
 \\ \>\;     $[(ys = \epsilon \land v_1 = \None \land \iterpred_\alpha(i_1, ys, S_1))$ 
 \\ \>\;\;    $\vee\; (\exists b, bs.\; ys = b\cdot bs \land v_1 = \Some(b) \land 
                                 \iterpred_\alpha(i, bs, S_1))] \;*$ 
-\\ \>\;     $\iterpred_\alpha(i_2, zs, S_2) * 
-             \mathit{colls}(S_1) * \mathit{colls}(S_2)$\}
-\nextline \{$xs = \mathit{map2}\;f\;ys\;zs \land 
-                  S = S_1 \uplus S_2 \land$ 
-\\ \>\;     $[(ys = \epsilon \land v_1 = \None \land \iterpred_\alpha(i_1, ys, S_1))$ 
-\\ \>\;\;    $\vee\; (\exists b, bs.\; ys = b\cdot bs \land v_1 = \Some(b) \land 
-                                \iterpred_\alpha(i_1, bs, S_1))] \;*$ 
 \\ \>\;     $\iterpred_\alpha(i_2, zs, S_2) * 
              \mathit{colls}(S_1) * \mathit{colls}(S_2)$\}
 \nextline $\letv{v_2}{\nextiter_\alpha(i_2)}{}$ 
@@ -1461,11 +1454,11 @@ annotated proof as follows:
                   S = S_1 \uplus S_2 \land$ 
 \\ \> \> \>\;\;    $(\exists bs.\; ys = b\cdot bs \land v_1 = \Some(b) \land 
                                 \iterpred_\alpha(i_1, bs, S_1)) \;*$
-\\ \> \> \>\;     $(zs = \epsilon \land v_2 = \None \land \iterpred_\alpha(i_2, zs, S_2))$ 
+\\ \> \> \>\;     $(zs = \epsilon \land v_2 = \None \land \iterpred_\alpha(i_2, zs, S_2)) *$ 
 \\ \> \> \>\;     $\mathit{colls}(S)$\}
 
 \nextline \> \> \{$xs = \epsilon \land xs = \mathit{map2}\;f\;ys\;zs \land 
-                  S = S_1 \uplus S_2 \land$ 
+                  S = S_1 \uplus S_2 \land zs = \epsilon \;\land$ 
 \\ \> \> \>\;\;    $(\exists bs.\; ys = b\cdot bs \land v_1 = \Some(b) \land 
                                 \iterpred_\alpha(i_1, bs, S_1)) \;*$
 \\ \> \> \>\;     $(zs = \epsilon \land v_2 = \None \land \iterpred_\alpha(i_2, zs, S_2))$ 
@@ -1506,11 +1499,11 @@ annotated proof as follows:
 \\ \> \> \>\;     $\mathit{colls}(S)$\}
 
 \nextline \> \> $\Some(f\;b\;c)))$ 
-\nextline \> \> \{$a = (f\;b\;c) \land xs = (f\;b\;c) \cdot \mathit{map2}\;f\;bs\;cs \; \land$
+\nextline \> \> \{$a = \Some(f\;b\;c) \land xs = (f\;b\;c) \cdot \mathit{map2}\;f\;bs\;cs \; \land$
 \\ \> \> \>\;    $\iterpred_\alpha(\Merge(f, i_1, i_2), \mathit{map2}\;f\;bs\;cs, S) \;*$
 \\ \> \> \>\;     $\mathit{colls}(S)$\}
 
-\nextline \> \> \{$\exists v, vs.\; a = v \land xs = v \cdot vs \; \land$
+\nextline \> \> \{$\exists v, vs.\; a = \Some(v) \land xs = v \cdot vs \; \land$
 \\ \> \> \>\;    $\iterpred_\alpha(\Merge(f, i_1, i_2), vs, S) \;*$
 \\ \> \> \>\;     $\mathit{colls}(S)$\}
 
@@ -1522,21 +1515,22 @@ annotated proof as follows:
 \end{proof}
 
 
-$\nextiter$ (lines 20-31) recursively walks down the structure of
-the iterator tree, and combines the results from the leaves upwards.
-The base case is the $\ctext{Coll }r$ case (lines 20-23). The iterator
-pointer is doubly-dereferenced, and then the contents examined. If the
-end of the list has been reached and the contents are $\Nil$,
-then $\None$ is returned to indicate there are no more
-elements. Otherwise, the pointer $r$ is advanced, and the head
-returned as the observed value. The $\ctext{Filter(p,i)}$ case (lines
-24-26) will return $\None$ if $i$ is exhausted, and if it is
-not, it will pull elements from $i$ until it finds one that satisfies
-$p$, calling itself recursively until it succeeds or $i$ is exhausted.
-Finally, in the $\ctext{Map2}(f, i_1, i_2)$ case (lines 27-31),
-$\nextiter$ will draw a value from both $i_1$ and $i_2$, and will
-return $\None$ if either is exhausted, and otherwise it will
-return $f$ applied to the pair of values.
+$\nextiter$ (lines 18-33 of Figure~\ref{iterator-implementation})
+recursively walks down the structure of the iterator tree, and
+combines the results from the leaves upwards.  The base case is the
+$\One(ii)$ case (lines 18-22). The iterator pointer is
+doubly-dereferenced, and then the contents examined. If the end of the
+list has been reached and the contents are $\Nil$, then $\None$ is
+returned to indicate there are no more elements. Otherwise, the
+pointer $r$ is advanced, and the head returned as the observed
+value. The $\ctext{Filter(p,i)}$ case (lines 23-26) will return
+$\None$ if $i$ is exhausted, and if it is not, it will pull elements
+from $i$ until it finds one that satisfies $p$, calling itself
+recursively until it succeeds or $i$ is exhausted.  Finally, in the
+$\ctext{Map2}(f, i_1, i_2)$ case (lines 27-33), $\nextiter$ will draw
+a value from both $i_1$ and $i_2$, and will return $\None$ if either
+is exhausted, and otherwise it will return $f$ applied to the pair of
+values.
 
 
 \section{The Flyweight and Factory Patterns}
@@ -1561,20 +1555,22 @@ constant-time equality testing, and is a common reason for using this
 pattern. Therefore, our specification has to be able to justify this
 reasoning.
 
-Below, we specify a program that uses the flyweight pattern to create
-and access glyphs (i.e., refs of pairs of characters and fonts) of a
-particular font $f$. We have a function $\ctext{newglyph}$ to create
-new glyphs, which does the caching described above, using a predicate
-variable $I$ to refer to the table invariant; and a function
-$\ctext{getdata}$ to get the character and font information from a
-glyph.
+In Figure~\ref{flyweight-spec}, we specify a program that uses the
+flyweight pattern to create and access glyphs (i.e., refs of pairs of
+characters and fonts) of a particular font $f$. We have a function
+$\ctext{newglyph}$ to create new glyphs, which does the caching
+described above, using a predicate variable $I$ to refer to the table
+invariant; and a function $\ctext{getdata}$ to get the character and
+font information from a glyph.
 
 Furthermore, these functions will be created by a call to another
 function, $\ctext{make\_flyweight}$, which receives a font as an
 argument and will return appropriate $\ctext{newglyph}$ and
 $\ctext{getdata}$ functions.
 
+\begin{figure}
 \begin{tabbing}
+\\
 Flyweight$($\=$I : (\ctext{char} \rightharpoonup \ctext{glyph}) \to \assert,\;\; $\\
 \> $\ctext{newglyph} : \chartp \to \monad{\ctext{glyph}},$ \\
 \> $\ctext{getdata} : \ctext{glyph} \to \monad{(\chartp \times \fonttp)},$ \\
@@ -1590,7 +1586,10 @@ Flyweight$($\=$I : (\ctext{char} \rightharpoonup \ctext{glyph}) \to \assert,\;\;
 2 \> $\forall l, h, c.\;$\=
      $\angles{I(h) \land l = h(c)}$ \\
 \>\> ${\ctext{getdata}(l)}$ \\
-\>\> $\angles{a:\chartp \times \fonttp.\;  I(h) \land a = (c,f)}$
+\>\> $\angles{a:\chartp \times \fonttp.\;  I(h) \land a = (c,f)}$ \\[1em]
+
+where $\ctext{glyph} \triangleq \reftype{(\ctext{char} \times \ctext{font})}$
+
 %   \> \!$\specand$ \\
 % 4 \> $\{\forall l, l', c, c'.\;$\=$I \land glyph(l,c,f) \land glyph(l',c',f')
 %  \implies $ \\
@@ -1599,9 +1598,11 @@ Flyweight$($\=$I : (\ctext{char} \rightharpoonup \ctext{glyph}) \to \assert,\;\;
 % $chars(\emptyset)$ \qquad\qquad\qquad \;\;\= $\equiv$ \= $\top$ \\
 % $chars(\setof{(l,(c,f))} \cup S)$ \> $\equiv$ \> $glyph(l,c,f) \land chars(S)$ \\
 \end{tabbing}
+\caption{Flyweight Specification}
+\label{flyweight-spec}
+\end{figure}
 
-
-In the opening , we informally parametrize our specification over the
+In the opening, we informally parametrize our specification over the
 predicate variable $I$, the function variable $\ctext{newglyph}$, the
 function variable $\ctext{getdata}$, and the variable $f$ of $\fonttp$
 type. The reason we do this instead of existentially quantifying over
@@ -1625,9 +1626,7 @@ that if we call $\ctext{getdata}(c)$ on a character $c$ in the domain
 of $h$, then we are returned the data (the alphabetic character 
 and font) for this glyph. 
 
-The specification of the flyweight factory looks like this:
-
-
+\begin{figure}
 \begin{tabbing}
 1 \qquad \= $\exists \ctext{make\_flyweight} :
 \fonttp \to \bigcirc($\=$(\chartp \to \monad{\ctext{glyph}}) \times$ \\
@@ -1636,14 +1635,18 @@ The specification of the flyweight factory looks like this:
   \>\> \> $\run{\ctext{make\_flyweight}(f)}$ \\
   \>\> \> $\setof{a.\; \exists I.\; I([]) \land \validprop{\mbox{Flyweight}(I, \fst{a}, \snd{a}, f)}}$ 
 \end{tabbing}
+\caption{Flyweight Factory Specification}
+\label{flyweight-factory-spec}
+\end{figure}
 
 
-Here, we assert the existence of a function $\ctext{make\_flyweight}$,
-which takes a font $f$ as an input argument, and returns two functions
-to serve as the $\ctext{getchar}$ and $\ctext{getdata}$ functions of
-the flyweight. In the postcondition, we assert the existence of some
-private state $I$, which contains the table used to cache glyph
-creations. 
+The specification of the flyweight factory is given in
+Figure~\ref{flyweight-factory-spec}.  Here, we assert the existence of
+a function $\ctext{make\_flyweight}$, which takes a font $f$ as an
+input argument, and returns two functions to serve as the
+$\ctext{getchar}$ and $\ctext{getdata}$ functions of the flyweight. In
+the postcondition, we assert the existence of some private state $I$,
+which contains the table used to cache glyph creations.
 
 This pattern commonly arises when encoding aggressively
 object-oriented designs in a higher-order style --- we call a
@@ -1654,8 +1657,7 @@ theory. The difference is that instead of making the fields of an
 object an existentially quantified \emph{value}~\cite{pierce-turner}, we
 make use of existentially-quantified \emph{state}.
 
-Below, we define $\ctext{make\_flyweight}$ and its predicates:
-
+\begin{figure}
 \begin{specification}
 \nextline $\ctext{m}$\=$\ctext{ake\_flyweight} \equiv$ 
 \nextline            \> $\lambda f:$\=$\fonttp.\;$
@@ -1663,28 +1665,33 @@ Below, we define $\ctext{make\_flyweight}$ and its predicates:
 \nextline \> \> $\ctext{letv\;}$\=$\mathit{newglyph} =$ 
 \nextline \> \> \> \!\!$[\lambda c.[$\=$\ctext{letv}\; x = \ctext{lookup}(t, c)\;\ctext{in}$
 \nextline \> \>\>\> $\ctext{run}\;\ctext{case}(x,$\=
-$\None \to [$\=$\ctext{letv}\; r = [\newref{\ctext{glyph}}{c,f}] \;\ctext{in}$
+$\None \to [$\=$\ctext{letv}\; r = [\newref{\ctext{char} \times \ctext{font}}{c,f}] \;\ctext{in}$
 \nextline \> \>\>\>\>\> $\ctext{letv } \_ = \ctext{update}(t, c, r) \;\ctext{ in }\;r],$ 
 \nextline \> \>\>\>\> $\Some(r) \to [r])] \;\ctext{in}$ 
 \nextline \> \> $\ctext{letv\;}\mathit{getdata} = [\lambda r.\; [!r]] \;\ctext{in}$ 
 \nextline \> \> $(\mathit{newglyph}, \mathit{getdata})]$
 \\
 
-\nextline $I(h) \equiv table(t,h) * \mathit{refs}(mapping, \mbox{dom}(mapping))$ \\
-\nextline $\mathit{refs}(h) = \forall^{*} c \in \domain{h}.\; h(c) \pointsto (c, f)$ 
+\nextline $I : \ctext{font} \times \ctext{table} \times (\ctext{char} \rightharpoonup \ctext{glyph}) \to \assert$ 
+\nextline $I(f, t, h) \equiv table(t,h) * \mathit{refs}(f, h)$ \\
+\nextline $\mathit{refs}(f, h) = \forall^{*} c \in \domain{h}.\; h(c) \pointsto (c, f)$ 
 \end{specification}
+\caption{Flyweight Implementation}
+\label{flyweight-impl}
+\end{figure}
 
-
-In this implementation we have assumed the existence of a hash table
-implementation with operations $\ctext{newtable}$, $\ctext{lookup}$,
-and $\ctext{update}$, whose specifications we give at the end of the
-chapter. The $\ctext{make\_flyweight}$ function definition takes a
-font argument $f$, and then in its body it creates a new table $t$. It
-then constructs two functions as closures which capture this state
-(and the argument $f$) and operate on it. In lines 4-7, we define
-$newglyph$, which takes a character and checks to see (line 5) if it
-is already in the table. If it is not (lines 5-6), it allocates a new
-glyph reference, stores it in the table, and returns the
+In Figure~\ref{flyweight-impl}, we define $\ctext{make\_flyweight}$
+and its predicates. In this implementation we have assumed the
+existence of a hash table implementation with operations
+$\ctext{newtable}$, $\ctext{lookup}$, and $\ctext{update}$, whose
+specifications we give in Figure~\ref{hash-table-spec}. The
+$\ctext{make\_flyweight}$ function definition takes a font argument
+$f$, and then in its body it creates a new table $t$. It then
+constructs two functions as closures which capture this state (and the
+argument $f$) and operate on it. In lines 4-7, we define $newglyph$,
+which takes a character and checks to see (line 5) if it is already in
+the table. If it is not (lines 5-6), it allocates a new glyph
+reference, stores it in the table, and returns the
 reference. Otherwise (line 7), it returns the existing reference from
 the table.  On lines 8, we define $getdata$, which dereferences its
 pointer argument and returns the result. This implementation does no
@@ -1700,6 +1707,23 @@ specifications and proofs with no possibility that the wrong
 $\ctext{getdata}$ will be called on the wrong reference, even though
 they have compatible types.
 
+\begin{figure}
+\begin{specification}
+\nextline $\mspec{\emp}{\ctext{newtable}}{a:\ctext{table}}{\mathit{table}(a, [])}$  \\
+
+\nextline $\{\mathit{table}(t, h)\}$
+\nextline $\ctext{lookup}(t, c)$ 
+\nextline $\{a:\opttype{(\ctext{glyph})}.\;$\=$\mathit{table}(t, h) $ 
+\nextline \> $\land ((c \in \domain{h} \land a = \Some(h(c))) \vee (c \not\in \domain{h} \land a = \None))\}$ \\
+
+\nextline $\{\mathit{table}(t, h)\}$
+\nextline $\ctext{update}(t, c, g)$ 
+\nextline $\{a:1.\; \mathit{table}(t, [h|c:g])\}$
+\end{specification}
+\caption{Hash Table Specification}
+\label{hash-table-spec}
+\end{figure}
+
 \subsection{Verification of the Implementation}
 
 To prove the correctness of the implementation, we will work
@@ -1712,19 +1736,15 @@ Define the function $\mathit{newglyph}$ as follows:
 \begin{tabbing}
   $\mathit{newglyph} \equiv \lambda c.\; [$\=
      $\letv{x}{\ctext{lookup}(t,c)}{}$ \\
-\>   $\ctext{run}\;\ctext{case}(x, $\=$\None \to [$\=$\letv{r}{[\newref{\ctext{glyph}}{(c,f)}]}{}$ \\
+\>   ${run}\;\ctext{case}(x, $\=$\None \to [$\=$\letv{r}{[\newref{\ctext{glyph}}{(c,f)}]}{}$ \\
 \>                                  \>            \>$\letv{\_}{\ctext{update}(t, c, r)}{}$ \\
 \>                                  \>            \>$r]$\\
 \>                                  \>$\Some(r) \to [r])]$ 
 \end{tabbing}
 \noindent This function satisfies the following specification:
-\begin{tabbing}
-\;\;\=
-$\setof{\mathit{table}(t, \sigma) * \forall^{*}c \in \domain{\sigma}.\;\sigma(c) \pointsto (c,f)}$ \\
-\> $\mathit{newglyph}(c,f)$ \\
-\> $\{a:\reftype{\ctext{glyph}}.\;
-   \exists \sigma' \supseteq \sigma. \mathit{table}(t, \sigma') \land \sigma'(a) = (c,f) * \forall^{*}c \in \domain{\sigma}.\;\sigma(c) \pointsto (c,f) \}$ \\
-\end{tabbing}
+\begin{displaymath}
+\spec{I(f, t, \sigma)}{\mathit{newglyph}(c,f)}{a:\ctext{glyph}}{\exists \sigma' \supseteq \sigma. I(f, t, \sigma') \land \sigma'(c) = a}
+\end{displaymath}
 \end{lemma}
 
 \begin{proof}
@@ -1733,28 +1753,35 @@ prove our specification valid with respect to these variables, so that we can su
 them with whatever actual terms in context that we need to use. 
 
 \begin{tabbedproof}
-\oo Assume we are in the precondition state $\mathit{table}(t, \sigma) * \forall^{*}c \in \domain{\sigma}.\;\sigma(c) \pointsto (c,f)$ \\
-\ooo $[\letv{x}{\ctext{lookup}(t,c)}{}$ \\
-\ooo We now have $\mathit{table}(t, \sigma) * \forall^{*}c \in \domain{\sigma}.\;\sigma(c) \pointsto (c,f)$  \\
-\oox $\land\; ((c \not \in \domain{\sigma} \land x = \None) \vee (c \in \domain{\sigma} \land x = \Some(\sigma(c))))$ \\
-\ooo Suppose $x = \None$:\\
-\oooo Then it follows that $\mathit{table}(t, \sigma) * \forall^{*}c \in \domain{\sigma}.\;\sigma(c) \pointsto (c,f) \land c \not \in \domain{\sigma} \land x = \None$\\
-\oooo By equality reasoning, we can simplify the case statement. \\
-\oooo $\letv{r}{[\newref{\ctext{glyph}}{(c,f)}]}{}$ \\
-\oooo So $r \pointsto (c,f) * \forall^{*}c \in \domain{\sigma}.\;\sigma(c) \pointsto (c,f) * \mathit{table}(t, \sigma) \land c \not \in \domain{\sigma} \land x = \None$\\
+\oo Assume we are in the precondition state $I(f, t, \sigma)$ \\
+\oo Hence we are in the precondition state $\mathit{table}(t, \sigma) * \forall^{*}c \in \domain{\sigma}.\;\sigma(c) \pointsto (c,f)$ \\
+\oo $[\letv{x}{\ctext{lookup}(t,c)}{}$ \\
+\oo We now have $\mathit{table}(t, \sigma) * \forall^{*}c \in \domain{\sigma}.\;\sigma(c) \pointsto (c,f)$  \\
+\ox $\land\; ((c \not \in \domain{\sigma} \land x = \None) \vee (c \in \domain{\sigma} \land x = \Some(\sigma(c))))$ \\
+\oo $\mathsf{case}(x,$ \\
+\ooo $\None \to$ \\
+\oooo Now it follows that $x = \None$, \\
+\oooo Hence $\mathit{table}(t, \sigma) * \forall^{*}c \in \domain{\sigma}.\;\sigma(c) \pointsto (c,f) \land c \not \in \domain{\sigma} \land x = \None$\\
+\oooo $[\letv{r}{[\newref{\ctext{glyph}}{(c,f)}]}{}$ \\
+\oooo So $r \pointsto (c,f) * \forall^{*}c \in \domain{\sigma}.\;\sigma(c) \pointsto (c,f) * \mathit{table}(t, \sigma) \land c \not \in \domain{\sigma}$\\
 \oooo $\letv{\_}{\ctext{update}(t, c, r)}{}$ \\
 \oooo So $r \pointsto (c,f) * \forall^{*}c \in \domain{\sigma}.\;\sigma(c) \pointsto (c,f) * \mathit{table}(t, [\sigma|c:r]) \land c \not \in \domain{\sigma}$\\
 \oooo So $\forall^{*}c \in \domain{\sigma'}.\;\sigma(c) \pointsto (c,f) * \mathit{table}(t, \sigma') \land \sigma' = [\sigma|c:r]$\\
 \oooo $r]$ \\
 \oooo We can choose the witness to the existential to be $\sigma'$, yielding \\
-\ooox $\exists \sigma' \supseteq \sigma. \mathit{table}(t, \sigma') \land \sigma'(a) = (c,f) * \forall^{*}c \in \domain{\sigma}.\;\sigma(c) \pointsto (c,f)$ \\
-\ooo Suppose $\exists y.\; x = \Some(y)$:  \\
-\oooo Then it follows that $\mathit{table}(t, \sigma) * \forall^{*}c \in \domain{\sigma}.\;\sigma(c) \pointsto (c,f) \land x = \Some(\sigma(c))$\\
-\oooo By equality reasoning, we can simplify the case statement. \\
-\oooo Furthermore, we have $\mathit{table}(t, \sigma) * \forall^{*}c \in \domain{\sigma}.\;\sigma(c) \pointsto (c,f) \land r = \sigma(c)$\\
-\oooo $r]$ \\
-\oooo We can choose the witness to the existential to be $\sigma$, yielding \\
-\ooox $\exists \sigma' \supseteq \sigma. \mathit{table}(t, \sigma') \land \sigma'(a) = (c,f) * \forall^{*}c \in \domain{\sigma}.\;\sigma(c) \pointsto (c,f)$ 
+\ooox $\exists \sigma' \supseteq \sigma.\; \mathit{table}(t, \sigma') \land \sigma'(a) = (c,f) * \forall^{*}c \in \domain{\sigma}.\;\sigma(c) \pointsto (c,f)$ \\
+\oooo Hence $\exists \sigma' \supseteq \sigma.\; I(f, t, \sigma') \land \sigma'(c) = a$ \\
+\ooo $\Some(r) \to $ \\
+\oooo We know $r = \Some(r)$, \\
+\oooo Hence $\mathit{table}(t, \sigma) * \forall^{*}c \in \domain{\sigma}.\;\sigma(c) \pointsto (c,f) \land r = \Some(\sigma(c))$\\
+\oooo So $I(f, t, \sigma) \land x = \Some(\sigma(c))$ \\
+\oooo $[r])$ \\
+\oooo Hence $a.\; \exists r.\; I(f, t, \sigma) \land a = r \land r = \Some(\sigma(c))$\\
+\oooo Hence $a.\; I(f, t, \sigma) \land a = \Some(\sigma(c))$\\
+\oooo Choose the witness to the existential to be $\sigma$, yielding \\
+\ooox $\exists \sigma' \supseteq \sigma. I(f, t, \sigma') \land a = \Some(\sigma'(c))$ \\
+\oo Hence $\exists \sigma' \supseteq \sigma. I(f, t, \sigma') \land a = \Some(\sigma'(c))$
+
 \end{tabbedproof}
 \end{proof}
 
@@ -1766,10 +1793,10 @@ Define the $\mathit{getdata}$ function as follows:
 
 \noindent This function satisfies the following specification:
 \begin{displaymath}
-  \spec{\mathit{table}(t, \sigma) * \mathit{refs}(\sigma) \land l \in \domain{\sigma}}
-       {\mathit{getdata}(l)}
-       {a:\chartp \times \fonttp}
-       {\mathit{table}(t, \sigma) * \mathit{refs}(\sigma)}
+  \mspec{I(f, t, \sigma) \land r = \sigma(c)}
+        {\mathit{getdata}(r)}
+        {a:\chartp \times \fonttp}
+        {I(f, t, \sigma) \land a = (c, f)}
 \end{displaymath}
 \end{lemma}
 
@@ -1777,11 +1804,12 @@ Define the $\mathit{getdata}$ function as follows:
 The correctness proof for this function is very simple, amounting to a single application
 of the frame rule, together with the dereference rule.
 \begin{tabbedproof}
-\oo Assume our state is $\mathit{table}(t, \sigma) * \mathit{refs}(\sigma) \land l = h(c)$ \\
+\oo Assume our state is $\mathit{table}(t, \sigma) * \mathit{refs}(\sigma) \land r = h(c)$ \\
 \oo This is $\mathit{table}(t, \sigma) * (\mathit{refs}(\sigma - [c:l]) * l \pointsto (c,f)$ \\
-\oo $[!l]$ \\
-\oo This is $\mathit{table}(t, \sigma) * (\mathit{refs}(\sigma - [c:l]) * l \pointsto (c,f) \land a = (c,f)$ \\
-\oo This is $\mathit{table}(t, \sigma) * \mathit{refs}(\sigma) \land a = (c, f)$ 
+\oo $[!r]$ \\
+\oo So $a.\; \exists r.\; a = r \land \mathit{table}(t, \sigma) * (\mathit{refs}(\sigma - [c:l]) * l \pointsto (c,f) \land r = (c,f)$ \\
+\oo So $a.\; \mathit{table}(t, \sigma) * (\mathit{refs}(\sigma - [c:l]) * l \pointsto (c,f) \land a = (c,f)$ \\
+\oo So $a.\; I(f, t, \sigma) \land a = (c,f)$
 \end{tabbedproof}
 \end{proof}
 
@@ -1798,15 +1826,21 @@ of the function.
 \oo We begin with an assumed $\emp$ precondition. \\
 \oo $[\letv{t}{\mathsf{newtable}()}{}$ \\
 \oo Now our state is $\mathit{table}(t, [])$ \\
-\oo $\letv{\mathit{newglyph}}{\ldots}{}$ (Take the ``\ldots'' to be the definition above) \\
-\oo $\letv{\mathit{getdata}}{\ldots}{}$ (Take the ``\ldots'' to be the definition above)\\
-\oo Now our state is $\mathit{table}(t, []) \land \mathit{newglyph} = \ldots \land \mathit{getdata} = \ldots$ \\
-\oo Choose $I(h) = table(t,h) * \mathit{refs}(mapping, \mbox{dom}(mapping))$ with the $t$ in this scope\\
-\oo Then we can instantiate the specs of $\mathit{newglyph}$ and $\mathit{getdata}$ with $I$ and $f$ in this scope\\
+\oo $\letv{\mathit{newglyph}}{[N]}{}$ (where $N$ is the definition of $\mathit{newglyph}$ in Lemma 60) \\
+\oo $\letv{\mathit{getdata}}{[G]}{}$ (where $G$ is the  definition of $\mathit{getdata}$ in Lemma 61)\\
+\oo Now our state is $\mathit{table}(t, []) \land \mathit{newglyph} = N \land \mathit{getdata} = G$ \\
+\oo Since the two equalities are pure, we may assume them ambiently. \\
+\oo Then we can instantiate the specs of $\mathit{newglyph}$ and $\mathit{getdata}$ to know that\\
+\oo $\spec{I(f, t, \sigma)}{\Run\;N(c,f)}{a:\ctext{glyph}}{\exists \sigma' \supseteq \sigma. I(f, t, \sigma') \land \sigma'(c) = a}$\\
+\oo and \\
+\oo $\spec{I(f, t, \sigma) \land r = \sigma(c)}
+          {\Run\;G(r)}
+          {a:\chartp \times \fonttp}
+          {I(f, t, \sigma) \land a = (c, f)}$\\
 \oo Then since valid specs allow us to introduce validity assertions, we know  \\
-\ox $I([]) \land \validprop{\mbox{Flyweight}(I, \mathit{newglyph}, \mathit{getdata}, f)}$  \\
-\oo We can existentially quantify over $I$, to get \\
-\ox $\exists I.\; I([]) \land \validprop{\mbox{Flyweight}(I, \mathit{newglyph}, \mathit{getdata}, f)}$  \\
+\ox $I(f, t, []) \land \validprop{\mbox{Flyweight}((\fun{\sigma}{I(f,t,\sigma)}, \mathit{newglyph}, \mathit{getdata}, f)}$  \\
+\oo We can existentially quantify, choosing a witness $I' = \fun{\sigma}{I(f,t,\sigma)}$ to get \\
+\ox $\exists I'.\; I'([]) \land \validprop{\mbox{Flyweight}(I', \mathit{newglyph}, \mathit{getdata}, f)}$  \\
 \oo $(\mathit{newglyph}, \mathit{getdata})]$\\
 \oo Now we know $\exists I.\;I([]) \land \validprop{\mbox{Flyweight}(I, \fst{a}, \snd{a}, f)}$\\
 \end{tabbedproof}
