@@ -766,9 +766,10 @@ and whose tail is a collection representing $ys$.
 \mbox{}
 \begin{specification}
 \nextlinelabel{decl:colltype-impl}
-$\Listcontent(\alpha) = \Nil \bnfalt \Cons\; \alpha \times \reftype{\Listcontent(\alpha)}$ 
+$\Listcontent(\alpha) = \Nil \bnfalt \Cons\; \alpha \times \reftype{(\Listcontent(\alpha))}$ \\
+\> $\listtype(\alpha) = \reftype{(\Listcontent{(\alpha)})}$
 \nextline
-$\ctext{colltype}(\alpha) = \reftype{(\Listcontent(\alpha))}$ 
+$\ctext{colltype}(\alpha) = \listtype{\alpha}$ 
 \nextlinelabel[0.5em]{decl:itertype-impl}
 $\itertype{(\alpha)} $\=$=  \One\;\reftype{(\colltype{(\alpha)})}$ \nextline
                        \>$ \bnfalt 
@@ -1903,26 +1904,26 @@ $obs\_at((O,f)\cdot os, k) $\>$\equiv O(k) * obs\_at(os, k)$
 
 %
 On line 1 we assert the existence of a three-place predicate $sub(s,
-n, os)$. The first argument is the subject $s$'s whose state this
+n, os)$. The first argument is the subject $s$, whose state this
 predicate represents. The second argument $n$ is the data the
 observers depend on, and the field $os$ is a sequence of callbacks
 paired with their invariants. That is, $os$ is a sequence of pairs,
-consisting of the observer functions which act on a state, along with
-the predicate describing what that state should be.
+each consisting of the observer functions which act on a state, along
+with the predicate describing what that state should be.
 
 On lines 2-4, we assert the existence of $\ctext{newsub}$,
 $\ctext{register}$ and $\ctext{broadcast}$, which create a new
 subject, register a callback, and broadcast a change, respectively.
 
 $\ctext{register}$ is a higher order function, which takes a subject
-and an observer action its two arguments. The observer action is a
+and an observer action as its two arguments. The observer action is a
 function of type $\N \to \monad{1}$, which can be read as saying it
 takes the new value of the subject and performs a side-effect. Because
-$\ctext{register}$ depends on code, its specification must say how
-this observer action should behave. $\ctext{register}$'s specification
-on lines 6-9 accomplishes this via an implication over Hoare
-triples. It says that \emph{if} the function $f$ is a good observer
-callback, \emph{then} it can be safely registered with the
+$\ctext{register}$ take a procedure as an argument, its specification
+must say how this observer action should behave. $\ctext{register}$'s
+specification on lines 6-9 accomplishes this via an implication over
+Hoare triples. It says that \emph{if} the function $f$ is a good
+observer callback, \emph{then} it can be safely registered with the
 subject. Here, a ``good callback'' $f$ is one that takes an argument
 $k$ and sends an observer state to $O(k)$. If this condition is
 satisfied, then $\ctext{register}(s, f)$ will add the pair $(O,f)$ to
@@ -1942,24 +1943,25 @@ the $O$ predicates, all in the same state $k$.
 The implementation follows:
 
 \begin{tabbing}
-1 \qquad \= $A_s \equiv \reftype{\N} \times \reftype{\listtype{(\N \to \monad{1})}}$
+1 \qquad \= $A_s \equiv \reftype{\N} \times \listtype{(\N \to \monad{1})}$
 \\[0.5em]
 2 \> $sub(s, n, os) \equiv$\=$ \fst{s} \pointsto n * 
               list(\snd{s}, map\; \snd{} os) \land Good(os)$ 
 \\[0.5em]
 3 \> $Good(\epsilon) \!\qquad\qquad \equiv \top$ \\
 4 \> $Good((O,f)\cdot os) \equiv\; $\=
-   $\validprop{(\forall i,k.\; \spec{O(i)}{\run{f(k)}}{a:1}{O(k)})}$ \\
-  \> \>      $\land Good(os)$ 
+   $\validprop{(\forall i,k.\; \spec{O(i)}{\run{f(k)}}{a:1}{O(k)})} \land \land Good(os)$ 
 \\[0.5em]
+
 5 \> $\ctext{register}(s, f) \equiv$ \=
          $[$\= $\letv{cell}{\comp{!(\snd{s})}}{}$ \\
-6 \> \> \> $\letv{r}{\comp{\newref{\reftype{\listtype{(\N \to \monad{1})}}}{cell}}}{}$ \\
+6 \> \> \> $\letv{r}{\comp{\newref{\Listcontent{(\N \to \monad{1})}}{cell}}}{}$ \\
 7 \> \> \> $\snd{s} := \Cons(f, r)]$
 \\[0.5em]
 
 8  \> $\ctext{broad}$\=$\ctext{cast}(s, k) \equiv$ \\
-9  \>  \> $[$\=$\letv{dummy}{[\fst{s} := k]}{\ctext{loop}(k, \snd{s})}]$ \\
+9  \>  \> $[$\=$\letv{dummy}{[\fst{s} := k]}{\ctext{loop}(k, \snd{s})}]$ 
+\\[0.5em]
 
 
 10 \> $\ctext{loop}$\=$(k, list) \equiv $\\
@@ -1968,22 +1970,24 @@ The implementation follows:
             $\Nil \to [()],$ \\
 12 \>\>\>\> $\Cons(f, tl) \to [$\=$\letv{dummy}{f(k)}{}$ \\
 13  \>\>\>\> \> $\run{\ctext{loop}(k,tl)}])$ \\[0.5em]
+
 14 \> $\ctext{new}\ctext{sub}(n) \equiv$ \=
           $[$\=$\letv{data}{\newref{\N}{n}}{}$ \\
-15 \> \> \> $\letv{callbacks}{\newref{\listtype{(\N \to \monad{1})}}{\Nil}}{}$ \\
+15 \> \> \> $\letv{callbacks}{\newref{\Listcontent{(\N \to \monad{1})}}{\Nil}}{}$ \\
 16 \> \> \> $(data, callbacks)]$
 \end{tabbing}
 
 
-In line 1, we state concrete type of the subject $A_s$ is a pair of a
-pointer to a reference, and a pointer to a list of callback
+In line 1, we define the concrete type of the subject $A_s$ to be a
+pair of a pointer to a reference, and a mutable list of callback
 functions. On line 2, we define the three-place subject predicate,
 $sub(s,n,os)$. The first two subclauses of the predicate's body
 describe the physical layout of the subject, and assert that the first
 component of $s$ should point to $n$, and that the second component of
 $s$ should be a linked list containing the function pointers in
-$os$. (The $list$ predicate is described in Section 3, when we give
-the definition of the iterator predicates.)
+$os$. (The $list$ predicate is described in
+Figure~\ref{iterator-pred-impl}, when we give the definition of the
+iterator predicates.)
 
 Then we require that $os$ be ``Good''. $Good$-ness is defined on lines
 3 and 4, and says a sequence of predicates and functions is good when
@@ -2085,7 +2089,7 @@ invariant.
 \ooo This state is equivalent to $s \pointsto n * \mathit{list}(cs, \mathit{map}\;\snd{}\;os) \land \mathit{Good}(os)$ \\
 \ooo By the definition of $\mathit{list}$, we know \\
 \ooox $\mathit{list}(cs, \mathit{map}\;\snd{}\;os) = \exists cell.\;cs \pointsto cell * \mathit{listcell}(cell, \mathit{map}\;\snd{}\;os)$ \\
-\ooo $[\letv{mathit{cell}}{!r}{}$ \\
+\ooo $[\letv{\mathit{cell}}{[!cs]}{}$ \\
 \ooo We can drop the existential now, giving a state of \\
 \ooox $s \pointsto n * cs \pointsto cell * \mathit{listcell}(cell, \mathit{map}\;\snd{}\;os) \land \mathit{Good}(os)$ \\
 \ooo $\letv{r}{[\newref{\reftype{\listtype{(\N \to \monad{\unittype})}}}{\mathit{cell}}]}{}$ \\
@@ -2107,7 +2111,7 @@ invariant.
 \ooo Now consider the body of the $\ctext{newsub}$ function: \\
 \ooo $[\letv{\mathit{data}}{\newref{\N}{n}}{}$ \\
 \ooo The state is $\mathit{data} \pointsto n$ \\
-\ooo $\letv{\mathit{callbacks}}{\newref{\listtype{\N\to\monad{1}}}}{\Nil}{}$ \\
+\ooo $\letv{\mathit{callbacks}}{\newref{\Listcontent{\N\to\monad{1}}}{\Nil}}{}$ \\
 \ooo The state is $\mathit{data} \pointsto n * \mathit{callbacks} \pointsto \Nil$ \\
 \ooo This is equivalent to $\mathit{data} \pointsto n * \mathit{list}(\mathit{callbacks}, \epsilon)$ \\
 \ooo This is equivalent to $\mathit{data} \pointsto n * \mathit{list}(\mathit{callbacks}, \epsilon) \land \mathit{Good}(\epsilon)$ \\
@@ -2130,7 +2134,7 @@ For all $k$, $fs$  and $os$ we have
 \begin{proof}
 \begin{tabbedproof}
 \oo Assume we have a suitable $k$ and $fs$, and then proceed by induction on $os$.  \\
-\oo Pull $\mathit{Good}(os)$ into the context and frame it away. \\
+\oo Pull $\mathit{Good}(os)$ into the context as a pure assertion, and then frame it away. \\
 \oo Suppose $os = \epsilon$:  \\
 \ooo Then our precondition is $\mathit{list}(fs, \epsilon) * \mathit{obs}(\epsilon)$ \\
 \ooo This is equivalent to $fs \pointsto \Nil$ \\
@@ -2141,22 +2145,28 @@ For all $k$, $fs$  and $os$ we have
 \ooo So the state is still $\mathit{list}(fs, \epsilon)$ \\
 \ooo This is equivalent to $\mathit{list}(fs, \epsilon) * \emp$ \\
 \ooo This is equivalent to $\mathit{list}(fs, \epsilon) * \mathit{obs\_at}(\epsilon, k)$ \\
+\ooo This is equivalent to $\mathit{Good}(\epsilon) \land \mathit{list}(fs, \epsilon) * \mathit{obs\_at}(\epsilon, k)$ \\
+\ooo This is equivalent to $\mathit{Good}(os) \land \mathit{list}(fs, \epsilon) * \mathit{obs\_at}(\epsilon, k)$ \\
 \oo Suppose $os = (O,f) \cdot os'$:  \\
 \ooo Then our precondition is $\mathit{list}(fs, f \cdot \mathit{map}\;\snd{}\;os') * \mathit{obs}((O,f)\cdot os')$ \\
-\ooo This is equivalent to $\mathit{list}(fs, f \cdot \mathit{map}\;\snd{}\; os') * \mathit{obs}((O,f)\cdot os')$ \\
 \ooo This is equivalent to $\exists fs'.\; fs \pointsto \Cons(f, fs') * \mathit{list}(fs',  \mathit{map}\;\snd{}\; os') * \exists j.\;O(j) * \mathit{obs}( os')$ \\
 \ooo By dropping existentials, $fs \pointsto \Cons(f, fs') * \mathit{list}(fs',  \mathit{map}\;\snd{}\;os') * O(j) * \mathit{obs}( os')$ \\
 \ooo $[\letv{\mathit{cell}}{[!fs]}{}$ \\
 \ooo We know $fs \pointsto \mathit{cell}  * \mathit{list}(fs',  \mathit{map}\;\snd{}\;os') * O(j) * \mathit{obs}( os') \land \mathit{cell} = \Cons(f, fs')$ \\
 \ooo Since $\mathit{cell} = \Cons(f, fs')$, we can use equational reasoning to eliminate the case \\
+\ooo Since we assumed $\mathit{Good}(os)$, we know that $\mathit{Good}{(O,f)\cdot os'}$ \\
+\ooo Hence we know that $\validprop{(\forall i,k.\; \spec{O(i)}{\run{f(k)}}{a:1}{O(k)})} \land \mathit{Good}(os')$ \\
+\ooo Therefore we know that $(\forall i,k.\; \spec{O(i)}{\run{f(k)}}{a:1}{O(k)})$ \\
 \ooo $\letv{\mathit{dummy}}{f(k)}{}$ \\
 \ooo We know $fs \pointsto \mathit{cell}  * \mathit{list}(fs',  \mathit{map}\;\snd{}\;os') * O(k) * \mathit{obs}( os') \land \mathit{cell} = \Cons(f, fs')$ \\
-\ooo This call is justified because we assumed $\mathit{Good}(os)$ \\
+\ooo Add $\mathit{Good}(os')$ to the precondition, since it is a consequence of $\mathit{Good}(os)$, before\\
 \ooo $\mathsf{loop}(k, fs')]$\\
-\ooo By induction, $fs \pointsto \mathit{cell}  * \mathit{list}(fs',  \mathit{map}\;\snd{}\;os') * O(k) * \mathit{obs\_at}( os') \land \mathit{cell} = \Cons(f, fs')$ \\
-\ooo This is equivalent to $\mathit{list}(fs, \mathit{map}\;\snd{}\;os) * \mathit{obs\_at}(os, k)$ \\
-\oo Therefore $\mathit{Good}(os) * \mathit{list}(fs, \mathit{map}\;\snd{}\;os) * \mathit{obs\_at}(os, k)$ \\
-\oo Since $\mathit{Good}$ is pure, we have $\mathit{list}(fs, \mathit{map}\;\snd{}\;os) * \mathit{obs\_at}(os, k)$
+\ooo Then by induction, we can conclude \\
+\ooo $Good(os') \land fs \pointsto \mathit{cell}  * \mathit{list}(fs',  \mathit{map}\;\snd{}\;os') * O(k) * \mathit{obs\_at}( os') \land \mathit{cell} = \Cons(f, fs')$ \\
+\ooo This is equivalent to $\mathit{Good}(os') \land \mathit{list}(fs, \mathit{map}\;\snd{}\;os) * \mathit{obs\_at}(os, k)$ \\
+\ooo Since we know $\mathit{Good}(os)$, we can strengthen this to  \\
+\ooo  $\mathit{Good}(os) \land \mathit{list}(fs, \mathit{map}\;\snd{}\;os) * \mathit{obs\_at}(os, k)$ \\
+\oo Hence $\mathit{Good} \land \mathit{list}(fs, \mathit{map}\;\snd{}\;os) * \mathit{obs\_at}(os, k)$
 \end{tabbedproof}
 \end{proof}
 
@@ -2231,9 +2241,9 @@ solution. The idea in this work is to require the changes that a
 subject makes to ``increase the truth'' of the observer's predicate
 along some partial order. This is less flexible than the approach we
 took, though perhaps a little easier to use when it is
-applicable. Unfortunately, this work is not merely heavyweight, but
-entirely inapplicable for event-driven programs such as GUIs, since
-there is no natural partial order on user actions.
+applicable. Unfortunately, their work is not applicable for
+event-driven programs such as GUIs, since there is no natural partial
+order on user actions.
 
 More recently, Shaner, Naumann and Leavens~\cite{ShanerLN07} gave a
 ``gray-box'' treatment of the subject-observer pattern.  Instead of
