@@ -345,7 +345,7 @@ $\specand$
  \> $\forall \alpha, f, i, S,$\=$ xs, i', S', xs'.\;$ 
 \nextline
  \> \> 
-     $\angles{\iterpred_\alpha(i, xs, S) * \iterpred_\beta(i', xs', S') \land S \cap S' = \emptyset}$ 
+     $\angles{\iterpred_\alpha(i, xs, S) * \iterpred_\beta(i', xs', S')}$ % -- don't need this condition \land S \cap S' = \emptyset}$ 
 \nextline
  \> \> ${\mergeiter_{\alpha\;\beta\;\gamma}(f, i, i')}$ 
 \nextline
@@ -800,7 +800,7 @@ $\iterpred_{\tau}(\Merge(\tau_1, \tau_2, f, i_1, i_2), xs, S)$ \>$\equiv
   \exists S_1, ys, S_2, zs.$ 
 \nextline
   \> \qquad \= $\iterpred_{\tau_1}(i_1, ys, S_1) * \iterpred_{\tau_2}(i_2, zs, S_2) \;\land$
-\nextline \> \>$S = S_1 \uplus S_2 \land xs = \mathit{map2}\;f\;ys\;zs$ 
+\nextline \> \>$S = S_1 \cup S_2 \land xs = \mathit{map2}\;f\;ys\;zs$ 
 \end{specification}
 \caption{Type and Predicate Definitions of the Iterator Implementation}
 \label{iterator-pred-impl}
@@ -937,11 +937,12 @@ an iterator yielding some other sequence $ys$, which when filtered with
 the predicate $p$ is $xs$. There are no changes to the set of abstract
 states. 
 
-On the line after that, we give the case for $\iterpred_\tau(\Merge(\tau_1, \tau_2, f, i_1, i_2), xs, S)$. 
-This case says we can divide the abstract state into two parts, one of which is 
-used by $i_1$, and the other of which is used by $i_2$,  which 
-yield sequences $ys$ and $zs$ respectively, and which can be merged using
-$f$ to yield $xs$. 
+On the line after that, we give the case for
+$\iterpred_\tau(\Merge(\tau_1, \tau_2, f, i_1, i_2), xs, S)$.  This
+case says we can divide the abstract state into two parts (which may
+overlap), one of which is used by $i_1$, and the other of which is
+used by $i_2$, which yield sequences $ys$ and $zs$ respectively, and
+which can be merged using $f$ to yield $xs$.
 
 In both of these cases, we define the behavior of the imperative
 linked list in terms of purely functional sequences. This is a very
@@ -1212,7 +1213,7 @@ We have that
 \begin{displaymath}
   \forall \alpha, \beta, \gamma, f, i, xs, S, i', xs', S'.\; 
   \begin{array}{l}
-    \setof{\iterpred_\alpha(i, xs, S) * \iterpred_\beta(i',xs',S') \land S \cap S' = \emptyset} \\
+    \setof{\iterpred_\alpha(i, xs, S) * \iterpred_\beta(i',xs',S')} \\
     \mergeiter_{\alpha\;\beta\;\gamma}(f, i, i') \\
     \setof{a:\itertype(\gamma).\; \iterpred_\gamma(a, \mergemath\;f\;xs\;xs', S \cup S')}\\
   \end{array}
@@ -1225,10 +1226,10 @@ Figure~\ref{iterator-implementation}. Assume $f, i, xs, S, i', xs', S'$ as
 hypotheses, and proceed with the proof as follows: 
 
 \begin{specification}
-\nextline $\setof{\iterpred_\alpha(i, xs, S) * \iterpred_\beta(i',xs',S') \land S \cap S' = \emptyset}$ 
+\nextline $\setof{\iterpred_\alpha(i, xs, S) * \iterpred_\beta(i',xs',S')}$ 
 \nextline $\Merge(\alpha, \beta, f, i, i')$
-\nextline $\setof{\iterpred_\alpha(i, xs, S) * \iterpred_\beta(i',xs',S') \land S \cap S' = \emptyset \land a = \Merge(\alpha, \beta, f, i, i')}$ 
-\nextline $\{$\=$\iterpred_\alpha(i, xs, S) * \iterpred_\beta(i',xs',S') \land S \cup S' = S \uplus S' \land \mergemath\;f\;xs\;xs' = \mergemath\;f\;xs\;xs'$
+\nextline $\setof{\iterpred_\alpha(i, xs, S) * \iterpred_\beta(i',xs',S')  \land a = \Merge(\alpha, \beta, f, i, i')}$ 
+\nextline $\{$\=$\iterpred_\alpha(i, xs, S) * \iterpred_\beta(i',xs',S')  \land \mergemath\;f\;xs\;xs' = \mergemath\;f\;xs\;xs'$
 \nextline \> $\land a = \Merge(f, i, i')\}$ 
 \nextline $\{$\=$\exists i, i', S, S'.\; \iterpred_\alpha(i, xs, S) * \iterpred_\alpha(i',xs',S') \land S \cup S' = S \cup S' \land \mergemath\;f\;xs\;xs' = \mergemath\;f\;xs\;xs'$ 
 \nextline \> $\land a = \Merge(f, i, i')\}$ 
@@ -1377,40 +1378,47 @@ annotated proof as follows:
 \nextline $\setof{\iterpred_\alpha(\Merge(f, i_1, i_2), xs, S) * \mathit{colls}(S)}$ 
 \nextline $\{$\=$\exists \beta, \gamma, S_1, ys, S_2, zs.\; 
                   xs = \mathit{map2}\;f\;ys\;zs \land 
-                    S = S_1 \uplus S_2 \land$ 
+                    S = S_1 \cup S_2 \land$ 
 \\\>     \>$   \iterpred_\beta(i_1, ys, S_1) * 
                     \iterpred_\gamma(i_2, zs, S_2) * 
                     \mathit{colls}(S)\}$ 
 \nextline $\{xs = \mathit{map2}\;f\;ys\;zs \land 
-                  S = S_1 \uplus S_2 \land$ 
+                  S = S_1 \cup S_2 \land$ 
 \\ \>\;     $\iterpred_\beta(i_1, ys, S_1) * 
                   \iterpred_\gamma(i_2, zs, S_2) * 
-                  \mathit{colls}(C,S)$\}
+                  \mathit{colls}(S)$\}
 \nextline \{$xs = \mathit{map2}\;f\;ys\;zs \land 
-                  S = S_1 \uplus S_2 \land$ 
+                  S = S_1 \cup S_2 \land$ 
 \\ \>\;     $\iterpred_\beta(i_1, ys, S_1) * 
                   \iterpred_\gamma(i_2, zs, S_2) * 
-                  \mathit{colls}(S_1) * \mathit{colls}(S_2)$\}
+                  \mathit{colls}(S_1) * \mathit{colls}(S - S_1)$\}
 \nextline $\letv{v_1}{\nextiter_\alpha(i_1)}{}$
 \nextline \{$xs = \mathit{map2}\;f\;ys\;zs \land 
-                  S = S_1 \uplus S_2 \land$ 
+                  S = S_1 \cup S_2 \land$ 
 \\ \>\;     $[(ys = \epsilon \land v_1 = \None \land \iterpred_\alpha(i_1, ys, S_1))$ 
 \\ \>\;\;    $\vee\; (\exists b, bs.\; ys = b\cdot bs \land v_1 = \Some(b) \land 
                                 \iterpred_\alpha(i, bs, S_1))] \;*$ 
 \\ \>\;     $\iterpred_\alpha(i_2, zs, S_2) * 
-             \mathit{colls}(S_1) * \mathit{colls}(S_2)$\}
+             \mathit{colls}(S_1) * \mathit{colls}(S - S_1)$\}
+\nextline \{$xs = \mathit{map2}\;f\;ys\;zs \land 
+                  S = S_1 \cup S_2 \land$ 
+\\ \>\;     $[(ys = \epsilon \land v_1 = \None \land \iterpred_\alpha(i_1, ys, S_1))$ 
+\\ \>\;\;    $\vee\; (\exists b, bs.\; ys = b\cdot bs \land v_1 = \Some(b) \land 
+                                \iterpred_\alpha(i, bs, S_1))] \;*$ 
+\\ \>\;     $\iterpred_\alpha(i_2, zs, S_2) * 
+             \mathit{colls}(S_2) * \mathit{colls}(S - S_2)$\}
 \nextline $\letv{v_2}{\nextiter_\alpha(i_2)}{}$ 
 \nextline \{$xs = \mathit{map2}\;f\;ys\;zs \land 
-                  S = S_1 \uplus S_2 \land$ 
+                  S = S_1 \cup S_2 \land$ 
 \\ \>\;     $[(ys = \epsilon \land v_1 = \None \land \iterpred_\alpha(i_1, ys, S_1))$ 
 \\ \>\;\;    $\vee\; (\exists b, bs.\; ys = b\cdot bs \land v_1 = \Some(b) \land 
                                 \iterpred_\alpha(i_1, bs, S_1))] \;*$ 
 \\ \>\;     $[(zs = \epsilon \land v_2 = \None \land \iterpred_\alpha(i_2, zs, S_2))$ 
 \\ \>\;\;    $\vee\; (\exists c, cs.\; ys = c\cdot cs \land v_2 = \Some(c) \land 
                                 \iterpred_\alpha(i_2, cs, S_2))] \;*$ 
-\\ \>\;     $\mathit{colls}(S_2) * \mathit{colls}(S_1)$\}
+\\ \>\;     $\mathit{colls}(S_2) * \mathit{colls}(S - S_2)$\}
 \nextline \{$xs = \mathit{map2}\;f\;ys\;zs \land 
-                  S = S_1 \uplus S_2 \land$ 
+                  S = S_1 \cup S_2 \land$ 
 \\ \>\;     $[(ys = \epsilon \land v_1 = \None \land \iterpred_\alpha(i_1, ys, S_1))$ 
 \\ \>\;\;    $\vee\; (\exists b, bs.\; ys = b\cdot bs \land v_1 = \Some(b) \land 
                                 \iterpred_\alpha(i_1, bs, S_1))] \;*$ 
@@ -1421,14 +1429,14 @@ annotated proof as follows:
 \nextline $\Optcase(v_1$ 
 \nextline \;\;\; $\None$\=$ \to $ 
 \nextline \> \{$xs = \mathit{map2}\;f\;ys\;zs \land 
-                  S = S_1 \uplus S_2 \land$ 
+                  S = S_1 \cup S_2 \land$ 
 \\ \> \>\;     $(ys = \epsilon \land v_1 = \None \land \iterpred_\alpha(i_1, ys, S_1)) * $ 
 \\ \> \>\;     $[(zs = \epsilon \land v_2 = \None \land \iterpred_\alpha(i_2, zs, S_2))$ 
 \\ \> \>\;\;    $\vee\; (\exists c, cs.\; ys = c\cdot cs \land v_2 = \Some(c) \land 
                                 \iterpred_\alpha(i_2, cs, S_2))] \;*$ 
 \\ \> \>\;     $\mathit{colls}(S)$\}
 \nextline \> \{$xs = \epsilon \land xs = \mathit{map2}\;f\;ys\;zs \land 
-                  S = S_1 \uplus S_2 \land$ 
+                  S = S_1 \cup S_2 \land$ 
 \\ \> \>\;     $(ys = \epsilon \land v_1 = \None \land \iterpred_\alpha(i_1, ys, S_1)) * $ 
 \\ \> \>\;     $[(zs = \epsilon \land v_2 = \None \land \iterpred_\alpha(i_2, zs, S_2))$ 
 \\ \> \>\;\;    $\vee\; (\exists c, cs.\; ys = c\cdot cs \land v_2 = \Some(c) \land 
@@ -1442,7 +1450,7 @@ annotated proof as follows:
                * \mathit{colls}(S) $\}
 \nextline \;\;\;$\Some(b)$\=$ \to $ 
 \nextline \> \{$xs = \mathit{map2}\;f\;ys\;zs \land 
-                  S = S_1 \uplus S_2 \land$ 
+                  S = S_1 \cup S_2 \land$ 
 \\ \> \>\;\;    $(\exists bs.\; ys = b\cdot bs \land v_1 = \Some(b) \land 
                                 \iterpred_\alpha(i_1, bs, S_1)) \;*$ 
 \\ \> \>\;     $[(zs = \epsilon \land v_2 = \None \land \iterpred_\alpha(i_2, zs, S_2))$ 
@@ -1452,14 +1460,14 @@ annotated proof as follows:
 \nextline \> $\Optcase(v_2,$ 
 \nextline \> \;\;\; $\None$\=$\to$ 
 \nextline \> \> \{$xs = \mathit{map2}\;f\;ys\;zs \land 
-                  S = S_1 \uplus S_2 \land$ 
+                  S = S_1 \cup S_2 \land$ 
 \\ \> \> \>\;\;    $(\exists bs.\; ys = b\cdot bs \land v_1 = \Some(b) \land 
                                 \iterpred_\alpha(i_1, bs, S_1)) \;*$
 \\ \> \> \>\;     $(zs = \epsilon \land v_2 = \None \land \iterpred_\alpha(i_2, zs, S_2)) *$ 
 \\ \> \> \>\;     $\mathit{colls}(S)$\}
 
 \nextline \> \> \{$xs = \epsilon \land xs = \mathit{map2}\;f\;ys\;zs \land 
-                  S = S_1 \uplus S_2 \land zs = \epsilon \;\land$ 
+                  S = S_1 \cup S_2 \land zs = \epsilon \;\land$ 
 \\ \> \> \>\;\;    $(\exists bs.\; ys = b\cdot bs \land v_1 = \Some(b) \land 
                                 \iterpred_\alpha(i_1, bs, S_1)) \;*$
 \\ \> \> \>\;     $(zs = \epsilon \land v_2 = \None \land \iterpred_\alpha(i_2, zs, S_2))$ 
@@ -1473,7 +1481,7 @@ annotated proof as follows:
 
 \nextline \> \;\;\; $\Some(c)$\=$ \to $ 
 \nextline \> \> \{$xs = \mathit{map2}\;f\;ys\;zs \land 
-                  S = S_1 \uplus S_2 \land$ 
+                  S = S_1 \cup S_2 \land$ 
 \\ \> \> \>\;\;    $(\exists bs.\; ys = b\cdot bs \land v_1 = \Some(b) \land 
                                 \iterpred_\alpha(i_1, bs, S_1)) \;*$
 \\ \> \> \>\;\;    $(\exists cs.\; ys = c\cdot cs \land v_2 = \Some(c) \land 
@@ -1481,7 +1489,7 @@ annotated proof as follows:
 
 \\ \> \> \>\;     $\mathit{colls}(S)$\}
 \nextline \> \> \{$xs = \mathit{map2}\;f\;ys\;zs \land 
-                  S = S_1 \uplus S_2 \land$ 
+                  S = S_1 \cup S_2 \land$ 
 \\ \> \> \>\;    $(ys = b\cdot bs \land v_1 = \Some(b) \land 
                                 \iterpred_\alpha(i_1, bs, S_1)) \;*$
 \\ \> \> \>\;    $(zs = c\cdot cs \land v_2 = \Some(c) \land 
@@ -1490,7 +1498,7 @@ annotated proof as follows:
 \\ \> \> \>\;     $\mathit{colls}(S)$\}
 
 \nextline \> \> \{$xs = (f\;b\;c) \cdot \mathit{map2}\;f\;bs\;cs \land 
-                  S = S_1 \uplus S_2 \land$ 
+                  S = S_1 \cup S_2 \land$ 
 \\ \> \> \>\;    $\iterpred_\alpha(i_1, bs, S_1)) * \iterpred_\alpha(i_2, cs, S_2)) \;*$
 
 \\ \> \> \>\;     $\mathit{colls}(S)$\}

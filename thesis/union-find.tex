@@ -92,14 +92,16 @@ in the union-find algorithm.
 \begin{figure}
   \begin{mathpar}
     \begin{array}{lcl}
+      \formula & = & I \bnfalt \mathsf{Elt\;of\;}\tau \times \tau \bnfalt \mathsf{Tensor\;of\;}\formula \times \formula \\
       \phi, \psi & ::= & I \bnfalt \elt{x}{y} \bnfalt \phi \otimes \psi
     \end{array}
   \end{mathpar}
   \begin{mathpar}
     \begin{array}{lcl}
+      R & : & (\tau \to \tau) \times \formula \to \formula \\ 
       R(\rho, I) & = & I \\
       R(\rho, \psi \otimes \phi) & = & R(\rho, \psi) \otimes R(\rho, \phi) \\
-      R(\rho, \elt{x}{y}) & = & \elt{x}{\rho(x)} \\
+      R(\rho, \elt{x}{y}) & = & \elt{x}{\rho(y)} \\
     \end{array}
   \end{mathpar}
 
@@ -181,15 +183,21 @@ logic, only ``one level up''. Even though we have a single abstract
 predicate describing the whole forest, we can recover separation-style
 modularity by indexing the abstract predicate with a formula $\phi$,
 which gives a small (in fact, nearly degenerate) ``separation logic''
-for describing elements of these equivalence classes.
+for describing elements of these equivalence classes.  
 
-These formulas take the form $I$ and $\phi \otimes \psi$, which are an
-(intuitionistic) unit and separating conjunction for the elements of
-this little logic. There is also an atomic formula $\elt{x}{y}$, which
-says that $x$ is a term whose canonical representative is $y$. These
-formulas have the usual resource-aware interpretation of separation
-logic, so that $\elt{x}{y} \otimes \elt{a}{b}$ implies that $x \not=
-a$. % \todo{Add these entailments as axioms} 
+The datatype of formulas is given in the display above the
+specification. We give it both as an inductive type, to illustrate why
+it is definable in higher-order, and as a grammar (which is more
+readable, and what we use in the specifications). Formulas have three
+grammatical productions. First, we have the forms $I$ and $\phi
+\otimes \psi$, which are an (intuitionistic) unit and separating
+conjunction for the elements of this little logic. We also have an
+atomic formula $\elt{x}{y}$, which says that $x$ is a term whose
+canonical representative is $y$. 
+
+These formulas have the usual resource-aware interpretation of
+separation logic, so that $\elt{x}{y} \otimes \elt{a}{b}$ implies that
+$x \not= a$. % \todo{Add these entailments as axioms}
 
 We also give a simple judgement on formulas $\ufcontains{\phi}{x}{y}$,
 which lets us say that $\phi$ entails drawing the conclusion that
@@ -210,8 +218,9 @@ So we have the tools to reason both locally and globally in our
 specifications.  An example of local reasoning can be seen on line 6
 of Figure~\ref{union-find:spec}.  Here, we say that given a state
 $H(\phi)$, calling $\newset$ will result in a new state $H(\phi
-\otimes \elt{a}{a})$. This is essentially a ``small'' axiom for
-creating new equivalence classes. 
+\otimes \elt{a}{a})$. This functions a bit like a global axiom for
+creating new equivalence classes, since we explicitly quantify over
+the frame.
 
 By quantifying over $\phi$, we can \emph{implement} the frame rule for
 our library. This is similar to the interpretation of the frame rule
@@ -230,8 +239,8 @@ logic conceals.
 
 On line 8, we give the specification of $\union$. Here, we say that if
 $x$'s witness is $y$, and $u$'s witness is $v$, then calling
-$\union(x,u)$ will equate the two equivalence classes, setting $x$'s
-witness to $v$. Furthermore, since this is globally visible, we need
+$\union(x,u)$ will equate the two equivalence classes, setting $u$'s
+witness to $y$. Furthermore, since this is globally visible, we need
 to push this ramification over the entire set of known nodes
 $\phi$. Observe that unlike in the previous function we do not want
 local reasoning, since the purpose the $\union$ operation is to
@@ -247,7 +256,7 @@ we simply say that formulas are commutative, unital and associative.
 \begin{figure}
 \mbox{}
 \begin{specification}
-\nextline $\sigma = \Child \of \reftype{\sigma} \bnfalt \Root \of \opttype\;{\reftype{\sigma}} \times \N$ 
+\nextline $\sigma = \Child \of \reftype{\sigma} \bnfalt \Root \of \opttype\;{(\reftype{\sigma})} \times \N$ 
 \nextline $\tau = \reftype{\sigma}$ 
 
 \nextline
@@ -292,13 +301,18 @@ those roots to the appropriate canonical witness.
 Then, on lines 4-7, we define exactly how $G$ works. In order to
 ensure that the graph structure actually has no cycles, on line 4 we
 impose the condition that the transitive closure of $p$ is a strict
-partial order. This ensures that the nodes form a directed acyclic
-graph, and the fact that it arises as the closure of a function means
-that no node has more than one parent, which together ensure that the
-nodes form a forest. On line 5, we assert that $w$ is an injective
-function, which ensures that the canonical representatives for different
-equivalence classes are all distinct from one another. On line 6, we
-assert that the triple $(D, p, w)$ models our formulas.
+partial order. That is, we require that $p^+$ is a transitive,
+irreflexive relation. Since the domain $D$ is finite, this also 
+insures that $p^+$ has no infinite ascending chains. 
+
+In terms of graph structure, this requirement means that the nodes
+form a directed acyclic graph, and the fact that it arises as the
+closure of a function means that no node has more than one parent.
+Together, these conditions ensure that the nodes form a forest. On
+line 5, we assert that $w$ is an injective function, which ensures
+that the canonical representatives for different equivalence classes
+are all distinct from one another. On line 6, we assert that the
+triple $(D, p, w)$ models our formulas.
 
 These formulas are a small subset of separation logic. We have the
 formula $I$, which is always satisfied. (So this logic is like an
@@ -433,29 +447,68 @@ These properties follow immediately from the semantics of assertions.
 
 \subsection{Proof of $\ctext{find}$}
 
-Suppose $R \subseteq X \times X$ is a strict partial order. We say $x \in X$ is \emph{maximal}
-when there is no $y \in X$ such that $(x,y) \in R$. 
+Suppose $R \subseteq D \times D$ is a strict partial order. We say $x
+\in D$ is \emph{maximal} when there is no $y$ such that $(x,y) \in R$.
+Note that when we have a partial function $f : D \rightharpoonup D$
+such that $f^+$ is a strict partial order, $x \in D$ is maximal
+precisely when $f(x)$ is not defined. (If $f(x)$ were defined, then
+$(x, f(x)) \in f^+$. Hence it cannot be defined for any maximal
+element.)
 
 \begin{lemma}{(Path Compression Lemma)}
-  Suppose $D$ is a finite set and $f : D \rightharpoonup D$ is a partial function on $D$,
-such that $f^{+}$ is a strict partial order. Now suppose $(x,y) \in f^{+}$ with $y$ maximal.
+  Suppose $D$ is a finite set and $f : D \rightharpoonup D$ is a
+  partial function on $D$, such that $f^{+}$ is a strict partial
+  order. Now suppose $(x,y) \in f^{+}$ with $y$ maximal.
 
-Then, $(u,v) \in [f|x:y]^{+}$ with $v$ maximal if and only if $(u,v) \in f^{+}$ with $v$ maximal. 
+Then, $[f|x:y]$ has the same domain as $f$, and $[f|x:y]^+$ is a
+strict partial order such that for all $(u,v) \in D$, $(u,v) \in
+[f|x:y]^{+}$ with $v$ maximal if and only if $(u,v) \in f^{+}$ with
+$v$ maximal.
 \end{lemma}
 
 \begin{proof}
+\begin{enumerate}
+\item 
+Since $(x,y) \in f^+$, we know that $x \in \domain{f}$. Hence $[f|x:y]$
+has the same domain as $f$. 
+
+\item 
+For $[f|x:y]^+$ to be a strict partial order, it must be an
+irreflexive transitive relation.  Since it is the transitive closure
+of a function, it is immediately transitive. 
+
+To show that it is irreflexive, assume that $(u, u) \in
+[f|x:y]^+$. Therefore there is some sequence $(u, [f|x:y](u), \ldots,
+[f|x:y]^n(u) = u)$.
+
+Now consider whether $x$ is in the sequence. If it is not, then this
+sequence is equal to $(u, f(u), \ldots, f^n(u) = u)$, which is a
+contradiction, since $f^+$ is irreflexive. If $x$ is in the sequence,
+then we know that either $x$ is the last element, or the
+second-to-last element (since $f(x) = y$, and $y$ is maximal).
+Suppose $x$ is the last element. Then we know that $u = x$, and hence
+$[f|x:y](x) = y$, and so we have a contradiction. Suppose $y$ is the
+last element. Then the first element is $y$, and there is no $f(y)$,
+since $y$ is a maximal element, and this is also a
+contradiction. 
+
+Therefore there is no $(u, u) \in [f|x:y]^+$, and so $[f|x:y]^+$ is
+irreflexive.
+
+\item
 \begin{itemize}
-\item[$\Leftarrow$] Suppose that $(u, v)$ in $f^{+}$. Then there is some $k$ such 
-that $f^k(u) = v$. So we have a sequence $u, f(u), \ldots, f^k(u)$. 
+\item[$\Leftarrow$] Suppose that $(u, v)$ in $f^{+}$ with $v$
+  maximal. Then there is some $k$ such that $f^k(u) = v$. So we have a
+  sequence $u, f(u), \ldots, f^k(u)$.
 
 If any of the $f^i(u) = x$ for $i < k$, then we know that $v = y$,
 since both $v$ and $y$ are maximal. Therefore, it follows that the
-sequence $0, [f|x:y](u), \ldots, [f|x:y]^i(u), y$ shows that $(u,v)
+sequence $u, [f|x:y](u), \ldots, [f|x:y]^i(u), y$ shows that $(u,v)
 \in [f^|x:y]^+$ with $v$ maximal.
 
 If none of the $f^i(u) = x$, then it follows that the sequence $u,
 f(u), \ldots, f^k(u)$ is exactly the same as $u, [f|x:y](u), \ldots,
-[f|x:y]^k(u)$, and so $(u, v) \in [f|x:y]^+$ with $(u,v)$ maximal.
+[f|x:y]^k(u)$, and so $(u, v) \in [f|x:y]^+$ with $v$ maximal.
 
 \item[$\Rightarrow$] Suppose $(u,v) \in [f|x:y]^{+}$ with $v$
   maximal. Then we know that there is some sequence $u, [f|x:y](u),
@@ -464,24 +517,37 @@ f(u), \ldots, f^k(u)$ is exactly the same as $u, [f|x:y](u), \ldots,
 Suppose $[f|x:y]^i(u) = x$ for some $i \leq k$. Then we know that $i =
 k-1$ and $v = y$, since $x$ is not maximal and $y$ is, and furthermore
 we know that none of the $[f|x:y]^j(u) = x$ for $j < i$, and so
-$[f|x:y]^j(u) = f^j(u)$. We also know that $x, f(x), \ldots, f^n(x) =
-y$ is a sequence in $f$. So we can construct the sequence $u, f(u),
-\ldots, f^i(u) = u, \ldots, f(x), \ldots, f^n(x) = y$, which shows
-that $(u,v) \in f^+$ with $v$ maximal.
+$[f|x:y]^j(u) = f^j(u)$ for $j \leq i$. We also know that $x, f(x),
+\ldots, f^n(x) = y$ is a sequence in $f$. So we can construct the
+sequence $u, f(u), \ldots, f^i(u) = x, \ldots, f(x), \ldots, f^n(x) =
+y$, which shows that $(u,v) \in f^+$ with $v$ maximal.
 
 Otherwise, suppose that $[f|x:y]^i(u) \not= x$ for any $i \leq
 k$. Then we know that $[f|x:y]^i(u) = f^i(u)$, and so we have the
 sequence $u, f(u), \ldots, f^k(u) = v$ to show us that $(u,v) \in f^+$ with
 $v$ maximal.
 \end{itemize}
+\end{enumerate}
 \end{proof}
 
-\begin{lemma}{(Path Compression Preserves Satisfaction)}
-Suppose $D$ is a finite set and $f : D \rightharpoonup D$ is a partial function on $D$,
-such that $f^{+}$ is a strict partial order, and that $(x,y) \in f^{+}$ with $y$ maximal.
+\begin{lemma}{(Satisfaction Depends on Maximality)}
+Suppose $D$ is a finite set and $f,g : D \rightharpoonup D$ are
+partial functions on $D$, such that $f^+$ and $g^+$ are strict partial
+orders such that for all $x,y \in D$, we have that $(x,y) \in f^+$
+with $y$ maximal in $f$ if and only if $(x,y) \in g^+$ with $y$
+maximal in $g$.
 
-For all $\phi$, $w$ and $D' \subseteq D$, if $D', f, w \models \phi$, then $D', [f|x:y], w \models \phi$.  
+Then for all $\phi, w$ and $D' \subseteq D$, if $D', f, w \models \phi$,
+then $D', g, w \models \phi$. 
 \end{lemma}
+
+% \begin{lemma}{(Path Compression Preserves Satisfaction)}
+% Suppose $D$ is a finite set and $f : D \rightharpoonup D$ is a partial function on $D$,
+% such that $f^{+}$ is a strict partial order, and that $(x,y) \in f^{+}$ with $y$ maximal.
+% 
+% For all $\phi$, $w$ and $D' \subseteq D$, if $D', f, w \models \phi$, then $D', [f|x:y], w \models \phi$.  
+% \end{lemma}
+
 
 \begin{proof}
 This lemma follows by induction on $\phi$. 
@@ -491,25 +557,31 @@ This lemma follows by induction on $\phi$.
   \begin{tabbedproof}
     \oo By assumption, we have $D', f, w \models \psi \otimes \theta$. \\
     \ooo From the definition of satisfaction, we get  $D_1, D_2$ such that $D' = D_1 \uplus D_2$ \\
-    \oox and $D_1, f, w \models \phi$ and $D_2, f, w \models \phi$.  \\
-    \ooo By induction, we get $D_1, [f|x:y] \models \psi$ \\
-    \ooo By induction, we get $D_2, [f|x:y] \models \theta$ \\
-    \ooo By definition, we get $D_1 \cup D_2, [f|x:y] \models \psi \otimes \theta$ \\
-    \ooo Hence $D, [f|x:y] \models \phi$ \\
+    \oox and $D_1, f, w \models \psi$ and $D_2, f, w \models \theta$.  \\
+    \ooo By induction, we get $D_1, g, w \models \psi$ \\
+    \ooo By induction, we get $D_2, g, w \models \theta$ \\
+    \ooo By definition, we get $D_1 \cup D_2, [f|x:y], w \models \psi \otimes \theta$ \\
+    \ooo Hence $D, g, w \models \phi$ \\
   \end{tabbedproof}
-\item Case $\phi = \elt{u}{v}$.
+\item Case $\phi = \elt{x}{y}$.
   \begin{tabbedproof}
-    \oo By assumption, $D', f, w \models \elt{u}{v}$ \\
-    \oo So we know that $u \in D'$ and there exists $w$ such that \\
-    \ox $(u,m) \in f^*$ with $m$ maximal and $v = w(m)$ \\
-    \oo By definition of reflexive transitive closure, either $(u, m) \in f^+$ or $u = m$ \\
-    \oo Suppose $(u,m) \in f^+$:\\
-    \ooo Then by the path compression lemma, $(u,m) \in f^+$ with $m$ maximal.  \\
-    \ooo Hence $D', [f|x:y], w \models \elt{u}{v}$  \\
-    \oo Suppose $u = m$: \\
-    \ooo Then we know that $u \not= x$, since $u$ is maximal. \\
-    \ooo So $u$ is still maximal with respect to $[f|x:y]$ \\
-    \ooo Hence $D', [f|x:y], w \models \elt{u}{v}$
+    \oo By assumption, $D', f, w \models \elt{x}{y}$ \\
+    \oo So we know that $x \in D'$ and there exists an $z$ such that \\
+    \ox $(u,z) \in f^*$ with $z$ maximal and $y = w(z)$ \\
+    \oo By definition of reflexive transitive closure, either $(x, z) \in f^+$ or $x = z$ \\
+    \oo Suppose $(x,z) \in f^+$:\\
+    \ooo Then by hypothesis, $(x,z) \in g^+$ with $m$ maximal.  \\
+    \ooo Hence $D', g, w \models \elt{x}{z}$  \\
+    \oo Suppose $x = y$: \\
+    \ooo Since $x$ is maximal, we know $x \not\in \domain{f}$. \\
+    \ooo Suppose $x \in \domain{g}$. \\
+    \oooo Then there is a sequence $(x, g(x), \ldots, u) \in g^+$ with $u$ maximal \\
+    \oooo Then $(x, g(x), \ldots, u) \in f^+$ with $u$ maximal \\
+    \oooo This is a contradiction, since $x$ is maximal in $f$ \\
+    \ooo So $x \not\in \domain{g}$ \\
+    \ooo Hence $(x, x) \in g^*$ and $x$ maximal in $g$ \\
+    \ooo Hence $(x, z) \in g^*$ and $z$ maximal in $g$ \\
+    \ooo Hence $D', g, w \models \elt{x}{y}$
   \end{tabbedproof}
 \end{itemize}
 \end{proof}
@@ -529,32 +601,34 @@ The $\findroot$ function satisfies the following specification:
 \end{lemma}
 
 Here, $f$ and $f'$ ``having the same maximal relationships'' means that $(u,v) \in f^+$ with $v$ maximal
-if and only if $f'$ does. 
+if and only if $(u, v) \in (f')^+$ with $v$ maximal. 
 
 \begin{proof}
 \begin{tabbedproof}
 \oo Assume our precondition state is $G(D, f, w, \phi) \land \ufcontains{\phi}{u}{v}$ \\
 \ooo Then we know that $f^+$ is a strict partial order, and $D,f,w \models \phi$ and \\
-\oox $\mathit{heap}(D,f,w,\phi)$ and $D,f,w \models \elt{u}{v}$ \\
+\oox $\mathit{heap}(D,f,w)$ and $D,f,w \models \elt{u}{v}$ \\
 \ooo Now, do a case split on whether or not $u \in \domain{f}$ (i.e., is maximal). \\
 \ooo If $u \in \domain{f}$: \\
-\oooo Then $\mathit{heap}(D,f) \implies (u \hookrightarrow \Child(f(u))$ \\
+\oooo Then $\mathit{heap}(D,f,w) \implies (u \hookrightarrow \Child(f(u))$ \\
 \oooo $[\letv{i}{[!u]}{}$ \\
 \oooo So we add $i = \Child(f(u))$ to the state, and simplify the case statement \\
 \oooo $\letv{(r,c,n)}{\findroot(f(u))}{}$ \\
-\oooo Then $G(D, f', w, \phi) \land r\mbox{ maximal} \land c = w(r) \land c = v  \land \domain{f} = \domain{f'}$ for some $f'$ \\
-\oooo Since $\domain{f} = \domain{f'}$, we know that $(u,v) \in f'^{+}$ with $v$ maximal. \\
-\oooo Hence $D,[f'|u:v],w \models \phi$ since path compression preserves satisfaction. \\
-\oooo Furthermore, path compression says that they have the same maximal relationships. \\
+\oooo Then $G(D, f', w, \phi) \land r\mbox{ maximal} \land c = w(r) \land c = v$ for some $f'$ \\
+\oooo with the same domain and maximal relationships as $f$\\
+\oooo So we know $D, f', w \models \phi$ and $(f')^+$ is a strict partial order and $w$ injective and $\mathit{heap}(D, f', w)$. \\
+\oooo Due to path compression, $[f'|u:v]^+$ is a strict partial order \\
+\oooox with the same maximal relationships and domain as $f'$\\
+\oooo Hence $D, [f'|u:v], w \models \phi$ and $\domain{[f|u:v]} = \domain{f}$ \\
 \oooo $\letv{\_}{[u := \Child(r)]}{}$ \\
-\oooo Hence $\mathit{heap}(D, f', w)$, together with the pure formulas above \\
-\oooo Hence $\exists f''.\;G(D, f'', \phi) \land p = v$ \\
+\oooo Hence $\mathit{heap}(D, [f'|u:v], w)$, together with the pure formulas above \\
 \oooo $(r,c,n)]$ \\
 \oooo Hence $\exists f''.\;G(D, f'', \phi) \land c = v \land w(r) = c \;\land$ \\
-\oooox $\domain{f} = \domain{f'} \land (u,r) \in f''^{*} \land r\mbox{ maximal} \;\land$ \\
-\oooox $(f,f')$ have the same maximal relationships. \\
+\oooox $\domain{f} = \domain{f''} \land (u,r) \in f''^{*} \land r\mbox{ maximal} \;\land$ \\
+\oooox $(f,f'')$ have the same maximal relationships. \\
+\ooox (with the choice of $[f'|x:y]$ as the witness for $f''$) \\
 \ooo If $u \not\in \domain{f}$:  \\
-\oooo Then $\mathit{heap}(D,f) \implies (u \hookrightarrow \Root(\Some(p), n))$ for some $n$ and $p = w(u)$\\
+\oooo Then $\mathit{heap}(D,f,w) \implies (u \hookrightarrow \Root(\Some(p), n))$ for some $n$ and $p = w(u)$\\
 \oooo $[\letv{i}{[!u]}{}$ \\
 \oooo So we add $i = \Root(\Some(w(u)), n)$ to the state, and simplify the case statement \\
 \oooo $(u, p, n)]$\\
@@ -629,17 +703,17 @@ The $\newset$ procedure meets the specification in Figure~\ref{union-find:spec}.
 \begin{tabbedproof}
 \oo Assume we have a precondition state $H(\phi)$, and consider the body of $\newset$. \\
 \ooo Then we know that $f^+$ is a strict partial order, and $D,f,w \models \phi$ and \\
-\oox $\mathit{heap}(D,f,w,\phi)$ and $D,f,w \models \elt{u}{v}$ \\
+\oox $\mathit{heap}(D,f,w)$ and $D,f,w \models \elt{u}{v}$ \\
 \ooo $[\letv{r}{[\newref{\sigma}{\Root(\None, 0)}]}{}$ \\
-\ooo Now the state is $\mathit{heap}(D,f,w,\phi) * r \pointsto \Root(\None, 0)$, plus the pure predicates. \\
+\ooo Now the state is $\mathit{heap}(D,f,w) * r \pointsto \Root(\None, 0)$, plus the pure predicates. \\
 \ooo $\letv{\_}{[r := \Root(\Some(r), 0)]}{}$ \\
-\ooo Now the state is $\mathit{heap}(D,f,w,\phi) * r \pointsto \Root(\Some(r), 0)$, plus the pure predicates. \\
-\ooo Since $\mathit{heap}(D,f,w,\phi)$ has a pointer for each $l \in D$, it follows that $r \not \in D$. \\
-\ooo Now, we know that $D' = D \uplus \setof{r}, f, [w|r:r] \models \phi \otimes \elt{r}{r}$ \\ 
+\ooo Now the state is $\mathit{heap}(D,f,w) * r \pointsto \Root(\Some(r), 0)$, plus the pure predicates. \\
+\ooo Since $\mathit{heap}(D,f,w)$ has a pointer for each $l \in D$, it follows that $r \not \in D$. \\
+\ooo Thus, we know that $D' = D \uplus \setof{r}, f, [w|r:r] \models \phi \otimes \elt{r}{r}$ \\ 
 \ooo $f^+$ is still a strict partial order which is a subset of $D' \times D'$ \\
 \ooo $f$ has the domain $D' \rightharpoonup D'$ \\
 \ooo $[w|x:x] \in (D' - \domain{f}) \to D'$ \\
-\ooo It is clear that $\mathit{heap}(D,f,w,\phi) * r \pointsto \Root(\Some(r), 0)$ is \\
+\ooo It is clear that $\mathit{heap}(D,f,w) * r \pointsto \Root(\Some(r), 0)$ is \\
 \oox equivalent to $\mathit{heap}(D', f, [w|x:x])$ \\
 \ooo Hence $G(D', f, [w|x:x], \phi \otimes \elt{r}{r})$ \\
 \ooo $r]$ \\
@@ -658,7 +732,7 @@ and $(x, y) \in f^+$ and $y$ maximal, and $v \not= y$, then it follows that for 
 \item $\domain{g} = \domain{f} \uplus \setof{v}$
 \item $g^+$ is a strict partial order 
 \item If $(a,b) \in f^*$ with $b$ maximal, either $b \not= v$ and $(a,b) \in g^*$ with $b$ maximal,
-  or $b = v$ and $(a,y) \in g^*$. 
+  or $b = v$ and $(a,y) \in g^*$ with $y$ maximal. 
 \end{enumerate}
 \end{lemma}
 
@@ -666,17 +740,17 @@ and $(x, y) \in f^+$ and $y$ maximal, and $v \not= y$, then it follows that for 
 \begin{enumerate}
 \item Since $v$ is maximal in $f$, it follows that $v \not\in \domain{f}$, and hence $\domain{[f|v:y]} = \domain{f} \uplus \setof{v}$
 
-\item To be a strict partial order, there must be no $(x,x) \in g^+$. 
+\item To be a strict partial order, it suffices that there is no $(x,x) \in g^+$. 
 \begin{tabbedproof}
 \oo Assume $(x, x) \in g^+$ \\
-\oo Then there is a $k$ such that $g^k(x) = x$ \\
+\oo Then there is a $k \geq 1$ such that $g^k(x) = x$ \\
 \oo Now, we'll show that $v$ does not occur in the sequence $x, g(x), \ldots, g^k(x)$ \\
 \ooo Suppose there is an $i \leq k$ such that $g^i(x) = v$ \\
-\ooo This is a contradiction, because $y$ is maximal, and we know that $g^{i+1}(x)$ must be defined \\
+\ooo This is a contradiction, because $v$ is maximal, and we know that $g^{i+1}(x)$ must be defined \\
 \oo Therefore for $i \leq k$, we have $g^i(x) \not= v$.  \\
 \oo Hence we have $g^i(x) = f^i(x)$ \\
 \oo Therefore $x, f(x), \ldots, f^k(x) = x$ shows that $(x, x) \in f^+$ \\
-\oo But $f^+$ is a strict partial order, which is a contradiction \\
+\oo But $f^+$ is a strict partial order, which is a contradiction. \\
 \end{tabbedproof}
 
 \item If $(a,b) \in f^*$ with $b$ maximal, either $b \not= v$ and $(a,b) \in g^*$ with $b$ maximal,
@@ -687,27 +761,28 @@ and $(x, y) \in f^+$ and $y$ maximal, and $v \not= y$, then it follows that for 
 \ooo Suppose $a = b$: \\
 \oooo Then either $b = v$ or not \\
 \oooo Suppose $b = v$: \\
-\ooooo Then $(v, y = f(b)) \in g^+$ with $y$ maximal \\
+\ooooo Then $(a,y) = (v,y) \in g \subseteq g^*$, and  \\
+\ooooo $y$ is maximal since $y \not\in \domain{g} = \domain{f} \cup \setof{v}$ \\
 \oooo Suppose $b \not= v$: \\
-\ooooo Then $(b,b) \in g^*$ \\
+\ooooo Then $(a,y) = (b, b) \in g^*$, since $b$ is maximal since $b \not\in \domain{g} = \domain{f} \cup \setof{v}$ \\ 
 \ooo Suppose $(a,b) \in f^+$: \\
-\oooo Then we have a $k$ such that $f^k(a) = b$ \\
+\oooo Then we have a $k > 0$ such that $f^k(a) = b$ \\
 \oooo Now, either there is an $i \leq k$ such that $f^i(a) = v$, or not. \\
 \oooo Suppose $f^i(a) = v$: \\
 \ooooo Then we know that for all $j < i$, $f^j(a) \not= v$, since $v$ is maximal in $f$ \\
-\ooooo Therefore for all $j < i$, $f^j(a) = g^j(a)$ \\
+\ooooo Therefore for all $j \leq i$, $f^j(a) = g^j(a)$ \\
 \ooooo Therefore $g^{i+1}(a) = y$ \\
-\ooooo Hence $(a,y) \in g^*$ \\
+\ooooo Hence $(a,y) \in g^*$ and $y$ is maximal, since $y \not\in \domain{g}$ \\
 \oooo Suppose there is no $i$ such that $f^i(a) = v$: \\
 \ooooo Then we know that for all $j \leq k$, $f^j(a) = g^j(a)$, and $b \not= v$ \\
-\ooooo Hence $(a,b) \in g^*$ \\
+\ooooo Hence $(a,b) \in g^*$ and $b$ is maximal since $b \not\in \domain{f} \cup \setof{v} = \domain{g}$\\
 \end{tabbedproof}
 \end{enumerate}
 \end{proof}
 
 \begin{lemma}{(Ramification)}
-Suppose $D, f, w \models \phi$ and $(x,y) \in f^+$ with $y$ maximal and $(u, v) \in f^+$ with $v$ maximal,
-and $y \not= v$. Let $w'$ be the restriction of $[w|v:z]$ to exclude $y$, and let $g = [f|y:v]$. Then
+Suppose $D, f, w \models \phi$ and $(x,y) \in f^*$ with $y$ maximal and $(u, v) \in f^*$ with $v$ maximal,
+and $y \not= v$, and $w$ injective. Let $w'$ be the restriction of $[w|v:z]$ to exclude $y$, and let $g = [f|y:v]$. 
 
 Then, $D, g,  w' \models R([z/w(v), z/w(y)], \phi)$.
 \end{lemma}
@@ -718,7 +793,7 @@ This proof follows by induction on the structure of $\phi$.
 \begin{tabbedproof}
 \oo Case $\phi = I$: \\
 \ooo This case is immediate since $D, g, w' \models I$  and $R([z/w(v), z/w(y)],I) = I$ \\
-\oo Case $\phi = \phi \otimes \theta$: \\
+\oo Case $\phi = \psi \otimes \theta$: \\
 \ooo By satisfaction of $\phi$, we have $D_1, D_2$ such that $D = D_1 \uplus D_2$ and \\
 \ooox $D_1, f, w \models \psi$ and\\
 \ooox $D_2, f, w \models \theta$ \\
@@ -735,21 +810,22 @@ This proof follows by induction on the structure of $\phi$.
 \oooo If $c \not= v$:  \\
 \ooooo Since $w$ is injective, we know that $w(c) \not= w(v)$. Hence $[z/w(v)]w(c) = w(c)$ \\
 \ooooo Hence $[z/w(v), z/w(y)]w(c) = w(c)$ \\
-\ooooo So $\elt{a}{b} = R([w(v)/w(y)], \elt{a}{b})$ \\
+\ooooo So $\elt{a}{b} = R([z/w(v),z/w(y)], \elt{a}{b})$ \\
 \ooooo Furthermore $w'(c) = w(c)$ \\
 \ooooo Hence $D, g, w' \models \elt{a}{b}$ \\
 \ooooo Hence $D, g, w' \models R([z/w(v), z/w(y)], \elt{a}{b})$ \\
 \oooo If $c = v$: \\
-\ooooo Since $w(c) = w(v)$. Hence $[z/w(v)]w(c) = z$ \\
+\ooooo Since $w(c) = w(v)$, we have $[z/w(v)]w(c) = z$ \\
 \ooooo Hence $[z/w(v), z/w(y)]w(c) = z$ \\
 \ooooo Note $w'(v) = z$ \\
-\ooooo Hence $D, g, w' \models \elt{c}{z}$ \\
+\ooooo Hence $D, g, w' \models \elt{a}{z}$ \\
 \ooooo Hence $D, g, w' \models R([z/w(v), z/w(y)], \elt{a}{b})$ \\
 \ooo Suppose $c = y$: \\
-\oooo Then, $b = w(c)$ and $[w(v)/w(y)]w(c) = [w(v)/w(y)]w(y) = w(v)$ \\
-\oooo So $R([w(v)/w(y)], \elt{a}{b}) = \elt{a}{w(v)}$ \\
-\oooo Furthermore, we know that $(a, v) \in g^*$ and and $v$ maximal \\
-\oooo So $D, g, w' \models R([w(v)/w(y)], \elt{a}{b})$ 
+\oooo Then, $b = w(c) = w(y)$, so that $[z/w(v), z/w(y)]b = z$\\ 
+\oooo So $R([z/w(v), z/w(y)], \elt{a}{b}) = \elt{a}{z}$ \\
+\oooo Furthermore, we know that $(a, v) \in g^*$ and and $v$ maximal and $w'(v) = z$ \\
+\oooo So $D, g, w' \models \elt{a}{z}$ \\
+\oooo So $D, g, w' \models R([z/w(v),z/w(y)], \elt{a}{b})$ 
 \end{tabbedproof}
 \end{proof}
 
@@ -771,16 +847,19 @@ The $\union$ function meets the specification in Figure~\ref{union-find:spec}.
 \ooox  $y = y'$ \\
 \ooo $\letv{(s,v',n)}{\findroot(u)}{}$ \\
 \ooo So we have $f''$ such that $G(D, f'', w, \phi)$ and \\
-\ooox  $(y, s) \in f''^*$ and $s$ maximal \\
+\ooox  $(u, s) \in f''^*$ and $s$ maximal \\
 \ooox  $f'$ and $f''$ have the same maximal relationships \\
 \ooox  $v = w(s)$ \\
 \ooox  $v = v'$ \\
 \ooo So we can substitute $y$ for $y'$ and $v$ for $v'$ \\
-\ooo So $(x, r) \in f''^*$ and $r$ maximal \\
+\ooo Since $f$ and $f'$ have the same maximal relationships, and \\
+\oox since $f'$ and $f''$ have the same maximal relationships,  \\
+\oox we know that $f$ and $f''$ have the same maximal relationships \\
+\ooo Since $(x,r) \in f^*$ and $r$ maximal in $f$, we know $(x, r) \in f''^*$ and $r$ maximal in $f''$ \\
 \ooo Now case analyze on whether $r = s$: \\
 \ooo If $r = s$: \\
 \oooo Then we can simplify the remaining program to $\unit$ \\
-\oooo Now, note that since $r = s$, $w(r) = w(s)$, and so $y = v$ $R([y/v], \phi) = \phi$ \\
+\oooo Now, note that since $r = s$, $w(r) = w(s)$, and so $y = v$ and $R([y/v], \phi) = \phi$ \\
 \oooo Hence we can hide $D, f'', w$ to get $H(\phi)$ \\
 \ooo If $r \not= s$: \\
 \oooo Now, case analyze on the ranks $m$ and $n$: \\
