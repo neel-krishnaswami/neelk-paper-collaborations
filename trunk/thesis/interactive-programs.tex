@@ -116,11 +116,11 @@ everything that depends on it invalidates the memoized value.
 \begin{figure}
 \mbox{}
 \begin{specification}
-\nextline $\codetype{A} = \monad{(A \times \cellset)}$ \nextline[1em]
-$\celltype{A} = \{$\=$code: \reftype{\codetype{A}};$ \nextline
-                   \>$value: \reftype{\opttype{A}};$ \nextline
+\nextline $\codetype{\alpha} = \monad{(\alpha \times \cellset)}$ \nextline[1em]
+$\celltype{\alpha} = \{$\=$code: \reftype{\codetype{\alpha}};$ \nextline
+                   \>$value: \reftype{\opttype{\alpha}};$ \nextline
                    \>$reads: \reftype{\cellset};$ \nextline
-                   \>$obs:   \reftype{\cellset}\;$ \nextline
+                   \>$obs:   \reftype{\cellset};$ \nextline
                    \>$id:    \N\}$ \nextline[1em]
 
 $ecell = \exists \alpha:\star.\; \celltype{\alpha}$ \nextline[1em]
@@ -151,7 +151,7 @@ $\setref : \forall \alpha : \reftype{\alpha} \to \alpha \to \codetype{\unittype}
 $\setref r\;v = \comp{\letv{dummy}{\comp{r := v}}{\pair{\unit}{\ctext{emptyset}}}}$ \nextline[1em]
 
 $\newcell : \forall \alpha:\star.\; \codetype{\alpha} \to \monad{\celltype{\alpha}}$ \nextline
-$\newcell\;\alpha\;code = [$\=$\letv{id}{!counter}{}$ \nextline
+$\newcell\;code = [$\=$\letv{id}{!counter}{}$ \nextline
                                    \>$\letv{\_}{\comp{counter := n + 1}}{}$ \nextline
                                    \>$\letv{code}{\newref{\codetype{\alpha}}{code}}{}$ \nextline
                                    \>$\letv{value}{\newref{\opttype{\alpha}}{\ctext{None}}}{}$ \nextline
@@ -167,8 +167,8 @@ $\newcell\;\alpha\;code = [$\=$\letv{id}{!counter}{}$ \nextline
 \mbox{}
 \begin{specification}
 \nextline
-$\updatecell : \forall \alpha:\star.\; \codetype{\alpha} \to \celltype{\alpha} \to \monad{\unittype}$\nextline
-$\updatecell\;\alpha\;exp\;a = 
+$\updatecell : \forall \alpha:\star.\; \celltype{\alpha} \to \codetype{\alpha} \to \monad{\unittype}$\nextline
+$\updatecell\;\alpha\;a\;exp = 
      [$\=$\letv{\_}{\ctext{mark\_unready}\;\pack{\alpha}{a}}{}$ \nextline
        \>$a.code := exp]$ \nextline[1em]
 
@@ -181,19 +181,31 @@ $\ctext{mark\_unready}\;cell =\; $\=$\ctext{unpack}(\alpha, a) = cell\; \ctext{i
 \>     \>$\letv{\_}{\comp{a.value := \ctext{None}}}{}$ \nextline
 \>     \>$\letv{\_}{\comp{a.reads := \ctext{emptyset}}}{}$ \nextline
 \>     \>$a.obs   := \ctext{emptyset}]$ 
+\nextline[1em]
+$\ctext{add\_observer} : \forall \alpha:\star.\; \celltype{\alpha} \to \mathit{ecell} \to \monad{1}$ \nextline
+$\ctext{add\_observer} \;o \;\pack{\beta}{c} = [$\=$\letv{os}{[!(c.\mathit{obs})]}{}$ \nextline
+                                             \>$\letv{os}{[\ctext{addset}\;os\;\pack{\alpha}{o}]}{}$ \nextline
+                                             \>$c.\mathit{obs} := os]$
+\nextline[1em]
+$\ctext{remove\_obs} : \forall \alpha:\star.\; \celltype{\alpha} \to \mathit{ecell} \to \monad{1}$ \nextline
+$\ctext{remove\_obs} \;o \;\pack{\beta}{c} = [$\=$\letv{os}{[!(c.\mathit{obs})]}{}$ \nextline
+                                             \>$\letv{os}{[\ctext{removeset}\;os\;\pack{\alpha}{o}]}{}$ \nextline
+                                             \>$c.\mathit{obs} := os]$
+
 \end{specification}
 \caption{Implementation of Notification Networks}
 \label{notification-implementation-update}
 \end{figure}
 
 Our API for creating notification networks is given in
-Figure~\ref{notification-implementation}. First, we'll describe
-the interface, and then discuss its implementation. 
+Figure~\ref{notification-implementation} and
+Figure~\ref{notification-implementation-update}. First, we'll describe
+the interface, and then discuss its implementation.
 
 The interface exposes two basic abstract data types, $\ctext{cell}$
 and $\ctext{code}$.
 
-The type $\celltype{A}$ is the type of dynamic data values. A cell
+The type $\celltype{\alpha}$ is the type of dynamic data values. A cell
 contains a reference to a piece of code, a possible memoized value,
 plus enough information to correctly invalidate its memoized value
 when the cell's dependencies change. We can create a new cell by
@@ -202,7 +214,7 @@ code expression $e$ inside it. We can also modify a cell with
 the command $\updatecell\;cell\;exp$, which modifies the cell
 $cell$ by installing the new expression $exp$ in it. 
 
-The type $\codetype{A}$ is a monadic type, representing the type of
+The type $\codetype{\alpha}$ is a monadic type, representing the type of
 computations that can read cells. It supports the usual operations
 $\return e$ and $\bind e\; (\semfun{x}{e'})$, which embed a pure value
 into the $\ctext{code}$ type and implement sequential composition,
@@ -215,35 +227,40 @@ The difference between $\readcell$ and $\getref$ or $\setref$ is that
 the first operation reads a cell, possibly furthere executing the code
 in that cell. In contrast, $\getref$ and $\setref$ are just the
 operations to update primitive pointers, lifted to live within the
-$\codetype{A}$ monad.
+$\codetype{\alpha}$ monad.
  
 The actual implementation is also given in
 Figure~\ref{notification-implementation}. The abstract type of code is
 implemented using the underlying monad of imperative commands, so that
-$\codetype{A}$ is implemented with the type $\monad{(A \times
-  \cellset)}$.  The intuition is that when we evaluate a term we are
-allowed to read some cells along the way, and so must return a set of
-all the cells that we read in order to do proper dependency
+$\codetype{\alpha}$ is implemented with the type $\monad{(\alpha
+  \times \cellset)}$.  The intuition is that when we evaluate a term
+we are allowed to read some cells along the way, and so must return a
+set of all the cells that we read in order to do proper dependency
 management. So, $\cellset$ is a type representing sets of
 (existentially-quantified) cells.  (The precise specification of
 $\cellset$ is given in Appendix A, since describing it is a
 distraction from the main development.)
 
-Cells are represented with a 5-tuple. There is a reference pointing to
-the code expression, as well as a value field pointing to an optional
-value. The value field will be set to $\ctext{None}$ if the cell is in
-an unready, un-memoized state, and will be $\ctext{Some}\;v$ if the
-cell's code has already been evaluated to a value $v$. In addition there are
-two fields representing the dependencies. If the code expression has
-been evaluated and a memoized value generated, then the $reads$ field
-will point to the set of cells that the computation directly read
-while computing its value. Otherwise it will point to the empty
+Cells are represented with a 5-tuple. For readability, we use a
+record-style notation for them, even though our formal language has
+only binary tuples, since records can be translated into nested
+tuples.
+
+There is a reference pointing to the code expression, as well as a
+value field pointing to an optional value. The value field will be set
+to $\ctext{None}$ if the cell is in an unready, un-memoized state, and
+will be $\ctext{Some}\;v$ if the cell's code has already been
+evaluated to a value $v$. In addition there are two fields
+representing the dependencies. If the code expression has been
+evaluated and a memoized value generated, then the $reads$ field will
+point to the set of cells that the computation directly read while
+computing its value. Otherwise it will point to the empty
 set. Conversely, the field $obs$ contains the cell's observers --- the
 set of cells that have read the current cell as part of their own
 computations. Obviously, this is only non-empty when the cell has been
 evaluated. Finally, each cell also has an integer id field, which is a
 unique numeric identifier for every cell that is created by the
-library. It allows us to compare cells (even of different type) for
+library. This permits us to compare cells (even of different type) for
 equality, which is needed for dependency management.
 
 The $\return$ operation for the library simply returns its argument
@@ -300,12 +317,12 @@ empty. Notice that there is no explicit base case to the recursive
 call; if there are any cycles in the dependency graph, invalidation
 could go into an infinite loop. 
 
-So far, we have described the implementation invariants incrementally.
-Before proceeding to describe them formally, we will state them again
-informally, all in one place:
+So far, we have described the implementation invariants incrementally
+and informally. Before proceeding to the formal description, we will
+state them again informally, all in one place:
 
 \begin{itemize}
-  \item Every cell must have a unique numeric identifier
+  \item Every cell must have a unique numeric identifier.
   \item Every cell is either ready, or unready. 
   \item Every ready cell has a memoized value, and maintains 
     two sets, one containing every cell that it reads, and the
@@ -340,15 +357,26 @@ direction these two functions look is why we end up needing a global
 invariant: we need to know that these two directions are in harmony
 with one another.
 
-Now, note that the type of $\ctext{mark\_unready}$ is simply the monadic
-type $\monad{\unittype}$, which precludes it from being called from within
-a $\codetype{A}$. This means that when we are evaluating a code
-expression, we will never actually follow the observer fields --
-we'll only patch them as needed, whenever we evaluate a
-cell and change it from unready to ready.  As a result, an abstract
-description of the heap which \emph{does not explicitly mention
-the observer sets} will prove sufficient for reasoning about
-the behavior of $\codetype{A}$ expressions.
+Now, note that the type of $\ctext{update}$ is simply the monadic type
+$\monad{\unittype}$, which precludes clients from constructing
+expressions of type $\codetype{\alpha}$ which invoke it. The reason
+for this is that the $\codetype{\alpha}$ is an abstract type, and
+clients can construct terms of this type only by using the
+$\ctext{return}, \ctext{bind}, \ctext{read}, \ctext{getref}$ and
+$\ctext{setref}$ operations. Since none of these operations themselves
+invoke $\ctext{update}$, no client code can put a code expression in a
+cell which can invoke it. (Making this argument completely airtight
+would require a parametric model of our language, which we do not
+have, but`the intuition is sufficient to guide the design of the
+program invariant.)
+
+As a result, when we evaluate a code expression, we will never
+actually follow the observer fields -- we'll only patch them as
+needed, whenever we evaluate a cell and change it from unready to
+ready.  As a result, an abstract description of the heap which
+\emph{does not explicitly mention the observer sets} will prove
+sufficient for reasoning about the behavior of $\codetype{\alpha}$
+expressions.
 
 With this plan, we introduce \emph{abstract heap formulas}, which are
 syntactic descriptions of the state of part of the cell heap. These
@@ -371,11 +399,11 @@ state owned by the network, currently with value $v$. There are two
 atomic forms representing cells. $\cellneg{a}{e}$ says that $a$ is a
 cell with code $e$, which is unready to deliver a value --- it needs
 to be re-evaluated before it can yield a value. $\cellpos{a}{e}{v}{r}$
-says that $a$ is a cell with code $e$, and that may be ready to deliver
-the value $v$, assuming that all the cells in its read set $r$ are themselves
-ready. If anything it reads is known to be unready, then it is unready
-itself. (We will sometimes write $\celleither{a}{e}$ when we do not care
-whether $a$ is ready or not.)
+says that $a$ is a cell with code $e$ that will deliver the value $v$,
+under the condition that all the cells in its read set $r$ are
+themselves ready. If anything it reads is known to be unready, then it
+is unready itself. (We will sometimes write $\celleither{a}{e}$ when
+we do not care whether $a$ is ready or not.)
 
 First, notice the must/may flavor of this reading. The formula
 $\cellneg{a}{e}$ says that $a$ \emph{must} be unready.  The formula
@@ -415,6 +443,7 @@ collection of cells, together with a function mapping each cell to a
 code expression, a possible value, a read set, an observed set, and an
 identifier, which satisfies the overall invariant $Inv$.
 
+
 In the first two lines of $Inv(H, \phi)$, we assert all of the global 
 conditions in terms of the mathematical cell heap $H$. First, we assert that 
 the relational transpose $(\cdot)^\dagger$ of the reads relation $R_H$ is the
@@ -453,7 +482,13 @@ represent the appropriate sets of cells.  Since none of the prior
 clauses say anything about the local state, we also use the
 $\mathit{refs}(\phi)$ function to take a formula, and assemble a
 collection of points-to assertions $r \pointsto v$ from each
-$\localref{r}{v}$ in our formula.
+$\localref{r}{v}$ in our formula. (As a reminder, the specifications
+of the set operations are given in Appendix A of this chapter.)
+
+Note that the separation requirements in $\mathit{heap}(H)$ ensure
+that every cell value $c$ in set of cells $D$ has a disjoint set of
+pointer values. As a result, we do not have to specify this condition
+explicitly, since its failure would falsify the precondition.
 
 \begin{figure}
 \mbox{}
@@ -479,18 +514,18 @@ $O_{(D, h)} = \comprehend{(c,c') \in D}{ c' \in obs(h(c)) }$ \\[1em]
 $unique(D,h) = \exists$\=$i : Fin(|D|) \to D.$\\
                        \>$i \circ (identity \circ h) = id \; \land (identity \circ h) \circ i = id$ \\[1em]
 
-$\satisfies{(D,h)}{\phi} = sat((D,h), D, \phi)$ \\[1em]
+$\satisfies{(D,h)}{\phi} = (D,h), D \models \phi$ \\[1em]
 
-$sat(H, D, \localref{r}{v}) = \top$ \\
-$sat(H, D, I) = \top$ \\
-$sat(H, D, \phi \otimes \psi) = \exists D_1, D_2.\;$\=$D = D_1 \uplus D_2 
-                                                      \land sat(H, D_1, \phi) 
-                                                      \land sat(H, D_2, \psi)$ \\
-$sat(H, D, \cellneg{a}{e}) = a \in D \land code(h(a)) = e \land a \not \in V_H$ \\
-$sat(H, D, \cellpos{a}{e}{v}{r}) =\; $\=$ a \in D \land code(h(a)) = e \;\land$ \\
-      \>$\mathrm{if}($\=$r \cap V_H = r,$ \\
-      \>     \>$value(h(a)) = \ctext{Some}\;v \land reads(h(a)) = r,$ \\
-      \>     \>$a \not\in V_H)$\\[1em]
+$H, D \models \localref{r}{v} \qquad \qquad$\=$\iff \top$ \\
+$H, D \models I$                            \>$\iff \top$ \\
+$H, D \models \phi \otimes \psi$            \>$\iff \exists D_1, D_2.\;$\=$D = D_1 \uplus D_2 
+                                                      \land H, D_1 \models \phi
+                                                      \land H, D_2 \models \psi$ \\
+$H, D \models \cellneg{a}{e}$               \>$\iff a \in D \land code(h(a)) = e \land a \not \in V_H$ \\
+$H, D \models \cellpos{a}{e}{v}{r}$         \>$\iff $\=$ a \in D \land code(h(a)) = e \;\land$ \\
+\>      \>$\mathrm{if}\;r \subseteq V_H$ \\
+\>      \>$\mathrm{then}\;value(h(a)) = \ctext{Some}\;v \land reads(h(a)) = r$ \\
+\>      \>$\mathrm{else}\;a \not\in V_H$\\[1em]
  
 
 $heap(D,h) = $ \\
@@ -556,14 +591,14 @@ large part of the cell graph.
 \subsection{Correctness of $\newcell$ and $\updatecell$}
 
 In this subsection, I will prove the correctness of the two operations
-in our interface which lie outside the $\codetype{A}$
+in our interface which lie outside the $\codetype{\alpha}$
 monad. Specifications and proofs of the operations in the monad will
 follow, afterwards.
 
 \subsubsection{Correctness of $\updatecell$}
 
-Despite this issue, we can prove the soundness of the following triple
-specifying $\updatecell$.
+We will now prove the soundness of the following triple specifying
+$\updatecell$.
 
 \begin{prop}{(Update Rule)}
 For all cells $o$ and code expressions $e$ and $e'$, the following
@@ -583,12 +618,12 @@ depends on $o$, and modify it to be unready.
 
 Now consider any positive cell formula in $\psi$ which reads $o$,
 directly or indirectly. The satisfaction relation for $\phi$ tells us
-that a positive formula must have everything in its read set be
-ready, in order to represent a ready cell. So by changing $o$'s
-formula to the unready state, we no longer require that positive
-formula to represent a ready cell. As a result, we can leave the
-entire frame $\psi$ untouched, even though the physical heap it
-represents may have been (quite drastically) modified. 
+that a positive formula must have everything in its read set be ready,
+in order to represent a ready cell. So by changing $o$'s formula to
+the unready state, we no longer require that positive formula
+represent a ready cell. As a result, we can leave the entire frame
+$\psi$ untouched, even though the physical heap it represents may have
+been (quite drastically) modified.
 
 However, before we can give a proper proof of this theorem, we need to
 specify and prove correct the $\ctext{mark\_unready(c)}$ procedure,
@@ -615,11 +650,11 @@ cells which (transitively) read $c$, and define $h'$ to have the
 following components:
 
 \begin{itemize}
-\item $\mathit{code}(h') = \mathit{code}(h)$
-\item $\mathit{value}(h') = \semfun{c'}{\IfThenElse{c'\in U}{\None}{\mathit{value}(h(c'))}}$
-\item $\mathit{reads}(h') = \semfun{c'}{\IfThenElse{c'\in U}{\emptyset}{\mathit{reads}(h(c'))}}$
-\item $\mathit{obs}(h') = \semfun{c'}{\IfThenElse{c'\in U}{\emptyset}{\mathit{obs}(h(c')) - U}}$
-\item $\mathit{identity}(h') = \mathit{identity}(h)$
+\item $\mathit{code}(h'(c')) = \mathit{code}(h(c'))$
+\item $\mathit{value}(h'(c')) = \IfThenElse{c'\in U}{\None}{\mathit{value}(h(c'))}$
+\item $\mathit{reads}(h'(c')) = \IfThenElse{c'\in U}{\emptyset}{\mathit{reads}(h(c'))}$
+\item $\mathit{obs}(h'(c')) = \IfThenElse{c'\in U}{\emptyset}{\mathit{obs}(h(c')) - U}$
+\item $\mathit{identity}(h'(c')) = \mathit{identity}(h(c'))$
 \end{itemize}
 
 \noindent Then it is the case that $H' = (D,h')$ satisfies the five properties below. 
@@ -638,14 +673,14 @@ following components:
   \begin{tabbedproof}
     \oo This follows if $R^+_{H'}$ is transitive relation without any $(a,a) \in R^+_H$ \\
     \oo Since it is a transitive closure, it is a transitive relation \\
-    \oo To show that there is no $a \in D$ such that $(a,a) \in R^+_H$, \\
+    \oo To show that there is no $a \in D$ such that $(a,a) \in R^+_{H'}$, \\
     \ox we will show that $R^+_{H'} \subseteq R^+_H$ \\
     \oo Assume that $(a_0,b) \in R^+_{H'}$ \\
-    \oo Then there is a sequence $a_0, \ldots, a_k$ such $b = a_k$ and each $a_{i+1} \in \mathit{reads}(h'(a_i))$ \\
-    \oo Suppose we have an arbitrary $a_i, a_{i+1}$, so $a_{i+1} \in \mathit{reads}(h'(a_i))$ \\
+    \oo Then there is a sequence $a_0, \ldots, a_k$ such that $b = a_k$ and each $a_{i+1} \in \mathit{reads}(h'(a_i))$ \\
+    \oo Suppose we have an arbitrary $a_i, a_{i+1}$, such that $a_{i+1} \in \mathit{reads}(h'(a_i))$ \\
     \oo Hence it follows that $a_i \not\in U$, since otherwise $\mathit{reads}(h'(a_i)) = \emptyset$ \\
-    \oo Hence it tollows that $\mathit{reads}(h'(a_i)) = \mathit{reads}(h(a_i))$ \\
-    \oo Hence $a_0, \ldots, a_k$ such $b = a_k$ and each $a_{i+1} \in \mathit{reads}(h(a_i))$ \\
+    \oo Hence it follows that $\mathit{reads}(h'(a_i)) = \mathit{reads}(h(a_i))$ for $i < k$ \\
+    \oo Hence $a_0, \ldots, a_k$ such that $b = a_k$ and each $a_{i+1} \in \mathit{reads}(h(a_i))$ \\
     \oo Hence $(a_0, b) \in R^+_H$ \\
     \oo Hence $a_0 \not= b$, since $R^+_H$ strict partial order 
   \end{tabbedproof}
@@ -655,7 +690,7 @@ following components:
     \oo Suppose $a \in V_{H'}$ \\
     \ooo Then $\mathit{value}(h'(a)) = \Some(v)$ for some $v$ \\
     \ooo Hence $a \not\in U$ \\
-    \ooo Hence $\mathit{value}(h'(a)) = \mathit{value}(h(v))$  \\
+    \ooo Hence $\mathit{value}(h'(a)) = \mathit{value}(h(a))$  \\
     \ooo Hence $a \in V_H$ \\
     \ooo Hence $a \in V_{H} - U$ \\
     \oo Conversely, suppose $a \in V_{H} - U$ \\
@@ -669,8 +704,8 @@ following components:
     \oo Assume $(a,b) \in R_{H'}$ \\
     \oo Hence $b \in \mathit{reads}(h'(a))$ \\
     \oo Hence we know that $a \not\in U$ \\
-    \oo Hence we know that $b \in \mathit{reads}(h(a))$ \\
-    \oo Hence we know that $a \in V_H$\\
+    \oo Hence we know that $b \in \mathit{reads}(h(a))$ and $(a,b) \in R_H$\\
+    \oo Hence we know that $a \in V_H$ and $b \in V_H$\\
     \oo Hence we know that $a \in V_H - U$ \\
     \oo Hence we know that $a \in V_{H'}$ \\
     \oo Since $U$ is transitively-closed, we know that if $b \in U$, then $a \in U$ \\
@@ -708,23 +743,64 @@ This is immediate, since $\mathit{identity}(h) = \mathit{identity}(h')$
 \end{enumerate}
 \end{proof}
 
+\begin{lemma}{(Sequentialization)}
+Suppose we have $H = (D,h)$ such that $R^+_H$ is a strict partial
+order, $R_H \subseteq V_H \times V_H$, $R^\dagger_H = O_H$, and
+$\mathit{unique}(H)$.  Now, for any $X \subseteq D$, define $U^H_X =
+\comprehend{c' \in D}{(c', c) \in R^*_H \land c \in X}$ to be the set
+of cells which transitively read any cell in $X$, and also define
+$h|_X$ so that:
+\begin{itemize}
+\item $\mathit{code}(h|_X(c')) = \mathit{code}(h(c'))$
+\item $\mathit{value}(h|_X(c')) = \IfThenElse{c' \in U^H_X}{\None}{\mathit{value}(h(c'))}$
+\item $\mathit{reads}(h|_X(c')) = \IfThenElse{c' \in U^H_X}{\emptyset}{\mathit{reads}(h(c'))}$
+\item $\mathit{obs}(h|_X(c')) = \IfThenElse{c' \in U^H_X}{\emptyset}{\mathit{obs}(h(c')) - U^H_X}$
+\item $\mathit{identity}(h|_X(c')) = \mathit{identity}(h(c'))$
+\end{itemize}
+
+Writing $(D,h)|_X$ for $(D,h|_X)$, we have that for any $X, Y
+\subseteq D$, it follows that $H|_X|_Y = H|_{X \cup Y}$.
+
+\end{lemma}
+
+\begin{proof}
+This proof proceeds by induction on $Y$. 
+\begin{tabbedproof}
+\oo Case $Y = \emptyset$: \\
+\ooo Then it is clear that $U^{H|_X}_Y = \emptyset$, and so $H_X|_\emptyset = H|_X = H|_{X \cup \emptyset}$ \\
+\oo Case $Y = Y' \uplus \setof{y}$: \\
+\ooo By induction, we know that $H|_X|_{Y'} = H|_{X \cup Y'}$ \\ 
+\ooo Let $Z = X \cup Y'$ \\ 
+\ooo Now, consider whether $y \in Z$ \\
+\ooo Case $y \in Z$: \\
+\oooo Then $X \cup Y = Z$ \\
+\oooo Then $y \in U^H_Z$, and so $y \not\in V_{H|_Z}$, and so $U^{H|_Z}_{\setof{y}} = \emptyset$ \\
+\oooo Hence $H|_Z|_{\setof{y}} = H|_Z = H|_{X \cup Y}$ \\
+\ooo Case $y \not\in Z$: \\
+\oooo We want to show that $H|_Z|_{\setof{y}} = H|_{Z \uplus \setof{y}}$ \\
+\oooo Note $U^{H|_Z}_{\setof{y}} = \comprehend{c' \in D}{(c', y) \in R^*_{H|_Z}}$ \\
+\oooo Now consider $\mathit{value}(h|_Z|_{\setof{y}}(c')) = \IfThenElse{c' \in U^{H|_Z}_{\setof{y}}}{\None}
+                                                                    {\IfThenElse{c' \in U^H_Z}{\None}{\mathit{value}(h(c'))}}$
+\end{tabbedproof}
+\end{proof}
+
 
 \begin{lemma}{(Updating the Abstract Heap)}
 Suppose we have $H = (D,h)$ and $H, D', \models \phi \otimes
 \celleither{c}{e}$ and $c \in D$, and let $U = \comprehend{c' \in
-  D}{(c,c') \in R^*_H}$ to be the set of cells which (transitively)
+  D}{(c',c) \in R^*_H}$ be the set of cells which (transitively)
 read $c$.
 
 Now, define $h'$ to have the following components
 \begin{itemize}
-\item $\mathit{code}(h') = \mathit{code}(h)$
-\item $\mathit{value}(h') = \semfun{c'}{\IfThenElse{c'\in U}{\None}{\mathit{value}(h(c'))}}$
-\item $\mathit{reads}(h') = \semfun{c'}{\IfThenElse{c'\in U}{\emptyset}{\mathit{reads}(h(c'))}}$
-\item $\mathit{obs}(h') = \semfun{c'}{\IfThenElse{c'\in U}{\emptyset}{\mathit{obs}(h(c'))}}$
-\item $\mathit{identity}(h') = \mathit{identity}(h)$
+\item $\mathit{code}(h'(c')) = \mathit{code}(h(c'))$
+\item $\mathit{value}(h'(c')) = \IfThenElse{c'\in U}{\None}{\mathit{value}(h(c'))}$
+\item $\mathit{reads}(h'(c')) = \IfThenElse{c'\in U}{\emptyset}{\mathit{reads}(h(c'))}$
+\item $\mathit{obs}(h'(c')) = \IfThenElse{c'\in U}{\emptyset}{\mathit{obs}(h(c')) - U}$
+\item $\mathit{identity}(h'(c')) = \mathit{identity}(h(c'))$
 \end{itemize}
 
-It is the case that $(D, h'), D' \models \phi$. 
+It is the case that $(D, h'), D' \models \phi \otimes \cellneg{c}{e}$. 
 \end{lemma}
 
 \begin{proof}
@@ -734,18 +810,19 @@ It is the case that $(D, h'), D' \models \phi$.
 \oo Note that this means $c$ is not in the domain of $\phi$ \\
 \oo First, consider $(D,h), D_1 \models \phi$ \\
 \ooo We will show by induction that $(D,h'), D_1 \models \phi$ \\
-\ooo Case $\phi = I$: \\
-\oooo In this case, by the definition of satisfaction, $(D,h), D_1 \models I$ \\
+\ooo Case $\phi = I$ or $\phi = \localref{r}{v}$: \\
+\oooo In this case, by the definition of satisfaction, $(D,h), D_1 \models I$ or $(D,h), D_1 \models \localref{r}{v}$\\
 \ooo Case $\phi = \psi \otimes \theta$: \\
-\oooo In this case, we have $D_1, D_2$ such that $D_1 = D_1 \uplus D_2$ and \\
-\oooox $(D,h), D_1 \models \psi$ \\
-\oooox $(D,h), D_2 \models \theta$ \\
+\oooo In this case, we have $D'_1, D'_2$ such that $D_1 = D'_1 \uplus D'_2$ and \\
+\oooox $(D,h), D'_1 \models \psi$ \\
+\oooox $(D,h), D'_2 \models \theta$ \\
 \oooo By induction, we know that \\
-\oooox $(D,h'), D_1 \models \psi$ \\
-\oooox $(D,h'), D_2 \models \theta$ \\
-\oooo Hence by the definition of satisfaction, $(D,h'), D \models \psi \otimes \theta$ \\
+\oooox $(D,h'), D'_1 \models \psi$ \\
+\oooox $(D,h'), D'_2 \models \theta$ \\
+\oooo Hence by the definition of satisfaction, $(D,h'), D_1 \models \psi \otimes \theta$ \\
 \ooo Case $\phi = \cellneg{a}{e}$: \\
 \oooo In this case, we know $a \in D_1$ and $\mathit{code}(h(a)) = e$ and $a \not\in V_{(D,h)}$ \\
+\oooo Hence $\mathit{value}(h(a)) = \None$, and so $\mathit{value}(h'(a)) = \None$ \\
 \oooo Since $R_H \subseteq V_H \times V_H$, it follows  $U = \emptyset$ \\
 \oooo Hence $h' = h$ \\
 \oooo Hence $(D,h'), D_1 \models \cellneg{a}{e}$ \\
@@ -753,14 +830,15 @@ It is the case that $(D, h'), D' \models \phi$.
 \oooo Now, consider whether $r \subseteq V_H$ \\
 \oooo If $r \subseteq V_H$: \\
 \ooooo We know $a \in D_1$ and $\mathit{code}(h(a)) = e$ and 
- o     $\mathit{value}(h(a)) = \Some(v)$ and $\mathit{reads}(h(a)) = r$ \\
+       $\mathit{value}(h(a)) = \Some(v)$ and $\mathit{reads}(h(a)) = r$ \\
 \ooooo So $a \in V_H$. \\
 \ooooo Now consider whether $a \in U$ \\
 \ooooo If $a \in U$: \\
 \oooooo First, note $a \not\in V_{(D,h')}$ \\
-\oooooo Then $(c, a) \in R^*_H$ \\
-\oooooo Since $c \not= a$ (since $c$ is not in the domain of $\phi$), we know $(c,a) \in R^+_H$ \\
-\oooooo Hence there is a $d \in r$ such that $d \in U$ \\
+\oooooo Then $(a, c) \in R^*_H$ \\
+\oooooo Since $c \not= a$ (since $c$ is not in the domain of $\phi$), we know $(a, c) \in R^+_H$ \\
+\oooooo Hence there is a $d \in r$ such that $(a,d) \in R_H$ and $(d, c) \in R^*_H$  \\
+\oooooo Hence $d \in r$ and $d \in U$ and $\mathit{value}(h'(d)) = \None$, and so $d \not\in V_{(D,h')}$\\
 \oooooo Hence $r \not\subseteq V_{(D, h')}$ \\
 \oooooo Hence $(D,h'), D_1 \models \cellpos{a}{e}{v}{r}$ \\
 \ooooo If $a \not\in U$: \\
@@ -771,15 +849,16 @@ It is the case that $(D, h'), D' \models \phi$.
 \oooooo Hence $r \subseteq V_{(D,h')}$ \\
 \oooooo Hence $(D,h'), D_1 \models \cellpos{a}{e}{v}{r}$ \\
 \oooo If $r \not\subseteq V_H$: \\
-\ooooo Then we know $a \in D_1$ and $\mathit{code}(h(a)) = e$ and $a \not\in V_H$ \\
-\ooooo Since $R_H \subseteq V_H \times V_H$, it follows  $U = \emptyset$ \\
+\ooooo Then we know $a \in D_1$ and $\mathit{code}(h(a)) = e$ and $a \not\in V_H$  \\
+\ooooo Since $R_H \subseteq V_H \times V_H$, it follows that $\comprehend{c'\in D}{(a,c') \in R} = \emptyset$. \\
+\ooooo Hence $U = \emptyset$ \\
 \ooooo Hence $h' = h$ \\
 \ooooo Hence $(D,h'), D_1 \models \cellpos{a}{e}{v}{r}$ \\
 \oo Next, consider $(D,h), D_2 \models \celleither{c}{e}$: \\
 \ooo Since $(c, c) \in R^*_H$,  we know $c \in U$ \\
 \ooo Hence it follows $c \not\in V_{(D, h')}$ \\
 \ooo Hence $(D,h'), D_2 \models \cellneg{c}{e}$ \\
-\oo Now, it follows that $(D,h'), D' \models \phi \otimes \cellneg{c}{e}$ \\ 
+\oo Therefore, it follows that $(D,h'), D' \models \phi \otimes \cellneg{c}{e}$ \\ 
 \end{tabbedproof}
 \end{proof}
 
@@ -787,22 +866,22 @@ It is the case that $(D, h'), D' \models \phi$.
 \begin{lemma}{(The $\ctext{mark\_unready}$ procedure preserves order structure)}
 Suppose $H = (D,h)$ where $R^+_H$ is a strict partial order, $O^\dagger_H = R_H$,
 $R_H \subseteq V_H \times V_H$ and $\mathit{unique}(H)$. Furthermore, suppose 
-$U = \comprehend{c' \in D}{(c,c') \in R^*_H}$ to be the set of cells which (transitively)
+$U = \comprehend{c' \in D}{(c',c) \in R^*_H}$ to be the set of cells which (transitively)
 read $c$.
 
 Now, define $h'$ to have the following components
 \begin{itemize}
-\item $\mathit{code}(h') = \mathit{code}(h)$
-\item $\mathit{value}(h') = \semfun{c'}{\IfThenElse{c'\in U}{\None}{\mathit{value}(h(c'))}}$
-\item $\mathit{reads}(h') = \semfun{c'}{\IfThenElse{c'\in U}{\emptyset}{\mathit{reads}(h(c'))}}$
-\item $\mathit{obs}(h') = \semfun{c'}{\IfThenElse{c'\in U}{\emptyset}{\mathit{obs}(h(c'))}}$
-\item $\mathit{identity}(h') = \mathit{identity}(h)$
+\item $\mathit{code}(h'(c')) = \mathit{code}(h(c'))$
+\item $\mathit{value}(h'(c')) = \IfThenElse{c'\in U}{\None}{\mathit{value}(h(c'))}$
+\item $\mathit{reads}(h'(c')) = \IfThenElse{c'\in U}{\emptyset}{\mathit{reads}(h(c'))}$
+\item $\mathit{obs}(h'(c')) = \IfThenElse{c'\in U}{\emptyset}{\mathit{obs}(h(c')) - U}$
+\item $\mathit{identity}(h'(c')) = \mathit{identity}(h(c'))$
 \end{itemize}
 
 Then $\ctext{mark\_unready}$ function satisfies the following specification:
 
 \begin{displaymath}
-\mspec{\mathit{heap}(H)}{\ctext{mark\_unready}}{a:\unittype}{\mathit{heap}(D,h')}
+\mspec{\mathit{heap}(H)}{\ctext{mark\_unready}(c)}{a:\unittype}{\mathit{heap}(D,h')}
 \end{displaymath}
   
 \end{lemma}
@@ -817,34 +896,33 @@ detail obscures the key ideas.)
 Now we'll proceed line-by-line through the function body of $\ctext{mark\_unready}(c)$: 
 
 \begin{tabbedproof}
-\oo Suppose $\mathit{Inv}(H, \phi \otimes \celleither{c}{e})$ \\
-\oo Then we know \\
+\oo We know \\
 \oox $R^\dagger_H = O_H$ \\
 \oox $R^+_H$ strict partial order \\
 \oox $R_H \subseteq V_H \times V_H$ \\
 \oox $\mathit{unique}(H)$ \\
-\oox $\mathit{satisfies}(H, \phi)$ \\
 \oox $\mathit{heap}(H)$ \\
 \ooo Consider whether $c$ is in $V_H$ \\
 \ooo Suppose $c \not\in V_H$: \\
-\oooo Then $H'$ is equal to $H$ \\
+\oooo Then $U = \emptyset$, since $R_H \subseteq V_H \times V_H$ \\ 
+\oooo Therefore $H'$ is equal to $H$ \\
 \oooo Since $R_H \subseteq V_H \times V_H$, we know $\mathit{reads}(h'(c)) = \mathit{obs}(h'(c)) = \emptyset$ \\
 \oooo $[\unpack{\alpha}{a}{c}{}$ \\
 \oooo Now, we know that $c = \pack{\alpha}{a}$ \\
-\oooo $\letv{os}{!a.obs}{}$ \\
-\oooo $\letv{rs}{!a.reads}{}$ \\
+\oooo $\letv{os}{[!(a.obs)]}{}$ \\
+\oooo $\letv{rs}{[!(a.reads)]}{}$ \\
 \oooo From the definition of $\mathit{heap}(H)$, we know that  \\
 \oooo $\mathit{set}(D, os, \emptyset)$ and $\mathit{set}(D, rs, \emptyset)$ \\
-\oooo Simplifying using the axioms for sets, lines 8 and 9 are no-ops \\
+\oooo Simplifying using the axioms for sets, lines 8 and 9 of Figure~\ref{notification-implementation-update} are no-ops \\
 \oooo $\letv{\_}{[a.value := \None]}{}$ \\
 \oooo $\letv{\_}{[a.reads := \emptyset]}{}$ \\
 \oooo $a.obs := \emptyset]$ \\
 \oooo None of these assignments have any effect on the validity of $\mathit{heap}(H')$ \\
-\ooo Consider whether $c \in V_H$: \\
+\ooo Suppose whether $c \in V_H$: \\
 \oooo $[\unpack{\alpha}{a}{c}{}$ \\
 \oooo Now, we know that $c = \pack{\alpha}{a}$ \\
-\oooo $\letv{os}{!a.obs}{}$ \\
-\oooo $\letv{rs}{!a.reads}{}$ \\
+\oooo $\letv{os}{[!(a.obs)]}{}$ \\
+\oooo $\letv{rs}{[!(a.reads)]}{}$ \\
 \oooo From the definition of $\mathit{heap}(H)$, we know that  \\
 \oooo $\mathit{set}(D, os, \mathit{obs}(h(c)))$ and $\mathit{set}(D, rs, \mathit{reads}(h(c)))$ \\
 \oooo Now, by axiom in the cellset interface, we know that $\ctext{iterseq\;mark\_unready}\;os$ \\
@@ -945,11 +1023,11 @@ We can prove the soundness of a similar specification for $\newcell$ as
 well:
 
 \begin{prop}{(New Cell Rule)}
-For all code expressions $e$, the following specification is provable: 
+For all code expressions $e$ of type $\alpha$, the following specification is provable: 
 \begin{tabbing}
 $\forall \psi:\formula.\; $\=$\setof{G(\psi)}$ \\
                            \>$\run {\newcell\;e}$ \\
-                           \>$\setof{a:\celltype{A}.\; G(\cellneg{a}{e} \otimes \psi)}$
+                           \>$\setof{a:\celltype{\alpha}.\; G(\cellneg{a}{e} \otimes \psi)}$
 \end{tabbing}
 \end{prop}
 
@@ -1051,7 +1129,7 @@ Then we can hide $H'$ behind an existential to establish the postcondition.
 
 Ironically, this strategy is sufficient for $\newcell$and
 $\updatecell$, but is not adequate for defining a frame property
-for $\codetype{A}$ expressions. 
+for $\codetype{\alpha}$ expressions. 
 
 As an example, suppose that we want to evaluate the formula $\readcell
 a$, in a cell heap described by $\cellneg{a}{\return 5}$.  Clearly,
