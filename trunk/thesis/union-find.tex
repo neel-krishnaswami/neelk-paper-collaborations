@@ -616,10 +616,12 @@ if and only if $(u, v) \in (f')^+$ with $v$ maximal.
 \oooo $\letv{(r,c,n)}{\findroot(f(u))}{}$ \\
 \oooo Then $G(D, f', w, \phi) \land r\mbox{ maximal} \land c = w(r) \land c = v$ for some $f'$ \\
 \oooo with the same domain and maximal relationships as $f$\\
-\oooo So we know $D, f', w \models \phi$ and $(f')^+$ is a strict partial order and $w$ injective and $\mathit{heap}(D, f', w)$. \\
-\oooo Due to path compression, $[f'|u:v]^+$ is a strict partial order \\
+\oooo So we know $D, f', w \models \phi$ and $(f')^+$ is a strict partial order and $w$ injective and $\mathit{heap}(D, f', w)$, \\
+\oooo Since we continue to know that $\ufcontains{\phi}{u}{v}$, we know $v$ remains maximal in $f'$ \\
+\oooo Therefore, due to path compression, $[f'|u:v]^+$ is a strict partial order \\
 \oooox with the same maximal relationships and domain as $f'$\\
 \oooo Hence $D, [f'|u:v], w \models \phi$ and $\domain{[f|u:v]} = \domain{f}$ \\
+\oooo Now we will perform updates to make the physical heap match this logical heap \\ 
 \oooo $\letv{\_}{[u := \Child(r)]}{}$ \\
 \oooo Hence $\mathit{heap}(D, [f'|u:v], w)$, together with the pure formulas above \\
 \oooo $(r,c,n)]$ \\
