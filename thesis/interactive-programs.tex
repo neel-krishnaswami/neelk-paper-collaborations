@@ -635,6 +635,143 @@ As with the proofs in the previous chapter, these follow the pattern
 of a lemma about partial orders, a lemma connecting it to the satisfaction
 relation, and finally a correctness proof of the procedure. 
 
+First, we will prove the fact that the order in which we delete
+reachable subtrees doesn't matter. This is necessary since the 
+algorithm will sequentially delete reachable sub-DAGs, and we
+need to know that the effect of sequential deletion is equivalent
+to a parallel one.  
+
+\begin{lemma}{(Reachability in Deleted Graphs)}
+Suppose we have $H = (D,h)$ such that $R^+_H$ is a strict partial
+order, $R_H \subseteq V_H \times V_H$, $R^\dagger_H = O_H$, and
+$\mathit{unique}(H)$.  Now, for any $X \subseteq D$, define $U^H_X =
+\comprehend{d \in D}{(d, c) \in R^*_H \land c \in X}$ to be the set
+of cells which transitively read any cell in $X$, and also define
+$h|_X$ so that:
+\begin{itemize}
+\item $\mathit{code}(h|_X(c')) = \mathit{code}(h(c'))$
+\item $\mathit{value}(h|_X(c')) = \IfThenElse{c' \in U^H_X}{\None}{\mathit{value}(h(c'))}$
+\item $\mathit{reads}(h|_X(c')) = \IfThenElse{c' \in U^H_X}{\emptyset}{\mathit{reads}(h(c'))}$
+\item $\mathit{obs}(h|_X(c')) = \IfThenElse{c' \in U^H_X}{\emptyset}{\mathit{obs}(h(c')) - U^H_X}$
+\item $\mathit{identity}(h|_X(c')) = \mathit{identity}(h(c'))$
+\end{itemize}
+
+It is the case that $(d,c) \in R^*_{H|_X}$ if and only if $(d,c) \in R^*_H \land c \not\in U^H_X \land d \not\in U^H_X$. 
+\end{lemma}
+
+\begin{proof}
+
+\begin{tabbedproof}
+\oo $\Rightarrow$: \\
+\ooo Assume $(d,c) \in R^*_{H|_X}$ \\
+\ooo Therefore we have a sequence $(d, \ldots, c)$ in $R_{H|_X}$ \\
+\ooo Each consecutive pair $(c_i, c_{i+1})$ satisfies $c_{i+1} \in \mathit{reads}(h|_X(c_i))$ \\
+\ooo We know $\mathit{reads}(h|_X(c_i) = \IfThenElse{c' \in U^H_X}{\emptyset}{\mathit{reads}(h(c_i))}$ \\
+\ooo Hence each $c_{i+1} \not\in U^H_X$ and $(c_i, c_{i+1}) \in R_H$ \\ 
+\ooo Hence $(d,c) \in R^*_H$ and $d \not \in U^H_X$ and $c \not \in U^H_X$ \\ 
+\oo $\Leftarrow$: \\
+\ooo Asssume $(d,c) \in R^*_H \land c \not\in U^H_X \land d \not\in U^H_X$. \\
+\ooo So we have a sequence $(d, \ldots, c)$ with each pair in $R_H$ \\
+\ooo Suppose an intermediate element $c_i$ between $d$ and $c$ is in $U^H_X$ \\
+\oooo Then we have a sequence $(c, \ldots, c_i) \in R^*_H$ and a sequence $(c_i,x) \in R^*_X$ for some $x \in X$ \\ 
+\oooo Concatenating, we have a sequence $(c, \ldots, x) \in R^*_H$ with $x \in X$ \\
+\oooo This implies that $c \in U^H_X$, which is a contradiction \\
+\ooo Hence no element in the sequence $(d, \ldots, c)$ is in $U^H_X$ \\ 
+\ooo For every $(c_k, c_{k+1}) \in (d, \ldots, c)$, we know $c_{k+1} \in \mathit{reads}(h(c_k))$ \\
+\ooo So we know $c_{k+1} \in \IfThenElse{c_k \in U^H_X}{\emptyset}{\mathit{reads}(h(c_k))}$ \\
+\ooo Hence for every $(c_k, c_{k+1}) \in (d, \ldots, c)$, we know $c_{k+1} \in \mathit{reads}(h|_X(c_k))$ \\
+\ooo Hence $(d,c) \in R^*_{H|_X}$ \\
+\end{tabbedproof}
+\end{proof}
+
+\begin{lemma}{(Path Union)}
+Suppose we have $H = (D,h)$ such that $R^+_H$ is a strict partial
+order, $R_H \subseteq V_H \times V_H$, $R^\dagger_H = O_H$, and
+$\mathit{unique}(H)$. Then $c \in U^{H|_{X}}_{\setof{z}} \vee
+(c \not\in U^{H|_{X}}_{\setof{z}} \land c \in U^H_{X})$
+is logically equivalent to $c \in U^H_{\setof{z}} \vee c \in U^H_{X}$.
+\end{lemma}
+
+
+\begin{proof}
+\begin{tabbedproof}
+\oo Note $c \in U^{H|_{X}}_{\setof{z}}$ is equivalent to $(c,z) \in R^*_{H|_{X}}$, \\
+\oo which is equivalent to  $(c, z) \in R^*_H \land c \not\in U^H_{X} \land z \not\in U^H_{X}$, \\
+\oo which is equivalent to  $c \in U^H_{\setof{z}} \land c \not\in U^H_{X} \land z \not\in U^H_{X}$, \\
+\oo Hence this condition is equivalent to  \\
+\oox $c \in U^H_{\setof{z}} \land c \not\in U^H_{X} \land z \not\in U^H_{X} \vee $ \\
+\oox $(\lnot(c \in U^H_{\setof{z}} \land c \not\in U^H_{X} \land z \not\in U^H_{X}) \land c \in U^H_{X})$   \\
+\oo Simplifying the second clause gives us \\
+\oox $(c \in U^H_{\setof{z}} \land c \not\in U^H_{X} \land z \not\in U^H_{X}) \vee c \in U^H_{X}$ \\
+\oo We want to show this is equivalent to $c \in U^H_{\setof{z}} \vee c \in U^H_{X}$ \\
+\oo One direction of the equivalence trivial. To prove the other, assume $c \in U^H_{\setof{z}} \vee c \in U^H_{X}$ \\
+\ooo Now branch on this assumption \\
+\ooo Case $c \in U^H_{X}$: \\
+\oooo Then $c \in U^H_{X}$ \\
+\ooo Case $c \in U^H_{\setof{z}}$: \\ 
+\oooo Branch on whether $c \in U^H_{X}$ \\
+\oooo Case $c \in U^H_{X}$: \\
+\ooooo Then $c \in U^H_{X}$ \\
+\oooo Case $c \not\in U^H_{X}$: \\
+\ooooo Branch on whether $z \in U^H_{X}$ \\
+\ooooo Case $z \in U^H_{X}$: \\
+\oooooo Since $c \in U^H_{\setof{z}}$, there is a sequence $(c, \ldots, z) \in R^*_H$ \\
+\oooooo Since $z \in U^H_{X}$, there is a sequence $(z, \ldots, x) \in R^*_H$ for some $x \in X$ \\
+\oooooo By concatenation, there is a sequence $(c, \ldots, x) \in R^*_H$ for some  $x \in X$ \\
+\oooooo Hence $c \in U^H_{X}$, which is a contradiction \\
+\ooooo Case $z \in U^H_{X}$: \\
+\oooooo Hence $c \in U^H_{\setof{z}} \land c \not\in U^H_{X} \land z \not\in U^H_{X}$ \\
+\end{tabbedproof}
+\end{proof}
+
+\begin{lemma}{(Sequentialization)}
+Suppose we have $H = (D,h)$ such that $R^+_H$ is a strict partial
+order, $R_H \subseteq V_H \times V_H$, $R^\dagger_H = O_H$, and
+$\mathit{unique}(H)$.
+
+Then $H|_X|_Y = H|_{X \cup Y}$.
+\end{lemma}
+
+\begin{proof}
+We prove this by induction on the size of $Y$. 
+\begin{tabbedproof}
+\oo Case $Y = \emptyset$: \\
+\ooo Immediate \\
+\oo Case $Y = Z \uplus \setof{z}$: \\
+\ooo By induction, we know that $H|_X|_Z = H|_{X \cup Z}$ \\
+\ooo Consider whether $z \in X \cup Z$ \\
+\ooo Case $z \in X \cup Z$: \\
+\oooo Then $U^{H|_{X \cup Z}}_{\setof{z}} = \emptyset$ \\
+\oooo Therefore $H|_{X \cup Z}|_{\setof{z}} = H|_{X \cup Z} = H|_{X \cup Y}$  \\ 
+\ooo Case $z \not\in X \cup Z$: \\
+\oooo To show that $H|_{X \cup Z}|_{\setof{z}} = H|_{\setof X \cup Z \cup \setof{z}} $, we need to show $h|_{X \cup Z}|_{\setof{z}} = h|_{\setof X \cup Z \cup \setof{z}}$ \\
+\oooo 1. Consider $\mathit{reads}(h|_{X \cup Z}|_{\setof{z}}(c))$ \\
+\ooooo $\mathit{reads}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^{H|_{X \cup Z}}_{\setof{z}}}{\emptyset}{\mathit{reads}(h|_{X \cup Z}(c))}$ \\
+\ooooo $\mathit{reads}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^{H|_{X \cup Z}}_{\setof{z}}}{\emptyset}{\IfThenElse{c \in U^H_{X \cup Z}}{\emptyset}{\mathit{reads}(h(c))}}$ \\
+\ooooo $\mathit{reads}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^{H|_{X \cup Z}}_{\setof{z}} \vee (c \not\in U^{H|_{X \cup Z}}_{\setof{z}} \land c \in U^H_{X \cup Z})}{\emptyset}{\mathit{reads}(h(c))}$ \\
+\ooooo By the path union lemma, \\
+\ooooox $\mathit{reads}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^H_{X \cup Z \setof{z}}}{\emptyset}{\mathit{reads}(h(c))}$ \\
+\ooooo Hence $\mathit{reads}(h|_{X \cup Z}|_{\setof{z}}(c)) = \mathit{reads}(h|_{X \cup Z \cup \setof{z}})$ \\
+\oooo 2. Consider $\mathit{value}(h|_{X \cup Z}|_{\setof{z}}(c))$ \\
+\ooooo $\mathit{value}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^{H|_{X \cup Z}}_{\setof{z}}}{\None}{\mathit{value}(h|_{X \cup Z}(c))}$ \\
+\ooooo $\mathit{value}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^{H|_{X \cup Z}}_{\setof{z}}}{\None}{\IfThenElse{c \in U^H_{X \cup Z}}{\None}{\mathit{value}(h(c))}}$ \\
+\ooooo $\mathit{value}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^{H|_{X \cup Z}}_{\setof{z}} \vee (c \not\in U^{H|_{X \cup Z}}_{\setof{z}} \land c \in U^H_{X \cup Z})}{\None}{\mathit{value}(h(c))}$ \\
+\ooooo By the path union lemma, \\
+\ooooox $\mathit{value}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^H_{X \cup Z \setof{z}}}{\None}{\mathit{value}(h(c))}$ \\
+\ooooo Hence $\mathit{value}(h|_{X \cup Z}|_{\setof{z}}(c)) = \mathit{value}(h|_{X \cup Z \cup \setof{z}})$ \\
+\oooo 3. Consider $\mathit{obs}(h|_{X \cup Z}|_{\setof{z}}(c))$ \\
+\ooooo $\mathit{obs}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^{H|_{X \cup Z}}_{\setof{z}}}{\emptyset}{\mathit{obs}(h|_{X \cup Z}(c)) - U^{H|_{X \cup Z}}_{\setof{z}}}$ \\
+\ooooo $\mathit{obs}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^{H|_{X \cup Z}}_{\setof{z}}}{\emptyset}{\IfThenElse{c \in U^H_{X \cup Z}}{\emptyset}{\mathit{obs}(h|_{X \cup Z}(c)) - U^{H|_{X \cup Z}}_{\setof{z}}}}$ \\
+\ooooo $\mathit{obs}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^{H|_{X \cup Z}}_{\setof{z}} \vee (c \not\in U^{H|_{X \cup Z}}_{\setof{z}} \land c \in U^H_{X \cup Z})}{\emptyset}{\mathit{obs}(h|_{X \cup Z}(c)) - U^{H|_{X \cup Z}}_{\setof{z}}}$ \\
+\ooooo By the path union lemma, \\
+\ooooox $\mathit{obs}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^H_{X \cup Z \setof{z}}}{\emptyset}{\mathit{obs}(h|_{X \cup Z}(c)) - U^{H|_{X \cup Z}}_{\setof{z}}}$ \\
+\ooooo So $\mathit{obs}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^H_{X \cup Z \setof{z}}}{\emptyset}{\mathit{obs}(h(c)) - U^H_{X \cup Z} - U^{H|_{X \cup Z}}_{\setof{z}}}$ \\
+\ooooo So $\mathit{obs}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^H_{X \cup Z \setof{z}}}{\emptyset}{\mathit{obs}(h|_{X \cup Z}(c)) - (U^H_{X \cup Z} \cup U^{H|_{X \cup Z}}_{\setof{z}})}$ \\
+\ooooo By the path union lemma, \\
+\ooooo $\mathit{obs}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^H_{X \cup Z \setof{z}}}{\emptyset}{\mathit{obs}(h|_{X \cup Z}(c)) - U^H_{X \cup Z \cup \setof{z}}}$\\
+\ooooo Hence $\mathit{obs}(h|_{X \cup Z}|_{\setof{z}}(c)) = \mathit{obs}(h|_{X \cup Z \cup \setof{z}})$ \\
+\end{tabbedproof}
+\end{proof}
 
 \begin{lemma}{(Transitive Invalidation Preserves Order Structure)}
 Suppose we have $H = (D,h)$ such that 
@@ -644,20 +781,7 @@ Suppose we have $H = (D,h)$ such that
 \item $R^\dagger_H = O_H$ 
 \item $\mathit{unique}(H)$
 \end{enumerate}
-
-Now let $U = \comprehend{c' \in D}{(c',c) \in R^*_H}$ to be the set of
-cells which (transitively) read $c$, and define $h'$ to have the
-following components:
-
-\begin{itemize}
-\item $\mathit{code}(h'(c')) = \mathit{code}(h(c'))$
-\item $\mathit{value}(h'(c')) = \IfThenElse{c'\in U}{\None}{\mathit{value}(h(c'))}$
-\item $\mathit{reads}(h'(c')) = \IfThenElse{c'\in U}{\emptyset}{\mathit{reads}(h(c'))}$
-\item $\mathit{obs}(h'(c')) = \IfThenElse{c'\in U}{\emptyset}{\mathit{obs}(h(c')) - U}$
-\item $\mathit{identity}(h'(c')) = \mathit{identity}(h(c'))$
-\end{itemize}
-
-\noindent Then it is the case that $H' = (D,h')$ satisfies the five properties below. 
+\noindent For any cell $c \in D$, it is the case that for $H' = (D, h') = H|_{\setof{c}}$, we have
 \begin{enumerate}
 \item $R^+_{H'}$ is a strict partial order 
 \item $V_{H'} = V_H - U$
@@ -743,64 +867,11 @@ This is immediate, since $\mathit{identity}(h) = \mathit{identity}(h')$
 \end{enumerate}
 \end{proof}
 
-\begin{lemma}{(Sequentialization)}
-Suppose we have $H = (D,h)$ such that $R^+_H$ is a strict partial
-order, $R_H \subseteq V_H \times V_H$, $R^\dagger_H = O_H$, and
-$\mathit{unique}(H)$.  Now, for any $X \subseteq D$, define $U^H_X =
-\comprehend{c' \in D}{(c', c) \in R^*_H \land c \in X}$ to be the set
-of cells which transitively read any cell in $X$, and also define
-$h|_X$ so that:
-\begin{itemize}
-\item $\mathit{code}(h|_X(c')) = \mathit{code}(h(c'))$
-\item $\mathit{value}(h|_X(c')) = \IfThenElse{c' \in U^H_X}{\None}{\mathit{value}(h(c'))}$
-\item $\mathit{reads}(h|_X(c')) = \IfThenElse{c' \in U^H_X}{\emptyset}{\mathit{reads}(h(c'))}$
-\item $\mathit{obs}(h|_X(c')) = \IfThenElse{c' \in U^H_X}{\emptyset}{\mathit{obs}(h(c')) - U^H_X}$
-\item $\mathit{identity}(h|_X(c')) = \mathit{identity}(h(c'))$
-\end{itemize}
-
-Writing $(D,h)|_X$ for $(D,h|_X)$, we have that for any $X, Y
-\subseteq D$, it follows that $H|_X|_Y = H|_{X \cup Y}$.
-
-\end{lemma}
-
-\begin{proof}
-This proof proceeds by induction on $Y$. 
-\begin{tabbedproof}
-\oo Case $Y = \emptyset$: \\
-\ooo Then it is clear that $U^{H|_X}_Y = \emptyset$, and so $H_X|_\emptyset = H|_X = H|_{X \cup \emptyset}$ \\
-\oo Case $Y = Y' \uplus \setof{y}$: \\
-\ooo By induction, we know that $H|_X|_{Y'} = H|_{X \cup Y'}$ \\ 
-\ooo Let $Z = X \cup Y'$ \\ 
-\ooo Now, consider whether $y \in Z$ \\
-\ooo Case $y \in Z$: \\
-\oooo Then $X \cup Y = Z$ \\
-\oooo Then $y \in U^H_Z$, and so $y \not\in V_{H|_Z}$, and so $U^{H|_Z}_{\setof{y}} = \emptyset$ \\
-\oooo Hence $H|_Z|_{\setof{y}} = H|_Z = H|_{X \cup Y}$ \\
-\ooo Case $y \not\in Z$: \\
-\oooo We want to show that $H|_Z|_{\setof{y}} = H|_{Z \uplus \setof{y}}$ \\
-\oooo Note $U^{H|_Z}_{\setof{y}} = \comprehend{c' \in D}{(c', y) \in R^*_{H|_Z}}$ \\
-\oooo Now consider $\mathit{value}(h|_Z|_{\setof{y}}(c')) = \IfThenElse{c' \in U^{H|_Z}_{\setof{y}}}{\None}
-                                                                    {\IfThenElse{c' \in U^H_Z}{\None}{\mathit{value}(h(c'))}}$
-\end{tabbedproof}
-\end{proof}
-
 
 \begin{lemma}{(Updating the Abstract Heap)}
 Suppose we have $H = (D,h)$ and $H, D', \models \phi \otimes
-\celleither{c}{e}$ and $c \in D$, and let $U = \comprehend{c' \in
-  D}{(c',c) \in R^*_H}$ be the set of cells which (transitively)
-read $c$.
-
-Now, define $h'$ to have the following components
-\begin{itemize}
-\item $\mathit{code}(h'(c')) = \mathit{code}(h(c'))$
-\item $\mathit{value}(h'(c')) = \IfThenElse{c'\in U}{\None}{\mathit{value}(h(c'))}$
-\item $\mathit{reads}(h'(c')) = \IfThenElse{c'\in U}{\emptyset}{\mathit{reads}(h(c'))}$
-\item $\mathit{obs}(h'(c')) = \IfThenElse{c'\in U}{\emptyset}{\mathit{obs}(h(c')) - U}$
-\item $\mathit{identity}(h'(c')) = \mathit{identity}(h(c'))$
-\end{itemize}
-
-It is the case that $(D, h'), D' \models \phi \otimes \cellneg{c}{e}$. 
+\celleither{c}{e}$ and $c \in D$. Then for $H' = (D, h') = H|_{\setof{c}}$, we
+have $H', D' \models \phi \otimes \cellneg{c}{e}$.
 \end{lemma}
 
 \begin{proof}
@@ -864,21 +935,10 @@ It is the case that $(D, h'), D' \models \phi \otimes \cellneg{c}{e}$.
 
 
 \begin{lemma}{(The $\ctext{mark\_unready}$ procedure preserves order structure)}
-Suppose $H = (D,h)$ where $R^+_H$ is a strict partial order, $O^\dagger_H = R_H$,
-$R_H \subseteq V_H \times V_H$ and $\mathit{unique}(H)$. Furthermore, suppose 
-$U = \comprehend{c' \in D}{(c',c) \in R^*_H}$ to be the set of cells which (transitively)
-read $c$.
-
-Now, define $h'$ to have the following components
-\begin{itemize}
-\item $\mathit{code}(h'(c')) = \mathit{code}(h(c'))$
-\item $\mathit{value}(h'(c')) = \IfThenElse{c'\in U}{\None}{\mathit{value}(h(c'))}$
-\item $\mathit{reads}(h'(c')) = \IfThenElse{c'\in U}{\emptyset}{\mathit{reads}(h(c'))}$
-\item $\mathit{obs}(h'(c')) = \IfThenElse{c'\in U}{\emptyset}{\mathit{obs}(h(c')) - U}$
-\item $\mathit{identity}(h'(c')) = \mathit{identity}(h(c'))$
-\end{itemize}
-
-Then $\ctext{mark\_unready}$ function satisfies the following specification:
+Suppose $H = (D,h)$ where $R^+_H$ is a strict partial order,
+$O^\dagger_H = R_H$, $R_H \subseteq V_H \times V_H$ and
+$\mathit{unique}(H)$. Then for any $c \in D$ and $H' = (D, h') =
+H|_{\setof{c}}$, the $\ctext{mark\_unready}$ function satisfies the following specification:
 
 \begin{displaymath}
 \mspec{\mathit{heap}(H)}{\ctext{mark\_unready}(c)}{a:\unittype}{\mathit{heap}(D,h')}
@@ -925,27 +985,23 @@ Now we'll proceed line-by-line through the function body of $\ctext{mark\_unread
 \oooo $\letv{rs}{[!(a.reads)]}{}$ \\
 \oooo From the definition of $\mathit{heap}(H)$, we know that  \\
 \oooo $\mathit{set}(D, os, \mathit{obs}(h(c)))$ and $\mathit{set}(D, rs, \mathit{reads}(h(c)))$ \\
-\oooo Now, by axiom in the cellset interface, we know that $\ctext{iterseq\;mark\_unready}\;os$ \\
+\oooo Now, by the equational axioms in the cellset interface, $\ctext{iterseq\;mark\_unready}\;os$ \\
 \ooox is equal to a sequence of calls to $\ctext{mark\_unready}$, once for each element of $\mathit{obs}(h(c))$\\
-\oooo By induction on the size of $\mathit{obs}(h(c))$, we end in a state with $h'$ such that \\
-\oooox $\mathit{value}(h' ) = \semfun{c'}{\IfThenElse{c'\in \mathit{obs}(h(c))}{\None}{\mathit{value}(h(c'))}}$ \\
-\oooox $\mathit{reads}(h') = \semfun{c'}{\IfThenElse{c'\in \mathit{obs}(h(c))}{\emptyset}{\mathit{reads}(h(c'))}}$ \\
-\oooox $\mathit{obs}(h') = \semfun{c'}{\IfThenElse{c'\in \mathit{obs}(h(c))}{\emptyset}{\mathit{obs}(h(c'))}}$ \\
-\oooo Note that we need the the fact that invalidation preserves order structure to  \\
-\ooox make the induction go through. \\
-\oooo Hence in $H' = (D,h')$, every $c'$ strictly above $c$ in $H$ is now not in $V_{H'}$ \\ 
+\oooo By induction on the size of $\mathit{obs}(h(c))$, we end in a logical state $(D, h|_{os})$, \\
+\ooox which also preserves the order structure, and a physical state $\mathit{heap}(D, h|_{\setof{os}})$  \\
+\oooo Hence in $H' = (D,h|_{\setof{os}})$, every $c'$ which read $c$ in $H$ is no longer in $V_{H'}$ \\ 
+\oooo As a result $U^{H'}_{\setof{c}} = \setof{c}$ \\ 
 \oooo Since $R_H$ was a strict partial order, $c$ is still in $V_{H'}$ \\
-\oooo Therefore consider $h''$ such that   \\
-\oooox $\mathit{value}(h'') = \semfun{c'}{\IfThenElse{c' = c)}{\None}{\mathit{value}(h'(c'))}}$ \\
-\oooox $\mathit{reads}(h'') = \semfun{c'}{\IfThenElse{c' = c)}{\emptyset}{\mathit{reads}(h'(c'))}}$ \\
-\oooox $\mathit{obs}(h'') = \semfun{c'}{\IfThenElse{c'\in \mathit{obs}(h(c))}{\emptyset}{\mathit{obs}(h'(c'))}}$ \\
-\oooo Likewise, by axiom in the cellset interface, we know that $\ctext{iterseq}\;(\ctext{remove\_obs}\;cell)\;rs$ \\
+\oooo Therefore consider $h'' = h'|_{\setof{c}}$, which is equivalent to   \\
+\oooox $\mathit{value}(h'') = \semfun{c'}{\IfThenElse{c' = c}{\None}{\mathit{value}(h'(c'))}}$ \\
+\oooox $\mathit{reads}(h'') = \semfun{c'}{\IfThenElse{c' = c}{\emptyset}{\mathit{reads}(h'(c'))}}$ \\
+\oooox $\mathit{obs}(h'') = \semfun{c'}{\IfThenElse{c'\in \mathit{obs}(h(c))}{\emptyset}{\mathit{obs}(h'(c')) - \setof{c}}}$ \\
+\oooo Likewise, by the equational axiom in the cellset interface, $\ctext{iterseq}\;(\ctext{remove\_obs}\;cell)\;rs$ \\
 \ooox is equal to a sequence of calls to $\ctext{remove\_obs}$, once for each element of $\mathit{reads}(h'(c))$\\
 \oooo $\letv{\_}{[a.value := \None]}{}$ \\
 \oooo $\letv{\_}{[a.reads := \emptyset]}{}$ \\
 \oooo $a.obs := \emptyset]$ \\
-\oooo We know that $c$ occurs only in $rs$ since $R^\dagger_{H'} = O_{H'}$, and so \\ 
-\oooo these assignments ensure that $\mathit{heap}(D, h'')$ is satisfied. \\
+\oooo These updates then ensure that $\mathit{heap}(D, h'')$ is satisfied. \\
 \end{tabbedproof}
 \end{proof}
 
@@ -1037,12 +1093,14 @@ numeric id for the new cell, and show that the extended cell heap
 continues to satisfy all of the expected properties.
 
 Concretely, suppose that $G(\psi) = \mathit{Inv}{(H, \psi)}$ for some
-$H = (D,h)$. Now, by the invariant, we know that each cell in $D$ has 
+$H = (D,h)$. Now, by the invariant, we know that each cell in $D$ has
 a unique numeric id somewhere in the range from $0$ to $|D|-1$. Then,
-on lines 29-30, we increment the global counter by 1, and let $id = |D|$. 
-Then, on lines 31-34, we allocate a pointer $\mathit{code}$ to the code $e$, a pointer
-$\mathit{value}$ to $\None$ (to indicate the unitialized state), as well as pointers to 
-$\mathit{read}$ and $\mathit{obs}$ to empty read and observer sets. 
+on lines 29-30 of Figure~\ref{notification-implementation}, we
+increment the global counter by 1, and let $id = |D|$.  Then, on lines
+31-34, we allocate a pointer $\mathit{code}$ to the code $e$, a
+pointer $\mathit{value}$ to $\None$ (to indicate the unitialized
+state), as well as pointers to $\mathit{read}$ and $\mathit{obs}$ to
+empty read and observer sets.
 
 At line 35, all of these values are bound to variables in scope, so we
 can define $H' = (D',h')$, where $\mathit{ec} = \pack{\tau}{\mathit{(code, value, read, obs, id)}}$, 
@@ -1072,12 +1130,12 @@ Then we can hide $H'$ behind an existential to establish the postcondition.
 \mbox{}
 \begin{mathpar}
   \inferrule*[right=Ready]
-            {\forall a' \in r.\; \exists v.\; \ready{\phi}{a'}{r}}
+            {\forall a' \in r.\; \exists v.\; \ready{\phi}{a'}{v}}
             {\ready{\phi \otimes \cellpos{a}{e}{v}{r}}{a}{v}}
   \\
   \\
   \inferrule*[right=UnreadyPos]
-            {\exists a' \in r.\; \unready{\phi}{a}}
+            {\exists a' \in r.\; \unready{\phi}{a'}}
             {\unready{\phi \otimes \cellpos{a}{e}{v}{r}}
                      {a}}
   \and
@@ -1127,9 +1185,9 @@ Then we can hide $H'$ behind an existential to establish the postcondition.
 
 \section{Ramified Frame Properties}
 
-Ironically, this strategy is sufficient for $\newcell$and
-$\updatecell$, but is not adequate for defining a frame property
-for $\codetype{\alpha}$ expressions. 
+The proof strategy of the previous section is sufficient for
+$\newcell$ and $\updatecell$, but is not adequate for defining a frame
+property for $\codetype{\alpha}$ expressions.
 
 As an example, suppose that we want to evaluate the formula $\readcell
 a$, in a cell heap described by $\cellneg{a}{\return 5}$.  Clearly,
@@ -1155,9 +1213,9 @@ into the post-state will give us the cell formula:
 That is, our satisfaction relation now expects $b$ to be ready and have the 
 value 17, even though $\readcell a$ never touches $b$ at all!
 
-Clearly, we cannot expect to be able simply copy the same frame formula into 
-the pre- and the post-condition states in the specification of commands like 
-$\readcell a$. 
+Clearly, we cannot simply copy the same frame formula into the pre-
+and the post-condition states in the specification of commands like
+$\readcell a$.
 
 To deal with this problem, we will return to the idea of
 ramifications, introduced in the previous chapter. We can understand
@@ -1195,11 +1253,38 @@ unready, from the syntactic structure of $\phi$.
 \begin{prop}{(Soundness of $\ready{\phi}{o}{v}$ and $\unready{\phi}{o}$)}
 For all $\phi, o,$ and $H$ such that $H = (D,h)$:
 
-\begin{itemize}
-\item $(Inv(H, \phi) \land \ready{\phi}{o}{v}) \implies value(h(o)) = \ctext{Some}\;v$
-\item $(Inv(H, \phi) \land \unready{\phi}{o}) \implies o \not\in V_H$
-\end{itemize}
+\begin{enumerate}
+\item $(Inv((D,h), \phi) \land \ready{\phi}{o}{v}) \implies \mathit{value}(h(o)) = \ctext{Some}\;v$
+\item $(Inv((D,h), \phi) \land \unready{\phi}{o}) \implies o \not\in V_H$
+\end{enumerate}
 \end{prop}
+
+\begin{proof}
+\begin{enumerate}
+\item $(Inv((D,h), \phi) \land \ready{\phi}{o}{v}) \implies \mathit{value}(h(o)) = \ctext{Some}\;v$
+
+We prove this by induction on the derivation of
+$\ready{\phi}{o}{v}$. By inversion, we know that $\phi = \psi \otimes
+\cellpos{o}{e}{v}{r}$, and for each $c' \in r$, we have a derivation
+of $\ready{\psi}{c'}{v'}$ for some $v'$. By induction, we know that
+for each $c' \in r$, $c' \in V_H$. By the fact that $(D,h), D \models
+\psi \otimes cellpos{c}{e}{v}{r}$, we know that $c \in V_H$ and
+$\mathit{value}(h(o)) = \ctext{Some}(v)$. Hence the conclusion follows. 
+
+\item $(Inv((D,h), \phi) \land \unready{\phi}{o}) \implies o \not\in V_H$
+
+We prove this by induction on the derivation of $\unready{\phi}{o}$.
+First, consider the case where $\phi = \psi \otimes \cellneg{o}{e}$. 
+Then, the fact that $(D,h), D \models \psi \otimes \cellneg{o}{e}$
+implies that $o \not\in V_H$. Now, consider the other case, where 
+$\phi = \psi \otimes \cellpos{o}{e}{v}{r}$. We know that there is
+some $a \in r$ such that $\unready{\psi}{a}$ holds, and by induction
+we know that $a \not\in V_H$. Hence, it follows that $a \not\subseteq V_H$,
+and so the fact that $(D,h), D \models \psi \otimes \cellneg{o}{e}$ implies
+that $o \not\in V_H$. 
+\end{enumerate}
+\end{proof}
+
 
 In Figure~\ref{closedness}, we define the $\closed{\phi}{s}$ predicate,
 which asserts that every cell formula in $\phi$ reads at most the
@@ -1212,7 +1297,7 @@ that:
 \begin{itemize}
 \item $R(s, R(u, \phi)) = R(s \cup u, \phi)$
 \item If $\unready{\phi}{o}$, then $\unready{R(u, \phi)}{o}$ 
-\item If $\ready{R(u, \phi)}{o}{v}$, then $\ready{phi}{o}{v}$ 
+\item If $\ready{R(u, \phi)}{o}{v}$, then $\ready{\phi}{o}{v}$ 
 \item If $R(u, \phi)$ and $\closed{\phi}{s}$, then $R(u, \phi) = R(u \cap s, \phi)$ 
 \end{itemize}
 \end{prop}
@@ -1292,7 +1377,7 @@ $H, D \models \theta$.
 \ooo Case $\phi = I$: \\
 \oooo Since $R(\setof{c}, I) = I$, this case is immediate \\
 \ooo Case $\phi = \localref{r}{v}$: \\
-\oooo Since this is always forced, this case is immediate \\
+\oooo Since $R(\setof{c}, \localref{r}{v}) = \localref{r}{v}$, this case is immediate \\
 \ooo Case $\phi = \sigma \otimes \theta$: \\
 \oooo By definition, we know there are $D_1, D_2$ such that $D = D_1 \uplus D_2$ and \\
 \ooox $H, D_1 \models \sigma$ and $H, D_2 \models \theta$ \\
@@ -1347,7 +1432,7 @@ $H, D \models \theta$.
 \oo $\Rightarrow$: Assume $H, D \models \phi \otimes \cellpos{c}{e}{v}{r}$ \\
 \ooo So we have $D_1, D_2$ such that $D = D_1 \uplus D_2$ and \\
 \oox $H, D_1 \models \phi$ and $H, D_2 \models \cellpos{c}{e}{v}{r}$ \\
-\ooo From the soundness of $\unready{c}{e}$, we know that $c \not \in C_H$ \\
+\ooo From the soundness of $\unready{\phi \otimes \cellpos{c}{e}{v}{r}}{c}$, we know that $c \not \in V_H$ \\
 \ooo Hence we know that $H, D_2 \models cellneg{c}{e}$ \\
 \ooo Hence we know that $H, D \models \phi \otimes \cellneg{c}{e}$ \\
 \oo $\Leftarrow$: Assume $H, D \models \phi \otimes \cellneg{c}{e}$ \\
@@ -1549,7 +1634,7 @@ The following specification is derivable:
 \forall \psi.\; \mspec{G(\phi' \otimes \psi)}
                         {f\;v'}
                         {a}{G(\phi'' \otimes R(u'', \psi)) \land \exists z.\; a = (v'', z) \land \mathit{set}(r'', z, r'')}\\
-specimp \\
+\specimp \\
 \begin{array}{ll}
      \forall \psi. & \left<G(\phi \otimes \psi)\right> \\
                    & \bind e\;f \\
@@ -1602,8 +1687,8 @@ The following specification holds:
 \ooo Now assume we have a precondition $G(\phi \otimes \psi)$ \\
 \ooo So there is an $H = (D,h)$ such that $\mathit{Inv}(H, \phi \otimes \psi)$ holds \\
 \ooo So we know that $H, D \models \phi \otimes \psi$ and $\mathit{heap}(H)$ \\
-\ooo So we know that $c \pointsto \mathit{value}(h(c))$ \\
-\ooo From soundness we know that $\mathit{value}(h(c)) = \Some(v)$ \\
+\ooo So we know that $c.\mathit{value} \pointsto \mathit{value}(h(c))$ \\
+\ooo From soundness of $\ready{\phi}{c}{v}$, we know that $\mathit{value}(h(c)) = \Some(v)$ \\
 \ooo $[\letv{o}{[!c.value]}{}$ \\
 \ooo So we know that $o = \Some(v)$ \\
 \ooo Now we can simplify the case statement and continue \\
@@ -1643,7 +1728,7 @@ The following triple holds:
 
 This follows the standard pattern of (1) proving that the update
 preserves the relevant order structure, (2) proving the new abstract
-formula continues models the updated abstract heap, and finally (3)
+formula continues to model the updated abstract heap, and finally (3)
 showing the code actually implements this update. 
 
 
@@ -1699,19 +1784,18 @@ Suppose that $H = (D,h)$ and $c \in D - V_H$. Then for any subset $r
     \oo Since it is a transitive closure, it is a transitive relation \\
     \oo So we want to show there is no $a \in D$ such that $(a,a) \in R^+_{H'}$ \\
     \oo Consider an arbitrary $(a_0, b) \in R^+_{H'}$ \\
-    \oo Hence there is a sequence $a_0, \ldots, a_k$ such that $b = a_k$ and each $a_{i+1} \in \mathit{reads}(h'(a_i))$ \\
+    \oo Hence there is a sequence $a_0, \ldots, a_{k+1}$ such that $b = a_{k+1}$ \\
+    \ox and for each $i \leq k$, $a_{i+1} \in \mathit{reads}(h'(a_i))$ \\
     \oo Now consider whether $c$ is equal to any of the $a_i$ \\
-    \oo Suppose $a_i \not= c$ for all $0 \leq i \leq k$: \\
-    \ooo Then in this case, it follows that $\mathit{reads}(h'(a_i)) = \mathit{reads}(h'(a_i))$ for all $i$\\
-    \ooo Then $(a_0, a_k) \in R^+_H$ \\
-    \ooo Thn $a_0 \not= a_k$ since $R^+_H$ is irreflexive \\
-    \oo Suppose $a_i = c$ for some $0 \leq i \leq k$: \\
+    \oo Suppose $a_i \not= c$ for all $0 \leq i \leq k+1$: \\
+    \ooo Then in this case, it follows that $\mathit{reads}(h'(a_i)) = \mathit{reads}(h(a_i))$ for all $i$\\
+    \ooo Then $(a_0, a_{k+1}) \in R^+_H$ \\
+    \ooo Then $a_0 \not= a_{k+1}$ since $R^+_H$ is irreflexive \\
+    \oo Suppose $a_i = c$ for some $0 \leq i \leq k+1$: \\
     \ooo Note $\mathit{reads}(h'(a)) \subseteq V_H$ for all $a$  \\
-    \ooo Since $c \not\in V_H$, it follows $c \not\in \mathit{reads}(h'(a))$ for any $a$ \\
+    \ooo Since $c \not\in V_H$, it follows $c \not\in \mathit{reads}(h'(a))$ for any $a_i$ \\
     \ooo Hence $i = 0$, and $c \not= a_j$ for any $j > 0$ \\
-    \ooo Therefore $a \not= b$ for any sequence of length greater than 1 \\
-    \ooo Since $r \subseteq V_H$, it follows that  $a \not\in \mathit{reads}(h(a))$ \\
-    \ooo Hence $a \not= b$ for sequences of length 1, too \\
+    \ooo Then $c \not= a_{k+1}$
   \end{tabbedproof}
 
 \item $R_{H'} \subseteq V_{H'} \times V_{H'}$ 
@@ -1756,10 +1840,8 @@ Suppose that $H = (D,h)$ and $c \in D - V_H$. Then for any subset $r
     \oooo Suppose $a \in r$: \\
     \ooooo Then by definition $a \in \mathit{reads}(h'(b))$ \\
     \oooo Suppose $a \not\in r$: \\
-    \ooooo Then $\mathit{obs}(h'(a)) = \mathit{obs}(h(a))$ \\
-    \ooooo So $b \in \mathit{obs}(h(a))$ \\
-    \ooooo But $\mathit{obs}(h(a)) \subseteq V_H$, and $b = c \not\in V_H$ \\
-    \ooooo So this case is impossible \\
+    \ooooo Then $\mathit{obs}(h'(a)) = \mathit{obs}(h(a)) = \emptyset$ \\
+    \ooooo This is a contradiction, since we assumed $b \in \mathit{obs}(h'(a))$ \\
     \ooo Suppose $b \not= c$: \\
     \oooo Consider whether $a = c$: \\
     \oooo Suppose $a = c$: \\
@@ -1897,6 +1979,7 @@ The following triple holds:
 \ooo Using our assumption about $e$, and setting $\psi$ to $\cellneg{c}{e} \otimes \psi$, \\
 \ooo our poststate is $G(\phi' \otimes R(u, \cellneg{c}{e} \otimes \psi)) \land v = v' \land \mathit{set}(r, z, r)$ \\
 \ooo Simplifying away the $v'$, we get $\mathit{set}(r, z, r)$ and $G(\phi' \otimes \cellneg{c}{e} \otimes R(u, \psi))$ \\
+\ooo So there is a shadowing $H = (D,h)$ such that $\mathit{Inv}((D, h), \phi' \otimes R(u, \cellneg{c}{e} \otimes \psi))$ \\
 \ooo Now take $H' = (D,h')$ and $h'$ as in the semantic update lemma \\
 \ooo We know $H', D \models R(\setof{a}, \phi' \otimes \cellpos{c}{e}{v}{r} \otimes R(u, \psi))$\\
 \ooo So we know $H', D \models R(\setof{a}, \phi') \otimes \cellpos{c}{e}{v}{r} \otimes R(u \cup \setof{a}, \psi))$ \\
@@ -1920,10 +2003,10 @@ The following triple holds:
 The following specification is valid:
 \begin{displaymath}
 \begin{array}{l}
-\setof{\phi' \vdash \phi} \specand \setof{\psi \vdash \psi'} \specand \\
+\setof{\phi' \vdash \phi} \specand \setof{\theta \vdash \theta'} \specand \\
 \forall \psi.\; \mspec{G(\phi \otimes \psi) \land P}{e}{(x,z)}{G(\theta\otimes R(u, \psi)) \land Q} \\
 \specimp \\
-\forall \psi.\; \mspec{G(\phi' \otimes \psi) \land P}{e}{(x,z)}{G(\theta'\otimes R(u, \psi)) \land Q} \specand \\
+\forall \psi.\; \mspec{G(\phi' \otimes \psi) \land P}{e}{(x,z)}{G(\theta'\otimes R(u, \psi)) \land Q}  \\
 \end{array}
 \end{displaymath}
 \end{prop*}
@@ -1963,8 +2046,8 @@ The following specification is valid:
 \oo Assume we are in a prestate $G(\localref{r}{v} \otimes \psi)$ \\
 \oo So there is an $H = (D,h)$ such that $Inv(H, \localref{r}{v} \otimes \psi)$ holds \\
 \oo The spatial part of $Inv$ is $heap(H) * \mathit{refs}(\localref{r}{v} \otimes \psi)$ \\
-\oo This is the same as $heap(H) * {r}\pointsto{v} * \mathit{refs}(psi)$ \\
-\oo $[letv{x}{[!r]}{}$ \\
+\oo This is the same as $heap(H) * {r}\pointsto{v} * \mathit{refs}(\psi)$ \\
+\oo $[\letv{x}{[!r]}{}$ \\
 \oo This leaves us in $Inv(H, \localref{r}{v} \otimes \psi) \land x = v$ \\
 \oo $\pair{v}{\ctext{emptyset}}]$ \\
 \oo $G(\localref{r}{v} \otimes \psi) \land a = \pair{v}{\ctext{emptyset}}$ \\
@@ -2152,31 +2235,31 @@ the next section is the following:
 \begin{figure}
 \mbox{}
 \begin{tabbing}
-$\ST{A}{B} \equiv \celltype{A} \to \monad{\celltype{B}}$ \\[1em]
+$\ST{\alpha}{\beta} \equiv \celltype{\alpha} \to \monad{\celltype{\beta}}$ \\[1em]
 
-$\liftop : (A \to B) \to \ST{A}{B}$ \\
+$\liftop : \forall \alpha,\beta:\star.\; (\alpha \to \beta) \to \ST{\alpha}{\beta}$ \\
 $\liftop\;f\;input = $ \\
-\;\; $\newcell\; (\bind\;(\readcell input)\; (\fun{x}{A}{\return (f\;x)}))$ \\[1em]
+\;\; $\newcell\; (\bind\;(\readcell input)\; (\fun{x}{\alpha}{\return (f\;x)}))$ \\[1em]
 
-$\composeop : \ST{A}{B} \to \ST{B}{C} \to \ST{A}{C}$ \\
+$\composeop : \forall \alpha,\beta,\gamma:\star.\; \ST{\alpha}{\beta} \to \ST{\beta}{\gamma} \to \ST{\alpha}{\gamma}$ \\
 $\composeop p\;q\;input = [$\=$\letv{middle}{p\;input}$ \\
                             \>$\letv{output}{q\;middle}$ \\ 
                             \>$\;output]$ \\[1em]
 
-$\parop : \ST{A}{B} \to \ST{C}{D} \to \ST{A \times C}{B \times D}$ \\
+$\parop : \forall \alpha,\beta,\gamma,\delta:\star.\; \ST{\alpha}{\beta} \to \ST{\gamma}{\delta} \to \ST{\alpha \times \gamma}{\beta \times \delta}$ \\
 $\parop p \; q \; input = $ \\
 \;\;$[$\=$\ctext{letv}\;a = \newcell\; (\bind$\=$(\readcell\;input)$ \\
-     \>                                   \>$(\fun{x}{A\times B}{\return (\fst{x})}))$ \\
+     \>                                   \>$(\fun{x}{\alpha\times \beta}{\return (\fst{x})}))$ \\
      \>$\ctext{letv}\;b = {p\;a}{}$ \\
      \>$\ctext{letv}\;c = \newcell\; (\bind$\=$(\readcell\;input)\;$\\ 
-     \>                                   \>$(\fun{x}{A\times B}{\return (\snd{x})}))$ \\
+     \>                                   \>$(\fun{x}{\alpha\times \beta}{\return (\snd{x})}))$ \\
      \>$\ctext{letv}\;d = {q\;b} = $ \\
-     \>$\ctext{letv}\;output = \newcell\; ($\=$\bind (\readcell b)\; (\lambda b:B.$ \\
-     \>                                   \>$\bind (\readcell d)\; (\lambda d:D.$ \\
+     \>$\ctext{letv}\;output = \newcell\; ($\=$\bind (\readcell b)\; (\lambda b:\beta.$ \\
+     \>                                   \>$\bind (\readcell d)\; (\lambda d:\delta.$ \\
      \>                                   \>$\;\;\return \pair{b}{d})))] \;\ctext{in}$ \\
      \>$\;output]$ \\[1em]
 
-$\switchop : \N \to \ST{A}{B} \to \ST{A}{B} \to \ST{A}{B}$ \\
+$\switchop : \forall \alpha,\beta:\star.\; \N \to \ST{\alpha}{\beta} \to \ST{\alpha}{\beta} \to \ST{\alpha}{\beta}$ \\
 $\switchop k\;p\;q\; input =  $ \\
 \;\;$[$\=$\letv{r}{\newref{\N}{0}}{}$ \\
     \>$\letv{a}{p\;input}$ \\
@@ -2186,20 +2269,20 @@ $\switchop k\;p\;q\; input =  $ \\
     \>                                 \>$\;\;\ctext{if}(i < k, \readcell a, \readcell b)))) \;\ctext{in}$ \\
     \>$\;\;out]$\\[1em]
 
-$\loopop : A \to \ST{A\times B}{A\times C} \to \ST{B}{C}$ \\
+$\loopop : \forall \alpha,\beta,\gamma:\star.\; \alpha \to \ST{\alpha\times \beta}{\alpha\times \gamma} \to \ST{\beta}{\gamma}$ \\
 $\loopop a_0\; p \; input = $ \\
-\;\;$[$\=$\letv{r}{\newref{A}{a_0}}{}$ \\
-    \>$\ctext{letv}\; ab = \newcell\; ($\=$\bind (\readcell input)\; (\lambda b:B.$ \\
-    \>                                \>$\bind (\getref r)\;       (\lambda a:A.$ \\
+\;\;$[$\=$\letv{r}{\newref{\alpha}{a_0}}{}$ \\
+    \>$\ctext{letv}\; ab = \newcell\; ($\=$\bind (\readcell input)\; (\lambda b:\beta.$ \\
+    \>                                \>$\bind (\getref r)\;       (\lambda a:\alpha.$ \\
     \>                                \>$\;\; \return \pair{a}{b}))) \;\ctext{in}$ \\
     \>$\letv{ac}{p\;ab}{}$ \\
-    \>$\ctext{letv}\;c = \newcell\; ($\=$\bind (\readcell ac) \;(\lambda v:A \times C.$ \\
+    \>$\ctext{letv}\;c = \newcell\; ($\=$\bind (\readcell ac) \;(\lambda v:\alpha \times \gamma.$ \\
     \>                              \>$\bind (\setref r\;(\fst{v})) \;(\lambda q:\unittype.$ \\
     \>                              \>$\;\;\return (\snd{v}))))\;\ctext{in}$ \\
     \>$\;\;c]$ 
 \end{tabbing}
 \caption{Imperative Stream Transducers}
-\label{imperative-transducer-semantics}
+\label{imperative-transducer-impl}
 \end{figure}
 
 While the definitions in the previous subsection yield very clean
@@ -2220,7 +2303,7 @@ re-computations are performed.
 
 We will shortly formalize exactly this idea, but we will first discuss
 the implementation given in
-Figure~\ref{imperative-transducer-semantics} in informal terms. Here,
+Figure~\ref{imperative-transducer-impl} in informal terms. Here,
 we define the type of imperative stream transducers as a function type
 $\celltype{A} \to \monad{(\celltype{B})}$. This type should be read as
 saying that the implementation is a function that, given an input cell
@@ -2259,10 +2342,73 @@ returns a value of type $C$. The use of a local reference (rather than
 a cell) to store the current state of $A$ is essential, because we need
 to maintain the acyclicity of the dataflow graph. 
 
-\subsection{Specifying Transducers}
+\subsection{Formally Specifying Transducers}
 
+In Figure~\ref{transducer-specification}, we give the predicates we
+will use to specify our imperative stream transducer library. The key
+predicate is the predicate $\mathit{Transduce}(vs, i, \phi, o, ws)$
+which says that the dataflow network $\phi$ reads the streams $vs$ on
+input cell $i$, and writes the stream $ws$ on the output cell $o$. The
+only subtlety in this specification is that $\phi$ is a function in
+$\N \to \mathsf{formula}$, giving the formula of the dataflow network
+as a function of time.
+
+However, the definition of the predicate itself is consderably more
+complicated. The first five lines of the specification give syntactic
+conditions on readiness and unreadiness. 
+\begin{enumerate}
+\item The first condition, that $\unready{\theta}{i} \implies
+\unready{\theta \otimes \phi_n}{o}$, says that the output $o$ must
+depend on the input cell $i$.
+
+\item The second condition, that $\ready{\theta}{i}{vs_n} \implies
+  \ready{\theta \otimes \phi_{n+1}}{o}{ws_n}$, says that when the
+  input cell $i$ has been read for its value $vs_n$, then the output
+  cell will be ready with the value $ws_n$, and furthermore the
+  network $\phi_{n+1}$ will have evolved to the state it will use to
+  execute at time $n + 1$.
+
+\item The condition $\closed{\phi_n}{\domain{\phi_n} \cup \setof{i}}$
+means that $\phi_n$ depends on no external cells except for the input
+cell $i$. 
+
+\item The condtion $o \in \domain{\phi_n}$ simply ensures that the
+output cell is always part of the network that computes it. 
+
+\item The condition $\unready{R(\setof{i}, \phi_n)}{o}$ ensures
+that the output is not ready to read, after we update the input
+cell with a new, yet-to-be-read value. 
+\end{enumerate}
+
+Then, we can give the specification for the transducer itself.  The
+intuitive reading of the specification is that if reading $i$ produces
+a value $vs_n$, then reading $o$ should produce the value
+$ws_n$. However, this definition is complicated by the fact that we do
+not wish to specify the exact state owned by $i$ --- we are only
+interested in the state $\phi$, and want our specification to work
+obliviously to the state read by $i$. So we state the specification of
+$o$ hypothetically, quantifying over the specification of $o$. So our
+specification says that for any $\theta$ and $\theta'$, for which
+reading $i$ leads to value $vs_n$ with ramification $u$, then reading
+$o$ will give us the desired value $ws_n$. 
+
+The other hypothetical assumptions give syntactic representations to
+some natural conditions on $\theta$ and $\theta'$. Namely, if $i$ is
+ready in $\theta$, then reading $\theta$ should do nothing (i.e.,
+$\theta' = \theta$. If $i$ is not ready in $\theta$, then $i$ should
+be ready with value $vs_n$ in $\theta'$, and finally that $\theta'$
+should be closed, meaning that it has everything needed to evaluate
+$i$. 
+
+The $\mathit{Realize}$ predicate simply says that $\mathsf{\hat{f}}$
+is a realizer for the function $f$, which means that executing it 
+with input cell $i$ builds a dataflow graph which can act as a 
+suitable transducer.  
+
+
+\begin{figure}
 \begin{specification}
-\nextline $\mathit{Transduce}(vs, i, \phi, o, ws)  =  $
+\\ $\mathit{Transduce}(vs, i, \phi, o, ws)  =  $
 \nextline $\forall \theta, n.\; \unready{\theta}{i} \implies \unready{\theta \otimes \phi_n}{o} \specand$ 
 \nextline $\forall \theta, n.\; \ready{\theta}{i}{vs_n} \implies \ready{\theta \otimes \phi_{n+1}}{o}{ws_n} \specand$
 \nextline $\forall n.\; \closed{\phi_n}{\domain{\phi_n} \cup \setof{i}} \specand$ 
@@ -2287,6 +2433,10 @@ to maintain the acyclicity of the dataflow graph.
 \nextline $\mathit{Realize}(\mathsf{\hat{f}}, f) = $ 
 \nextline\;\;\= $\forall \psi, i.\; \spec{G(\psi)}{\mathsf{\hat{f}}\;i}{a}{\exists \phi.\;G(\psi \otimes R(\setof{i}, \phi_0)) \land \forall vs.\;\mathit{Transduce}(vs, i, \phi, a, f\;vs)}$
 \end{specification}
+\caption{Transducer Specification}
+\label{transducer-specification}
+\end{figure}
+
 
 \subsection{Correctness Proofs}
 
@@ -2305,7 +2455,7 @@ Then, the following specifications are provable:
 \end{prop}
 
 \noindent To prove these properties, we will first prove transduction lemmas for each kind of 
-network, and then show that each operator creats an appropriate network. 
+network, and then show that each operator creates an appropriate network. 
 
 \subsubsection{Correctness of $\mathsf{lift}$}
 
@@ -2323,11 +2473,13 @@ It is the case that $\mathit{Transduce}(vs, i, \phi, c, \mathit{lift}\;f\;vs)$ h
 \item Second, it is clear that for all $\theta$ and $n$, if $\ready{\theta}{i}{v_n}$, then $\ready{\theta \otimes \phi_n}{c}{(f\;v)_n}$, since the read set of $\phi_n$ is $i$, which is by hypothesis ready. 
 \item Third, it is immediately clear that for all $n$, $\closed{\phi_n}{\setof{i} \cup \domain{\phi_n}}$,
 since $\phi_n$ has a single cell whose read set contains only $i$. 
-\item Fourth, for all $n$, we know that $R(\setof{i}, \phi_n) = \cellneg{c}{e}$, which obviously satisfies $\unready{R(\setof{i}, \phi_n)}{c}$ 
+\item Fourth, it is immediate $c \in \domain{\cellpos{c}{e}{ws_n}{\setof{i}}}$
+\item Fifth, for all $n$, we know that $R(\setof{i}, \phi_n) = \cellneg{c}{e}$, which obviously satisfies $\unready{R(\setof{i}, \phi_n)}{c}$ 
+
 \end{itemize}
 Now we need to show the implication over triples. 
 \begin{tabbedproof}
-\oo Assume we have $n$, $\theta$, $\theta'$ and $u$. \\
+\oo Assume we have $n$, $\theta$, $\theta'$ and $u \subseteq \domain{\theta}$. \\
 \oo Assume that either $\ready{\theta}{i}{v_n}$ and $\theta = \theta'$ and $u = \emptyset$,  \\
 \oo or $\unready{\theta}{i} \land i \in u$ \\
 \oo Assume that $\closed{\theta'}{\domain{\theta'}}$ and that $\ready{\theta'}{i}{v_n}$ \\
@@ -2446,7 +2598,7 @@ where
 
 \begin{itemize}
 \item $\omega = \semfun{n}{\cellpos{o}{e}{ws_n}{\setof{b,c}}}$, where $ws = x \cdot (\mathit{par}\;f\;g\;v)$ for some dummy $x$ and
-\item $e = \bind (\readcell a)\; (\semfun{x}{\bind (\readcell b)\; (\semfun{y}{\return (x,y)})})$
+\item $e = \bind (\readcell b)\; (\semfun{x}{\bind (\readcell c)\; (\semfun{y}{\return (x,y)})})$
 \end{itemize}
 \end{lemma}
 
@@ -2522,12 +2674,12 @@ where
 \oo $G(\theta \otimes R(\setof{i},\phi_n \otimes \sigma_n) \otimes \psi)$ \\
 \oo Now, to use the \textsc{ABind} rule, consider  $\readcell b$. By hypothesis, we end up in a state \\
 \oo $G(\theta' \otimes \phi_{n+1} \otimes R(u' \cup \setof{i},\sigma_n) \otimes R(u', \psi)) \land (x,r_1) = ((f\;v)_n, \setof{b})$ \\
-\oo Since the domains of $\phi$ and $\sigma$ are disjoint, this is equivalent to (pulling out $(x,r_1) = ((f\;v)_n, \setof{b})$) \\
+\oo Since $\phi$ and $\sigma$ have disjoint domains, this implies (pulling out $(x,r_1) = ((f\;v)_n, \setof{b})$) \\
 \oo Also, since $i \in u'$, \\
 \oo $G(\theta' \otimes \phi_{n+1} \otimes R(\setof{i},\sigma_n) \otimes R(u', \psi))$ \\
-\oo Now, using the \textsc{ABind} rule again, consider $\readcell b$. By hypothesis, we end up in a state \\
+\oo Now, using the \textsc{ABind} rule again, consider $\readcell c$. By hypothesis, we end up in a state \\
 \oo $G(\theta' \otimes R(u'',\phi_{n+1}) \otimes \sigma_{n+1} \otimes R(u' \cup u'', \psi)) \land (y,r_2) = ((g\;v)_n, \setof{b, c})$ \\
-\oo Since the domains of $\phi$ and $\sigma$ are disjoint, this is equivalent to (pulling out $(y,r_2) = ((g\;v)_n, \setof{b, c})$) \\
+\oo Since $\phi$ and $\sigma$ have disjoint domains, this implies (pulling out $(y,r_2) = ((g\;v)_n, \setof{b, c})$) \\
 \oo $G(\theta' \otimes \phi_{n+1} \otimes \sigma_{n+1} \otimes R(u' \cup u'', \psi)) \land (y, r_2) = ((g\;v)_n, \setof{b,c})$ \\
 \oo Now, by the \textsc{AReturn} rule and the definition of $\mathit{par}$, we get \\
 \oo $G(\theta' \otimes \phi_{n+1} \otimes \sigma_{n+1} \otimes R(u' \cup u'', \psi)) \land a = ((\mathit{par}\;f\;g\;v)_n, \setof{b,c})$ \\
@@ -2574,12 +2726,12 @@ then it is the case that $\mathit{Transduce}(v, i, \omega, o,
     \ooo Then $\omega_n = \localref{r}{n} \otimes \phi_n \otimes R(\setof{i}, \sigma_0) \otimes \delta_n$ \\
     \ooo So we know that $\unready{\theta \otimes \phi_n}{b}$ holds \\
     \ooo Since $\delta_n = \cellpos{o}{e}{(\mathit{switch}\;f\;g\;v)_n}{\setof{b}}$, we can see that \\
-    \ooo $\unready{\theta \otimes \omega_n}{b}$ \\
+    \ooo $\unready{\theta \otimes \omega_n}{o}$ \\
     \oo If $n \geq k$: \\
     \ooo Then $\omega_n = \localref{r}{n} \otimes R(\setof{i}, \phi_k) \otimes \sigma_{n-k} \otimes \delta_n$ \\
     \ooo So we know that $\unready{\theta \otimes \sigma_{n-k}}{c}$ holds \\
     \ooo Since $\delta_n = \cellpos{o}{e}{(\mathit{switch}\;f\;g\;v)_n}{\setof{c}}$, we can see that \\
-    \ooo $\unready{\theta \otimes \omega_n}{c}$ \\
+    \ooo $\unready{\theta \otimes \omega_n}{o}$ \\
   \end{tabbedproof}
 
 \item We want to show that $\ready{\theta}{i}{v_n}$ implies $\ready{\theta \otimes \omega_{n+1}}{o}{(\mathit{par}\;f\;g\;v)_n}$. 
@@ -2590,13 +2742,13 @@ then it is the case that $\mathit{Transduce}(v, i, \omega, o,
     \ooo Then $\omega_n = \localref{r}{n} \otimes \phi_n \otimes R(\setof{i}, \sigma_0) \otimes \delta_n$ \\
     \ooo So we know that $\ready{\theta \otimes \phi_n}{b}{(f\;v)_n}$ holds \\
     \ooo Since $\delta_n = \cellpos{o}{e}{(\mathit{switch}\;f\;g\;v)_n}{\setof{b}}$, we can see that \\
-    \ooo $\ready{\theta \otimes \omega_n}{b}{(\mathit{switch}\;f\;g\;v)_n}$ \\
+    \ooo $\ready{\theta \otimes \omega_n}{o}{(\mathit{switch}\;f\;g\;v)_n}$ \\
     \oo If $n \geq k$: \\
     \ooo Then $\omega_n = \localref{r}{n} \otimes R(\setof{i}, \phi_k) \otimes \sigma_{n-k} \otimes \delta_n$ \\
     \ooo So we know that $\ready{\theta}{i}{(\mathit{drop}\;k\;v)_{n-k}}$ \\
     \ooo So we know that $\ready{\theta \otimes \sigma_{n-k}}{c}{(g\;v)_{n-k}}$ holds \\
     \ooo Since $\delta_n = \cellpos{o}{e}{(\mathit{switch}\;f\;g\;v)_n}{\setof{c}}$, we can see that \\
-    \ooo $\ready{\theta \otimes \omega_n}{b}{(\mathit{switch}\;f\;g\;v)_n}$ \\
+    \ooo $\ready{\theta \otimes \omega_n}{o}{(\mathit{switch}\;f\;g\;v)_n}$ \\
   \end{tabbedproof}
 
 \item Now we want to show that $\closed{\omega_n}{\domain{\omega_n} \cup \setof{i}}$. 
@@ -2623,12 +2775,12 @@ then it is the case that $\mathit{Transduce}(v, i, \omega, o,
     \ooo Then $\omega_n = \localref{r}{n} \otimes \phi_n \otimes R(\setof{i}, \sigma_0) \otimes \delta_n$ \\
     \ooo So we know that $\unready{\theta \otimes \phi_n}{b}$ holds \\
     \ooo Since $\delta_n = \cellpos{o}{e}{(\mathit{switch}\;f\;g\;v)_n}{\setof{b}}$, we can see that \\
-    \ooo $\unready{\theta \otimes \omega_n}{b}$ \\
+    \ooo $\unready{\theta \otimes \omega_n}{o}$ \\
     \oo If $n \geq k$: \\
     \ooo Then $\omega_n = \localref{r}{n} \otimes R(\setof{i}, \phi_k) \otimes \sigma_{n-k} \otimes \delta_n$ \\
     \ooo So we know that $\unready{\theta \otimes \sigma_{n-k}}{c}$ holds \\
     \ooo Since $\delta_n = \cellpos{o}{e}{(\mathit{switch}\;f\;g\;v)_n}{\setof{c}}$, we can see that \\
-    \ooo $\unready{\theta \otimes \omega_n}{c}$ \\
+    \ooo $\unready{\theta \otimes \omega_n}{o}$ \\
   \end{tabbedproof}
 
 
@@ -2646,8 +2798,6 @@ Now we will show the implication over triples.
 \ox  $\mspec{G(\theta \otimes \psi)}{\readcell i}{a}{a = ((f\;v)_n, \setof{c}) 
       \land G(\theta' \otimes R(u,\psi)) }$ \\
 \oo Now suppose $n < k$: \\
-\ooo In this case, $e$ in $\delta_n$ simplifies to \\
-\oooo $e = \bind (\getref r)\; (\semfun{n}{\bind (\setref r\;(n+1))\; (\semfun{\unit}{\readcell b})})$ \\
 \ooo Now assume we have $\psi$ and note that  \\
 \oooo since we know $\mathit{Transduce}(v, i, \phi, b, (f\;v)_n)$, we can conclude that \\
 \oooo there is a $u'$ such that $\setof{b} \subseteq u' \subseteq \domain{\phi_n}$ such that \\
@@ -2665,6 +2815,8 @@ Now we will show the implication over triples.
 \ooo $G(\theta \otimes \localref{r}{n} \otimes R(\setof{i}, \phi_n) \otimes R(\setof{i}, \sigma_0) \otimes \psi)$ \\
 \ooo We begin with the \textsc{ABind} rule, which asks us to evaluate $\getref r$, which gives us \\
 \ooo $G(\theta \otimes \localref{r}{n} \otimes R(\setof{i}, \phi_n) \otimes R(\setof{i}, \sigma_0) \otimes \psi) \land (n_1,r_1) = (n,\emptyset)$ \\
+\ooo In this case, $e$ in $\delta_n$ simplifies to \\
+\oooo $e = \bind (\getref r)\; (\semfun{n}{\bind (\setref r\;(n+1))\; (\semfun{\unit}{\readcell b})})$ \\
 \ooo So now we need to evaluate $\bind (\setref r\;(n+1))\; (\semfun{\unit}{\readcell b})$ in \\
 \ooo $G(\theta \otimes \localref{r}{n+1} \otimes R(\setof{i}, \phi_n) \otimes R(\setof{i}, \sigma_0) \otimes \psi)$ \\
 \ooo Using the \textsc{ABind} rule, we need to evaluate $\setref r\;(n+1)$, which yields  \\
@@ -2681,8 +2833,6 @@ Now we will show the implication over triples.
 \ooo $G(\theta' \otimes \localref{r}{n+1} \otimes \phi_{n+1} \otimes R(u' \cup \setof{i}, \sigma_0) \otimes \delta_{n+1} \otimes R(u' \cup \setof{o}, \psi))) \land a = ((f\;v)_n, \setof{o})$\\
 \ooo Since $(f\;v)_n = (\mathit{switch}\;k\;f\;g\;v)_n$, we have the conclusion \\
 \oo Now suppose $n \geq k$: \\
-\ooo In this case, $e$ in $\delta_n$ simplifies to \\
-\oooo $e = \bind (\getref r)\; (\semfun{n}{\bind (\setref r\;(n+1))\; (\semfun{\unit}{\readcell c})})$ \\
 \ooo Now assume we have $\psi$ and note that  \\
 \oooo since we know $\mathit{Transduce}(\mathit{drop}\;k\;v, i, \sigma, c, (g\;(\mathit{drop}\;k\;v))_n)$, we can conclude that \\
 \oooo there is a $u'$ such that $\setof{c} \subseteq u' \subseteq \domain{\sigma_{n-k}}$ such that \\
@@ -2701,6 +2851,8 @@ Now we will show the implication over triples.
 \ooo $G(\theta \otimes \localref{r}{n} \otimes R(\setof{i}, \phi_k) \otimes R(\setof{i}, \sigma_{n-k}) \otimes \psi)$ \\
 \ooo We begin with the \textsc{ABind} rule, which asks us to evaluate $\getref r$, which gives us \\
 \ooo $G(\theta \otimes \localref{r}{n} \otimes R(\setof{i}, \phi_k) \otimes R(\setof{i}, \sigma_{n-k}) \otimes \psi) \land (n_1,r_1) = (n,\emptyset)$ \\
+\ooo In this case, $e$ in $\delta_n$ simplifies to \\
+\oooo $e = \bind (\getref r)\; (\semfun{n}{\bind (\setref r\;(n+1))\; (\semfun{\unit}{\readcell c})})$ \\
 \ooo So now we need to evaluate $\bind (\setref r\;(n+1))\; (\semfun{\unit}{\readcell c})$ in \\
 \ooo $G(\theta \otimes \localref{r}{n+1} \otimes R(\setof{i}, \phi_k) \otimes R(\setof{i}, \sigma_{n-k}) \otimes \psi)$ \\
 \ooo Using the \textsc{ABind} rule, we need to evaluate $\setref r\;(n+1)$, which yields  \\
@@ -2733,7 +2885,7 @@ Now we will show the implication over triples.
                       \iota_n \otimes \phi_n \otimes \delta_n$ 
   \item $\iota_n = \cellpos{s}{e_1}{ws_n}{\setof{i}}$ where $ws_{n+1} = ((x \cdot \mathit{map}\;\pi_1\;(\mathit{cycle}\;x\;f\;ys))_n, ys_n)$ and $ws_0$ is some dummy value\\
   \item $e_1 = \bind (\readcell i)\; \semfun{y}{\bind (\getref r)\; \semfun{x}{\return (x,y)}}$ \\
-  \item $\delta_n = \cellpos{t}{e_2}{(z\cdot (\mathit{loop}\;x\;f\;ys))_n}{\setof{v}}$ for some dummy $z$ \\ 
+  \item $\delta_n = \cellpos{o}{e_2}{(z\cdot (\mathit{loop}\;x\;f\;ys))_n}{\setof{t}}$ for some dummy $z$ \\ 
   \item $e_2 = \bind (\readcell t)\; (\semfun{(x,z)}{
                \bind (\setref r\;x)\; (\semfun{\unit}{\return z}}))$ \\
   \end{itemize}
@@ -2747,7 +2899,7 @@ Now we will show the implication over triples.
       \oo Assume $\unready{\theta}{i}$ \\
       \oo Hence $\unready{\theta \otimes \iota_n}{s}$ \\
       \oo Hence $\unready{\theta \otimes \iota_n \otimes \phi_n}{t}$ \\
-      \oo Hence $\unready{\theta \otimes \iota_n \otimes \phi_n \otimes \delta_n}{t}$ \\
+      \oo Hence $\unready{\theta \otimes \iota_n \otimes \phi_n \otimes \delta_n}{o}$ \\
     \end{tabbedproof}
 
   \item Now, we want to show that if $\ready{\theta}{i}{ys_n}$, then $\ready{\theta \otimes \sigma_{n+1}}{o}{(\mathit{loop}\;x\;f\;ys)_n}$ 
@@ -2755,7 +2907,7 @@ Now we will show the implication over triples.
       \oo Assume $\ready{\theta}{i}{ys_n}$ \\
       \oo Hence $\ready{\theta \otimes \iota_n}{s}{((\mathit{map}\;\pi_1\;(\mathit{cycle}\;x\;f\;ys))_n, ys_n)}$ \\
       \oo Hence $\ready{\theta \otimes \iota_n \otimes \phi_n}{t}{(f\;(\mathit{zip}\;(\mathit{map}\;\pi_1\;(\mathit{cycle}\;x\;f\;ys))\;ys))_n}$ \\
-      \oo Hence $\ready{\theta \otimes \iota_n \otimes \phi_n \otimes \delta_n}{t}{(\mathit{loop}\;x\;f\;ys)_n}$ \\
+      \oo Hence $\ready{\theta \otimes \iota_n \otimes \phi_n \otimes \delta_n}{o}{(\mathit{loop}\;x\;f\;ys)_n}$ \\
     \end{tabbedproof}
 
   \item Now, we want to show that $\closed{\sigma_n}{\domain{\sigma_n} \cup \setof{i}}$ 
@@ -2764,7 +2916,7 @@ Now we will show the implication over triples.
       \oo First, observe that $\closed{\iota_n}{\setof{i} \cup \domain{\iota_n}}$\\
       \oo Next, by hypothesis $\closed{\phi_n}{\domain{\phi_n} \cup \setof{s}}$ \\
       \oo Note that $s \in \domain{\iota_n}$ \\
-      \oo Next, note that $closed{\delta_n}{\setof{t} \cup \domain{\delta_n}}$ \\
+      \oo Next, note that $\closed{\delta_n}{\setof{t} \cup \domain{\delta_n}}$ \\
       \oo Note that $t \in \domain{\phi_n}$ \\
       \oo Hence $\closed{\sigma_n}{\setof{i} \cup \domain{\sigma_n}}$
     \end{tabbedproof}
@@ -2984,8 +3136,7 @@ example, as a binary tree).
 
 \begin{tabbing}
 $World = $ \\
-\;\;\;\;\=$\{D \in \powersetfin{ecell}\;|\;\forall c,d \in D.\;$\=$identity(c) = identity(d)$\\
-        \>                                                      \>$\iff c = d\}$\\[1em]
+\;\;\;\;\=$\{D \in \powersetfin{ecell}\;|\;\forall c,d \in D.\;$\=$identity(c) = identity(d) \iff c = d\}$\\[1em]
 
 $\exists \cellset : \star.$ \\
 $\exists set : World \To \cellset \To \powersetfin{ecell} \To \assert.$ \\
