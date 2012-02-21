@@ -46,8 +46,9 @@ over the shared data structures representing the interface and
 program. These callbacks are structured using the subject-observer
 pattern~\cite{gof}, which uses collections of callbacks to implicitly
 synchronize mutable data structures across a program. So higher-order
-state not only poses a technical challenge, but also offers a
-tantalizingly concrete example to motivate the technical development.
+state not only poses a technical challenge, but also offers a set of
+tantalizingly practical examples to motivate the technical
+development.
 
 In this dissertation, I develop a model higher-order imperative
 programming language, and develop a program logic for it. I
@@ -250,77 +251,6 @@ contribution as the correctness proofs themselves: programmers have
 informal reasons for believing in the correctness of their programs,
 which are often surprisingly subtle to formalize. 
 
-
-\subsubsection{Related Work}
-% \vspace{-0.5em}
-
-In his dissertation~\cite{parkinson-thesis}, Parkinson gave as an
-example a simple iterator protocol, lacking the integration with
-composites we have exhibited.  Subsequently, we formalized a similar
-account of iterators~\cite{iterator}, again lacking the integration
-with composites. Jacobs, Meijer, Piessens and
-Schulte~\cite{iterators-revisited} extend Boogie with new rules for
-the coroutine constructs C\# uses to define iterators. Their solution
-typifies the difficulties ownership-based approaches face with
-iterators, which arise from the fact that iterators must have access
-to the private state of a collection but may have differing
-lifetimes. This work builds on Barnett and Naumann's generalization of
-ownership to friendship~\cite{friends}, which allows object invariants
-to have some dependency on non-owned objects.
-
-The subject-observer pattern has been the focus of a great deal of
-effort, given its prominence in important applications. Simultaneously
-with our own initial formulation, Parkinson gave an example of
-verifying the subject-observer
-protocol~\cite{parkinson-iwaco-07}. Recently, Parkinson and
-Distefano~\cite{jstar-parkinson-distefano} have implemented a tool to
-verify these programs, and have demonstrated several examples
-including a verification of a subject-observer pattern specified along
-these lines. The tool includes automatic generation of loop
-invariants.
-
-The style of invariant in our work and Parkinson's is very similar,
-and subject to similar limitations. Since each subject needs to know
-what its observers are, verifying programs with chains of
-subject-observers is extremely cumbersome. This is especially
-problematic given that GUI programs --- which are one of the primary
-uses of the subject-observer pattern --- rely upon chains of subjects
-and observers.
-
-The work of Barnett and Naumann is also capable of reasoning about the
-subject-observer pattern, but only if all of the possible observers
-are known at verification.  Leino and Schulte~\cite{boogie-sub-obs}
-made use of Liskov and Wing's concept of history invariants or
-monotonic predicates~\cite{liskov-wing} to give a more modular
-solution. The idea in this work is to require the changes that a
-subject makes to ``increase the truth'' of the observer's predicate
-along some partial order. This is less flexible than the approach we
-took, though perhaps a little easier to use when it is
-applicable. Unfortunately, this work is not merely heavyweight, but
-entirely inapplicable for event-driven programs such as GUIs, since
-there is no natural partial order on user actions.
-
-More recently, Shaner, Naumann and Leavens~\cite{ShanerLN07} gave a
-``gray-box'' treatment of the subject-observer pattern.  Instead of
-tracking the specifications of the observers in the predicate, they
-give a model program that should approximates the behavior of any
-actual notification method. This works as long as the runtime
-dependencies are known statically enough to include them in the model
-programs --- again, a limitation which is problematic in the case of
-GUIs.
-
-Lest the reader get too depressed, in the following two chapters, I
-will give a solution to the problem of verifying invariants across
-dynamic chains of dependencies.
-
-Pierik, Clarke and de Boer~\cite{creational-invariants} formalize another
-extension to the Boogie framework which they name \emph{creation
-  guards}, specifically to handle flyweights. They consider flyweights
-an instance of a case where object invariants can be invalidated by
-the allocation of new objects, and add guards to their specifications
-to control allocation to the permitted cases. 
-
-
 \subsection{The Union-Find Algorithm}
 
 One of the reasons for the success of separation logic (and related
@@ -378,6 +308,380 @@ the the dataflow graph library, and not to its implementation. This
 demonstrates that very sophisticated libraries can still be factored
 into modular parts, and moreover that the correctness proofs can be
 cleanly factored as well. 
+
+\section{Related Work}
+
+\subsection{Immediate Predecessors}
+
+There are two immediate predecessors to the proof system in this
+dissertation. 
+
+First, there is the work of Reynolds on specification logic for
+Algol~\cite{spec-logic}. Idealized Algol~\cite{idealized-algol}
+combines a call-by-name functional language, together with a type of
+imperative computations whose operations correspond to the
+while-language (i.e., it does not have higher-order store). This
+stratification ensures that Algol features a powerful equational
+theory which validates both the $\beta$- and $\eta$-rules of the
+lambda-calculus. 
+
+Specification logic extends Hoare logic~\cite{hoare-logic} to deal
+with these new features, by viewing Hoare triples as the atomic
+propositions of a first-order logic of specifications. Then, the user
+of the logic can specify the behavior of a higher-order function using
+an implications over triples, using the hypothesis of an implication
+to specify the behavior of arguments of command type. In short,
+specification logic can be viewed as a synthesis of LCF~\cite{lcf} with
+  Hoare logic.
+
+One of the motivations for the language design in my dissertation was
+to see if the analogy between the computation type in Algol and the
+monadic type discipline could be extended to a full higher-order
+programming language, with features like higher-order store. This has
+worked fantastically well. The semantics of the logic of this
+dissertation is (suprisingly) \emph{simpler} than original
+specification logic, even though the programming language itself is a
+much more complex one than Idealized Algol.
+
+In particular, one of the main sources of complexity in usages of
+specification logic has simply vanished from this logic. Algol has
+assignable variables (like C or Java, though of course this reverses
+the chronology), and so specification logic had to account for their
+update with assertions about so-called ``good variable''
+conditions. Since ML-like languages do not have assignable variables,
+this means that all aliasing is confined to the heap. As a result, the
+entire machinery of good variables is simply absent from my system.
+So all aliasing and interference is confined to the heap, and
+separation logic works quite well for specifying and reasoning about
+this interference.
+
+The other line of work I make use is on algebraic models of separation
+logic. I give a very concrete model of separation logic in Chapter 3,
+and am able to interpret higher-order quantification due to the fact
+that the lattice of propositions is complete. This is probably best
+understood as an instantiation of Biering~\emph{et al.}'s
+hyperdoctrine model of higher-order separation logic. Likewise, my
+semantic domain for specifications makes use of the techniques
+introduced by Birkedal and Yang~\cite{birkedal-yang} to model
+higher-order frame rules.
+
+Happily, though, most of this machinery stays ``under the hood'' to
+ensure that the logic looks simple to the user.  As an example of this
+phenomenon, we use TT-closure~\cite{tt-closure} to force the
+admissibility of Hoare triples. This lets us give a simple rule for
+fixed-point induction, without having to specify conditions on
+admissible predicates (which is especially problematic in a setting
+with predicate variables).
+
+Finally, nested triples are very useful for specifying the properties
+of higher-order programs. It is very useful to be able put the
+specification of the contents of a reference into an assertion.  In my
+dissertation, I have given a ``cheap and cheerful'' embedding of
+assertions in specifications and vice-versa, where the embedding (in
+either direction) sends the topmost element of the source lattice to
+the topmost element of the target lattice, and maps all other lattice
+elements to the bottom element. This approach has the virtues of
+first, being very technically easy to implement, and second,
+sufficient for all of the examples I have considered.
+
+However, more sophisticated approaches are certainly
+possible. \citet{nested-hoare-triples} describe how to unify the
+assertion and specification languages into a single logic.  This
+offers the technical benefit that it extends the power of the
+higher-order frame rule by letting it operate in a hereditary way, to
+act on nested triples contained within assertions. In contrast, the
+frame rule I give stops at the boundary of an assertion. 
+
+Despite looking, though, I have not yet found any programs that seem
+to need this extra generality to verify. Most of the programs I have
+considered which might benefit from these features seem to also need
+further generalizations, such as Liskov and Wing's monotonic
+predicates. Indeed, this is the case even for the higher-order frame
+rule: most of the results in this dissertation could have been proven
+without it. However, the Kripke view made it no harder to support than
+the first-order frame rule.
+
+\subsection{Program Logics and Type Theories}
+
+While there is a vast literature on verification of imperative
+programs, three lines of research in particular stand out as most
+closely related to my own work.
+
+\subsubsection{Separation Logic for Java}
+
+In his dissertation, Parkinson~\cite{parkinson-thesis} gives a program
+logic for Java, which, on the surface, closely follows the standard
+methodology of separation logic --- that is, it is a pure Hoare logic
+with triples as the fundamental device for structuring program proofs
+(and no logic of triples, as in specification logic). However, a
+deeper look reveals a number of innovations which permit an elegant
+treatment of many aspects of object-oriented programming. Since
+object-oriented programming is fundamentally higher-order imperative
+programming, there are many ideas in Parkinson's dissertation which
+are either related to or simply reminiscent of the ideas in my work.
+
+As in this work, Parkinson builds a high-level separation logic. That
+is, his model of the heap consists of a collection of structured
+objects, rather than as a simple giant byte array. As in my work,
+pointer arithmetic is impossible, and pointer point to arbitrary
+values.
+
+Unlike in my work, all specifications are Hoare triples (there is no
+specification logic which treats Hoare triples as atoms), and
+furthermore his program logic supports the semantic subtyping rule
+(aka the Liskov substitution principle). Now, it is well-known that
+the straightforward treatment of semantic subtyping essentially
+reduces object-oriented programs to first-order programs and prevents
+writing essentially higher-order functions (such as $\mathsf{iter}$ or
+$\mathsf{map}$). 
+
+To avoid this trap, Parkinson made two key innovations. First, he
+makes use of abstract predicates (i.e., second-order quantification
+over predicates), which permits writing method specifications which
+relate the footprint of a method to the footprint of the methods of
+the objects it receives as an argument.
+
+Second, he gives his second-order predicates a very unusual semantic
+interpretation. The idea, described in Parkinson and
+Bierman~\cite{parkinson-bierman-05}, is to index each predicate symbol
+by an object, and to permit the concrete definition of a predicate to
+\emph{dynamically dispatch} based on the class of the receiver
+object. That is, each class in an object hierarchy may define the
+implementation of an abstract predicate differently, and the
+definition used actually depends on the concrete class of the
+object. As a result, semantic subtyping can be formally respected,
+without blocking the use of objects as higher-order parameters: a
+family of objects used as higher-order parameters can simply define
+different concrete definitions of a common predicate symbol.
+
+This design is both clever and elegant, since it puts the natural
+style of specifications in alignment with the style of object-oriented
+programming. Unfortunately, the use of dynamic dispatch means that it
+is difficult to figure out what higher-kinded predicate symbols ought
+to mean.  This turns out not to be a fundamental problem for
+Parkinson, since the natural style of Java programming is rather like
+writing the defunctionalized version of a higher-order program. As a
+result, he rarely needs fully higher-order specifications --- he can
+attach specifications to each class implementing an interface for a
+higher-order method.
+
+However, I work with a genuinely higher-order programming language,
+and this solution does not work for me. Instead, I make use of a
+standard semantics of predicates in separation logic, which makes
+interpreting predicates of arbitrary order straightforward. As a
+result, I have no problems with higher-order specifications. A good
+example of this difference can be seen by contrasting our respective
+proofs of the subject-observer pattern, which we simultaneously and
+independently gave correctness proofs for.
+
+From a distance, the specifications look very similar, with the
+differences appearing on close inspection. Namely, in Parkinson's
+version of the subject-observer pattern~\cite{parkinson-iwaco-07}, for
+each subject class, there is a common observer interface that all
+concrete observer classes must implement, and the subject predicate is
+indexed by a list of observers of this interface. He then uses his
+predicate dynamic dispatch to allow each observer to have a different
+real invariant. In my version of the subject-observer pattern (in
+Chapter 4), the subject predicate is directly indexed by a list of
+observer actions plus their invariants and specifications, directly as
+a higher-order predicate.
+
+The ability to make use of full higher-order logic turns out to be
+very important for more complex examples. This initial verification of
+the subject-observer pattern turned out to be inadequate for real use,
+which lead to my development of embedded separation logics for
+verifying programs making use of heavily aliased mutable state (as in
+Chapter 5 and 6). There, I make free use of the full machinery of
+higher-order logic to define custom logics as index
+domains. Furthermore, the specification in chapter 6 relies
+essentially on the ability to work compositionally with higher-order
+programs, without having to defunctionalize a whole program.
+
+\subsubsection{Hoare Type Theory}
+
+Nanevski, Morisett and Birkedal have developed Hoare Type
+Theory~\cite{htt, nanevski08}, a sophisticated dependently-typed
+functional language that, like our system, uses a monadic discipline
+to control effects.  Unlike my work, HTT takes advantage of type
+dependency to directly integrate specifications into the types of
+computation terms, by using an indexed family of monads to represent
+computations. A single term of computation type has a type $e :
+\spec{P}{-}{a:A}{Q(a)}$, where $P$ and $Q$ are predicates on the heap.
+Similarly to my own use of existentials, Nanevski, Ahmed, Morisett and
+Birkedal~\cite{abstract-htt} have also proposed using the existential
+quantification of their type theory to hide data representations,
+giving examples such as a malloc/free style memory
+allocator. \citet{nanevski-victor-10} also give a proof of a modern
+congruence closure algorithm, illustrating that this system can be
+used to verify some of the most complex imperative algorithms known.
+
+The key difference between the two approaches can be summarized by
+saying that my work in this thesis is to construct a higher-order
+predicate logic \emph{about} programs in a non-dependently programming
+language, whereas HTT \emph{embeds} imperative programs into a
+dependently typed language. That is, the distinction lies in whether
+or not specifications are considered part of the language or not.
+(Note that the other two combinations are also reasonable: embedding
+computations into a non-dependent language basically amounts to a
+monadic type discipline. Specification languages without rich support
+for quantifiers or higher-order features takes us into the domain of
+program analysis, in which automated tools prove weak theorems about
+programs. However, neither of these allow rich specifications of
+program behavior.)
+
+In principle, embedding computations into a dependently-typed language
+should offer greater flexibility than separating specifications from
+programs. However, the specific choices made in the design of HTT mean
+that this promise goes unrealized: there are natural classes of
+higher-order imperative program which are impossible to write in
+HTT. Furthermore, I give correctness proofs of such programs, with not
+especially difficult proofs, which illustrates that the difficulty is
+not fundamental.
+
+To understand the issue, recall that computations in HTT have types $e
+: \spec{P}{-}{a:A}{Q(a)}$, where $P$ and $Q$ are predicates on the
+heap. Furthermore, heaps map locations to values, and heap predicates
+map heaps to propositions. Now, any higher-order imperative program
+--- i.e., any program which manipulates pointers to code --- needs to
+refer to terms of computation type in its pre- and post-conditions.
+In the original formulation of HTT, which is predicative, this causes
+size issues to arise, since a heap at universe level $n$ can only
+contain commands which manipulate heaps at universe level $n-1$ or
+lower. As a result, examples such as the subject-observer example in
+Chapter 4 or the dataflow network example of Chapter 6 cannot be
+written in predicative HTT. 
+
+This difficulty has been overcome by Petersen~\emph{et al.}, who give
+an impredicative model of Hoare Type Theory. However, Svendsen
+[personal communication] says that in an impredicative setting, the
+weaker elimination rules for impredicative existentials made porting
+the proofs in my system to HTT much more difficult. I do not presently
+know whether the problem is fundamental, or whether there is a more
+intricate encoding which can avoid the obstacles.
+ 
+These issues simply do not arise in my system, since specifications
+are strictly separated from the types. As a result, there are never
+any size issues arising from the problem of storing computations in
+the heap. 
+
+(This also suggests that an interesting future direction would be to
+study a version of Hoare Type Theory in which there is an ordinary
+monadic type of computations, together with a predicate on terms of
+monadic type which indexes them with pre- and post-conditions.)
+
+\subsubsection{Regional Logic and Ownership}
+
+In addition to systems based on separation, there is also a line of
+research based on the concept of object invariants and ownership.  The
+Java modeling language (JML)~\cite{jml} and the Boogie
+methodology~\cite{boogie} are two of the most prominent systems based
+on this research stream. In Boogie, each object tracks its owner
+object with a ghost field, and the ownership discipline enforces that
+the heap have a tree structure. This allows the calculation of frame
+properties without explosions due to aliasing, even though the
+specification language remains ordinary first-order
+logic. \citet{banerjee-naumann-regions} give a logic, which they name
+``regional logic'', which formalizes these ideas in a small core logic
+more tractable than industrial-strength systems like JML or Boogie.
+
+For ``by-hand'' proofs, approaches based on ownership tend to be more
+onerous than proofs using separation logic, since footprints have to
+be tracked explicitly in pre- and post-conditions. However, the flip
+side of this is that there are no substructural quantifiers, and this
+can enable an easier use of existing theorem provers for automation. 
+
+From the semantic point of view, one of the most interesting features
+of this line of work is that \citet{banerjee-naumann-rep} were able to
+use an ownership discipline to prove a representation independence
+(i.e., relational parametricity) result for Java-like programs.  This
+is something that neither my system, nor any of the other ones
+described earlier is capable of.  The equality relation I use is
+simply the equality inherited from the (highly non-abstract)
+denotational semantics I give.
+
+\subsection{Program Proofs for Design Patterns}
+
+\subsubsection{Iterators}
+
+In his dissertation~\cite{parkinson-thesis}, Parkinson gave as an
+example a simple iterator protocol, lacking the integration with
+composites we have exhibited.  Subsequently, we formalized a similar
+account of iterators~\cite{iterator}, again lacking the integration
+with composites. 
+
+Jacobs, Meijer, Piessens and Schulte~\cite{iterators-revisited} extend
+Boogie with new rules for the coroutine constructs C\# uses to define
+iterators. Their solution typifies the difficulties ownership-based
+approaches face with iterators, which arise from the fact that
+iterators must have access to the private state of a collection but
+may have differing lifetimes. This work builds on Barnett and
+Naumann's generalization of ownership to friendship~\cite{friends},
+which allows object invariants to have some dependency on non-owned
+objects. 
+
+Unlike the work in my thesis, this required an extension to the core
+logic, rather than being a formula provable within the logic. 
+
+\subsubsection{Flyweights}
+
+Pierik, Clarke and de Boer~\cite{creational-invariants} formalize
+another extension to the Boogie framework which they name
+\emph{creation guards}, specifically to handle flyweights. They
+consider flyweights an instance of a case where object invariants can
+be invalidated by the allocation of new objects, and add guards to
+their specifications to control allocation to the permitted cases.
+
+Again, this required an extension to the core logic, though in this
+case the extension was quite modest, since footprints are already
+explicitly tracked. 
+
+\subsubsection{The Subject-Observer Pattern}
+
+The subject-observer pattern has been the focus of a great deal of
+effort, given its prominence in important applications. Simultaneously
+with our own initial formulation, Parkinson gave an example of
+verifying the subject-observer
+protocol~\cite{parkinson-iwaco-07}. Recently, Parkinson and
+Distefano~\cite{jstar-parkinson-distefano} have implemented a tool to
+verify these programs, and have demonstrated several examples
+including a verification of a subject-observer pattern specified along
+these lines. The tool includes automatic generation of loop
+invariants.
+
+The style of invariant in our work and Parkinson's is very similar,
+and subject to similar limitations. Since each subject needs to know
+what its observers are, verifying programs with chains of
+subject-observers is extremely cumbersome. This is especially
+problematic given that GUI programs --- which are one of the primary
+uses of the subject-observer pattern --- rely upon chains of subjects
+and observers.
+
+The work of Barnett and Naumann is also capable of reasoning about the
+subject-observer pattern, but only if all of the possible observers
+are known at verification.  Leino and Schulte~\cite{boogie-sub-obs}
+extended Boogie with Liskov and Wing's concept of history invariants
+or monotonic predicates~\cite{liskov-wing} to give a more modular
+solution. The idea in this work is to require the changes that a
+subject makes to ``increase the truth'' of the observer's predicate
+along some partial order. This is less flexible than the approach we
+took, though perhaps a little easier to use when it is
+applicable. Unfortunately, this work is not merely heavyweight, but
+entirely inapplicable for event-driven programs such as GUIs, since
+there is no natural partial order on user actions.
+
+More recently, Shaner, Naumann and Leavens~\cite{ShanerLN07} gave a
+``gray-box'' treatment of the subject-observer pattern.  Instead of
+tracking the specifications of the observers in the predicate, they
+give a model program that should approximates the behavior of any
+actual notification method. This works as long as the runtime
+dependencies are known statically enough to include them in the model
+programs --- again, a limitation which is problematic in the case of
+GUIs.
+
+In Chapter 6, I give a better specification of callbacks which is
+modular and handles chains of notifications gracefully. This
+specification is very much unlike any of the other specifications for
+subject-observer that I have seen. 
 
 
 

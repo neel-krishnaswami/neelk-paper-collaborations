@@ -2242,72 +2242,72 @@ Now, the proof of the $\mathsf{broadcast}$ function is quite easy:
 
 % \input{htt-experiments}
 
-\section{Related Work}
-% \vspace{-0.5em}
-
-In his dissertation~\cite{parkinson-thesis}, Parkinson gave as an
-example a simple iterator protocol, lacking the integration with
-composites we have exhibited.  Subsequently, we formalized a similar
-account of iterators~\cite{iterator}, again lacking the integration
-with composites. Jacobs, Meijer, Piessens and
-Schulte~\cite{iterators-revisited} extend Boogie with new rules for
-the coroutine constructs C\# uses to define iterators. Their solution
-typifies the difficulties ownership-based approaches face with
-iterators, which arise from the fact that iterators must have access
-to the private state of a collection but may have differing
-lifetimes. This work builds on Barnett and Naumann's generalization of
-ownership to friendship~\cite{friends}, which allows object invariants
-to have some dependency on non-owned objects.
-
-The subject-observer pattern has been the focus of a great deal of effort,
-given its prominence in important applications. Simultaneously with our own
-initial formulation, Parkinson gave an example of verifying the
-subject-observer protocol~\cite{parkinson-iwaco-07}. Recently, Parkinson and
-Distefano~\cite{jstar-parkinson-distefano} have implemented a tool to verify
-these programs, and have demonstrated several examples including a verification
-of a subject-observer pattern specified along these lines. The tool includes
-automatic generation of loop invariants. 
-
-The style of invariant in our work and Parkinson's is very similar,
-and subject to similar limitations. Since each subject needs to know
-what its observers are, verifying programs with chains of
-subject-observers is extremely cumbersome. This is especially
-problematic given that GUI programs --- which are one of the primary
-uses of the subject-observer pattern --- rely upon chains of subjects
-and observers. 
-
-The work of Barnett and Naumann is also capable of reasoning about the
-subject-observer pattern, but only if all of the possible observers
-are known at verification.  Leino and Schulte~\cite{boogie-sub-obs}
-made use of Liskov and Wing's concept of history invariants or
-monotonic predicates~\cite{liskov-wing} to give a more modular
-solution. The idea in this work is to require the changes that a
-subject makes to ``increase the truth'' of the observer's predicate
-along some partial order. This is less flexible than the approach we
-took, though perhaps a little easier to use when it is
-applicable. Unfortunately, their work is not applicable for
-event-driven programs such as GUIs, since there is no natural partial
-order on user actions.
-
-More recently, Shaner, Naumann and Leavens~\cite{ShanerLN07} gave a
-``gray-box'' treatment of the subject-observer pattern.  Instead of
-tracking the specifications of the observers in the predicate, they
-give a model program that should approximates the behavior of any
-actual notification method. This works as long as the runtime
-dependencies are known statically enough to include them in the model
-programs --- again, a limitation which is problematic in the case of
-GUIs.
-
-Lest the reader get too depressed, in the following two chapters, I
-will give a solution to the problem of verifying invariants across
-dynamic chains of dependencies.
-
-Pierik, Clarke and de Boer~\cite{creational-invariants} formalize another
-extension to the Boogie framework which they name \emph{creation
-  guards}, specifically to handle flyweights. They consider flyweights
-an instance of a case where object invariants can be invalidated by
-the allocation of new objects, and add guards to their specifications
-to control allocation to the permitted cases. 
+% \section{Related Work}
+% % \vspace{-0.5em}
+% 
+% In his dissertation~\cite{parkinson-thesis}, Parkinson gave as an
+% example a simple iterator protocol, lacking the integration with
+% composites we have exhibited.  Subsequently, we formalized a similar
+% account of iterators~\cite{iterator}, again lacking the integration
+% with composites. Jacobs, Meijer, Piessens and
+% Schulte~\cite{iterators-revisited} extend Boogie with new rules for
+% the coroutine constructs C\# uses to define iterators. Their solution
+% typifies the difficulties ownership-based approaches face with
+% iterators, which arise from the fact that iterators must have access
+% to the private state of a collection but may have differing
+% lifetimes. This work builds on Barnett and Naumann's generalization of
+% ownership to friendship~\cite{friends}, which allows object invariants
+% to have some dependency on non-owned objects.
+% 
+% The subject-observer pattern has been the focus of a great deal of effort,
+% given its prominence in important applications. Simultaneously with our own
+% initial formulation, Parkinson gave an example of verifying the
+% subject-observer protocol~\cite{parkinson-iwaco-07}. Recently, Parkinson and
+% Distefano~\cite{jstar-parkinson-distefano} have implemented a tool to verify
+% these programs, and have demonstrated several examples including a verification
+% of a subject-observer pattern specified along these lines. The tool includes
+% automatic generation of loop invariants. 
+% 
+% The style of invariant in our work and Parkinson's is very similar,
+% and subject to similar limitations. Since each subject needs to know
+% what its observers are, verifying programs with chains of
+% subject-observers is extremely cumbersome. This is especially
+% problematic given that GUI programs --- which are one of the primary
+% uses of the subject-observer pattern --- rely upon chains of subjects
+% and observers. 
+% 
+% The work of Barnett and Naumann is also capable of reasoning about the
+% subject-observer pattern, but only if all of the possible observers
+% are known at verification.  Leino and Schulte~\cite{boogie-sub-obs}
+% made use of Liskov and Wing's concept of history invariants or
+% monotonic predicates~\cite{liskov-wing} to give a more modular
+% solution. The idea in this work is to require the changes that a
+% subject makes to ``increase the truth'' of the observer's predicate
+% along some partial order. This is less flexible than the approach we
+% took, though perhaps a little easier to use when it is
+% applicable. Unfortunately, their work is not applicable for
+% event-driven programs such as GUIs, since there is no natural partial
+% order on user actions.
+% 
+% More recently, Shaner, Naumann and Leavens~\cite{ShanerLN07} gave a
+% ``gray-box'' treatment of the subject-observer pattern.  Instead of
+% tracking the specifications of the observers in the predicate, they
+% give a model program that should approximates the behavior of any
+% actual notification method. This works as long as the runtime
+% dependencies are known statically enough to include them in the model
+% programs --- again, a limitation which is problematic in the case of
+% GUIs.
+% 
+% Lest the reader get too depressed, in the following two chapters, I
+% will give a solution to the problem of verifying invariants across
+% dynamic chains of dependencies.
+% 
+% Pierik, Clarke and de Boer~\cite{creational-invariants} formalize another
+% extension to the Boogie framework which they name \emph{creation
+%   guards}, specifically to handle flyweights. They consider flyweights
+% an instance of a case where object invariants can be invalidated by
+% the allocation of new objects, and add guards to their specifications
+% to control allocation to the permitted cases. 
 
 
 
