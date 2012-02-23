@@ -462,7 +462,7 @@ element.)
   order. Now suppose $(x,y) \in f^{+}$ with $y$ maximal.
 
 Then, $[f|x:y]$ has the same domain as $f$, and $[f|x:y]^+$ is a
-strict partial order such that for all $(u,v) \in D$, $(u,v) \in
+strict partial order such that for all $u,v \in D$, $(u,v) \in
 [f|x:y]^{+}$ with $v$ maximal if and only if $(u,v) \in f^{+}$ with
 $v$ maximal.
 \end{lemma}
@@ -483,7 +483,7 @@ To show that it is irreflexive, assume that $(u, u) \in
 [f|x:y]^{n+1}(u) = u)$.
 
 Now consider whether $x$ is in the sequence. If it is not, then this
-sequence is equal to $(u, f(u), \ldots, f^n(u) = u)$, which is a
+sequence is equal to $(u, f(u), \ldots, f^{n+1}(u) = u)$, which is a
 contradiction, since $f^+$ is irreflexive. If $x$ is in the sequence,
 then we know that either $x$ is the last element, or the
 second-to-last element (since $f(x) = y$, and $y$ is maximal).
@@ -517,7 +517,7 @@ f(u), \ldots, f^k(u)$ is exactly the same as $u, [f|x:y](u), \ldots,
 
   Now, either $x$ occurs in this sequence, or not. Suppose that 
   $x$ does not occur in the sequence -- that is, for every $i \leq k+1$,
-  $[f|x:y]^i(u) \not= y$. Then it follows that this sequence is 
+  $[f|x:y]^i(u) \not= x$. Then it follows that this sequence is 
   the same as $(u, \ldots, f^{k+1}(u) = v)$. Since $[f|x:y]$ and $f$
   have the same domain, it follows that $v$ is maximal in $f$, 
   as well. Hence $(u, v) \in f^+$ with $v$ maximal. 
@@ -631,20 +631,34 @@ if and only if $(u, v) \in (f')^+$ with $v$ maximal.
 \oooo $\letv{(r,c,n)}{\findroot(f(u))}{}$ \\
 \oooo Then $G(D, f', w, \phi) \land (f(u), r) \in f'^* \land r\mbox{ maximal} \land c = w(r) \land c = v$ for some $f'$ \\
 \oooo with the same domain and maximal relationships as $f$\\
+\oooo We know that $(f(u), r) \in f'^*$ and $r$ is maximal \\
+\oooo If $f(u) = r$, then $(f(u), r) \in f^*$ and $r$ is maximal \\
+\oooo If $f(u) \not= r$, then: \\
+\ooooo $(f(u), r) \in f'^+$ and $r$ is maximal \\
+\ooooo Therefore $(f(u), r) \in f^+$ and $r$ is maximal, since \\
+\oooox $f$ and $f'$ have the same domain and maximal relationships \\
+\oooo Therefore $(f(u), r) \in f^*$ and $r$ is maximal \\
+\oooo From line 6, $(f(u), x) \in f^*$ and $x$ maximal \\
+\oooo Therefore $r = x$ \\
+\oooo From line 4, $(u, r) \in f^+$ and $r$ is maximal \\
+\oooo Hence $(u, r) \in f'^+$ and $r$ is maximal, since \\
+\oooox $f$ and $f'$ have the same domain and maximal relationships \\
 \oooo So we know that $r = x$, and that $(u, r) \in f'^*$ \\ 
-\oooo So we know $D, f', w \models \phi$ and $(f')^+$ is a strict partial order and $w$ injective and $\mathit{heap}(D, f', w)$, \\
-\oooo Since we know $r$ remains maximal in $f'$, we know that $(D, f', w) \models \elt{u}{v}$ \\ 
+\oooo So $D, f', w \models \phi$ and $(f')^+$ is a strict partial order and $w$ injective and $\mathit{heap}(D, f', w)$, \\
+\oooo Since we know $r$ remains maximal in $f'$, we know that $(D, f', w) \models \elt{u}{v}$, \\
+\ooox since satisfaction depends only on maximality \\ 
 \oooo Therefore, due to path compression, $[f'|u:r]^+$ is a strict partial order \\
 \oooox with the same maximal relationships and domain as $f'$\\
-\oooo Hence $D, [f'|u:r], w \models \phi$ and $\domain{[f|u:r]} = \domain{f}$ and $(u, r) \in [f'|u:r]^*$ \\
+\oooo Hence $D, [f'|u:r], w \models \phi$ and $\domain{[f|u:r]} = \domain{f}$ and $(u, r) \in [f'|u:r]^*$, \\
+\ooox since satisfaction depends only on maximality \\ 
 \oooo Now we will perform updates to make the physical heap match this logical heap \\ 
 \oooo $\letv{\_}{[u := \Child(r)]}{}$ \\
 \oooo Hence $\mathit{heap}(D, [f'|u:r], w)$, together with the pure formulas above \\
 \oooo $(r,c,n)]$ \\
-\oooo Hence $\exists f''.\;G(D, f'', \phi) \land c = v \land w(r) = c \;\land$ \\
-\oooox $\domain{f} = \domain{f''} \land (u,r) \in f''^{*} \land r\mbox{ maximal} \;\land$ \\
-\oooox $(f,f'')$ have the same maximal relationships. \\
-\ooox (with the choice of $[f'|x:y]$ as the witness for $f''$) \\
+\oooo Choosing as the existential witness $[f'|u:r]$, we get \\
+\oooo Hence $(r, c, n).\; \exists f'.\;G(D, f', w, \phi) \land c = v \land w(r) = c \;\land$ \\
+\oooox $\domain{f} = \domain{f'} \land (u,r) \in f'^{*} \land r\mbox{ maximal} \;\land$ \\
+\oooox $(f,f')$ have the same maximal relationships. \\
 \ooo If $u \not\in \domain{f}$:  \\
 \oooo Then $\mathit{heap}(D,f,w) \implies (u \hookrightarrow \Root(\Some(p), n))$ for some $n$ and $p = w(u)$\\
 \oooo $[\letv{i}{[!u]}{}$ \\
@@ -697,19 +711,22 @@ Then $D \cup \setof{x}, f, [w|x:x] \models \phi \otimes \elt{x}{x}$
 \oox $x$ is maximal (since it is not in the domain of $f$) \\
 \oox $[w|x:x](x) = x$. \\
 \oo Now it remains to be shown that $D, f, [w|x:x] \models \phi$ \\
-\oo We show this by an induction on $\phi$:  \\
+\oo By induction on $\phi$, we will show  \\
+\oox $\forall D, \phi,$ if $x \not\in D$ and $D, f, w \models \phi$ then $D, f, [w|x:x] \models \phi$ \\
 \ooo Case $\phi = I$:\\ 
 \oooo This case is immediate, since $D, f, [w|x:x] \models I$ by definition \\ 
 \ooo Case $\phi = \psi \otimes \theta$: \\    
 \oooo Since $D, f, w, \models \psi \otimes \theta$, there are $D_1, D_2$ so $D_1, f, w \models \psi$ and $D_2, f, w \models \theta$ \\
 \ooox and $D = D_1 \uplus D_2$ \\
+\oooo Since $x \not \in D$, we know $x \not\in D_1$ and $x \not\in D_2$ \\
 \oooo By induction, we know $D_1, f, [w|x:x] \models \psi$ \\ 
 \oooo By induction, we know $D_2, f, [w|x:x] \models \theta$ \\
 \oooo Hence $D, f, [w|x:x] \models \phi$ \\
 \ooo Case $\phi = \elt{u}{v}$ \\
 \oooo So we know $u \in D$ and that $(u,z) \in f^{*}$ and $z$ maximal and $w(z) = v$ for some $z$ \\
 \oooo Since $x \not \in D$, $x \not\in D - \domain{f}$, and so it follows that $[w|x:x](z) = v$ \\
-\oooo Hence $D, f, [w|x:x] \models \elt{u}{v}$ 
+\oooo Hence $D, f, [w|x:x] \models \elt{u}{v}$ \\
+\oo Hence $D, f, [w|x:x] \models \elt{u}{v}$ 
 \end{tabbedproof}
 \end{proof}
 
@@ -727,16 +744,16 @@ The $\newset$ procedure meets the specification in Figure~\ref{union-find:spec}.
 \ooo $\letv{\_}{[r := \Root(\Some(r), 0)]}{}$ \\
 \ooo Now the state is $\mathit{heap}(D,f,w) * r \pointsto \Root(\Some(r), 0)$, plus the pure predicates. \\
 \ooo Since $\mathit{heap}(D,f,w)$ has a pointer for each $l \in D$, it follows that $r \not \in D$. \\
-\ooo Thus, we know that $D' = D \uplus \setof{r}, f, [w|r:r] \models \phi \otimes \elt{r}{r}$ \\ 
+\ooo Thus, we know that $D', f, [w|r:r] \models \phi \otimes \elt{r}{r}$ where $= D \uplus \setof{r}$ \\ 
 \ooo $f^+$ is still a strict partial order which is a subset of $D' \times D'$ \\
-\ooo $f$ has the domain $D' \rightharpoonup D'$ \\
-\ooo $[w|x:x] \in (D' - \domain{f}) \to D'$ \\
+\ooo So $f \in D' \rightharpoonup D'$ \\
+\ooo $[w|r:r] \in (D' - \domain{f}) \to D'$ \\
 \ooo It is clear that $\mathit{heap}(D,f,w) * r \pointsto \Root(\Some(r), 0)$ is \\
-\oox equivalent to $\mathit{heap}(D', f, [w|x:x])$ \\
-\ooo Hence $G(D', f, [w|x:x], \phi \otimes \elt{r}{r})$ \\
+\oox equivalent to $\mathit{heap}(D', f, [w|r:r])$ \\
+\ooo Hence $G(D', f, [w|r:r], \phi \otimes \elt{r}{r})$ \\
 \ooo $r]$ \\
-\ooo Hence $G(D', f, [w|x:x], \phi \otimes \elt{a}{a})$ \\
-\ooo Hence $H(\phi \otimes \elt{a}{a})$ 
+\ooo Hence $a.\; G(D', f, [w|a:a], \phi \otimes \elt{a}{a})$ \\
+\ooo Hence $a.\; H(\phi \otimes \elt{a}{a})$ 
 \end{tabbedproof}
 \end{proof}
 
@@ -758,21 +775,28 @@ and $(x, y) \in f^+$ and $y$ maximal, and $v \not= y$, then it follows that for 
 \begin{enumerate}
 \item Since $v$ is maximal in $f$, it follows that $v \not\in \domain{f}$, and hence $\domain{[f|v:y]} = \domain{f} \uplus \setof{v}$
 
-\item To be a strict partial order, it suffices that there is no $(x,x) \in g^+$. 
+\item To be a strict partial order, it suffices that there is no $(z,z) \in g^+$. 
 \begin{tabbedproof}
-\oo Assume $(x, x) \in g^+$ \\
-\oo Then there is a $k \geq 1$ such that $g^k(x) = x$ \\
-\oo Now, we'll show that $v$ does not occur in the sequence $x, g(x), \ldots, g^k(x)$ \\
-\ooo Suppose there is an $i \leq k$ such that $g^i(x) = v$ \\
-\ooo This is a contradiction, because $v$ is maximal, and we know that $g^{i+1}(x)$ must be defined \\
-\oo Therefore for $i \leq k$, we have $g^i(x) \not= v$.  \\
-\oo Hence we have $g^i(x) = f^i(x)$ \\
-\oo Therefore $x, f(x), \ldots, f^k(x) = x$ shows that $(x, x) \in f^+$ \\
+\oo Assume $(z, z) \in g^+$ \\
+\oo Then there is a $k \geq 1$ such that $g^k(z) = z$ \\
+\oo Now, we'll show that $v$ does not occur in the sequence $z, g(z), \ldots, g^k(z)$ \\
+\oo To do this, we'll first show that $y$ does not occur in the sequence $z, g(z), \ldots, g^k(z)$ \\
+\oo Since $y$ is maximal for $f$ and $v \not= y$, we know $y$ is maximal for $g = [f|v:y]$ \\
+\oo As a result, $y$ can only occur as the last element $g^k(z)$ \\
+\oo But since $g^k(z) = z$ and $z \in \domain{g}$, we know that $y \not= v$, \\
+\ox and so it cannot occur as the last element, either. \\
+\oo As a result, $v$ cannot occur at any $i < k$, since then $g^{i+1}(z) = y$, \\
+\oo and we know this cannot happen \\
+\oo We also know $v$ cannot occur at $i = k$, since $g^k(z) = z = g^0(z)$, and \\
+\oo we know $v$ cannot occur at $i = 0$ \\
+\oo Therefore for $i \leq k$, we have $g^i(z) \not= v$.  \\
+\oo Hence we have $g^i(z) = f^i(z)$ \\
+\oo Therefore $z, f(z), \ldots, f^k(z) = z$ shows that $(z, z) \in f^+$ \\
 \oo But $f^+$ is a strict partial order, which is a contradiction. \\
 \end{tabbedproof}
 
 \item If $(a,b) \in f^*$ with $b$ maximal, either $b \not= v$ and $(a,b) \in g^*$ with $b$ maximal,
-  or $b = v$ and $(a,y) \in g^*$. 
+  or $b = v$ and $(a,y) \in g^*$ with $y$ maximal.
 \begin{tabbedproof}
 \oo Assume $(a,b) \in f^*$ with $b$ maximal. \\
 \ooo Then either $a = b$, or $(a,b) \in f^+$ \\
@@ -787,6 +811,7 @@ and $(x, y) \in f^+$ and $y$ maximal, and $v \not= y$, then it follows that for 
 \oooo Then we have a $k > 0$ such that $f^k(a) = b$ \\
 \oooo Now, either there is an $i \leq k$ such that $f^i(a) = v$, or not. \\
 \oooo Suppose $f^i(a) = v$: \\
+\ooooo Since $v$ is maximal, it is the last element, so $b = v$ \\
 \ooooo Then we know that for all $j < i$, $f^j(a) \not= v$, since $v$ is maximal in $f$ \\
 \ooooo Therefore for all $j \leq i$, $f^j(a) = g^j(a)$ \\
 \ooooo Therefore $g^{i+1}(a) = y$ \\
@@ -820,7 +845,7 @@ This proof follows by induction on the structure of $\phi$.
 \ooo By the definition of satisfaction, $D, g, w' \models  R([z/w(v), z/w(y)], \psi)\otimes R([w(v)/w(y)], \theta)$ \\ 
 \ooo By the definition of $R$, we have $D, g, w' \models  R([z/w(v), z/w(y)], \phi)$  \\
 \oo Case $\phi = \elt{a}{b}$: \\
-\ooo We know that $a \in D$, $(a,c) \in f^*$ with $c$ maximal, and $w(c) = b$ \\
+\ooo We know that $a \in D$, $(a,c) \in f^*$ with $c$ maximal, and $w(c) = b$ with $v$ maximal \\
 \ooo Therefore either $c \not= y$ and $(a,c) \in g^*$ with $c$ maximal or $c = y$ and $(a, v) \in g^*$ \\
 \ooo Suppose $c \not= y$: \\
 \oooo Since $w$ is injective, we know that $w(c) \not= w(y)$. Hence $[z/w(y)]w(c) = w(c)$ \\
@@ -841,7 +866,7 @@ This proof follows by induction on the structure of $\phi$.
 \ooo Suppose $c = y$: \\
 \oooo Then, $b = w(c) = w(y)$, so that $[z/w(v), z/w(y)]b = z$\\ 
 \oooo So $R([z/w(v), z/w(y)], \elt{a}{b}) = \elt{a}{z}$ \\
-\oooo Furthermore, we know that $(a, v) \in g^*$ and and $v$ maximal and $w'(v) = z$ \\
+\oooo Furthermore, we know that $(a, v) \in g^*$ and $v$ maximal and $w'(v) = z$ \\
 \oooo So $D, g, w' \models \elt{a}{z}$ \\
 \oooo So $D, g, w' \models R([z/w(v),z/w(y)], \elt{a}{b})$ 
 \end{tabbedproof}
@@ -859,22 +884,22 @@ The $\union$ function meets the specification in Figure~\ref{union-find:spec}.
 \ooo Now consider the body of $\union(x,u)$ \\
 \ooo $[\letv{(r,y',m)}{\findroot(x)}{}$ \\
 \ooo So we have $f'$ such that $G(D, f', w, \phi)$ and \\
-\ooox  $(x, r) \in f'^*$ and $r$ maximal \\
-\ooox  $f$ and $f'$ have the same maximal relationships \\
+\ooox  $(x, r) \in f'^*$ and $r$ maximal in $f'$ \\
+\ooox  $f$ and $f'$ have the same maximal relationships and domain \\
 \ooox  $y = w(r)$ \\
 \ooox  $y = y'$ \\
 \ooo Furthermore $D, f', w \models \elt{u}{v}$, so \\
 \ooo $\letv{(s,v',n)}{\findroot(u)}{}$ \\
 \ooo So we have $f''$ such that $G(D, f'', w, \phi)$ and \\
-\ooox  $(u, s) \in f''^*$ and $s$ maximal \\
-\ooox  $f'$ and $f''$ have the same maximal relationships \\
+\ooox  $(u, s) \in f''^*$ and $s$ maximal in $f''$ \\
+\ooox  $f'$ and $f''$ have the same maximal relationships and domain \\
 \ooox  $v = w(s)$ \\
 \ooox  $v = v'$ \\
 \ooo So we can substitute $y$ for $y'$ and $v$ for $v'$ \\
 \ooo Since $f$ and $f'$ have the same maximal relationships, and \\
 \oox since $f'$ and $f''$ have the same maximal relationships,  \\
 \oox we know that $f$ and $f''$ have the same maximal relationships \\
-\ooo Since $(x,r) \in f^*$ and $r$ maximal in $f$, we know $(x, r) \in f''^*$ and $r$ maximal in $f''$ \\
+\ooo Since $(x,r) \in f'^*$ and $r$ maximal in $f'$, we know $(x, r) \in f''^*$ and $r$ maximal in $f''$ \\
 \ooo Now case analyze on whether $r = s$: \\
 \ooo If $r = s$: \\
 \oooo Then we can simplify the remaining program to $\unit$ \\
