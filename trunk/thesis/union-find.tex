@@ -640,7 +640,7 @@ if and only if $(u, v) \in (f')^+$ with $v$ maximal.
 \oooo Therefore $(f(u), r) \in f^*$ and $r$ is maximal \\
 \oooo From line 6, $(f(u), x) \in f^*$ and $x$ maximal \\
 \oooo Therefore $r = x$ \\
-\oooo From line 4, $(u, r) \in f^+$ and $r$ is maximal \\
+\oooo From line 19, $(u, r) \in f^+$ and $r$ is maximal \\
 \oooo Hence $(u, r) \in f'^+$ and $r$ is maximal, since \\
 \oooox $f$ and $f'$ have the same domain and maximal relationships \\
 \oooo So we know that $r = x$, and that $(u, r) \in f'^*$ \\ 
@@ -649,7 +649,7 @@ if and only if $(u, v) \in (f')^+$ with $v$ maximal.
 \ooox since satisfaction depends only on maximality \\ 
 \oooo Therefore, due to path compression, $[f'|u:r]^+$ is a strict partial order \\
 \oooox with the same maximal relationships and domain as $f'$\\
-\oooo Hence $D, [f'|u:r], w \models \phi$ and $\domain{[f|u:r]} = \domain{f}$ and $(u, r) \in [f'|u:r]^*$, \\
+\oooo Hence $D, [f'|u:r], w \models \phi$ and $\domain{[f'|u:r]} = \domain{f}$ and $(u, r) \in [f'|u:r]^*$, \\
 \ooox since satisfaction depends only on maximality \\ 
 \oooo Now we will perform updates to make the physical heap match this logical heap \\ 
 \oooo $\letv{\_}{[u := \Child(r)]}{}$ \\
@@ -667,9 +667,9 @@ if and only if $(u, v) \in (f')^+$ with $v$ maximal.
 \oooo Note $(u, u) \in f^*$ and $u$ maximal, and that $p = w(u)$, and that $\domain{f} = \domain{f}$ \\
 \oooo The fact that $D, f, w \models \elt{u}{v}$ implies $v = w(u)$\\ 
 \oooo And obviously $f$ has the same maximal relationships as $f$ \\
-\oooo Hence $\exists f''.\;G(D, f'', \phi) \land c = v \land w(r) = c \;\land$ \\
-\oooox $\domain{f} = \domain{f'} \land (u,r) \in f''^{*} \land r\mbox{ maximal} \;\land$ \\
-\oooox $(f,f')$ have the same maximal relationships. \\
+\oooo Hence $(r, c n).\; \exists f''.\;G(D, f'', w, \phi) \land c = v \land w(r) = c \;\land$ \\
+\oooox $\domain{f} = \domain{f''} \land (u,r) \in f''^{*} \land r\mbox{ maximal} \;\land$ \\
+\oooox $(f,f'')$ have the same maximal relationships. \\
 \oooo (with the choice of $f$ as witness for $f''$) \\
 \end{tabbedproof}
 \end{proof}
@@ -744,7 +744,7 @@ The $\newset$ procedure meets the specification in Figure~\ref{union-find:spec}.
 \ooo $\letv{\_}{[r := \Root(\Some(r), 0)]}{}$ \\
 \ooo Now the state is $\mathit{heap}(D,f,w) * r \pointsto \Root(\Some(r), 0)$, plus the pure predicates. \\
 \ooo Since $\mathit{heap}(D,f,w)$ has a pointer for each $l \in D$, it follows that $r \not \in D$. \\
-\ooo Thus, we know that $D', f, [w|r:r] \models \phi \otimes \elt{r}{r}$ where $= D \uplus \setof{r}$ \\ 
+\ooo Thus, we know that $D', f, [w|r:r] \models \phi \otimes \elt{r}{r}$ where $D' = D \uplus \setof{r}$ \\ 
 \ooo $f^+$ is still a strict partial order which is a subset of $D' \times D'$ \\
 \ooo So $f \in D' \rightharpoonup D'$ \\
 \ooo $[w|r:r] \in (D' - \domain{f}) \to D'$ \\
@@ -783,7 +783,7 @@ and $(x, y) \in f^+$ and $y$ maximal, and $v \not= y$, then it follows that for 
 \oo To do this, we'll first show that $y$ does not occur in the sequence $z, g(z), \ldots, g^k(z)$ \\
 \oo Since $y$ is maximal for $f$ and $v \not= y$, we know $y$ is maximal for $g = [f|v:y]$ \\
 \oo As a result, $y$ can only occur as the last element $g^k(z)$ \\
-\oo But since $g^k(z) = z$ and $z \in \domain{g}$, we know that $y \not= v$, \\
+\oo But since $g^k(z) = z$ and $z \in \domain{g}$, we know that $y \not= g^k(z)$, \\
 \ox and so it cannot occur as the last element, either. \\
 \oo As a result, $v$ cannot occur at any $i < k$, since then $g^{i+1}(z) = y$, \\
 \oo and we know this cannot happen \\
@@ -845,8 +845,9 @@ This proof follows by induction on the structure of $\phi$.
 \ooo By the definition of satisfaction, $D, g, w' \models  R([z/w(v), z/w(y)], \psi)\otimes R([w(v)/w(y)], \theta)$ \\ 
 \ooo By the definition of $R$, we have $D, g, w' \models  R([z/w(v), z/w(y)], \phi)$  \\
 \oo Case $\phi = \elt{a}{b}$: \\
-\ooo We know that $a \in D$, $(a,c) \in f^*$ with $c$ maximal, and $w(c) = b$ with $v$ maximal \\
-\ooo Therefore either $c \not= y$ and $(a,c) \in g^*$ with $c$ maximal or $c = y$ and $(a, v) \in g^*$ \\
+\ooo We know that $a \in D$, $(a,c) \in f^*$ with $c$ maximal, and $w(c) = b$ \\
+\ooo Therefore either $c \not= y$ and $(a,c) \in g^*$ with $c$ maximal, or \\
+\oox $c = y$ and $(a, v) \in g^*$ with $v$ maximal \\
 \ooo Suppose $c \not= y$: \\
 \oooo Since $w$ is injective, we know that $w(c) \not= w(y)$. Hence $[z/w(y)]w(c) = w(c)$ \\
 \oooo Consider whether $c$ is $v$.  \\
