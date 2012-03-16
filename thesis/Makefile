@@ -3,7 +3,7 @@ all: thesis
 clean:
 	rm *.aux *.bbl *.blg *.log *.pdf 
 
-.PHONY: all clean upload
+.PHONY: all clean upload version
 
 thesis: 
 	pdflatex thesis.tex
@@ -11,8 +11,10 @@ thesis:
 	pdflatex thesis
 	pdflatex thesis
 
-upload: thesis
+version:
 	svn info thesis.tex -r HEAD | grep Revision > version.txt
+
+upload: version thesis
 	svn commit -m 'making version for upload' 
 	scp thesis.pdf neelk@linux.gp.cs.cmu.edu:/afs/cs/user/neelk/www/thesis.pdf
 	# scp thesis.pdf /www/sws-homepage/neelk/thesis.pdf

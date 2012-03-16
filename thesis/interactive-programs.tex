@@ -665,10 +665,22 @@ It is the case that $(d,c) \in R^*_{H|_X}$ if and only if $(d,c) \in R^*_H \land
 \oo $\Rightarrow$: \\
 \ooo Assume $(d,c) \in R^*_{H|_X}$ \\
 \ooo Therefore we have a sequence $(d, \ldots, c)$ in $R_{H|_X}$ \\
-\ooo Each consecutive pair $(c_i, c_{i+1})$ satisfies $c_{i+1} \in \mathit{reads}(h|_X(c_i))$ \\
-\ooo We know $\mathit{reads}(h|_X(c_i) = \IfThenElse{c' \in U^H_X}{\emptyset}{\mathit{reads}(h(c_i))}$ \\
-\ooo Hence each $c_{i+1} \not\in U^H_X$ and $(c_i, c_{i+1}) \in R_H$ \\ 
-\ooo Hence $(d,c) \in R^*_H$ and $d \not \in U^H_X$ and $c \not \in U^H_X$ \\ 
+\ooo Now, we proceed by induction on the length of the sequence. \\
+\ooo Case $n = 0$: \\
+\oooo Then $c = d \in V_{H|_X}$.\\
+\oooo Since $\mathit{value}(h|_{X}(c')) = \IfThenElse{c' \in U^H_X}{\None}{\mathit{value}(h(c'))}$, we know $c \not\in U^H_X$ \\
+\ooo Case $n = k+1$: \\
+\oooo Hence we have a sequence $(d, \ldots, c_k, c) \in R_{H|_X}$, such that \\
+\oooo $(d, c_k) \in R^*_H$ and $d \not \in U^H_X$ and $c_k \not \in U^H_x$ \\ 
+\oooo We know $c \in \mathit{reads}(h|_X(c_k)) = \IfThenElse{c_k \in U^H_X}{\emptyset}{\mathit{reads}(h(c_k))}$ \\
+\oooo Since $c_k \not \in U^H_X$, we know $c \in \mathit{reads}(h(c_k))$, so $(c_k, c) \in R_H$ \\
+\oooo Hence $(d, c) \in R^*_H$ \\
+\oooo We know $c \not \in U^H_X$, since if it were then $c_k \in U^H_X$, which is contradictory \\
+% 
+% \ooo Each consecutive pair $(c_i, c_{i+1})$ satisfies $c_{i+1} \in \mathit{reads}(h|_X(c_i))$ \\
+% \ooo We know $\mathit{reads}(h|_X(c_i) = \IfThenElse{c' \in U^H_X}{\emptyset}{\mathit{reads}(h(c_i))}$ \\
+% \ooo Hence each $c_{i+1} \not\in U^H_X$ and $(c_i, c_{i+1}) \in R_H$ \\ 
+% \ooo Hence $(d,c) \in R^*_H$ and $d \not \in U^H_X$ and $c \not \in U^H_X$ \\ 
 \oo $\Leftarrow$: \\
 \ooo Asssume $(d,c) \in R^*_H \land c \not\in U^H_X \land d \not\in U^H_X$. \\
 \ooo So we have a sequence $(d, \ldots, c)$ with each pair in $R_H$ \\
