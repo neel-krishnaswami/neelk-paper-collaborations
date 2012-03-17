@@ -107,9 +107,10 @@ cells, each of which contain program expressions whose evaluation may
 refer to other cells. When a cell is read, the expression within the
 cell is evaluated, possibly triggering the evaluation of other cells
 in a cascade. Furthermore, each cell memoizes its expression, so that
-repeated reads won't trigger re-evaluation, and maintains a set of
-dependencies so that when the code within a cell is changed, it and
-everything that depends on it invalidates the memoized value.
+repeated reads won't trigger re-evaluation. Each cell also maintains a
+set of dependencies, so that if its code is changed, it and its
+transitively reachable dependencies all invalidate their memoized
+values.
 
 \subsection{Implementing Notification Networks}
 
@@ -117,19 +118,19 @@ everything that depends on it invalidates the memoized value.
 \mbox{}
 \begin{specification}
 \nextline $\codetype{\alpha} = \monad{(\alpha \times \cellset)}$ \nextline[1em]
-$\celltype{\alpha} = \{$\=$code: \reftype{\codetype{\alpha}};$ \nextline
-                   \>$value: \reftype{\opttype{\alpha}};$ \nextline
+$\celltype{\alpha} = \{$\=$code: \reftype{(\codetype{\alpha})};$ \nextline
+                   \>$value: \reftype{(\opttype{\;\alpha})};$ \nextline
                    \>$reads: \reftype{\cellset};$ \nextline
                    \>$obs:   \reftype{\cellset};$ \nextline
                    \>$id:    \N\}$ \nextline[1em]
 
-$ecell = \exists \alpha:\star.\; \celltype{\alpha}$ \nextline[1em]
+$\ecell = \exists \alpha:\star.\; \celltype{\alpha}$ \nextline[1em]
 
 $\ctext{return} : \forall \alpha:\star.\; \alpha \to \codetype{\alpha}$ \nextline
 $\ctext{return}\;x = \comp{\pair{x}{\ctext{emptyset}}}$ \nextline[1em]
 
 $\ctext{bind} : \forall \alpha,\beta:\star.\; \codetype{\alpha} \to (\alpha \to \codetype{\beta}) \to \codetype{\beta}$ \nextline
-$\ctext{bind}\;e\;f = [$\=$\letv{(v,r_1)}{e}{}$ \nextline
+$\ctext{bind}\;\cmd\;f = [$\=$\letv{(v,r_1)}{\cmd}{}$ \nextline
                         \>$\letv{(v',r_2)}{f\;v}{}$ \nextline
                         \>$\;\pair{v'}{\ctext{union}\;r_1\;r_2}]$\nextline[1em]
 
@@ -137,27 +138,27 @@ $\ctext{read} : \forall \alpha:\star.\; \celltype{\alpha} \to \codetype{\alpha}$
 $\ctext{read}\;a = [$\=$\letv{o}{\comp{!a.value}}{}$ \nextline
                      \>$\ctext{run}\;\ctext{case}(o,$ \nextline
                      \>\qquad\= $\ctext{Some}\;v \to \comp{\pair{v}{\ctext{singleton}\;a}},$ \nextline
-                     \>      \> $\ctext{None} \to [$\=$\letv{exp}{\comp{!a.code}}{}$ \nextline
-                     \>      \>                     \>$\letv{(v,r)}{exp}{}$ \nextline
-                     \>      \>                     \>$\letv{\_}{\comp{a.value := v}}{}$\nextline
+                     \>      \> $\ctext{None} \to [$\=$\letv{\cmd}{\comp{!a.code}}{}$ \nextline
+                     \>      \>                     \>$\letv{(v,r)}{\cmd}{}$ \nextline
+                     \>      \>                     \>$\letv{\_}{\comp{a.value := \Some(v)}}{}$\nextline
                      \>      \>                     \>$\letv{\_}{\comp{a.reads := r}}{}$ \nextline
-                     \>      \>                     \>$\letv{\_}{\ctext{iterset}\;(\ctext{add\_observer}\;a)\;r}{}$ \nextline
-                     \>      \>                     \>$\;\pair{v}{\ctext{singleton}\;a}])$ \nextline[1em]
+                     \>      \>                     \>$\letv{\_}{\ctext{iterset}\;(\ctext{add\_observer}\;\pack{\alpha}{a})\;r}{}$ \nextline
+                     \>      \>                     \>$\;\pair{v}{\ctext{singleton}\;\pack{\alpha}{a}}])]$ \nextline[1em]
 
 $\getref : \forall \alpha : \reftype{\alpha} \to \codetype{\alpha}$ \nextline
 $\getref r = \comp{\letv{v}{\comp{!r}}{\pair{v}{\ctext{emptyset}}}}$ \nextline[1em]
 
 $\setref : \forall \alpha : \reftype{\alpha} \to \alpha \to \codetype{\unittype}$ \nextline
-$\setref r\;v = \comp{\letv{dummy}{\comp{r := v}}{\pair{\unit}{\ctext{emptyset}}}}$ \nextline[1em]
+$\setref r\;v = \comp{\letv{\_}{\comp{r := v}}{\pair{\unit}{\ctext{emptyset}}}}$ \nextline[1em]
 
 $\newcell : \forall \alpha:\star.\; \codetype{\alpha} \to \monad{\celltype{\alpha}}$ \nextline
-$\newcell\;code = [$\=$\letv{id}{!counter}{}$ \nextline
-                                   \>$\letv{\_}{\comp{counter := n + 1}}{}$ \nextline
-                                   \>$\letv{code}{\newref{\codetype{\alpha}}{code}}{}$ \nextline
-                                   \>$\letv{value}{\newref{\opttype{\alpha}}{\ctext{None}}}{}$ \nextline
-                                   \>$\letv{reads}{\newref{\cellset}{\ctext{emptyset}}}{}$ \nextline
-                                   \>$\letv{obs}{\newref{\cellset}{\ctext{emptyset}}}{}$ \nextline
-                                   \>$\; (code, value, reads, obs, id)]$ 
+$\newcell\;\cmd = [$\=$\letv{id}{!counter}{}$ \nextline
+                    \>$\letv{\_}{\comp{counter := id + 1}}{}$ \nextline
+                    \>$\letv{code}{\newref{\codetype{\alpha}}{\cmd}}{}$ \nextline
+                    \>$\letv{value}{\newref{\opttype{\;\alpha}}{\ctext{None}}}{}$ \nextline
+                    \>$\letv{reads}{\newref{\cellset}{\ctext{emptyset}}}{}$ \nextline
+                    \>$\letv{obs}{\newref{\cellset}{\ctext{emptyset}}}{}$ \nextline
+                    \>$\; (code, value, reads, obs, id)]$ 
 \end{specification}
 \caption{Implementation of Notification Networks}
 \label{notification-implementation}
@@ -168,11 +169,11 @@ $\newcell\;code = [$\=$\letv{id}{!counter}{}$ \nextline
 \begin{specification}
 \nextline
 $\updatecell : \forall \alpha:\star.\; \celltype{\alpha} \to \codetype{\alpha} \to \monad{\unittype}$\nextline
-$\updatecell\;\alpha\;a\;exp = 
-     [$\=$\letv{\_}{\ctext{mark\_unready}\;\pack{\alpha}{a}}{}$ \nextline
-       \>$a.code := exp]$ \nextline[1em]
+$\updatecell\;\alpha\;\mathit{cell}\;\cmd = 
+     [$\=$\letv{\_}{\ctext{mark\_unready}\;\pack{\alpha}{\mathit{cell}}}{}$ \nextline
+       \>$\mathit{cell}.code := \cmd]$ \nextline[1em]
 
-$\ctext{mark\_unready} : ecell \to \monad{\unittype}$ \nextline
+$\ctext{mark\_unready} : \ecell \to \monad{\unittype}$ \nextline
 $\ctext{mark\_unready}\;cell =\; $\=$\ctext{unpack}(\alpha, a) = cell\; \ctext{in}$\nextline
 \>  $[$\=$\letv{os}{\comp{!a.obs}}{}$ \nextline
 \>     \>$\letv{rs}{\comp{!a.reads}}{}$ \nextline
@@ -182,14 +183,14 @@ $\ctext{mark\_unready}\;cell =\; $\=$\ctext{unpack}(\alpha, a) = cell\; \ctext{i
 \>     \>$\letv{\_}{\comp{a.reads := \ctext{emptyset}}}{}$ \nextline
 \>     \>$a.obs   := \ctext{emptyset}]$ 
 \nextline[1em]
-$\ctext{add\_observer} : \forall \alpha:\star.\; \celltype{\alpha} \to \mathit{ecell} \to \monad{1}$ \nextline
+$\ctext{add\_observer} : \ecell \to \ecell \to \monad{1}$ \nextline
 $\ctext{add\_observer} \;o \;\pack{\beta}{c} = [$\=$\letv{os}{[!(c.\mathit{obs})]}{}$ \nextline
-                                             \>$\letv{os}{[\ctext{addset}\;os\;\pack{\alpha}{o}]}{}$ \nextline
-                                             \>$c.\mathit{obs} := os]$
+                                                  \>$\letv{os}{[\ctext{addset}\;os\;o]}{}$ \nextline
+                                                  \>$c.\mathit{obs} := os]$
 \nextline[1em]
-$\ctext{remove\_obs} : \forall \alpha:\star.\; \celltype{\alpha} \to \mathit{ecell} \to \monad{1}$ \nextline
+$\ctext{remove\_obs} : \ecell \to \ecell \to \monad{1}$ \nextline
 $\ctext{remove\_obs} \;o \;\pack{\beta}{c} = [$\=$\letv{os}{[!(c.\mathit{obs})]}{}$ \nextline
-                                             \>$\letv{os}{[\ctext{removeset}\;os\;\pack{\alpha}{o}]}{}$ \nextline
+                                             \>$\letv{os}{[\ctext{removeset}\;os\;o]}{}$ \nextline
                                              \>$c.\mathit{obs} := os]$
 
 \end{specification}
@@ -202,21 +203,21 @@ Figure~\ref{notification-implementation} and
 Figure~\ref{notification-implementation-update}. First, we'll describe
 the interface, and then discuss its implementation.
 
-The interface exposes two basic abstract data types, $\ctext{cell}$
+The interface exposes two basic abstract data type constructors, $\ctext{cell}$
 and $\ctext{code}$.
 
-The type $\celltype{\alpha}$ is the type of dynamic data values. A cell
-contains a reference to a piece of code, a possible memoized value,
-plus enough information to correctly invalidate its memoized value
-when the cell's dependencies change. We can create a new cell by
-calling $\newcell e$, which returns a brand new cell with the
-code expression $e$ inside it. We can also modify a cell with 
-the command $\updatecell\;cell\;exp$, which modifies the cell
-$cell$ by installing the new expression $exp$ in it. 
+The type $\celltype{\alpha}$ is the type of dynamic data values. A
+cell contains a reference to a piece of code, a possible memoized
+value, and enough information to correctly invalidate its memoized
+value when the cell's dependencies change. We can create a new cell by
+calling $\newcell \cmd$, which returns a brand new cell with the code
+expression $\cmd$ inside it. We can also modify a cell with the
+command $\updatecell\;cell\;\cmd$, which modifies the cell $cell$ by
+installing the new expression $\cmd$ in it.
 
 The type $\codetype{\alpha}$ is a monadic type, representing the type of
 computations that can read cells. It supports the usual operations
-$\return e$ and $\bind e\; (\semfun{x}{e'})$, which embed a pure value
+$\return e$ and $\bind \cmd\; (\semfun{x}{e'})$, which embed a pure value
 into the $\ctext{code}$ type and implement sequential composition,
 respectively. In addition, the primitive operations on this monad
 include reading a cell with the $\readcell cell$ function call, and
@@ -224,13 +225,14 @@ reading and modifying local state with the $\getref r$ and $\setref
 r\;v$ operations.
 
 The difference between $\readcell$ and $\getref$ or $\setref$ is that
-the first operation reads a cell, possibly furthere executing the code
+the first operation reads a cell, possibly further executing the code
 in that cell. In contrast, $\getref$ and $\setref$ are just the
 operations to update primitive pointers, lifted to live within the
 $\codetype{\alpha}$ monad.
  
 The actual implementation is also given in
-Figure~\ref{notification-implementation}. The abstract type of code is
+Figures~\ref{notification-implementation} and~\ref{notification-implementation-update}. 
+The abstract type of code is
 implemented using the underlying monad of imperative commands, so that
 $\codetype{\alpha}$ is implemented with the type $\monad{(\alpha
   \times \cellset)}$.  The intuition is that when we evaluate a term
@@ -265,7 +267,7 @@ equality, which is needed for dependency management.
 
 The $\return$ operation for the library simply returns its argument
 value and the empty set, since it doesn't read any cells. Likewise,
-$\bind e\;f$ will evaluate the first argument and pass the returned
+$\bind \cmd\;f$ will evaluate the first argument and pass the returned
 value to the function $f$. It will return the function's return value,
 together with the union of the two read sets. $\getref r$ and $\setref
 r\;v$ simply read and update the reference, and return empty read
@@ -289,9 +291,9 @@ inside of a code expression to find its ``free cells'', and so we rely
 upon the invariant that a code expression will return every cell it
 read, in addition to its return value.
 
-Further interesting things happen with the $\newcell\;cmd$
+Further interesting things happen with the $\newcell\;\cmd$
 operation.  It creates a new cell value, setting the code field with
-the argument $cmd$, and generating an id by dereferencing and
+the argument $\cmd$, and generating an id by dereferencing and
 incrementing the variable $counter$. The $counter$ variable occurs
 freely in this definition, because it is a piece of state global to
 this module, and must be initialized by whatever initialization
@@ -299,8 +301,8 @@ routine first constructs the whole module as an existential package.
 Since $counter$ is otherwise private, we can generate unique
 identifiers by incrementing it as we create new cells. 
 
-Finally, the $\updatecell\;cell\;cmd$ operation updates a cell
-$cell$ with a new code expression $cmd$. (As an aside, it's worth
+Finally, the $\updatecell\;cell\;\cmd$ operation updates a cell
+$cell$ with a new code expression $\cmd$. (As an aside, it's worth
 noting that this is a genuine, unavoidable, use of higher-order store:
 we make use of pointers to code, including the ability to dynamically
 modify them.) Once we modify a cell, any memoized value it has is no
@@ -383,7 +385,7 @@ syntactic descriptions of the state of part of the cell heap. These
 syntactic expressions are given by the following grammar:
 \begin{displaymath}
   \begin{array}{lcl}
-    \phi & ::= & I \bnfalt \phi \otimes \psi \bnfalt \cellpos{a}{e}{v}{r} \bnfalt \cellneg{a}{e}\\
+    \phi & ::= & I \bnfalt \phi \otimes \psi \bnfalt \cellpos{a}{\cmd}{v}{r} \bnfalt \cellneg{a}{\cmd}\\
          &  |  & \localref{r}{v} 
   \end{array}
 \end{displaymath}
@@ -396,18 +398,18 @@ $\otimes$, and take $I$ to be the unit of this binary operator.
 
 The atomic form $\localref{r}{v}$ says that $r$ is a piece of local
 state owned by the network, currently with value $v$. There are two
-atomic forms representing cells. $\cellneg{a}{e}$ says that $a$ is a
-cell with code $e$, which is unready to deliver a value --- it needs
-to be re-evaluated before it can yield a value. $\cellpos{a}{e}{v}{r}$
-says that $a$ is a cell with code $e$ that will deliver the value $v$,
+atomic forms representing cells. $\cellneg{a}{\cmd}$ says that $a$ is a
+cell with code $\cmd$, which is unready to deliver a value --- it needs
+to be re-evaluated before it can yield a value. $\cellpos{a}{\cmd}{v}{r}$
+says that $a$ is a cell with code $\cmd$ that will deliver the value $v$,
 under the condition that all the cells in its read set $r$ are
 themselves ready. If anything it reads is known to be unready, then it
-is unready itself. (We will sometimes write $\celleither{a}{e}$ when
+is unready itself. (We will sometimes write $\celleither{a}{\cmd}$ when
 we do not care whether $a$ is ready or not.)
 
 First, notice the must/may flavor of this reading. The formula
-$\cellneg{a}{e}$ says that $a$ \emph{must} be unready.  The formula
-$\cellpos{a}{e}{v}{r}$ says that $a$ \emph{may} have be ready,
+$\cellneg{a}{\cmd}$ says that $a$ \emph{must} be unready.  The formula
+$\cellpos{a}{\cmd}{v}{r}$ says that $a$ \emph{may} have be ready,
 conditional on the readiness of the elements of its read set
 $r$. Second, notice that the backwards dependencies are entirely
 missing from these formulas. We have simply left out the other half of
@@ -493,11 +495,11 @@ explicitly, since its failure would falsify the precondition.
 \begin{figure}
 \mbox{}
 \begin{tabbing}
-$CellHeap = \Sigma$\=$ D \in \powersetfin{ecell}.$ \\
+$CellHeap = \Sigma$\=$ D \in \powersetfin{\ecell}.$ \\
                \>$(\Pi (\pack{\alpha}{\_}) \in D. ($\=${\codetype{\alpha}} \;\times$
-                                         ${\opttype{\alpha}} \;\times$ 
-                                         ${\powersetfin{ecell}} \;\times$ 
-                                         ${\powersetfin{ecell}} \;\times$ 
+                                         ${\opttype{\;\alpha}} \;\times$ 
+                                         ${\powersetfin{\ecell}} \;\times$ 
+                                         ${\powersetfin{\ecell}} \;\times$ 
                                          $\N)$ \\[1em]
        
 
@@ -511,8 +513,9 @@ $V_{(D, h)} = \comprehend{c \in D}{\exists v.\; value(h(c)) = \ctext{Some}(v)}$ 
 $R_{(D, h)} = \comprehend{(c,c') \in D}{ c' \in reads(h(c)) }$ \\
 $O_{(D, h)} = \comprehend{(c,c') \in D}{ c' \in obs(h(c)) }$ \\[1em]
 
-$unique(D,h) = \exists$\=$i : Fin(|D|) \to D.$\\
-                       \>$i \circ (identity \circ h) = id \; \land (identity \circ h) \circ i = id$ \\[1em]
+$\mathit{Fin}(n) = \comprehend{ i \in \N }{ i < n }$ \\[1em]
+
+$unique(D,h) = \exists$\=$i : Fin(|D|) \to D.\; i \circ (identity \circ h) = id \; \land (identity \circ h) \circ i = id$ \\[1em]
 
 $\satisfies{(D,h)}{\phi} = (D,h), D \models \phi$ \\[1em]
 
@@ -521,8 +524,8 @@ $H, D \models I$                            \>$\iff \top$ \\
 $H, D \models \phi \otimes \psi$            \>$\iff \exists D_1, D_2.\;$\=$D = D_1 \uplus D_2 
                                                       \land H, D_1 \models \phi
                                                       \land H, D_2 \models \psi$ \\
-$H, D \models \cellneg{a}{e}$               \>$\iff a \in D \land code(h(a)) = e \land a \not \in V_H$ \\
-$H, D \models \cellpos{a}{e}{v}{r}$         \>$\iff $\=$ a \in D \land code(h(a)) = e \;\land$ \\
+$H, D \models \cellneg{a}{\cmd}$               \>$\iff a \in D \land code(h(a)) = \cmd \land a \not \in V_H$ \\
+$H, D \models \cellpos{a}{\cmd}{v}{r}$         \>$\iff $\=$ a \in D \land code(h(a)) = \cmd \;\land$ \\
 \>      \>$\mathrm{if}\;r \subseteq V_H$ \\
 \>      \>$\mathrm{then}\;value(h(a)) = \ctext{Some}\;v \land reads(h(a)) = r$ \\
 \>      \>$\mathrm{else}\;a \not\in V_H$\\[1em]
@@ -541,8 +544,8 @@ $heap(D,h) = $ \\
 
 $\mathit{refs}(I) \qquad\qquad\qquad$\=$= \emp$ \\
 $\mathit{refs}(\phi \otimes \psi) $\>$= \mathit{refs}(\phi) * \mathit{refs}(\psi)$ \\
-$\mathit{refs}(\cellneg{c}{e}) $\>$= \emp$ \\
-$\mathit{refs}(\cellpos{c}{e}{v}{r}) $\>$= \emp$ \\
+$\mathit{refs}(\cellneg{c}{\cmd}) $\>$= \emp$ \\
+$\mathit{refs}(\cellpos{c}{\cmd}{v}{r}) $\>$= \emp$ \\
 $\mathit{refs}(\localref{r}{v}) $\>$= r \pointsto v$ \\
 \end{tabbing}
 
@@ -601,18 +604,18 @@ We will now prove the soundness of the following triple specifying
 $\updatecell$.
 
 \begin{prop}{(Update Rule)}
-For all cells $o$ and code expressions $e$ and $e'$, the following
+For all cells $o$ and code expressions $\cmd$ and $\cmd'$, the following
 triple is provable: 
 
 \begin{tabbing}
-$\forall \psi:\formula.\; $\=$\setof{G(\celleither{o}{e} \otimes \psi)}$ \\
-                           \>$\runcmd {\updatecell\;o\;e}$ \\
-                           \>$\setof{a:1.\; G(\cellneg{o}{e} \otimes \psi)}$
+$\forall \psi:\formula.\; $\=$\setof{G(\celleither{o}{\cmd'} \otimes \psi)}$ \\
+                           \>$\run {\updatecell\;o\;\cmd}$ \\
+                           \>$\setof{a:1.\; G(\cellneg{o}{\cmd} \otimes \psi)}$
 \end{tabbing}
 \end{prop}
 
 \textbf{Proof Strategy.} The key to this proof is the conditional
-interpretation of the $\cellpos{c}{e}{v}{r}$ formula. When we evaluate
+interpretation of the $\cellpos{c}{\cmd}{v}{r}$ formula. When we evaluate
 the $\updatecell$ command, we recursively find every cell which
 depends on $o$, and modify it to be unready.
 
@@ -684,15 +687,29 @@ It is the case that $(d,c) \in R^*_{H|_X}$ if and only if $(d,c) \in R^*_H \land
 \oo $\Leftarrow$: \\
 \ooo Asssume $(d,c) \in R^*_H \land c \not\in U^H_X \land d \not\in U^H_X$. \\
 \ooo So we have a sequence $(d, \ldots, c)$ with each pair in $R_H$ \\
-\ooo Suppose an intermediate element $c_i$ between $d$ and $c$ is in $U^H_X$ \\
-\oooo Then we have a sequence $(c, \ldots, c_i) \in R^*_H$ and a sequence $(c_i,x) \in R^*_X$ for some $x \in X$ \\ 
-\oooo Concatenating, we have a sequence $(c, \ldots, x) \in R^*_H$ with $x \in X$ \\
-\oooo This implies that $c \in U^H_X$, which is a contradiction \\
-\ooo Hence no element in the sequence $(d, \ldots, c)$ is in $U^H_X$ \\ 
-\ooo For every $(c_k, c_{k+1}) \in (d, \ldots, c)$, we know $c_{k+1} \in \mathit{reads}(h(c_k))$ \\
-\ooo So we know $c_{k+1} \in \IfThenElse{c_k \in U^H_X}{\emptyset}{\mathit{reads}(h(c_k))}$ \\
-\ooo Hence for every $(c_k, c_{k+1}) \in (d, \ldots, c)$, we know $c_{k+1} \in \mathit{reads}(h|_X(c_k))$ \\
-\ooo Hence $(d,c) \in R^*_{H|_X}$ \\
+% \ooo Suppose an intermediate element $c_i$ between $d$ and $c$ is in $U^H_X$ \\
+% \oooo Then we have a sequence $(c, \ldots, c_i) \in R^*_H$ and a sequence $(c_i,x) \in R^*_X$ for some $x \in X$ \\ 
+% \oooo Concatenating, we have a sequence $(c, \ldots, x) \in R^*_H$ with $x \in X$ \\
+% \oooo This implies that $c \in U^H_X$, which is a contradiction \\
+% \ooo Hence no element in the sequence $(d, \ldots, c)$ is in $U^H_X$ \\ 
+\ooo Now, we will show $(d, \ldots, c) \in R^*_X$ by induction on the length \\
+\ooo Case $n = 0$: \\
+\oooo So $d = c \in V_{H|_X}$. \\
+\oooo Since $d \not\in U^H_X$, we know $d \in V_H$ \\
+\oooo Hence $(d,c) \in R^*_H$ \\
+\ooo Case $n = k+1$: \\
+\oooo We have $(d, \ldots, c_k, c) \in R^*_H \land c \not\in U^H_X \land d \not\in U^H_X$. \\
+\oooo If $c_k \in U^H_X$ then $d \in U^H_X$, which is a contradiction \\
+\oooo Hence $c_k \not\in U^H_X$ \\
+\oooo By induction, $(d, \ldots, c_k) \in R^*_H$ \\
+\oooo We know $c \in \mathit{reads}(h|_X(c_k))$ \\ 
+\oooo Hence $c \in \IfThenElse{c_k \in U^H_X}{\emptyset}{\mathit{reads}(h(c_k))}$ \\
+\oooo Hence $c \in \mathit{reads }(h(c_k))$ \\
+\oooo Hence $(d, c) \in R^*_H$ \\ 
+% \ooo For every $(c_k, c_{k+1}) \in (d, \ldots, c)$, we know $c_{k+1} \in \mathit{reads}(h(c_k))$ \\
+% \ooo So we know $c_{k+1} \in \IfThenElse{c_k \in U^H_X}{\emptyset}{\mathit{reads}(h(c_k))}$ \\
+% \ooo Hence for every $(c_k, c_{k+1}) \in (d, \ldots, c)$, we know $c_{k+1} \in \mathit{reads}(h|_X(c_k))$ \\
+% \ooo Hence $(d,c) \in R^*_{H|_X}$ \\
 \end{tabbedproof}
 \end{proof}
 
@@ -882,14 +899,14 @@ This is immediate, since $\mathit{identity}(h) = \mathit{identity}(h')$
 
 \begin{lemma}{(Updating the Abstract Heap)}
 Suppose we have $H = (D,h)$ and $H, D', \models \phi \otimes
-\celleither{c}{e}$ and $c \in D$. Then for $H' = (D, h') = H|_{\setof{c}}$, we
-have $H', D' \models \phi \otimes \cellneg{c}{e}$.
+\celleither{c}{\cmd}$ and $c \in D$. Then for $H' = (D, h') = H|_{\setof{c}}$, we
+have $H', D' \models \phi \otimes \cellneg{c}{\cmd}$.
 \end{lemma}
 
 \begin{proof}
 \begin{tabbedproof}
-\oo Assume we have $H, D' \models \phi \otimes \celleither{c}{e}$ \\
-\oo Then we have $D_1, D_2$ such that $D_1 \uplus D_2 = D'$ and $H, D_1 \models \phi$ and $H, D_2 \models \celleither{c}{e}$ \\
+\oo Assume we have $H, D' \models \phi \otimes \celleither{c}{\cmd}$ \\
+\oo Then we have $D_1, D_2$ such that $D_1 \uplus D_2 = D'$ and $H, D_1 \models \phi$ and $H, D_2 \models \celleither{c}{\cmd}$ \\
 \oo Note that this means $c$ is not in the domain of $\phi$ \\
 \oo First, consider $(D,h), D_1 \models \phi$ \\
 \ooo We will show by induction that $(D,h'), D_1 \models \phi$ \\
@@ -903,16 +920,16 @@ have $H', D' \models \phi \otimes \cellneg{c}{e}$.
 \oooox $(D,h'), D'_1 \models \psi$ \\
 \oooox $(D,h'), D'_2 \models \theta$ \\
 \oooo Hence by the definition of satisfaction, $(D,h'), D_1 \models \psi \otimes \theta$ \\
-\ooo Case $\phi = \cellneg{a}{e}$: \\
-\oooo In this case, we know $a \in D_1$ and $\mathit{code}(h(a)) = e$ and $a \not\in V_{(D,h)}$ \\
+\ooo Case $\phi = \cellneg{a}{\cmd}$: \\
+\oooo In this case, we know $a \in D_1$ and $\mathit{code}(h(a)) = \cmd$ and $a \not\in V_{(D,h)}$ \\
 \oooo Hence $\mathit{value}(h(a)) = \None$, and so $\mathit{value}(h'(a)) = \None$ \\
 \oooo Since $R_H \subseteq V_H \times V_H$, it follows  $U = \emptyset$ \\
 \oooo Hence $h' = h$ \\
-\oooo Hence $(D,h'), D_1 \models \cellneg{a}{e}$ \\
-\ooo Case $\phi = \cellpos{a}{e}{v}{r}$: \\
+\oooo Hence $(D,h'), D_1 \models \cellneg{a}{\cmd}$ \\
+\ooo Case $\phi = \cellpos{a}{\cmd}{v}{r}$: \\
 \oooo Now, consider whether $r \subseteq V_H$ \\
 \oooo If $r \subseteq V_H$: \\
-\ooooo We know $a \in D_1$ and $\mathit{code}(h(a)) = e$ and 
+\ooooo We know $a \in D_1$ and $\mathit{code}(h(a)) = \cmd$ and 
        $\mathit{value}(h(a)) = \Some(v)$ and $\mathit{reads}(h(a)) = r$ \\
 \ooooo So $a \in V_H$. \\
 \ooooo Now consider whether $a \in U$ \\
@@ -923,25 +940,25 @@ have $H', D' \models \phi \otimes \cellneg{c}{e}$.
 \oooooo Hence there is a $d \in r$ such that $(a,d) \in R_H$ and $(d, c) \in R^*_H$  \\
 \oooooo Hence $d \in r$ and $d \in U$ and $\mathit{value}(h'(d)) = \None$, and so $d \not\in V_{(D,h')}$\\
 \oooooo Hence $r \not\subseteq V_{(D, h')}$ \\
-\oooooo Hence $(D,h'), D_1 \models \cellpos{a}{e}{v}{r}$ \\
+\oooooo Hence $(D,h'), D_1 \models \cellpos{a}{\cmd}{v}{r}$ \\
 \ooooo If $a \not\in U$: \\
 \oooooo Then note $a \in V_{(D,h')}$ \\
 \oooooo Furthermore, $(c, a) \not\in R^*_H$ \\
 \oooooo Hence there is no $d \in r$ such that $(c, d) \in R^*_H$  \\
 \oooooo Hence $r \cap U = \emptyset$ \\
 \oooooo Hence $r \subseteq V_{(D,h')}$ \\
-\oooooo Hence $(D,h'), D_1 \models \cellpos{a}{e}{v}{r}$ \\
+\oooooo Hence $(D,h'), D_1 \models \cellpos{a}{\cmd}{v}{r}$ \\
 \oooo If $r \not\subseteq V_H$: \\
-\ooooo Then we know $a \in D_1$ and $\mathit{code}(h(a)) = e$ and $a \not\in V_H$  \\
+\ooooo Then we know $a \in D_1$ and $\mathit{code}(h(a)) = \cmd$ and $a \not\in V_H$  \\
 \ooooo Since $R_H \subseteq V_H \times V_H$, it follows that $\comprehend{c'\in D}{(a,c') \in R} = \emptyset$. \\
 \ooooo Hence $U = \emptyset$ \\
 \ooooo Hence $h' = h$ \\
-\ooooo Hence $(D,h'), D_1 \models \cellpos{a}{e}{v}{r}$ \\
-\oo Next, consider $(D,h), D_2 \models \celleither{c}{e}$: \\
+\ooooo Hence $(D,h'), D_1 \models \cellpos{a}{\cmd}{v}{r}$ \\
+\oo Next, consider $(D,h), D_2 \models \celleither{c}{\cmd}$: \\
 \ooo Since $(c, c) \in R^*_H$,  we know $c \in U$ \\
 \ooo Hence it follows $c \not\in V_{(D, h')}$ \\
-\ooo Hence $(D,h'), D_2 \models \cellneg{c}{e}$ \\
-\oo Therefore, it follows that $(D,h'), D' \models \phi \otimes \cellneg{c}{e}$ \\ 
+\ooo Hence $(D,h'), D_2 \models \cellneg{c}{\cmd}$ \\
+\oo Therefore, it follows that $(D,h'), D' \models \phi \otimes \cellneg{c}{\cmd}$ \\ 
 \end{tabbedproof}
 \end{proof}
 
@@ -1020,7 +1037,7 @@ Now we'll proceed line-by-line through the function body of $\ctext{mark\_unread
 \begin{lemma}{(Correctness of $\ctext{mark\_unready}$)}
 The $\ctext{mark\_unready}$ function satisfies the following specification:   
 \begin{displaymath}
-\mspec{G(H, \phi \otimes \celleither{c}{e})}{\ctext{mark\_unready}}{a:\unittype}{\exists H'.\;G(H', \phi \otimes \cellneg{c}{e})}
+\mspec{G(H, \phi \otimes \celleither{c}{\cmd})}{\ctext{mark\_unready}}{a:\unittype}{\exists H'.\;G(H', \phi \otimes \cellneg{c}{\cmd})}
 \end{displaymath}
 \end{lemma}
 
@@ -1031,16 +1048,16 @@ abstract heap.
 
 
 \begin{lemma}{(Updating Negative Formulas)}
-Suppose we have  $H = (D,h)$ and $H, D' \models \phi \otimes \cellneg{c}{e}$. Then, if
-we define $h'$ such that $\mathit{code}(h'(c)) = e'$ and is equal to $h$ otherwise, 
-it follows that with $H' = (D,h')$, we have $H', D' \models \phi \otimes \cellneg{c}{e'}$. 
+Suppose we have  $H = (D,h)$ and $H, D' \models \phi \otimes \cellneg{c}{\cmd}$. Then, if
+we define $h'$ such that $\mathit{code}(h'(c)) = \cmd'$ and is equal to $h$ otherwise, 
+it follows that with $H' = (D,h')$, we have $H', D' \models \phi \otimes \cellneg{c}{\cmd'}$. 
 \end{lemma}
 
 \begin{proof}
   \begin{tabbedproof}
-    \oo Assume $H, D' \models \phi \otimes \cellneg{c}{e}$. \\
-    \ooo So we have $D_1, D_2$ such that $D' = D_1 \uplus D_2$ and $H, D_1 models \phi$ and $H, D_2 \models \cellneg{c}{e}$ \\
-    \ooo Since $H, D_2 \models \cellneg{c}{e}$, we know that $c \in D_2$ and $c \not\in D_1$ \\
+    \oo Assume $H, D' \models \phi \otimes \cellneg{c}{\cmd}$. \\
+    \ooo So we have $D_1, D_2$ such that $D' = D_1 \uplus D_2$ and $H, D_1 models \phi$ and $H, D_2 \models \cellneg{c}{\cmd}$ \\
+    \ooo Since $H, D_2 \models \cellneg{c}{\cmd}$, we know that $c \in D_2$ and $c \not\in D_1$ \\
     \ooo Now proceed by induction on $\phi$: \\
     \ooo Case $\phi = I$: \\
     \oooo In this case, it is immediate that $H', D_1 \models I$ \\
@@ -1049,33 +1066,33 @@ it follows that with $H' = (D,h')$, we have $H', D' \models \phi \otimes \cellne
     \oooox $H, D_3 \models \psi$ and $H, D_4 \models \theta$ \\
     \oooo So by induction we have $H', D_3 \models \psi$ and $H', D_4 \models \theta$ \\
     \oooo Hence $H', D_1 \models \phi$\\
-    \ooo Case $\phi = \cellneg{c'}{e}$: \\
+    \ooo Case $\phi = \cellneg{c'}{\cmd}$: \\
     \oooo We know $c' \in D_1$ \\
     \oooo We know that $c' \not= c$. Hence $\mathit{code}(h'(c')) = \mathit{code}(h(c))$ \\
-    \oooo Hence $H', D_1 \models \cellneg{c'}{e}$ \\
-    \ooo Case $\phi = \cellpos{c'}{e}{v}{r}$: \\
+    \oooo Hence $H', D_1 \models \cellneg{c'}{\cmd}$ \\
+    \ooo Case $\phi = \cellpos{c'}{\cmd}{v}{r}$: \\
     \oooo We know that $c' \in D_1$ and hence $c \not= c'$ \\
     \oooo Hence $\mathit{code}(h'(c')) = \mathit{code}(h(c))$ \\
     \oooo Furthermore, $V_{H'} = V_H$ since $\mathit{value} \circ h' = \mathit{value} \circ h$\\
     \oooo Also $\mathit{reads} \circ h' = \mathit{reads} \circ h$ \\
-    \oooo Hence $H', D_1 \models \cellpos{c'}{e}{v}{r}$: \\
+    \oooo Hence $H', D_1 \models \cellpos{c'}{\cmd}{v}{r}$: \\
     \ooo Therefore $H', D_1 \models \phi$ \\
-    \ooo Now, we want to show $H', D_2 \models \cellneg{c}{e'}$ \\
+    \ooo Now, we want to show $H', D_2 \models \cellneg{c}{\cmd'}$ \\
     \oooo We know $c \in D_2$ \\
-    \oooo Furthermore, $\mathit{code}(h'(c)) = e'$ \\
-    \oooo Hence $H', D_2 \models \cellneg{c}{e'}$ \\
-    \ooo Hence $H', D' \models \phi \otimes \cellneg{c}{e'}$ 
+    \oooo Furthermore, $\mathit{code}(h'(c)) = \cmd'$ \\
+    \oooo Hence $H', D_2 \models \cellneg{c}{\cmd'}$ \\
+    \ooo Hence $H', D' \models \phi \otimes \cellneg{c}{\cmd'}$ 
   \end{tabbedproof}
 \end{proof}
 
 \begin{lemma}{(Update Rule)}
-For all cells $o$ and code expressions $e$ and $e'$, the following
+For all cells $o$ and code expressions $\cmd$ and $\cmd'$, the following
 triple is provable: 
 
 \begin{tabbing}
-$\forall \psi:\formula.\; $\=$\setof{G(\celleither{o}{e} \otimes \psi)}$ \\
-                           \>$\runcmd {\updatecell\;o\;e}$ \\
-                           \>$\setof{a:1.\; G(\cellneg{o}{e} \otimes \psi)}$
+$\forall \psi:\formula.\; $\=$\setof{G(\celleither{o}{\cmd'} \otimes \psi)}$ \\
+                           \>$\run {\updatecell\;o\;\cmd}$ \\
+                           \>$\setof{a:1.\; G(\cellneg{o}{\cmd} \otimes \psi)}$
 \end{tabbing}
 \end{lemma}
 
@@ -1091,11 +1108,11 @@ We can prove the soundness of a similar specification for $\newcell$ as
 well:
 
 \begin{prop}{(New Cell Rule)}
-For all code expressions $e$ of type $\alpha$, the following specification is provable: 
+For all code expressions $\cmd$ of type $\alpha$, the following specification is provable: 
 \begin{tabbing}
 $\forall \psi:\formula.\; $\=$\setof{G(\psi)}$ \\
-                           \>$\run {\newcell\;e}$ \\
-                           \>$\setof{a:\celltype{\alpha}.\; G(\cellneg{a}{e} \otimes \psi)}$
+                           \>$\run {\newcell\;\cmd}$ \\
+                           \>$\setof{a:\celltype{\alpha}.\; G(\cellneg{a}{\cmd} \otimes \psi)}$
 \end{tabbing}
 \end{prop}
 
@@ -1109,7 +1126,7 @@ $H = (D,h)$. Now, by the invariant, we know that each cell in $D$ has
 a unique numeric id somewhere in the range from $0$ to $|D|-1$. Then,
 on lines 29-30 of Figure~\ref{notification-implementation}, we
 increment the global counter by 1, and let $id = |D|$.  Then, on lines
-31-34, we allocate a pointer $\mathit{code}$ to the code $e$, a
+31-34, we allocate a pointer $\mathit{code}$ to the code $\cmd$, a
 pointer $\mathit{value}$ to $\None$ (to indicate the unitialized
 state), as well as pointers to $\mathit{read}$ and $\mathit{obs}$ to
 empty read and observer sets.
@@ -1118,7 +1135,7 @@ At line 35, all of these values are bound to variables in scope, so we
 can define $H' = (D',h')$, where $\mathit{ec} = \pack{\tau}{\mathit{(code, value, read, obs, id)}}$, 
 and 
 \begin{displaymath}
-(D',h') = (D \cup \setof{\mathit{ec}}, h' = [h|\mathit{ec}: (e, \None, \emptyset, \emptyset, id)])
+(D',h') = (D \cup \setof{\mathit{ec}}, h' = [h|\mathit{ec}: (\cmd, \None, \emptyset, \emptyset, id)])
 \end{displaymath}
 
 Then, it is easy to show that the modified heap realizes $H'$ --- the
@@ -1128,7 +1145,7 @@ correctly. This is because they held for world $D$, and we are now in
 world $D'$. Happily, we required as an axiom that $(W \subseteq W')
 \implies \mathit{set}(W, v, S) \implies \mathit{set}(W', v, S)$.
 
-Finally, we need to show that $\cellneg{a}{e} \otimes \psi$ is
+Finally, we need to show that $\cellneg{a}{\cmd} \otimes \psi$ is
 satisfied by $H'$. This follows from an easy induction on $\psi$:
 since $h'$ is just an extension of $h$ with $V_{H'} = V_H$, none
 of the conditionals or function calls in the cell predicates have
@@ -1143,17 +1160,17 @@ Then we can hide $H'$ behind an existential to establish the postcondition.
 \begin{mathpar}
   \inferrule*[right=Ready]
             {\forall a' \in r.\; \exists v.\; \ready{\phi}{a'}{v}}
-            {\ready{\phi \otimes \cellpos{a}{e}{v}{r}}{a}{v}}
+            {\ready{\phi \otimes \cellpos{a}{\cmd}{v}{r}}{a}{v}}
   \\
   \\
   \inferrule*[right=UnreadyPos]
             {\exists a' \in r.\; \unready{\phi}{a'}}
-            {\unready{\phi \otimes \cellpos{a}{e}{v}{r}}
+            {\unready{\phi \otimes \cellpos{a}{\cmd}{v}{r}}
                      {a}}
   \and
   \inferrule*[right=UnreadyNeg]
             { }
-            {\unready{\phi \otimes \cellneg{a}{e}}{a}}
+            {\unready{\phi \otimes \cellneg{a}{\cmd}}{a}}
 \end{mathpar}
 \caption{Ready and Unready Judgments}
 \label{readiness}
@@ -1166,8 +1183,8 @@ Then we can hide $H'$ behind an existential to establish the postcondition.
       \closed{I}{s} & = & \top \\
       \closed{\phi \otimes \psi}{s} & = & \closed{\phi}{s} \land \closed{\psi}{s} \\ 
       \closed{\localref{r}{v}}{s} & = & \top \\
-      \closed{\cellneg{a}{e}}{s} & = & \top \\
-      \closed{\cellpos{a}{e}{v}{r}}{s} & = & r \subseteq s \\
+      \closed{\cellneg{a}{\cmd}}{s} & = & \top \\
+      \closed{\cellpos{a}{\cmd}{v}{r}}{s} & = & r \subseteq s \\
     \end{array}
   \end{displaymath}
 \caption{Closedness predicate}
@@ -1181,11 +1198,11 @@ Then we can hide $H'$ behind an existential to establish the postcondition.
       R(s, I)                 & = & I \\
       R(s, \phi \otimes \psi) & = & R(s, \phi) \otimes R(s, \psi) \\
       R(s, \localref{r}{v})   & = & \localref{r}{v} \\
-      R(s, \cellneg{a}{e})    & = & \cellneg{a}{e} \\
-      R(s, \cellpos{a}{e}{v}{r}) & = & \left\{\begin{array}{ll}
-                                                \cellpos{a}{e}{v}{r} 
+      R(s, \cellneg{a}{\cmd})    & = & \cellneg{a}{\cmd} \\
+      R(s, \cellpos{a}{\cmd}{v}{r}) & = & \left\{\begin{array}{ll}
+                                                \cellpos{a}{\cmd}{v}{r} 
                                               & \mbox{if } s \cap r = \emptyset \\
-                                                \cellneg{a}{e}
+                                                \cellneg{a}{\cmd}
                                               & \mbox{otherwise}
                                               \end{array}
                                        \right.
@@ -1277,22 +1294,22 @@ For all $\phi, o,$ and $H$ such that $H = (D,h)$:
 
 We prove this by induction on the derivation of
 $\ready{\phi}{o}{v}$. By inversion, we know that $\phi = \psi \otimes
-\cellpos{o}{e}{v}{r}$, and for each $c' \in r$, we have a derivation
+\cellpos{o}{\cmd}{v}{r}$, and for each $c' \in r$, we have a derivation
 of $\ready{\psi}{c'}{v'}$ for some $v'$. By induction, we know that
 for each $c' \in r$, $c' \in V_H$. By the fact that $(D,h), D \models
-\psi \otimes cellpos{c}{e}{v}{r}$, we know that $c \in V_H$ and
+\psi \otimes cellpos{c}{\cmd}{v}{r}$, we know that $c \in V_H$ and
 $\mathit{value}(h(o)) = \ctext{Some}(v)$. Hence the conclusion follows. 
 
 \item $(Inv((D,h), \phi) \land \unready{\phi}{o}) \implies o \not\in V_H$
 
 We prove this by induction on the derivation of $\unready{\phi}{o}$.
-First, consider the case where $\phi = \psi \otimes \cellneg{o}{e}$. 
-Then, the fact that $(D,h), D \models \psi \otimes \cellneg{o}{e}$
+First, consider the case where $\phi = \psi \otimes \cellneg{o}{\cmd}$. 
+Then, the fact that $(D,h), D \models \psi \otimes \cellneg{o}{\cmd}$
 implies that $o \not\in V_H$. Now, consider the other case, where 
-$\phi = \psi \otimes \cellpos{o}{e}{v}{r}$. We know that there is
+$\phi = \psi \otimes \cellpos{o}{\cmd}{v}{r}$. We know that there is
 some $a \in r$ such that $\unready{\psi}{a}$ holds, and by induction
 we know that $a \not\in V_H$. Hence, it follows that $a \not\subseteq V_H$,
-and so the fact that $(D,h), D \models \psi \otimes \cellneg{o}{e}$ implies
+and so the fact that $(D,h), D \models \psi \otimes \cellneg{o}{\cmd}$ implies
 that $o \not\in V_H$. 
 \end{enumerate}
 \end{proof}
@@ -1334,7 +1351,7 @@ $H, D \models \theta$.
 \item For all $\phi, \theta$, we have $\phi \otimes \theta \vdash \phi$
 \item For all $\phi, \phi', \psi$, if $\phi \vdash \phi'$ then $\phi \otimes \psi \vdash \phi' \otimes \psi$  
 \item If $\unready{\phi}{c}$ then $\phi \dashv\vdash R(\setof{c}, \phi)$
-\item If $\unready{\phi \otimes \celleither{c}{e}}{c}$ then $\phi \otimes \celleither{c}{e} \dashv\vdash \phi \otimes \cellneg{c}{e}$
+\item If $\unready{\phi \otimes \celleither{c}{\cmd}}{c}$ then $\phi \otimes \celleither{c}{\cmd} \dashv\vdash \phi \otimes \cellneg{c}{\cmd}$
 \end{itemize}
 \end{prop}
 
@@ -1357,12 +1374,12 @@ $H, D \models \theta$.
 \oooo Hence $D_1 \uplus D''$ is disjoint from $D_2$ \\
 \oooo Hence $H, D_1 \uplus D'' \uplus D_2 \models \psi \otimes \theta$ \\
 \oooo Hence $H, D' \models \phi$ \\
-\ooo Case $\phi = \cellneg{c}{e}$: \\
+\ooo Case $\phi = \cellneg{c}{\cmd}$: \\
 \oooo Since $c \in D$, we know $c \in D'$ \\
-\oooo Hence $H, D' \models \cellneg{c}{e}$ \\
-\ooo Case $\phi = \cellpos{c}{e}{v}{r}$: \\
+\oooo Hence $H, D' \models \cellneg{c}{\cmd}$ \\
+\ooo Case $\phi = \cellpos{c}{\cmd}{v}{r}$: \\
 \oooo Since $c \in D$, we know $c \in D'$ \\
-\oooo Hence $H, D' \models \cellneg{c}{e}$ \\
+\oooo Hence $H, D' \models \cellneg{c}{\cmd}$ \\
 \oo Now note that we have $D_1, D_2$ such that $D = D_1 \uplus D_2$ and \\
 \ox $H, D_1 \models \phi$ and $H, D_2 \models \theta$ \\
 \oo Since $D \supseteq D_1$, we know that $H, D \models \phi$ \\
@@ -1396,14 +1413,14 @@ $H, D \models \theta$.
 \oooo By induction $H, D_1 \models R(\setof{c}, \sigma)$ and $H, D_2 \models R(\setof{c}, \theta)$ \\
 \oooo Hence $H, D \models R(\setof{c}, \sigma) \otimes R(\setof{c}, \theta)$ \\
 \oooo Hence $H, D \models R(\setof{c}, \sigma \otimes \theta)$ \\
-\ooo Case $\phi = \cellneg{c'}{e}$: \\
-\oooo Since $R(\setof{c}, \cellneg{c'}{e}) = \cellneg{c'}{e}$, this case is immediate \\
+\ooo Case $\phi = \cellneg{c'}{\cmd}$: \\
+\oooo Since $R(\setof{c}, \cellneg{c'}{\cmd}) = \cellneg{c'}{\cmd}$, this case is immediate \\
 \ooo Case $\phi = \cellpos{c'}{e'}{v'}{r'}$: \\
 \oooo Consider whether $c \in r'$: \\
 \oooo If $c \not\in r'$: \\
 \ooooo Then $R(\setof{c}, \cellpos{c'}{e'}{v'}{r'}) = \cellpos{c'}{e'}{v'}{r'}$ and this case is immediate \\
 \oooo If $c \in r'$: \\
-\ooooo Since $\unready{c}{e}$ is sound, we know that $c \not\in V_H$. \\ 
+\ooooo Since $\unready{c}{\cmd}$ is sound, we know that $c \not\in V_H$. \\ 
 \ooooo Hence $r' \not\subseteq V_H$, and so we know that $c' \not\in V_H$ \\
 \ooooo Furthermore, we know that $c' \in D$, and $\mathit{code}(h(c')) = e'$, \\
 \oooox so we know $H, D \models \cellneg{c'}{e'}$ \\
@@ -1415,20 +1432,20 @@ $H, D \models \theta$.
 \oooo Since $R(\setof{c}, I) = I$, this case is immediate \\
 \ooo Case $\phi = \localref{r}{v}$: \\
 \oooo Since $R(\setof{c}, \localref{r}{v}) = \localref{r}{v}$, this case is immediate \\
-\ooo Case $\phi = \sigma \otimes \theta$: \\
+\ooo Case $\phi = \sigma \otimes S\theta$: \\
 \oooo We know $R(\setof{c}, \sigma \otimes \theta) = R(\setof{c}, \sigma) \otimes R(\setof{c}, \theta)$ \\
 \oooo Hence we know there are $D_1, D_2$ such that $D = D_1 \uplus D_2$ and \\
 \ooox $H, D_1 \models R(\setof{c}, \sigma)$ and $H, D_2 \models R(\setof{c}, \theta)$ \\
 \oooo By induction $H, D_1 \models \sigma$ and $H, D_2 \models \theta$ \\
 \oooo Hence $H, D \models \sigma \otimes \theta$ \\
-\ooo Case $\phi = \cellneg{c'}{e}$: \\
-\oooo Since $R(\setof{c}, \cellneg{c'}{e}) = \cellneg{c'}{e}$, this case is immediate \\
+\ooo Case $\phi = \cellneg{c'}{\cmd}$: \\
+\oooo Since $R(\setof{c}, \cellneg{c'}{\cmd}) = \cellneg{c'}{\cmd}$, this case is immediate \\
 \ooo Case $\phi = \cellpos{c'}{e'}{v'}{r'}$: \\
 \oooo Consider whether $c \in r'$: \\
 \oooo If $c \not\in r'$: \\
 \ooooo Then $R(\setof{c}, \cellpos{c'}{e'}{v'}{r'}) = \cellpos{c'}{e'}{v'}{r'}$ and this case is immediate \\
 \oooo If $c \in r'$: \\
-\ooooo Since $\unready{c}{e}$ is sound, we know that $c \not\in V_H$. \\ 
+\ooooo Since $\unready{c}{\cmd}$ is sound, we know that $c \not\in V_H$. \\ 
 \ooooo We know $H, D \models R(\setof{c}, \cellpos{c'}{e'}{v'}{r'}) = \cellneg{c'}{e'}$ \\
 \ooooo Hence $c' \not\in V_H$ \\
 \ooooo But since $c \in r'$, we know $H, D \models \cellpos{c'}{e'}{v'}{r'}$ \\
@@ -1436,25 +1453,25 @@ $H, D \models \theta$.
 
 
 
-\item If $\unready{\phi \otimes \cellpos{c}{e}{v}{r}}{c}$ then $\phi \otimes \cellpos{c}{e}{v}{r} \dashv\vdash \phi \otimes \cellneg{c}{e}$
+\item If $\unready{\phi \otimes \cellpos{c}{\cmd}{v}{r}}{c}$ then $\phi \otimes \cellpos{c}{\cmd}{v}{r} \dashv\vdash \phi \otimes \cellneg{c}{\cmd}$
 \begin{tabbedproof}
-\oo Assume $\unready{\phi \otimes \cellpos{c}{e}{v}{r}}{c}$  and $H, D$ \\
-\oo Now we want to show $H, D \models \phi \otimes \cellpos{c}{e}{v}{r}$ if and only if \\
-\ox $H, D \models \phi \otimes \cellneg{c}{e}$ \\
-\oo $\Rightarrow$: Assume $H, D \models \phi \otimes \cellpos{c}{e}{v}{r}$ \\
+\oo Assume $\unready{\phi \otimes \cellpos{c}{\cmd}{v}{r}}{c}$  and $H, D$ \\
+\oo Now we want to show $H, D \models \phi \otimes \cellpos{c}{\cmd}{v}{r}$ if and only if \\
+\ox $H, D \models \phi \otimes \cellneg{c}{\cmd}$ \\
+\oo $\Rightarrow$: Assume $H, D \models \phi \otimes \cellpos{c}{\cmd}{v}{r}$ \\
 \ooo So we have $D_1, D_2$ such that $D = D_1 \uplus D_2$ and \\
-\oox $H, D_1 \models \phi$ and $H, D_2 \models \cellpos{c}{e}{v}{r}$ \\
-\ooo From the soundness of $\unready{\phi \otimes \cellpos{c}{e}{v}{r}}{c}$, we know that $c \not \in V_H$ \\
-\ooo Hence we know that $H, D_2 \models cellneg{c}{e}$ \\
-\ooo Hence we know that $H, D \models \phi \otimes \cellneg{c}{e}$ \\
-\oo $\Leftarrow$: Assume $H, D \models \phi \otimes \cellneg{c}{e}$ \\
+\oox $H, D_1 \models \phi$ and $H, D_2 \models \cellpos{c}{\cmd}{v}{r}$ \\
+\ooo From the soundness of $\unready{\phi \otimes \cellpos{c}{\cmd}{v}{r}}{c}$, we know that $c \not \in V_H$ \\
+\ooo Hence we know that $H, D_2 \models cellneg{c}{\cmd}$ \\
+\ooo Hence we know that $H, D \models \phi \otimes \cellneg{c}{\cmd}$ \\
+\oo $\Leftarrow$: Assume $H, D \models \phi \otimes \cellneg{c}{\cmd}$ \\
 \ooo So we have $D_1, D_2$ such that $D = D_1 \uplus D_2$ and \\
-\oox $H, D_1 \models \phi$ and $H, D_2 \models \cellpos{c}{e}{v}{r}$ \\
-\ooo We want to show $H, D \models \phi \otimes \cellpos{c}{e}{v}{r}$ \\
-\ooo By inversion on $\unready{\phi \otimes \cellpos{c}{e}{v}{r}}{c}$ we know $\unready{\phi}{d}$ for some $d \in r$ \\
+\oox $H, D_1 \models \phi$ and $H, D_2 \models \cellpos{c}{\cmd}{v}{r}$ \\
+\ooo We want to show $H, D \models \phi \otimes \cellpos{c}{\cmd}{v}{r}$ \\
+\ooo By inversion on $\unready{\phi \otimes \cellpos{c}{\cmd}{v}{r}}{c}$ we know $\unready{\phi}{d}$ for some $d \in r$ \\
 \ooo By soundness of $\unready{\phi}{d}$, we know that $d \not\in V_H$ \\
-\ooo Hence we know that $H, D_2 \models \cellpos{c}{e}{v}{r}$ \\
-\ooo Hence we know that $H, D \models \phi \otimes \cellpos{c}{e}{v}{r}$ \\
+\ooo Hence we know that $H, D_2 \models \cellpos{c}{\cmd}{v}{r}$ \\
+\ooo Hence we know that $H, D \models \phi \otimes \cellpos{c}{\cmd}{v}{r}$ \\
 \end{tabbedproof}
 \end{itemize}
 \end{proof}
@@ -1466,13 +1483,13 @@ $H, D \models \theta$.
 Now we can finally define the abstract semantics of the code
 expression monad, which we give in Figure~\ref{abs-semantics}.
 
-As before, we describe the effect of an expression $e$ with a Hoare
+As before, we describe the effect of an expression $\cmd$ with a Hoare
 triple, prefixed with a quantification over all possible frames
 $\psi$. Then we assert that from a state $G(\phi \otimes \psi)$,
-running $e$ will give us a state $G(\phi' \otimes R(u, \psi))$ ---
+running $\cmd$ will give us a state $G(\phi' \otimes R(u, \psi))$ ---
 that is, we must update the frame with the ramification $u$. Note in
 particular that the framing formulas may \emph{differ} in the pre- and
-the post-conditions. For composite commands (such as $\bind e\;f$) we
+the post-conditions. For composite commands (such as $\bind \cmd\;f$) we
 give their specifications as implications over the specifications of
 their subcomponents.
 
@@ -1481,7 +1498,7 @@ $\return v$ command, which simply returns its argument and neither
 reads nor updates any cells or state. 
 
 The \textsc{ABind} rule explains how sequential composition works for
-an expression $\bind e\;f$ --- as expected, we evaluate the first
+an expression $\bind \cmd\;f$ --- as expected, we evaluate the first
 monadic argument, and pass the result to the functional argument, and
 evaluate that. The read and update sets are simply the union of the
 two executions. Reading a cell comes in two variants, \textsc{AReady}
@@ -1535,7 +1552,7 @@ that construct and produce notifications.
 
 \mbox{\textsc{ABind}} & 
 \forall \psi.\; \mspec{G(\phi \otimes \psi)}
-                     {e}
+                     {\cmd}
                      {a}{G(\phi' \otimes R(u', \psi)) \land \exists z.\;a = (v', r') \land \mathit{set}(r', z, r')} 
                 \specand \\
 &  \forall \psi.\; \mspec{G(\phi' \otimes \psi)}
@@ -1544,7 +1561,7 @@ that construct and produce notifications.
 &  \specimp \\
 &  \begin{array}{ll}
      \forall \psi. & \left<G(\phi \otimes \psi)\right> \\
-                   & \bind e\;f \\
+                   & \bind \cmd\;f \\
                    &  \left<a.\;G(\phi'' \otimes R(u' \cup u'', \psi)) \land \exists z.\;a = (v'', z) \land \mathit{set}(r' \cup r'', z, r' \cup r'')\right> \\
    \end{array}
 \\[2em]
@@ -1557,17 +1574,17 @@ that construct and produce notifications.
 \\[1em]
 
 \mbox{\textsc{AUnready}} & 
-  \setof{\unready{\phi \otimes \celleither{c}{e}}{c}} \specand \\
+  \setof{\unready{\phi \otimes \celleither{c}{\cmd}}{c}} \specand \\
 & \forall \psi.\; \mspec{G(\phi \otimes \psi)}
-                       {e}
+                       {\cmd}
                        {a}{G(\phi' \otimes R(u, \psi)) \land \exists z.\; a = (v, z) \land \mathit{set}(r, z, r)} \\
 & \specimp \\
 & \begin{array}{ll}
-   \forall \psi. & \left<G(\phi \otimes \celleither{c}{e} \otimes \psi)\right> \\
+   \forall \psi. & \left<G(\phi \otimes \celleither{c}{\cmd} \otimes \psi)\right> \\
                  & \readcell c \\
                  & \left<a.\; 
                      \begin{array}{l}
-                       G(R(\setof{c}, \phi') \otimes \cellpos{c}{e}{v}{r} \otimes R(u \cup \setof{c}, \psi)) 
+                       G(R(\setof{c}, \phi') \otimes \cellpos{c}{\cmd}{v}{r} \otimes R(u \cup \setof{c}, \psi)) 
                         \;\land \\
                         \exists z.\;a = (v, z) \land \mathit{set}(\setof{c}, z, \setof{c})
                      \end{array}\right> 
@@ -1597,14 +1614,14 @@ that construct and produce notifications.
 \\[2em]
 
 % \mbox{\textsc{ANewCell}}
-% & \forall \psi.\; \mspec{G(\psi)}{\newcell e}{(c,z)}{G(\cellneg{c}{e} \otimes \psi) \land \mathit{set}(\emptyset, z, \emptyset)}
+% & \forall \psi.\; \mspec{G(\psi)}{\newcell \cmd}{(c,z)}{G(\cellneg{c}{\cmd} \otimes \psi) \land \mathit{set}(\emptyset, z, \emptyset)}
 % \\[1em]
 
 \mbox{\textsc{AConseq}}
 & \setof{\phi' \vdash \phi} \specand \setof{\theta \vdash \theta'} \specand \\
-& \forall \psi.\; \mspec{G(\phi \otimes \psi) \land P}{e}{(x,z)}{G(\theta\otimes R(u, \psi)) \land Q} \\
+& \forall \psi.\; \mspec{G(\phi \otimes \psi) \land P}{\cmd}{(x,z)}{G(\theta\otimes R(u, \psi)) \land Q} \\
 & \specimp \\
-& \forall \psi.\; \mspec{G(\phi' \otimes \psi) \land P}{e}{(x,z)}{G(\theta'\otimes R(u, \psi)) \land Q} \specand \\
+& \forall \psi.\; \mspec{G(\phi' \otimes \psi) \land P}{\cmd}{(x,z)}{G(\theta'\otimes R(u, \psi)) \land Q} \specand \\
 
 \end{array}
 \end{mathpar}
@@ -1640,7 +1657,7 @@ The following specification is derivable:
 \begin{displaymath}
 \begin{array}{l}
 \forall \psi.\; \mspec{G(\phi \otimes \psi)}
-                     {e}
+                     {\cmd}
                      {a}{G(\phi' \otimes R(u', \psi)) \land \exists z.\;a = (v', r') \land \mathit{set}(r', z, r')} 
                 \specand \\
 \forall \psi.\; \mspec{G(\phi' \otimes \psi)}
@@ -1649,7 +1666,7 @@ The following specification is derivable:
 \specimp \\
 \begin{array}{ll}
      \forall \psi. & \left<G(\phi \otimes \psi)\right> \\
-                   & \bind e\;f \\
+                   & \bind \cmd\;f \\
                    &  \left<a.\;G(\phi'' \otimes R(u' \cup u'', \psi)) \land \exists z.\;a = (v'', z) \land \mathit{set}(r' \cup r'', z, r' \cup r'')\right> \\
    \end{array}
 \end{array}
@@ -1659,14 +1676,14 @@ The following specification is derivable:
 \begin{proof}
 \begin{tabbedproof}
 \oo Assume $\forall \psi.\; \mspec{G(\phi \otimes \psi)}
-                     {e}
+                     {\cmd}
                      {a}{G(\phi' \otimes R(u', \psi)) \land \exists z.\;a = (v', r') \land \mathit{set}(r', z, r')}$ \\
 \oo Assume $\forall \psi.\; \mspec{G(\phi' \otimes \psi)}
                         {f\;v'}
                         {a}{G(\phi'' \otimes R(u'', \psi)) \land \exists z.\; a = (v'', z) \land \mathit{set}(r'', z, r'')}$ \\
 \oo Assume we have $\psi$, and a prestate $G(\phi \otimes \psi)$ \\
 \ooo Now consider the body of $\bind$ \\
-\ooo $[\letv{(v, z_1)}{e}{}$ \\
+\ooo $[\letv{(v, z_1)}{\cmd}{}$ \\
 \ooo So we know $G(\phi' \otimes R(u', \psi)) \land v = v' \land \mathit{set}(r', z_1, r')$ \\
 \ooo Simplifying $v$ away, we continue with \\
 \ooo $\letv{(v, z_2)}{f\;v'}{}$ \\
@@ -1719,17 +1736,17 @@ In this subsection, we will prove the following proposition:
 The following triple holds:
 \begin{displaymath}
 \begin{array}{l}
-\setof{\unready{\phi \otimes \celleither{c}{e}}{c}} \specand \\
+\setof{\unready{\phi \otimes \celleither{c}{\cmd}}{c}} \specand \\
 \forall \psi.\; \mspec{G(\phi \otimes \psi)}
-                     {e}
+                     {\cmd}
                      {a}{G(\phi' \otimes R(u, \psi)) \land \exists z.\; a = (v, z) \land \mathit{set}(r, z, r)} \\
 \specimp \\
 \begin{array}{ll}
- \forall \psi. & \left<G(\phi \otimes \celleither{c}{e} \otimes \psi)\right> \\
+ \forall \psi. & \left<G(\phi \otimes \celleither{c}{\cmd} \otimes \psi)\right> \\
                & \readcell c \\
                & \left<a.\; 
                    \begin{array}{l}
-                     G(R(\setof{c}, \phi') \otimes \cellpos{c}{e}{v}{r} \otimes R(u \cup \setof{c}, \psi)) 
+                     G(R(\setof{c}, \phi') \otimes \cellpos{c}{\cmd}{v}{r} \otimes R(u \cup \setof{c}, \psi)) 
                       \;\land \\
                       \exists z.\;a = (v, z) \land \mathit{set}(\setof{c}, z, \setof{c})
                    \end{array}\right> 
@@ -1872,7 +1889,7 @@ This is immediate since $\mathit{identity} \circ h' = \mathit{identity} \circ h$
 
 \begin{lemma}{(Reading an Unready Cell, Semantically)}
 Suppose that $H = (D,h)$ and $H, D' \models \phi \otimes
-\celleither{c}{e}$ and $c \in D' - V_H$. Then for any subset $r
+\celleither{c}{\cmd}$ and $c \in D' - V_H$. Then for any subset $r
 \subseteq V_H$ and value $v$, define $h'$ so that
 \begin{itemize}
 \item $\mathit{code} \circ h' = \mathit{code} \circ h$ 
@@ -1881,16 +1898,16 @@ Suppose that $H = (D,h)$ and $H, D' \models \phi \otimes
 \item $\mathit{obs} \circ h' = \semfun{c'}{\IfThenElse{c' \in r}{\mathit{obs}(h(c')) \cup \setof{c}}{\mathit{obs}(h(c'))}}$ 
 \item $\mathit{identity} \circ h' = \mathit{identity} \circ h$
 \end{itemize}
-Then it follows that for $H' = (D,h')$, we have $H', D' \models R(\setof{c}, \phi) \otimes \cellpos{c}{e}{v}{r}$.
+Then it follows that for $H' = (D,h')$, we have $H', D' \models R(\setof{c}, \phi) \otimes \cellpos{c}{\cmd}{v}{r}$.
 \end{lemma}
 
 \begin{proof}
   \begin{tabbedproof}
-    \oo Assume $H, D' \models \phi \otimes \celleither{c}{e}$ and $c \in D' - V_H$ \\
-    \ooo Then there are $D_1, D_2$ with $D' = D_1 \uplus D_2$ and $H, D_1 \models \phi$ and $H, D_2 \models \celleither{c}{e}$ \\
+    \oo Assume $H, D' \models \phi \otimes \celleither{c}{\cmd}$ and $c \in D' - V_H$ \\
+    \ooo Then there are $D_1, D_2$ with $D' = D_1 \uplus D_2$ and $H, D_1 \models \phi$ and $H, D_2 \models \celleither{c}{\cmd}$ \\
     \ooo Then $c \in D_2$ and $c \not \in D_1$, and $\mathit{value}(h(c)) = \None$ \\
     \ooo By assumption, $\mathit{value}(h'(c)) = \Some(v)$ and $\mathit{reads}(h'(c)) = r$ \\
-    \ooo Hence $H', D_2 \models \cellpos{c}{e}{v}{r}$ \\
+    \ooo Hence $H', D_2 \models \cellpos{c}{\cmd}{v}{r}$ \\
     \ooo Now proceed by induction on $\phi$, letting the support $D_1$ be a parameter \\
     \ooo Case $\phi = I$: \\
     \oooo By definition $H', D_1 \models I$ \\
@@ -1941,17 +1958,17 @@ Then it follows that for $H' = (D,h')$, we have $H', D' \models R(\setof{c}, \ph
 The following triple holds:
 \begin{displaymath}
 \begin{array}{l}
-\setof{\unready{\phi \otimes \celleither{c}{e}}{c}} \specand \\
+\setof{\unready{\phi \otimes \celleither{c}{\cmd}}{c}} \specand \\
 \forall \psi.\; \mspec{G(\phi \otimes \psi)}
-                     {e}
+                     {\cmd}
                      {a}{G(\phi' \otimes R(u, \psi)) \land \exists z.\; a = (v, z) \land \mathit{set}(r, z, r)} \\
 \specimp \\
 \begin{array}{ll}
- \forall \psi. & \left<G(\phi \otimes \celleither{c}{e} \otimes \psi)\right> \\
+ \forall \psi. & \left<G(\phi \otimes \celleither{c}{\cmd} \otimes \psi)\right> \\
                & \readcell c \\
                & \left<a.\; 
                    \begin{array}{l}
-                     G(R(\setof{c}, \phi') \otimes \cellpos{c}{e}{v}{r} \otimes R(u \cup \setof{c}, \psi)) 
+                     G(R(\setof{c}, \phi') \otimes \cellpos{c}{\cmd}{v}{r} \otimes R(u \cup \setof{c}, \psi)) 
                       \;\land \\
                       \exists z.\;a = (v, z) \land \mathit{set}(\setof{c}, z, \setof{c})
                    \end{array}\right> 
@@ -1962,10 +1979,10 @@ The following triple holds:
 
 \begin{proof}
 \begin{tabbedproof}
-\oo Assume $\unready{\phi \otimes \celleither{c}{e}}{c}$ \\
+\oo Assume $\unready{\phi \otimes \celleither{c}{\cmd}}{c}$ \\
 \oo Assume $\forall \psi.\; 
        \mspec{G(\phi \otimes \psi)}
-            {e}
+            {\cmd}
             {a}{G(\phi' \otimes R(u, \psi)) \land \exists z.\; a = (v, z) \land \mathit{set}(r, z, r)} $ \\
 \oo Assume we have some $\psi$ \\
 \ooo Assume we are in a prestate $G(\phi \otimes \psi)$ \\
@@ -1978,23 +1995,23 @@ The following triple holds:
 \ooox $H, D \models \phi \otimes \psi$ \\
 \ooox $\mathit{heap}(H)$ \\
 \ooo Since $\mathsf{unready}$ is sound, we know that $\mathit{value}(h'(c)) = \None$ \\
-\ooo Hence we also know that $H, D \models \phi \otimes \cellneg{c}{e} \otimes \psi$ \\
+\ooo Hence we also know that $H, D \models \phi \otimes \cellneg{c}{\cmd} \otimes \psi$ \\
 \ooo We also know that $c.\mathit{value} \pointsto \None$ \\
 \ooo $[\letv{o}{!a.\mathit{value}}{}$ \\
 \ooo Now we additionally know that $o = \None$ \\
 \ooo Hence we can simplify the remaining program to eliminate the case \\
-\ooo $\letv{exp}{!a.code}{}$ \\
-\ooo From the definition of $\mathit{heap}$, we know that $exp = \mathit{code}(h(c))$ \\
-\ooo From the fact that $H, D \models \phi \otimes \cellneg{c}{e} \otimes \psi$, \\
-\oox we know $\mathit{code}(h(c)) = e$ \\
-\ooo $\letv{(v',z)}{exp}{}$ \\
-\ooo Using our assumption about $e$, and setting $\psi$ to $\cellneg{c}{e} \otimes \psi$, \\
-\ooo our poststate is $G(\phi' \otimes R(u, \cellneg{c}{e} \otimes \psi)) \land v = v' \land \mathit{set}(r, z, r)$ \\
-\ooo Simplifying away the $v'$, we get $\mathit{set}(r, z, r)$ and $G(\phi' \otimes \cellneg{c}{e} \otimes R(u, \psi))$ \\
-\ooo So there is a shadowing $H = (D,h)$ such that $\mathit{Inv}((D, h), \phi' \otimes R(u, \cellneg{c}{e} \otimes \psi))$ \\
+\ooo $\letv{\cmd}{!a.code}{}$ \\
+\ooo From the definition of $\mathit{heap}$, we know that $\cmd = \mathit{code}(h(c))$ \\
+\ooo From the fact that $H, D \models \phi \otimes \cellneg{c}{\cmd} \otimes \psi$, \\
+\oox we know $\mathit{code}(h(c)) = \cmd$ \\
+\ooo $\letv{(v',z)}{\cmd}{}$ \\
+\ooo Using our assumption about $\cmd$, and setting $\psi$ to $\cellneg{c}{\cmd} \otimes \psi$, \\
+\ooo our poststate is $G(\phi' \otimes R(u, \cellneg{c}{\cmd} \otimes \psi)) \land v = v' \land \mathit{set}(r, z, r)$ \\
+\ooo Simplifying away the $v'$, we get $\mathit{set}(r, z, r)$ and $G(\phi' \otimes \cellneg{c}{\cmd} \otimes R(u, \psi))$ \\
+\ooo So there is a shadowing $H = (D,h)$ such that $\mathit{Inv}((D, h), \phi' \otimes R(u, \cellneg{c}{\cmd} \otimes \psi))$ \\
 \ooo Now take $H' = (D,h')$ and $h'$ as in the semantic update lemma \\
-\ooo We know $H', D \models R(\setof{a}, \phi' \otimes \cellpos{c}{e}{v}{r} \otimes R(u, \psi))$\\
-\ooo So we know $H', D \models R(\setof{a}, \phi') \otimes \cellpos{c}{e}{v}{r} \otimes R(u \cup \setof{a}, \psi))$ \\
+\ooo We know $H', D \models R(\setof{a}, \phi' \otimes \cellpos{c}{\cmd}{v}{r} \otimes R(u, \psi))$\\
+\ooo So we know $H', D \models R(\setof{a}, \phi') \otimes \cellpos{c}{\cmd}{v}{r} \otimes R(u \cup \setof{a}, \psi))$ \\
 \ooo Furthermore we know that this $H'$ preserves the relevant order structure \\
 \ooo $\letv{\_}{[a.value := v']}{}$ \\
 \ooo $\letv{\_}{[a.reads := z]}{}$ \\
@@ -2002,8 +2019,8 @@ The following triple holds:
 \ooo These commands establish $\mathit{heap}(H')$ \\
 \ooo The last requires an induction based on the size of $r$ \\ 
 \oox and the unfolding axiom in the cellset interface \\
-\ooo Now we know $\mathit{Inv}(H', R(\setof{a}, \phi') \otimes \cellpos{c}{e}{v}{r} \otimes R(u \cup \setof{a}, \psi))$ \\
-\ooo So we know $G(R(\setof{a}, \phi') \otimes \cellpos{c}{e}{v}{r} \otimes R(u \cup \setof{a}, \psi))$ \\
+\ooo Now we know $\mathit{Inv}(H', R(\setof{a}, \phi') \otimes \cellpos{c}{\cmd}{v}{r} \otimes R(u \cup \setof{a}, \psi))$ \\
+\ooo So we know $G(R(\setof{a}, \phi') \otimes \cellpos{c}{\cmd}{v}{r} \otimes R(u \cup \setof{a}, \psi))$ \\
 \ooo $(v, z)]$ \\
 \ooo So $\exists z.\;a = (v,z) \land \mathit{set}(\setof{c}, z, \setof{c})$ 
 \end{tabbedproof}
@@ -2016,9 +2033,9 @@ The following specification is valid:
 \begin{displaymath}
 \begin{array}{l}
 \setof{\phi' \vdash \phi} \specand \setof{\theta \vdash \theta'} \specand \\
-\forall \psi.\; \mspec{G(\phi \otimes \psi) \land P}{e}{(x,z)}{G(\theta\otimes R(u, \psi)) \land Q} \\
+\forall \psi.\; \mspec{G(\phi \otimes \psi) \land P}{\cmd}{(x,z)}{G(\theta\otimes R(u, \psi)) \land Q} \\
 \specimp \\
-\forall \psi.\; \mspec{G(\phi' \otimes \psi) \land P}{e}{(x,z)}{G(\theta'\otimes R(u, \psi)) \land Q}  \\
+\forall \psi.\; \mspec{G(\phi' \otimes \psi) \land P}{\cmd}{(x,z)}{G(\theta'\otimes R(u, \psi)) \land Q}  \\
 \end{array}
 \end{displaymath}
 \end{prop*}
@@ -2026,12 +2043,12 @@ The following specification is valid:
 \begin{proof}
 \begin{tabbedproof}
 \oo Assume we know $\phi' \vdash \phi$ and $\psi \vdash \psi'$ \\
-\oo Furthermore assume $\forall \psi.\; \spec{G(\phi \otimes \psi) \land P}{e}{(x,z)}{G(\theta\otimes R(u, \psi)) \land Q}$ \\
+\oo Furthermore assume $\forall \psi.\; \spec{G(\phi \otimes \psi) \land P}{\cmd}{(x,z)}{G(\theta\otimes R(u, \psi)) \land Q}$ \\
 \ooo Now assume $\psi$, and that we are in a prestate $G(\phi' \otimes \psi) \land P$ \\
 \ooo So we know there is an $H$ such that $\mathit{Inv}(H, \phi' \otimes \psi)$ \\
 \ooo Since $\phi' \models \phi$, we know that $H, D \models \phi \otimes \psi$ \\
 \ooo Hiding the existential again, we know that $G(\phi \otimes \psi) \land P$ \\
-\ooo $e$
+\ooo $\cmd$
 \ooo Now by assumption we know $G(\theta \otimes R(u, \psi)) \land Q$ \\
 \ooo So we know there is an $H$ such that $\mathit{Inv}(H, \theta \otimes \psi)$ \\
 \ooo Since $\theta \vdash \theta'$, we know that $\mathit{Inv}(H, \theta' \otimes \psi)$ \\
@@ -3104,8 +3121,8 @@ which is intended to be used to represent pure collections of
 existentially quantified cells. Specifying this interface is not
 entirely trivial, because of the way equality works for this
 type. Ordinarily, we would simply give a two-place predicate $set(v,
-elts)$ relating a value $v$, and the mathematical set of elements
-$elts$ it represents.
+\elts)$ relating a value $v$, and the mathematical set of elements
+$\elts$ it represents.
 
 However, this approach is not sufficient in our case. In order to
 manage dependencies, we need to be able to test cells of
@@ -3121,70 +3138,77 @@ establish equality. Since these identifiers are all generated
 dynamically along with the cells, this means that the precise partial
 equivalence relation we need to use is determined dynamically as
 well. So we add an additional index to the set predicate $set(W, v,
-elts)$. The extra parameter $W$ is the \emph{world}, the set of all
+\elts)$. The extra parameter $W$ is the \emph{world}, the set of all
 the cells allocated so far, which must collectively satisfy the
-constraint that they are equal if and only if their identifier fields
-match. 
+constraint that two elements of the world are equal if and only if their
+identifier fields match.
 
 All of the usual set operations exist. We have an $\ctext{emptyset}$,
-representing an empty set of cells. We have $\ctext{addset}\;v\;x$,
-which adds the element $x$ to the set $v$ represents, and
-$\ctext{removeset}\;v\;x$, which removes $x$ from the set $v$
-represents. We also have $\ctext{iterset}\;f\;v$, which iterates over
-the elements of $v$'s set and applies $f$ to each element in some
-sequential order. (Observe that the specification makes use of two 
-auxiliary predicates: $matches$, which assert that a
+representing an empty set of cells, as well as singleton
+($\ctext{singleton}$) and union ($\ctext{union}$) operations.  We have
+$\ctext{addset}\;v\;x$, which adds the element $x$ to the set $v$
+represents, and $\ctext{removeset}\;v\;x$, which removes $x$ from the
+set $v$ represents. We also have $\ctext{iterset}\;f\;v$, which
+iterates over the elements of $v$'s set and applies $f$ to each
+element in some sequential order. (Observe that the specification
+makes use of two auxiliary predicates: $matches$, which assert that a
 set and a list have the same elements; and $iterseq$, which constructs
-a command representing the sequential execution of those elements.) 
+a command representing the sequential execution of those elements.)
 
 We have three axioms that our implementation must satisfy. First, if a
 $\cellset$ value $v$ represents a set in a world $W$, it will also
 represent a set in any larger world $W'$. Second, the values in a set
 are always a subset of the world $W$. Finally, we require that
-$set(W,v,elts)$ is a pure predicate (i.e., is not heap-dependent),
+$set(W,v,\elts)$ is a pure predicate (i.e., is not heap-dependent),
 which implies that it have a purely functional implementation (for
 example, as a binary tree). 
 
 
 \begin{tabbing}
 $World = $ \\
-\;\;\;\;\=$\{D \in \powersetfin{ecell}\;|\;\forall c,d \in D.\;$\=$identity(c) = identity(d) \iff c = d\}$\\[1em]
+\;\;\;\;\=$\{D \in \powersetfin{\ecell}\;|\;\forall (\pack{\alpha}{c_0} \; \mathrm{as}\; c),(\pack{\beta}{d_0} \;\mathrm{as}\; d) \in D.\;$\=$c_0.id = d_0.id \iff c = d\}$\\[1em]
 
 $\exists \cellset : \star.$ \\
-$\exists set : World \To \cellset \To \powersetfin{ecell} \To \assert.$ \\
+$\exists set : World \To \cellset \To \powersetfin{\ecell} \To \assert.$ \\
 $\exists \ctext{emptyset}    : cellset.$ \\
-$\exists \ctext{addset}      : \cellset \to ecell \to \cellset.$ \\
-$\exists \ctext{removeset}   : \cellset \to ecell \to \cellset.$ \\
-$\exists \ctext{iterset}     : \cellset \to (ecell \to \monad{\unittype}) \to \unittype.$\\[1em]
+$\exists \ctext{singleton}   : \ecell \to \cellset.$ \\
+$\exists \ctext{union}      : \cellset \to \cellset \to \cellset.$ \\
+$\exists \ctext{addset}      : \cellset \to \ecell \to \cellset.$ \\
+$\exists \ctext{removeset}   : \cellset \to \ecell \to \cellset.$ \\
+$\exists \ctext{iterset}     : (\ecell \to \monad{\unittype}) \to \cellset \to \unittype.$\\[1em]
 
 $\forall W \in World.\; set(W, \ctext{emptyset}, \emptyset)$ \\[1em]
 
+$\forall W \in World, c \in W.\; set(W, \ctext{singleton}\;c, \setof{c})$ \\[1em]
 
-$\forall W \in World, v : \cellset, x : ecell, elts \in \powersetfin{ecell}.$ \\ 
-\> $set(W, v, elts) \land x \in W \implies set(W, \ctext{addset}\;v\;x, elts \cup \setof{x})$ \\[1em]
-
-
-$\forall W \in World, v : \cellset, x : ecell, elts \in \powersetfin{ecell}.$ \\ 
-\> $set(W, v, elts) \land x \in W \implies set(W, \ctext{removeset}\;v\;x, elts - \setof{x})$ \\[1em]
+$\forall W \in World, c_1 : \cellset, \elts_1 \in \powersetfin{W}, c_2 : \cellset, \elts_2 \in \powersetfin{W}.$ \\
+\;\;$set(W, c_1, \elts_1) \land set(W, c_2, \elts_2) \implies set(W, \ctext{union}\;c_1\;c_2, \elts_1 \cup \elts_2)$ \\[1em]
 
 
-$\forall W \in World, v : \cellset, elts \in \powersetfin{ecell}, 
-         f : (ecell \to \monad{\unittype}).$ \\ 
-\> $set(W, v, elts) \implies \exists L : \seqsort{ecell}.\;$\=$matches\;elts\;L\; \land$ \\
-\>                                \>$\ctext{iterset}\;f\;v = iterseq\;f\;L$ \\[1em]
+$\forall W \in World, v : \cellset, x : \ecell, \elts \in \powersetfin{\ecell}.$ \\ 
+\> $set(W, v, \elts) \land x \in W \implies set(W, \ctext{addset}\;v\;x, \elts \cup \setof{x})$ \\[1em]
 
 
-$\forall W, W' \in World, v, elts.$ \\
-\>$set(W,v,elts) \land W \subseteq W' \implies set(W',v, elts)$\\[1em]
+$\forall W \in World, v : \cellset, x : \ecell, \elts \in \powersetfin{\ecell}.$ \\ 
+\> $set(W, v, \elts) \land x \in W \implies set(W, \ctext{removeset}\;v\;x, \elts - \setof{x})$ \\[1em]
 
-$\forall W, W' \in World, v, elts.$ \\
-\>$set(W, v, elts) \implies elts \subseteq W$ \\[1em]
 
-$\forall W, v, elts.\; pure(set(W,v,elts))$ \\[1em]
+$\forall W \in World, v : \cellset, \elts \in \powersetfin{\ecell}, 
+         f : (\ecell \to \monad{\unittype}).$ \\ 
+\> $set(W, v, \elts) \implies \exists L : \seqsort{\ecell}.\;$\=$matches\;\elts\;L\; \land \ctext{iterset}\;f\;v = iterseq\;f\;L$ \\[1em]
+
+
+$\forall W, W' \in World, v, \elts.$ \\
+\>$set(W,v,\elts) \land W \subseteq W' \implies set(W',v, \elts)$\\[1em]
+
+$\forall W, W' \in World, v, \elts.$ \\
+\>$set(W, v, \elts) \implies \elts \subseteq W$ \\[1em]
+
+$\forall W, v, \elts.\; \mathrm{Pure}(set(W,v,\elts))$ \\[1em]
   
 
-$matches\;elts\;[] \qquad\;\;\; = elts = \emptyset$ \\
-$matches\;elts\;(v :: vs) = v \in elts \land matches\;(elts - \setof{v})\;vs$\\[1em]
+$matches\;\elts\;[] \qquad\;\;\; = \elts = \emptyset$ \\
+$matches\;\elts\;(v :: vs) = v \in \elts \land matches\;(\elts - \setof{v})\;vs$\\[1em]
 
 $iterseq\; f\; [] \qquad\;\;\;\;$\=$= \comp{\unit}$ \\
 $iterseq\; f\; (v :: vs)$\>$= \comp{\letv{\unit}{f\;v}{\ctext{run}\;iterseq\;f\;vs}}$ \\
