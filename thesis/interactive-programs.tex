@@ -137,13 +137,13 @@ $\ctext{bind}\;\cmd\;f = [$\=$\letv{(v,r_1)}{\cmd}{}$ \nextline
 $\ctext{read} : \forall \alpha:\star.\; \celltype{\alpha} \to \codetype{\alpha}$ \nextline
 $\ctext{read}\;a = [$\=$\letv{o}{\comp{!a.value}}{}$ \nextline
                      \>$\ctext{run}\;\ctext{case}(o,$ \nextline
-                     \>\qquad\= $\ctext{Some}\;v \to \comp{\pair{v}{\ctext{singleton}\;a}},$ \nextline
+                     \>\qquad\= $\ctext{Some}\;v \to \comp{\pair{v}{\ctext{singleton}\;(\pack{\alpha}{a})}},$ \nextline
                      \>      \> $\ctext{None} \to [$\=$\letv{\cmd}{\comp{!a.code}}{}$ \nextline
                      \>      \>                     \>$\letv{(v,r)}{\cmd}{}$ \nextline
                      \>      \>                     \>$\letv{\_}{\comp{a.value := \Some(v)}}{}$\nextline
                      \>      \>                     \>$\letv{\_}{\comp{a.reads := r}}{}$ \nextline
-                     \>      \>                     \>$\letv{\_}{\ctext{iterset}\;(\ctext{add\_observer}\;\pack{\alpha}{a})\;r}{}$ \nextline
-                     \>      \>                     \>$\;\pair{v}{\ctext{singleton}\;\pack{\alpha}{a}}])]$ \nextline[1em]
+                     \>      \>                     \>$\letv{\_}{\ctext{iterset}\;(\ctext{add\_observer}\;(\pack{\alpha}{a}))\;r}{}$ \nextline
+                     \>      \>                     \>$\;\pair{v}{\ctext{singleton}\;(\pack{\alpha}{a})}])]$ \nextline[1em]
 
 $\getref : \forall \alpha : \reftype{\alpha} \to \codetype{\alpha}$ \nextline
 $\getref r = \comp{\letv{v}{\comp{!r}}{\pair{v}{\ctext{emptyset}}}}$ \nextline[1em]
@@ -152,7 +152,7 @@ $\setref : \forall \alpha : \reftype{\alpha} \to \alpha \to \codetype{\unittype}
 $\setref r\;v = \comp{\letv{\_}{\comp{r := v}}{\pair{\unit}{\ctext{emptyset}}}}$ \nextline[1em]
 
 $\newcell : \forall \alpha:\star.\; \codetype{\alpha} \to \monad{\celltype{\alpha}}$ \nextline
-$\newcell\;\cmd = [$\=$\letv{id}{!counter}{}$ \nextline
+$\newcell\;\cmd = [$\=$\letv{id}{[!counter]}{}$ \nextline
                     \>$\letv{\_}{\comp{counter := id + 1}}{}$ \nextline
                     \>$\letv{code}{\newref{\codetype{\alpha}}{\cmd}}{}$ \nextline
                     \>$\letv{value}{\newref{\opttype{\;\alpha}}{\ctext{None}}}{}$ \nextline
@@ -184,12 +184,12 @@ $\ctext{mark\_unready}\;cell =\; $\=$\ctext{unpack}(\alpha, a) = cell\; \ctext{i
 \>     \>$a.obs   := \ctext{emptyset}]$ 
 \nextline[1em]
 $\ctext{add\_observer} : \ecell \to \ecell \to \monad{1}$ \nextline
-$\ctext{add\_observer} \;o \;\pack{\beta}{c} = [$\=$\letv{os}{[!(c.\mathit{obs})]}{}$ \nextline
+$\ctext{add\_observer} \;o \;(\pack{\beta}{c}) = [$\=$\letv{os}{[!(c.\mathit{obs})]}{}$ \nextline
                                                   \>$\letv{os}{[\ctext{addset}\;os\;o]}{}$ \nextline
                                                   \>$c.\mathit{obs} := os]$
 \nextline[1em]
 $\ctext{remove\_obs} : \ecell \to \ecell \to \monad{1}$ \nextline
-$\ctext{remove\_obs} \;o \;\pack{\beta}{c} = [$\=$\letv{os}{[!(c.\mathit{obs})]}{}$ \nextline
+$\ctext{remove\_obs} \;o \;(\pack{\beta}{c}) = [$\=$\letv{os}{[!(c.\mathit{obs})]}{}$ \nextline
                                              \>$\letv{os}{[\ctext{removeset}\;os\;o]}{}$ \nextline
                                              \>$c.\mathit{obs} := os]$
 
@@ -291,15 +291,16 @@ inside of a code expression to find its ``free cells'', and so we rely
 upon the invariant that a code expression will return every cell it
 read, in addition to its return value.
 
-Further interesting things happen with the $\newcell\;\cmd$
-operation.  It creates a new cell value, setting the code field with
-the argument $\cmd$, and generating an id by dereferencing and
-incrementing the variable $counter$. The $counter$ variable occurs
-freely in this definition, because it is a piece of state global to
-this module, and must be initialized by whatever initialization
-routine first constructs the whole module as an existential package.
-Since $counter$ is otherwise private, we can generate unique
-identifiers by incrementing it as we create new cells. 
+Further interesting things happen with the $\newcell\;\cmd$ operation.
+It creates a new cell value, setting the code field with the argument
+$\cmd$, and generating an id by dereferencing and incrementing the
+contents of the variable $counter$. The $counter$ variable occurs
+freely in this definition, because it is a variable of type
+$\reftype{\N}$ referring to a piece of state global to the module.
+The reference must be initialized by whatever initialization routine
+first constructs the whole module as an existential package.  Since
+$counter$ is otherwise private, we can generate unique identifiers by
+incrementing it as we create new cells.
 
 Finally, the $\updatecell\;cell\;\cmd$ operation updates a cell
 $cell$ with a new code expression $\cmd$. (As an aside, it's worth
@@ -310,14 +311,13 @@ longer necessarily correct.
 
 Therefore, we have to drop the memoized value of the cell, and any
 cell that transitively observes the cell. This is what the
-$\ctext{mark\_unready}$ function does. Given a cell, it takes all of the
-observers of the current cell and recursively makes all of
-them unready. Then it removes the current cell from the observer sets of
-all the cells it reads, and then it nulls out the current cell's
-memoized value, as well as setting its read and observer sets to
-empty. Notice that there is no explicit base case to the recursive
-call; if there are any cycles in the dependency graph, invalidation
-could go into an infinite loop. 
+$\ctext{mark\_unready}$ function does. Given a cell, it takes all of
+the observers of that cell and recursively makes all of them
+unready. Then it removes that cell from the observer sets of all the
+cells it reads, and nulls out that cell's memoized value, as well as
+setting its read and observer sets to empty. Notice that there is no
+explicit base case to the recursive call; if there are any cycles in
+the dependency graph, invalidation could go into an infinite loop.
 
 So far, we have described the implementation invariants incrementally
 and informally. Before proceeding to the formal description, we will
@@ -359,17 +359,17 @@ direction these two functions look is why we end up needing a global
 invariant: we need to know that these two directions are in harmony
 with one another.
 
-Now, note that the type of $\ctext{update}$ is simply the monadic type
-$\monad{\unittype}$, which precludes clients from constructing
-expressions of type $\codetype{\alpha}$ which invoke it. The reason
-for this is that the $\codetype{\alpha}$ is an abstract type, and
-clients can construct terms of this type only by using the
+Now, note that the type of calls to $\ctext{update}$ is simply the
+monadic type $\monad{\unittype}$, which precludes clients from
+constructing expressions of type $\codetype{\alpha}$ which invoke
+it. The reason for this is that the $\codetype{\alpha}$ is an abstract
+type, and clients can construct terms of this type only by using the
 $\ctext{return}, \ctext{bind}, \ctext{read}, \ctext{getref}$ and
 $\ctext{setref}$ operations. Since none of these operations themselves
 invoke $\ctext{update}$, no client code can put a code expression in a
 cell which can invoke it. (Making this argument completely airtight
 would require a parametric model of our language, which we do not
-have, but`the intuition is sufficient to guide the design of the
+have, but the intuition is sufficient to guide the design of the
 program invariant.)
 
 As a result, when we evaluate a code expression, we will never
@@ -398,18 +398,19 @@ $\otimes$, and take $I$ to be the unit of this binary operator.
 
 The atomic form $\localref{r}{v}$ says that $r$ is a piece of local
 state owned by the network, currently with value $v$. There are two
-atomic forms representing cells. $\cellneg{a}{\cmd}$ says that $a$ is a
-cell with code $\cmd$, which is unready to deliver a value --- it needs
-to be re-evaluated before it can yield a value. $\cellpos{a}{\cmd}{v}{r}$
-says that $a$ is a cell with code $\cmd$ that will deliver the value $v$,
-under the condition that all the cells in its read set $r$ are
-themselves ready. If anything it reads is known to be unready, then it
-is unready itself. (We will sometimes write $\celleither{a}{\cmd}$ when
-we do not care whether $a$ is ready or not.)
+atomic forms representing cells. $\cellneg{a}{\cmd}$ says that $a$ is
+a cell with code $\cmd$ that is unready to deliver a value --- it
+needs to be re-evaluated before it can yield a
+value. $\cellpos{a}{\cmd}{v}{r}$ says that $a$ is a cell with code
+$\cmd$ that will deliver the value $v$, under the condition that all
+the cells in its read set $r$ are themselves ready. However, if
+anything it reads is unready, then it itself is unready. (We will
+sometimes write $\celleither{a}{\cmd}$ when we do not care whether $a$
+is ready or not.)
 
 First, notice the must/may flavor of this reading. The formula
 $\cellneg{a}{\cmd}$ says that $a$ \emph{must} be unready.  The formula
-$\cellpos{a}{\cmd}{v}{r}$ says that $a$ \emph{may} have be ready,
+$\cellpos{a}{\cmd}{v}{r}$ says that $a$ \emph{may} be ready,
 conditional on the readiness of the elements of its read set
 $r$. Second, notice that the backwards dependencies are entirely
 missing from these formulas. We have simply left out the other half of
@@ -440,10 +441,12 @@ $Inv(H, \phi) \triangleq $ \\
 The auxiliary definitions we used in this definition are all given in
 Figure~\ref{heap-invariant}. 
 
-We first assert the existence of a cell heap $H$, which is a
-collection of cells, together with a function mapping each cell to a
-code expression, a possible value, a read set, an observed set, and an
-identifier, which satisfies the overall invariant $Inv$.
+We first assert the existence of a cell heap $H = (D,h)$, which is a
+collection of cells $D$, together with a function $h$ mapping each
+cell to a code expression, a possible value, a read set, an observed
+set, and an integer identifier, which satisfies the overall invariant
+$Inv(H, \phi)$.
+
 
 
 In the first two lines of $Inv(H, \phi)$, we assert all of the global 
@@ -484,8 +487,17 @@ represent the appropriate sets of cells.  Since none of the prior
 clauses say anything about the local state, we also use the
 $\mathit{refs}(\phi)$ function to take a formula, and assemble a
 collection of points-to assertions $r \pointsto v$ from each
-$\localref{r}{v}$ in our formula. (As a reminder, the specifications
-of the set operations are given in Appendix A of this chapter.)
+$\localref{r}{v}$ in our formula. 
+
+As a reminder, the specifications of the set operations are given in
+Appendix A of this chapter. One unusual feature of the specification
+is that we have a three-place relation $\mathit{set}(W, v, xs)$, which
+says that $v$ is a value representing a set of $\mathit{ecell}$s $xs$.
+Since we cannot directly compare cells of different type for equality,
+we include a unique integer id field in each cell. Furthermore, since
+these id fields are dynamically-generated, we need to track the
+association of id fields with the natural equality of the
+$\mathit{ecell}$ type.
 
 Note that the separation requirements in $\mathit{heap}(H)$ ensure
 that every cell value $c$ in set of cells $D$ has a disjoint set of
@@ -507,28 +519,31 @@ $code = \pi_1$ \\
 $value = \pi_2$ \\
 $reads = \pi_3$ \\
 $obs = \pi_4$ \\
-$identity = \pi_5$ \\[1em]
+$id = \pi_5$ \\[1em]
 
 $V_{(D, h)} = \comprehend{c \in D}{\exists v.\; value(h(c)) = \ctext{Some}(v)}$ \\
-$R_{(D, h)} = \comprehend{(c,c') \in D}{ c' \in reads(h(c)) }$ \\
-$O_{(D, h)} = \comprehend{(c,c') \in D}{ c' \in obs(h(c)) }$ \\[1em]
+$R_{(D, h)} = \comprehend{(c,c') \in D \times D}{ c' \in reads(h(c)) }$ \\
+$O_{(D, h)} = \comprehend{(c,c') \in D \times D}{ c' \in obs(h(c)) }$ \\[1em]
 
 $\mathit{Fin}(n) = \comprehend{ i \in \N }{ i < n }$ \\[1em]
 
-$unique(D,h) = \exists$\=$i : Fin(|D|) \to D.\; i \circ (identity \circ h) = id \; \land (identity \circ h) \circ i = id$ \\[1em]
+$unique(D,h) = \exists$\=$i : Fin(|D|) \to D.\; i \circ (id \circ h) = I_D \; \land (id \circ h) \circ i = I_{|D|}$  \\
+where $I_X : X \to X = \fun{x}{x}$ \\[1em]
 
 $\satisfies{(D,h)}{\phi} = (D,h), D \models \phi$ \\[1em]
 
-$H, D \models \localref{r}{v} \qquad \qquad$\=$\iff \top$ \\
-$H, D \models I$                            \>$\iff \top$ \\
-$H, D \models \phi \otimes \psi$            \>$\iff \exists D_1, D_2.\;$\=$D = D_1 \uplus D_2 
-                                                      \land H, D_1 \models \phi
-                                                      \land H, D_2 \models \psi$ \\
-$H, D \models \cellneg{a}{\cmd}$               \>$\iff a \in D \land code(h(a)) = \cmd \land a \not \in V_H$ \\
-$H, D \models \cellpos{a}{\cmd}{v}{r}$         \>$\iff $\=$ a \in D \land code(h(a)) = \cmd \;\land$ \\
-\>      \>$\mathrm{if}\;r \subseteq V_H$ \\
+$\models \;\subseteq\; \Sigma (D,h):CellHeap.\; D' \subseteq D$ \\[0.5em]
+
+$(D,h), D' \models \localref{r}{v} \qquad \qquad$\=$\iff \top$ \\
+$(D,h), D' \models I$                            \>$\iff \top$ \\
+$(D,h), D' \models \phi \otimes \psi$            \>$\iff \exists D_1, D_2.\;$\=$D' = D_1 \uplus D_2 
+                                                      \land (D,h), D_1 \models \phi
+                                                      \land (D,h), D_2 \models \psi$ \\
+$(D,h), D' \models \cellneg{a}{\cmd}$               \>$\iff a \in D' \land code(h(a)) = \cmd \land a \not \in V_{(D,h)}$ \\
+$(D,h), D' \models \cellpos{a}{\cmd}{v}{r}$         \>$\iff $\=$ a \in D' \land code(h(a)) = \cmd \;\land$ \\
+\>      \>$\mathrm{if}\;r \subseteq V_{(D,h)}$ \\
 \>      \>$\mathrm{then}\;value(h(a)) = \ctext{Some}\;v \land reads(h(a)) = r$ \\
-\>      \>$\mathrm{else}\;a \not\in V_H$\\[1em]
+\>      \>$\mathrm{else}\;a \not\in V_{(D,h)}$\\[1em]
  
 
 $heap(D,h) = $ \\
@@ -538,11 +553,11 @@ $heap(D,h) = $ \\
                          \>$c.value \pointsto value(h(cell)) \;* $ \\
                          \>$c.reads \pointsto v_r \;* $ \\
                          \>$c.obs   \pointsto v_o \;* $ \\
-                         \>$c.id    = identity(h(cell)) \;\land$ \\
+                         \>$c.id    = id(h(cell)) \;\land$ \\
                          \>$set(D, v_r, reads(h(cell))) \;\land$ \\
                          \>$set(D, v_o, obs(h(cell)))$ \\[1em]
 
-$\mathit{refs}(I) \qquad\qquad\qquad$\=$= \emp$ \\
+$\mathit{refs}(I) \qquad\qquad\qquad\qquad$\=$= \emp$ \\
 $\mathit{refs}(\phi \otimes \psi) $\>$= \mathit{refs}(\phi) * \mathit{refs}(\psi)$ \\
 $\mathit{refs}(\cellneg{c}{\cmd}) $\>$= \emp$ \\
 $\mathit{refs}(\cellpos{c}{\cmd}{v}{r}) $\>$= \emp$ \\
@@ -3127,10 +3142,10 @@ $\elts$ it represents.
 However, this approach is not sufficient in our case. In order to
 manage dependencies, we need to be able to test cells of
 \emph{different} concrete type for equality, and the natural equality
-for references only permits testing references of the same type. As a
-result, we can't unpack an existentially-quantified cell and compare
-the elements in its tuple, because we don't know that the two cells
-are of the same type (and indeed, they might not be). 
+test for references only permits testing references of the same
+type. As a result, we can't unpack an existentially-quantified cell
+and compare the elements in its tuple, because we don't know that the
+two cells are of the same type (and indeed, they might not be).
 
 To get around this problem, we generate a unique integer identifier
 for each cell we create, and then compare those identifiers to
@@ -3163,56 +3178,60 @@ $set(W,v,\elts)$ is a pure predicate (i.e., is not heap-dependent),
 which implies that it have a purely functional implementation (for
 example, as a binary tree). 
 
+\begin{specification}
+$World = $ \nextline
+\;\;\;\;\=$\{D \in \powersetfin{\ecell}\;|\;\forall (\pack{\alpha}{c_0} \; \mathrm{as}\; c),(\pack{\beta}{d_0} \;\mathrm{as}\; d) \in D.\;$\=$c_0.id = d_0.id \iff c = d\}$\nextline[1em]
 
-\begin{tabbing}
-$World = $ \\
-\;\;\;\;\=$\{D \in \powersetfin{\ecell}\;|\;\forall (\pack{\alpha}{c_0} \; \mathrm{as}\; c),(\pack{\beta}{d_0} \;\mathrm{as}\; d) \in D.\;$\=$c_0.id = d_0.id \iff c = d\}$\\[1em]
+$\exists \cellset : \star.$ \nextline
+$\exists set : World \To \cellset \To \powersetfin{\ecell} \To \assert.$ \nextline
+$\exists \ctext{emptyset}    : cellset.$ \nextline
+$\exists \ctext{singleton}   : \ecell \to \cellset.$ \nextline
+$\exists \ctext{union}      : \cellset \to \cellset \to \cellset.$ \nextline
+$\exists \ctext{addset}      : \cellset \to \ecell \to \cellset.$ \nextline
+$\exists \ctext{removeset}   : \cellset \to \ecell \to \cellset.$ \nextline
+$\exists \ctext{iterset}     : (\ecell \to \monad{\unittype}) \to \cellset \to \monad{\unittype}.$\nextline[1em]
 
-$\exists \cellset : \star.$ \\
-$\exists set : World \To \cellset \To \powersetfin{\ecell} \To \assert.$ \\
-$\exists \ctext{emptyset}    : cellset.$ \\
-$\exists \ctext{singleton}   : \ecell \to \cellset.$ \\
-$\exists \ctext{union}      : \cellset \to \cellset \to \cellset.$ \\
-$\exists \ctext{addset}      : \cellset \to \ecell \to \cellset.$ \\
-$\exists \ctext{removeset}   : \cellset \to \ecell \to \cellset.$ \\
-$\exists \ctext{iterset}     : (\ecell \to \monad{\unittype}) \to \cellset \to \unittype.$\\[1em]
+$\forall W \in World.\; set(W, \ctext{emptyset}, \emptyset)$ \nextline[1em]
 
-$\forall W \in World.\; set(W, \ctext{emptyset}, \emptyset)$ \\[1em]
+$\forall W \in World, c \in W.\; set(W, \ctext{singleton}\;c, \setof{c})$ \nextline[1em]
 
-$\forall W \in World, c \in W.\; set(W, \ctext{singleton}\;c, \setof{c})$ \\[1em]
-
-$\forall W \in World, c_1 : \cellset, \elts_1 \in \powersetfin{W}, c_2 : \cellset, \elts_2 \in \powersetfin{W}.$ \\
-\;\;$set(W, c_1, \elts_1) \land set(W, c_2, \elts_2) \implies set(W, \ctext{union}\;c_1\;c_2, \elts_1 \cup \elts_2)$ \\[1em]
-
-
-$\forall W \in World, v : \cellset, x : \ecell, \elts \in \powersetfin{\ecell}.$ \\ 
-\> $set(W, v, \elts) \land x \in W \implies set(W, \ctext{addset}\;v\;x, \elts \cup \setof{x})$ \\[1em]
+$\forall W \in World, c_1 : \cellset, \elts_1 \in \powersetfin{W}, c_2 : \cellset, \elts_2 \in \powersetfin{W}.$ \nextline
+\;\;$set(W, c_1, \elts_1) \land set(W, c_2, \elts_2) \implies set(W, \ctext{union}\;c_1\;c_2, \elts_1 \cup \elts_2)$ \nextline[1em]
 
 
-$\forall W \in World, v : \cellset, x : \ecell, \elts \in \powersetfin{\ecell}.$ \\ 
-\> $set(W, v, \elts) \land x \in W \implies set(W, \ctext{removeset}\;v\;x, \elts - \setof{x})$ \\[1em]
+$\forall W \in World, v : \cellset, x : \ecell, \elts \in \powersetfin{\ecell}.$ \nextline 
+\> $set(W, v, \elts) \land x \in W \implies set(W, \ctext{addset}\;v\;x, \elts \cup \setof{x})$ \nextline[1em]
+
+
+$\forall W \in World, v : \cellset, x : \ecell, \elts \in \powersetfin{\ecell}.$ \nextline 
+\> $set(W, v, \elts) \land x \in W \implies set(W, \ctext{removeset}\;v\;x, \elts - \setof{x})$ \nextline[1em]
 
 
 $\forall W \in World, v : \cellset, \elts \in \powersetfin{\ecell}, 
-         f : (\ecell \to \monad{\unittype}).$ \\ 
-\> $set(W, v, \elts) \implies \exists L : \seqsort{\ecell}.\;$\=$matches\;\elts\;L\; \land \ctext{iterset}\;f\;v = iterseq\;f\;L$ \\[1em]
+         f : (\ecell \to \monad{\unittype}).$ \nextline 
+\> $set(W, v, \elts) \implies \exists L : \seqsort{\ecell}.\;$\=$matches\;\elts\;L\; \land \ctext{iterset}\;f\;v = iterseq\;f\;L$ \nextline[1em]
 
 
-$\forall W, W' \in World, v, \elts.$ \\
-\>$set(W,v,\elts) \land W \subseteq W' \implies set(W',v, \elts)$\\[1em]
+$\forall W, W' \in World, v, \elts.$ \nextline
+\>$set(W,v,\elts) \land W \subseteq W' \implies set(W',v, \elts)$\nextline[1em]
 
-$\forall W, W' \in World, v, \elts.$ \\
-\>$set(W, v, \elts) \implies \elts \subseteq W$ \\[1em]
+$\forall W \in World, v, \elts.$ \nextline
+\>$set(W, v, \elts) \implies \elts \subseteq W$ \nextline[1em]
 
-$\forall W, v, \elts.\; \mathrm{Pure}(set(W,v,\elts))$ \\[1em]
+$\forall W, v, \elts.\; \mathrm{Pure}(set(W,v,\elts))$ \nextline[1em]
   
+$matches : \powerset{\ecell} \to seqsort{\ecell} \to \assert$ \nextline
+$matches\;\elts\;[] \qquad\;\;\; = \elts = \emptyset$ \nextline
+$matches\;\elts\;(v :: vs) = v \in \elts \land matches\;(\elts - \setof{v})\;vs$\nextline[1em]
 
-$matches\;\elts\;[] \qquad\;\;\; = \elts = \emptyset$ \\
-$matches\;\elts\;(v :: vs) = v \in \elts \land matches\;(\elts - \setof{v})\;vs$\\[1em]
-
-$iterseq\; f\; [] \qquad\;\;\;\;$\=$= \comp{\unit}$ \\
-$iterseq\; f\; (v :: vs)$\>$= \comp{\letv{\unit}{f\;v}{\ctext{run}\;iterseq\;f\;vs}}$ \\
-\end{tabbing}
+$iterseq : (\ecell \to \monad{\unittype}) \to \seqsort{\ecell} \to \monad{\unittype}$ \nextline
+$iterseq\; f\; [] \qquad\;\;\;\;$\=$= \comp{\unit}$ \nextline
+$iterseq\; f\; (v :: vs)$\>$= \comp{\letv{\unit}{f\;v}{\ctext{run}\;iterseq\;f\;vs}}$
+\end{specification}
 
 
 
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "thesis"
+%%% End: 
