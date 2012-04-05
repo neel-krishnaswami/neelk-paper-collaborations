@@ -683,7 +683,7 @@ It is the case that $(d,c) \in R^*_{H|_X}$ if and only if $(d,c) \in R^*_H \land
 \oo $\Rightarrow$: \\
 \ooo Assume $(d,c) \in R^*_{H|_X}$ \\
 \ooo Therefore we have a sequence $(d, \ldots, c)$ in $R_{H|_X}$ \\
-\ooo Now, we proceed by induction on the length of the sequence. \\
+\ooo Now, we proceed by induction on the number of steps from $d$ to $c$. \\
 \ooo Case $n = 0$: \\
 \oooo Then $c = d \in V_{H|_X}$.\\
 \oooo Since $\mathit{value}(h|_{X}(c')) = \IfThenElse{c' \in U^H_X}{\None}{\mathit{value}(h(c'))}$, we know $c \not\in U^H_X$ \\
@@ -742,18 +742,26 @@ is logically equivalent to $c \in U^H_{\setof{z}} \vee c \in U^H_{X}$.
 \oo Note $c \in U^{H|_{X}}_{\setof{z}}$ is equivalent to $(c,z) \in R^*_{H|_{X}}$, \\
 \oo which is equivalent to  $(c, z) \in R^*_H \land c \not\in U^H_{X} \land z \not\in U^H_{X}$, \\
 \oo which is equivalent to  $c \in U^H_{\setof{z}} \land c \not\in U^H_{X} \land z \not\in U^H_{X}$, \\
-\oo Hence this condition is equivalent to  \\
-\oox $c \in U^H_{\setof{z}} \land c \not\in U^H_{X} \land z \not\in U^H_{X} \vee $ \\
+\oo Expanding $c \in U^{H|_X}_{\setof{z}}$ in the formula $c \in U^{H|_{X}}_{\setof{z}} \vee (c \not\in U^{H|_{X}}_{\setof{z}} \land c \in U^H_{X})$, we get \\
+\oox $(c \in U^H_{\setof{z}} \land c \not\in U^H_{X} \land z \not\in U^H_{X}) \;\vee$ \\
 \oox $(\lnot(c \in U^H_{\setof{z}} \land c \not\in U^H_{X} \land z \not\in U^H_{X}) \land c \in U^H_{X})$   \\
-\oo Simplifying the second clause gives us \\
+\oo We can simplify the second clause as follows: \\
+\oo $\lnot(c \in U^H_{\setof{z}} \land c \not\in U^H_{X} \land z \not\in U^H_{X}) \land c \in U^H_{X}$   \\
+\ooo $\simeq (c \not\in U^H_{\setof{z}} \vee c \in U^H_X \vee z \in U^H_X) \land c \in U^H_X$ \\
+\ooo $\simeq (c \not\in U^H_{\setof{z}} \land c \in U^H_X) \vee 
+             (z \in U^H_X \land c \in U^H_X) \vee 
+             c \in U^H_X$ \\
+\ooo $\simeq c \in U^H_X$ \\
+\oo Hence the whole condition is equivalent to:\\
 \oox $(c \in U^H_{\setof{z}} \land c \not\in U^H_{X} \land z \not\in U^H_{X}) \vee c \in U^H_{X}$ \\
 \oo We want to show this is equivalent to $c \in U^H_{\setof{z}} \vee c \in U^H_{X}$ \\
-\oo One direction of the equivalence trivial. To prove the other, assume $c \in U^H_{\setof{z}} \vee c \in U^H_{X}$ \\
-\ooo Now branch on this assumption \\
+\oo The forward direction of the equivalence trivial. \\
+\oo To prove the backwards direction, assume $c \in U^H_{\setof{z}} \vee c \in U^H_{X}$ \\
+\ooo Now case on this assumption \\
 \ooo Case $c \in U^H_{X}$: \\
 \oooo Then $c \in U^H_{X}$ \\
 \ooo Case $c \in U^H_{\setof{z}}$: \\ 
-\oooo Branch on whether $c \in U^H_{X}$ \\
+\oooo Case on whether $c \in U^H_{X}$ \\
 \oooo Case $c \in U^H_{X}$: \\
 \ooooo Then $c \in U^H_{X}$ \\
 \oooo Case $c \not\in U^H_{X}$: \\
@@ -763,7 +771,7 @@ is logically equivalent to $c \in U^H_{\setof{z}} \vee c \in U^H_{X}$.
 \oooooo Since $z \in U^H_{X}$, there is a sequence $(z, \ldots, x) \in R^*_H$ for some $x \in X$ \\
 \oooooo By concatenation, there is a sequence $(c, \ldots, x) \in R^*_H$ for some  $x \in X$ \\
 \oooooo Hence $c \in U^H_{X}$, which is a contradiction \\
-\ooooo Case $z \in U^H_{X}$: \\
+\ooooo Case $z \not\in U^H_{X}$: \\
 \oooooo Hence $c \in U^H_{\setof{z}} \land c \not\in U^H_{X} \land z \not\in U^H_{X}$ \\
 \end{tabbedproof}
 \end{proof}
@@ -810,9 +818,15 @@ We prove this by induction on the size of $Y$.
 \ooooo By the path union lemma, \\
 \ooooox $\mathit{obs}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^H_{X \cup Z \setof{z}}}{\emptyset}{\mathit{obs}(h|_{X \cup Z}(c)) - U^{H|_{X \cup Z}}_{\setof{z}}}$ \\
 \ooooo So $\mathit{obs}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^H_{X \cup Z \setof{z}}}{\emptyset}{\mathit{obs}(h(c)) - U^H_{X \cup Z} - U^{H|_{X \cup Z}}_{\setof{z}}}$ \\
-\ooooo So $\mathit{obs}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^H_{X \cup Z \setof{z}}}{\emptyset}{\mathit{obs}(h|_{X \cup Z}(c)) - (U^H_{X \cup Z} \cup U^{H|_{X \cup Z}}_{\setof{z}})}$ \\
-\ooooo By the path union lemma, \\
-\ooooo $\mathit{obs}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^H_{X \cup Z \setof{z}}}{\emptyset}{\mathit{obs}(h|_{X \cup Z}(c)) - U^H_{X \cup Z \cup \setof{z}}}$\\
+\ooooo So $\mathit{obs}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^H_{X \cup Z \setof{z}}}{\emptyset}{\mathit{obs}(h(c)) - (U^H_{X \cup Z} \cup U^{H|_{X \cup Z}}_{\setof{z}})}$ \\
+\ooooo Now, suppose $y \in U^H_{X \cup Z} \cup U^{H|_{X \cup Z}}_{\setof{z}}$ \\
+\ooooo This is equivalent to $y \in U^H_{X \cup Z} \vee y \in U^{H|_{X \cup Z}}_{\setof{z}}$ \\
+\ooooo This is equivalent to $(y \not\in U^{H|_{X \cup Z}}_{\setof{z}} \land y \in U^H_{X \cup Z}) \vee (y \in U^{H|_{X \cup Z}}_{\setof{z}} \land y \in U^H_{X \cup Z}) \vee y \in U^H_{X \cup Z}$ \\
+\ooooo This is equivalent to $(y \not\in U^{H|_{X \cup Z}}_{\setof{z}} \land y \in U^H_{X \cup Z}) \vee y \in U^H_{X \cup Z}$ \\
+\ooooo By path union, this is equivalent to $y \in U^H_{X \cup Z} \vee y \in U^H_{X \cup Z}$ \\
+\ooooo Hence $U^H_{X \cup Z} \cup U^{H|_{X \cup Z}}_{\setof{z}} = U^H_{X \cup Z \cup \setof{z}}$ \\
+\ooooo Hence we know that \\
+\ooooo $\mathit{obs}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^H_{X \cup Z \setof{z}}}{\emptyset}{\mathit{obs}(h(c)) - U^H_{X \cup Z \cup \setof{z}}}$\\
 \ooooo Hence $\mathit{obs}(h|_{X \cup Z}|_{\setof{z}}(c)) = \mathit{obs}(h|_{X \cup Z \cup \setof{z}})$ \\
 \end{tabbedproof}
 \end{proof}
@@ -828,7 +842,7 @@ Suppose we have $H = (D,h)$ such that
 \noindent For any cell $c \in D$, it is the case that for $H' = (D, h') = H|_{\setof{c}}$, we have
 \begin{enumerate}
 \item $R^+_{H'}$ is a strict partial order 
-\item $V_{H'} = V_H - U$
+\item $V_{H'} = V_H - U^H_{\setof{c}}$
 \item $R_{H'} \subseteq V_{H'} \times V_{H'}$
 \item $R^\dagger_{H'} = O_{H'}$ 
 \item $\mathit{unique}(H')$
@@ -846,24 +860,24 @@ Suppose we have $H = (D,h)$ such that
     \oo Assume that $(a_0,b) \in R^+_{H'}$ \\
     \oo Then there is a sequence $a_0, \ldots, a_k$ such that $b = a_k$ and each $a_{i+1} \in \mathit{reads}(h'(a_i))$ \\
     \oo Suppose we have an arbitrary $a_i, a_{i+1}$, such that $a_{i+1} \in \mathit{reads}(h'(a_i))$ \\
-    \oo Hence it follows that $a_i \not\in U$, since otherwise $\mathit{reads}(h'(a_i)) = \emptyset$ \\
+    \oo Hence it follows that $a_i \not\in U^H_{\setof{c}}$, since otherwise $\mathit{reads}(h'(a_i)) = \emptyset$ \\
     \oo Hence it follows that $\mathit{reads}(h'(a_i)) = \mathit{reads}(h(a_i))$ for $i < k$ \\
     \oo Hence $a_0, \ldots, a_k$ such that $b = a_k$ and each $a_{i+1} \in \mathit{reads}(h(a_i))$ \\
     \oo Hence $(a_0, b) \in R^+_H$ \\
     \oo Hence $a_0 \not= b$, since $R^+_H$ strict partial order 
   \end{tabbedproof}
 
-\item $V_{H'} = V_H - U$
+\item $V_{H'} = V_H - U^H_{\setof{c}}$
   \begin{tabbedproof}
     \oo Suppose $a \in V_{H'}$ \\
     \ooo Then $\mathit{value}(h'(a)) = \Some(v)$ for some $v$ \\
-    \ooo Hence $a \not\in U$ \\
+    \ooo Hence $a \not\in U^H_{\setof{c}}$ \\
     \ooo Hence $\mathit{value}(h'(a)) = \mathit{value}(h(a))$  \\
     \ooo Hence $a \in V_H$ \\
-    \ooo Hence $a \in V_{H} - U$ \\
-    \oo Conversely, suppose $a \in V_{H} - U$ \\
+    \ooo Hence $a \in V_{H} - U^H_{\setof{c}}$ \\
+    \oo Conversely, suppose $a \in V_{H} - U^H_{\setof{c}}$ \\
     \ooo Then $\mathit{value}(h(a)) = \Some(v)$ for some $v$ \\
-    \ooo But since $a \not\in U$, we know $\mathit{value}(h'(a)) = \mathit{value}(h(a)) = \Some(v)$ \\
+    \ooo But since $a \not\in U^H_{\setof{c}}$, we know $\mathit{value}(h'(a)) = \mathit{value}(h(a)) = \Some(v)$ \\
     \ooo Hence $a \in V_{H'}$ 
   \end{tabbedproof}
 
@@ -871,14 +885,14 @@ Suppose we have $H = (D,h)$ such that
   \begin{tabbedproof}
     \oo Assume $(a,b) \in R_{H'}$ \\
     \oo Hence $b \in \mathit{reads}(h'(a))$ \\
-    \oo Hence we know that $a \not\in U$ \\
+    \oo Hence we know that $a \not\in U^H_{\setof{c}}$ \\
     \oo Hence we know that $b \in \mathit{reads}(h(a))$ and $(a,b) \in R_H$\\
     \oo Hence we know that $a \in V_H$ and $b \in V_H$\\
-    \oo Hence we know that $a \in V_H - U$ \\
+    \oo Hence we know that $a \in V_H - U^H_{\setof{c}}$ \\
     \oo Hence we know that $a \in V_{H'}$ \\
-    \oo Since $U$ is transitively-closed, we know that if $b \in U$, then $a \in U$ \\
-    \oo Since $a \not\in U$, we know that $b \not\in U$ \\
-    \oo Hence we know that $b \in V_H - U$ \\
+    \oo Since $U^H_{\setof{c}}$ is transitively-closed, we know that if $b \in U^H_{\setof{c}}$, then $a \in U^H_{\setof{c}}$ \\
+    \oo Since $a \not\in U^H_{\setof{c}}$, we know that $b \not\in U^H_{\setof{c}}$ \\
+    \oo Hence we know that $b \in V_H - U^H_{\setof{c}}$ \\
     \oo Hence we know that $b \in V_{H'}$ 
   \end{tabbedproof}
 
@@ -888,7 +902,7 @@ Suppose we have $H = (D,h)$ such that
     \ooo We want to show that $(a, b) \in O_{H'}$ \\
     \ooo We know that $(b, a) \in R_{H'}$ \\
     \ooo We know that $a \in \mathit{reads}(h'(b))$ \\
-    \ooo Since $R_{H'} \subseteq V_{H'} \times V_{H'}$, we know $a \not\in U$ and $b \not \in U$ \\
+    \ooo Since $R_{H'} \subseteq V_{H'} \times V_{H'}$, we know $a \not\in U^H_{\setof{c}}$ and $b \not \in U^H_{\setof{c}}$ \\
     \ooo Hence $a \in \mathit{reads}(h(b))$ \\ 
     \ooo Hence $b \in \mathit{obs}(h(a))$ \\
     \ooo Hence $b \in \mathit{obs}(h'(a))$ \\
@@ -896,12 +910,12 @@ Suppose we have $H = (D,h)$ such that
     \oo Suppose that $(a, b) \in O_{H'}$. \\
     \ooo We want to show that $(a,b) \in R^\dagger_{H'}$, so we want $(b,a) \in R_{H'}$ \\
     \ooo Since $(a,b) \in O_{H'}$, we know $b \in \mathit{obs}(h'(a))$ \\
-    \ooo Hence $a \not\in U$ and $b \in \mathit{obs}(h(a)) - U$ \\
-    \ooo So $b \in \mathit{obs}(h(a))$ and $b \not \in U$ \\
+    \ooo Hence $a \not\in U^H_{\setof{c}}$ and $b \in \mathit{obs}(h(a)) - U^H_{\setof{c}}$ \\
+    \ooo So $b \in \mathit{obs}(h(a))$ and $b \not \in U^H_{\setof{c}}$ \\
     \ooo So $(a,b) \in O_H$ \\
     \ooo So $(b,a) \in R_H$, and so $a \in \mathit{reads}(h(b))$ \\
-    \ooo Since $b \not\in U$, $\mathit{reads}(h'(b)) = \mathit{reads}(h(b))$ \\
-    \ooo Therefore $a \in \mathit{reads}(h'(a))$, and so $(b,a) \in R_{H'}$ \\
+    \ooo Since $b \not\in U^H_{\setof{c}}$, $\mathit{reads}(h'(b)) = \mathit{reads}(h(b))$ \\
+    \ooo Therefore $b \in \mathit{reads}(h'(a))$, and so $(b,a) \in R_{H'}$ \\
     \ooo Therefore $(a,b) \in R^\dagger_{H'}$ 
   \end{tabbedproof}
 
@@ -922,7 +936,7 @@ have $H', D' \models \phi \otimes \cellneg{c}{\cmd}$.
 \begin{tabbedproof}
 \oo Assume we have $H, D' \models \phi \otimes \celleither{c}{\cmd}$ \\
 \oo Then we have $D_1, D_2$ such that $D_1 \uplus D_2 = D'$ and $H, D_1 \models \phi$ and $H, D_2 \models \celleither{c}{\cmd}$ \\
-\oo Note that this means $c$ is not in the domain of $\phi$ \\
+\oo Note that this means $c$ is not in $D_1$ \\
 \oo First, consider $(D,h), D_1 \models \phi$ \\
 \ooo We will show by induction that $(D,h'), D_1 \models \phi$ \\
 \ooo Case $\phi = I$ or $\phi = \localref{r}{v}$: \\
@@ -938,8 +952,8 @@ have $H', D' \models \phi \otimes \cellneg{c}{\cmd}$.
 \ooo Case $\phi = \cellneg{a}{\cmd}$: \\
 \oooo In this case, we know $a \in D_1$ and $\mathit{code}(h(a)) = \cmd$ and $a \not\in V_{(D,h)}$ \\
 \oooo Hence $\mathit{value}(h(a)) = \None$, and so $\mathit{value}(h'(a)) = \None$ \\
-\oooo Since $R_H \subseteq V_H \times V_H$, it follows  $U = \emptyset$ \\
-\oooo Hence $h' = h$ \\
+% \oooo Since $R_H \subseteq V_H \times V_H$, it follows  $U = \emptyset$ \\
+% \oooo Hence $h' = h$ \\
 \oooo Hence $(D,h'), D_1 \models \cellneg{a}{\cmd}$ \\
 \ooo Case $\phi = \cellpos{a}{\cmd}{v}{r}$: \\
 \oooo Now, consider whether $r \subseteq V_H$ \\
@@ -947,27 +961,28 @@ have $H', D' \models \phi \otimes \cellneg{c}{\cmd}$.
 \ooooo We know $a \in D_1$ and $\mathit{code}(h(a)) = \cmd$ and 
        $\mathit{value}(h(a)) = \Some(v)$ and $\mathit{reads}(h(a)) = r$ \\
 \ooooo So $a \in V_H$. \\
-\ooooo Now consider whether $a \in U$ \\
-\ooooo If $a \in U$: \\
+\ooooo Now consider whether $a \in U^H_{\setof{c}}$ \\
+\ooooo If $a \in U^H_{\setof{c}}$: \\
 \oooooo First, note $a \not\in V_{(D,h')}$ \\
 \oooooo Then $(a, c) \in R^*_H$ \\
 \oooooo Since $c \not= a$ (since $c$ is not in the domain of $\phi$), we know $(a, c) \in R^+_H$ \\
 \oooooo Hence there is a $d \in r$ such that $(a,d) \in R_H$ and $(d, c) \in R^*_H$  \\
-\oooooo Hence $d \in r$ and $d \in U$ and $\mathit{value}(h'(d)) = \None$, and so $d \not\in V_{(D,h')}$\\
+\oooooo Hence $d \in r$ and $d \in U^H_{\setof{c}}$ and $\mathit{value}(h'(d)) = \None$, and so $d \not\in V_{(D,h')}$\\
 \oooooo Hence $r \not\subseteq V_{(D, h')}$ \\
 \oooooo Hence $(D,h'), D_1 \models \cellpos{a}{\cmd}{v}{r}$ \\
-\ooooo If $a \not\in U$: \\
+\ooooo If $a \not\in U^H_{\setof{c}}$: \\
 \oooooo Then note $a \in V_{(D,h')}$ \\
-\oooooo Furthermore, $(c, a) \not\in R^*_H$ \\
+\oooooo Furthermore, $(a, c) \not\in R^*_H$ \\
 \oooooo Hence there is no $d \in r$ such that $(c, d) \in R^*_H$  \\
-\oooooo Hence $r \cap U = \emptyset$ \\
+\oooooo Hence $r \cap U^H_{\setof{c}} = \emptyset$ \\
 \oooooo Hence $r \subseteq V_{(D,h')}$ \\
 \oooooo Hence $(D,h'), D_1 \models \cellpos{a}{\cmd}{v}{r}$ \\
 \oooo If $r \not\subseteq V_H$: \\
 \ooooo Then we know $a \in D_1$ and $\mathit{code}(h(a)) = \cmd$ and $a \not\in V_H$  \\
-\ooooo Since $R_H \subseteq V_H \times V_H$, it follows that $\comprehend{c'\in D}{(a,c') \in R} = \emptyset$. \\
-\ooooo Hence $U = \emptyset$ \\
-\ooooo Hence $h' = h$ \\
+\ooooo Since $V_{H'} \subseteq V_H$, we know $r \not\subseteq V_{H'}$ too \\
+% \ooooo Since $R_H \subseteq V_H \times V_H$, it follows that $\comprehend{c'\in D}{(a,c') \in R} = \emptyset$. \\
+% \ooooo Hence $U = \emptyset$ \\
+% \ooooo Hence $h' = h$ \\
 \ooooo Hence $(D,h'), D_1 \models \cellpos{a}{\cmd}{v}{r}$ \\
 \oo Next, consider $(D,h), D_2 \models \celleither{c}{\cmd}$: \\
 \ooo Since $(c, c) \in R^*_H$,  we know $c \in U$ \\
@@ -985,7 +1000,7 @@ $\mathit{unique}(H)$. Then for any $c \in D$ and $H' = (D, h') =
 H|_{\setof{c}}$, the $\ctext{mark\_unready}$ function satisfies the following specification:
 
 \begin{displaymath}
-\mspec{\mathit{heap}(H)}{\ctext{mark\_unready}(c)}{a:\unittype}{\mathit{heap}(D,h')}
+\mspec{\mathit{heap}(H)}{\ctext{mark\_unready}(c)}{a:\unittype}{\mathit{heap}(H')}
 \end{displaymath}
   
 \end{lemma}
@@ -1019,10 +1034,10 @@ Now we'll proceed line-by-line through the function body of $\ctext{mark\_unread
 \oooo $\mathit{set}(D, os, \emptyset)$ and $\mathit{set}(D, rs, \emptyset)$ \\
 \oooo Simplifying using the axioms for sets, lines 8 and 9 of Figure~\ref{notification-implementation-update} are no-ops \\
 \oooo $\letv{\_}{[a.value := \None]}{}$ \\
-\oooo $\letv{\_}{[a.reads := \emptyset]}{}$ \\
-\oooo $a.obs := \emptyset]$ \\
+\oooo $\letv{\_}{[a.reads := \ctext{emptyset}]}{}$ \\
+\oooo $a.obs := \ctext{emptyset}]$ \\
 \oooo None of these assignments have any effect on the validity of $\mathit{heap}(H')$ \\
-\ooo Suppose whether $c \in V_H$: \\
+\ooo Suppose $c \in V_H$: \\
 \oooo $[\unpack{\alpha}{a}{c}{}$ \\
 \oooo Now, we know that $c = \pack{\alpha}{a}$ \\
 \oooo $\letv{os}{[!(a.obs)]}{}$ \\
@@ -1032,7 +1047,9 @@ Now we'll proceed line-by-line through the function body of $\ctext{mark\_unread
 \oooo Now, by the equational axioms in the cellset interface, $\ctext{iterseq\;mark\_unready}\;os$ \\
 \ooox is equal to a sequence of calls to $\ctext{mark\_unready}$, once for each element of $\mathit{obs}(h(c))$\\
 \oooo By induction on the size of $\mathit{obs}(h(c))$, we end in a logical state $(D, h|_{os})$, \\
-\ooox which also preserves the order structure, and a physical state $\mathit{heap}(D, h|_{\setof{os}})$  \\
+\ooox and a physical state $\mathit{heap}(D, h|_{\setof{os}})$, which (using lemma 79)  \\
+\ooox satisfies the properties $R^\dagger_{(D,h|_{os})} = O_{(D,h|_{os})}$, $R^+_{(D,h|_{os})}$ is a strict partial order, \\
+\ooox $R_{(D,h|_{os})} \subseteq V_{(D,h|_{os})} \times V_{(D,h|_{os})}$ and $\mathit{unique}(D,h|_{os})$ \\
 \oooo Hence in $H' = (D,h|_{\setof{os}})$, every $c'$ which read $c$ in $H$ is no longer in $V_{H'}$ \\ 
 \oooo As a result $U^{H'}_{\setof{c}} = \setof{c}$ \\ 
 \oooo Since $R_H$ was a strict partial order, $c$ is still in $V_{H'}$ \\
@@ -1071,11 +1088,12 @@ it follows that with $H' = (D,h')$, we have $H', D' \models \phi \otimes \cellne
 \begin{proof}
   \begin{tabbedproof}
     \oo Assume $H, D' \models \phi \otimes \cellneg{c}{\cmd}$. \\
-    \ooo So we have $D_1, D_2$ such that $D' = D_1 \uplus D_2$ and $H, D_1 models \phi$ and $H, D_2 \models \cellneg{c}{\cmd}$ \\
+    \ooo So we have $D_1, D_2$ such that $D' = D_1 \uplus D_2$ and $H, D_1 \models \phi$ and $H, D_2 \models \cellneg{c}{\cmd}$ \\
     \ooo Since $H, D_2 \models \cellneg{c}{\cmd}$, we know that $c \in D_2$ and $c \not\in D_1$ \\
     \ooo Now proceed by induction on $\phi$: \\
-    \ooo Case $\phi = I$: \\
-    \oooo In this case, it is immediate that $H', D_1 \models I$ \\
+    \ooo Explicitly, our induction hypothesis is that if $H, \hat{D} \models \phi$ and $c \not \in D$, then $H', \hat{D} \models \phi$ \\
+    \ooo Case $\phi = I$ or $\phi = \localref{r}{v}$: \\
+    \oooo This case is immediate \\
     \ooo Case $\phi = \psi \otimes \theta$: \\
     \oooo In this case, we have $D_3, D_4$ such that $D_1 = D_3 \uplus D_4$ and  \\
     \oooox $H, D_3 \models \psi$ and $H, D_4 \models \theta$ \\

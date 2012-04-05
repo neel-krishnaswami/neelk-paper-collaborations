@@ -17,5 +17,5 @@ version:
 upload: version thesis
 	svn commit -m 'making version for upload' 
 	scp thesis.pdf neelk@linux.gp.cs.cmu.edu:/afs/cs/user/neelk/www/thesis.pdf
-	# scp thesis.pdf /www/sws-homepage/neelk/thesis.pdf
+	cp thesis.pdf /www/sws-homepage/neelk/thesis.pdf
 
