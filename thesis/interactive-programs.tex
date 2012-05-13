@@ -630,7 +630,7 @@ $\forall \psi:\formula.\; $\=$\setof{G(\celleither{o}{\cmd'} \otimes \psi)}$ \\
 \end{prop}
 
 \textbf{Proof Strategy.} The key to this proof is the conditional
-interpretation of the $\cellpos{c}{\cmd}{v}{r}$ formula. When we evaluate
+interpretation of the $\cellpos{c}{\cmd}{v}{r}$ formula. When we execute
 the $\updatecell$ command, we recursively find every cell which
 depends on $o$, and modify it to be unready.
 
@@ -673,6 +673,7 @@ $h|_X$ so that:
 \item $\mathit{obs}(h|_X(c')) = \IfThenElse{c' \in U^H_X}{\emptyset}{\mathit{obs}(h(c')) - U^H_X}$
 \item $\mathit{identity}(h|_X(c')) = \mathit{identity}(h(c'))$
 \end{itemize}
+If $H = (D,h)$, we will write $H|_X$ to mean $(D,h|_X)$. 
 
 It is the case that $(d,c) \in R^*_{H|_X}$ if and only if $(d,c) \in R^*_H \land c \not\in U^H_X \land d \not\in U^H_X$. 
 \end{lemma}
@@ -682,45 +683,37 @@ It is the case that $(d,c) \in R^*_{H|_X}$ if and only if $(d,c) \in R^*_H \land
 \begin{tabbedproof}
 \oo $\Rightarrow$: \\
 \ooo Assume $(d,c) \in R^*_{H|_X}$ \\
-\ooo Therefore we have a sequence $(d, \ldots, c)$ in $R_{H|_X}$ \\
+\ooo Since $R_{H|_X} \subseteq V_{H|_X} \times V_{H|_X}$, we know $R^\ast_{H|_X} \subseteq V_{H|_X} \times V_{H|_X}$ \\
+\ooo So $d \in V_{H|_X}$ and $c \in V_{H|_X}$ \\
+\ooo Therefore we have a sequence $(d, \ldots, c)$, with each adjacent pair in $R_{H|_X}$ \\
 \ooo Now, we proceed by induction on the number of steps from $d$ to $c$. \\
 \ooo Case $n = 0$: \\
 \oooo Then $c = d \in V_{H|_X}$.\\
-\oooo Since $\mathit{value}(h|_{X}(c')) = \IfThenElse{c' \in U^H_X}{\None}{\mathit{value}(h(c'))}$, we know $c \not\in U^H_X$ \\
+\oooo Since $\mathit{value}(h|_{X}(c)) = \IfThenElse{c \in U^H_X}{\None}{\mathit{value}(h(c))}$, we know $c \not\in U^H_X$ \\
 \ooo Case $n = k+1$: \\
-\oooo Hence we have a sequence $(d, \ldots, c_k, c) \in R_{H|_X}$, such that \\
-\oooo $(d, c_k) \in R^*_H$ and $d \not \in U^H_X$ and $c_k \not \in U^H_x$ \\ 
+\oooo Hence we have a sequence $(d, \ldots, c_k, c)$ with each adjacent pair in $R_{H|_X}$, \\
+\oooo such that $(d, c_k) \in R^*_H$ and $d \not \in U^H_X$ and $c_k \not \in U^H_x$ \\ 
 \oooo We know $c \in \mathit{reads}(h|_X(c_k)) = \IfThenElse{c_k \in U^H_X}{\emptyset}{\mathit{reads}(h(c_k))}$ \\
 \oooo Since $c_k \not \in U^H_X$, we know $c \in \mathit{reads}(h(c_k))$, so $(c_k, c) \in R_H$ \\
 \oooo Hence $(d, c) \in R^*_H$ \\
 \oooo We know $c \not \in U^H_X$, since if it were then $c_k \in U^H_X$, which is contradictory \\
-% 
-% \ooo Each consecutive pair $(c_i, c_{i+1})$ satisfies $c_{i+1} \in \mathit{reads}(h|_X(c_i))$ \\
-% \ooo We know $\mathit{reads}(h|_X(c_i) = \IfThenElse{c' \in U^H_X}{\emptyset}{\mathit{reads}(h(c_i))}$ \\
-% \ooo Hence each $c_{i+1} \not\in U^H_X$ and $(c_i, c_{i+1}) \in R_H$ \\ 
-% \ooo Hence $(d,c) \in R^*_H$ and $d \not \in U^H_X$ and $c \not \in U^H_X$ \\ 
 \oo $\Leftarrow$: \\
 \ooo Asssume $(d,c) \in R^*_H \land c \not\in U^H_X \land d \not\in U^H_X$. \\
-\ooo So we have a sequence $(d, \ldots, c)$ with each pair in $R_H$ \\
-% \ooo Suppose an intermediate element $c_i$ between $d$ and $c$ is in $U^H_X$ \\
-% \oooo Then we have a sequence $(c, \ldots, c_i) \in R^*_H$ and a sequence $(c_i,x) \in R^*_X$ for some $x \in X$ \\ 
-% \oooo Concatenating, we have a sequence $(c, \ldots, x) \in R^*_H$ with $x \in X$ \\
-% \oooo This implies that $c \in U^H_X$, which is a contradiction \\
-% \ooo Hence no element in the sequence $(d, \ldots, c)$ is in $U^H_X$ \\ 
-\ooo Now, we will show $(d, \ldots, c) \in R^*_X$ by induction on the length \\
+\ooo So we have a sequence $(d, \ldots, c)$ with each adjacent pair, if any, in $R_H$ \\
+\ooo Now, we will show $(d, \ldots, c) \in R^*_X$ by induction on the number of steps from $d$ to $c$ \\
 \ooo Case $n = 0$: \\
 \oooo So $d = c \in V_{H|_X}$. \\
-\oooo Since $d \not\in U^H_X$, we know $d \in V_H$ \\
-\oooo Hence $(d,c) \in R^*_H$ \\
+\oooo Since $d \not\in U^H_X$, we know $d \in V_{H|X}$ \\
+\oooo Hence $(d,c) \in R^*_{H|_X}$ \\
 \ooo Case $n = k+1$: \\
-\oooo We have $(d, \ldots, c_k, c) \in R^*_H \land c \not\in U^H_X \land d \not\in U^H_X$. \\
-\oooo If $c_k \in U^H_X$ then $d \in U^H_X$, which is a contradiction \\
-\oooo Hence $c_k \not\in U^H_X$ \\
+\oooo We have $(d, \ldots, c_k, c)$ such that $(d,c_k) \in R^*_H \land (c_k,c) \in R_H \land c \not\in U^H_X \land d \not\in U^H_X$. \\
+\oooo If $c_k \in U^H_X$ then $d \in U^H_X$, which is a contradiction, and so $c_k \not\in U^H_X$ \\
 \oooo By induction, $(d, \ldots, c_k) \in R^*_H$ \\
-\oooo We know $c \in \mathit{reads}(h|_X(c_k))$ \\ 
-\oooo Hence $c \in \IfThenElse{c_k \in U^H_X}{\emptyset}{\mathit{reads}(h(c_k))}$ \\
-\oooo Hence $c \in \mathit{reads }(h(c_k))$ \\
-\oooo Hence $(d, c) \in R^*_H$ \\ 
+\oooo Since $(c_k,c) \in R_H$, we know $c \in \mathit{reads}(h(c_k))$ \\ 
+\oooo Since $c_k \not\in U^H_X$, it follows $c \in \IfThenElse{c_k \in U^H_X}{\emptyset}{\mathit{reads}(h(c_k))}$ \\
+\oooo Hence $c \in \mathit{reads }(h|_X(c_k))$ \\
+\oooo Hence $(c_k,c) \in R_{H|_X}$ \\
+\oooo Hence by transitivity $(d, c) \in R^*_{H|_X}$ \\ 
 % \ooo For every $(c_k, c_{k+1}) \in (d, \ldots, c)$, we know $c_{k+1} \in \mathit{reads}(h(c_k))$ \\
 % \ooo So we know $c_{k+1} \in \IfThenElse{c_k \in U^H_X}{\emptyset}{\mathit{reads}(h(c_k))}$ \\
 % \ooo Hence for every $(c_k, c_{k+1}) \in (d, \ldots, c)$, we know $c_{k+1} \in \mathit{reads}(h|_X(c_k))$ \\
@@ -731,48 +724,54 @@ It is the case that $(d,c) \in R^*_{H|_X}$ if and only if $(d,c) \in R^*_H \land
 \begin{lemma}{(Path Union)}
 Suppose we have $H = (D,h)$ such that $R^+_H$ is a strict partial
 order, $R_H \subseteq V_H \times V_H$, $R^\dagger_H = O_H$, and
-$\mathit{unique}(H)$. Then $c \in U^{H|_{X}}_{\setof{z}} \vee
-(c \not\in U^{H|_{X}}_{\setof{z}} \land c \in U^H_{X})$
-is logically equivalent to $c \in U^H_{\setof{z}} \vee c \in U^H_{X}$.
+$\mathit{unique}(H)$. 
+
+Then $U^{H|_X}_{\setof{z}} \cup H^H_X = U^H_{X \cup \setof{z}}$.
+
+% Then $c \in U^{H|_{X}}_{\setof{z}} \vee
+% (c \not\in U^{H|_{X}}_{\setof{z}} \land c \in U^H_{X})$
+% is logically equivalent to $c \in U^H_{\setof{z}} \vee c \in U^H_{X}$.
 \end{lemma}
 
 
 \begin{proof}
 \begin{tabbedproof}
-\oo Note $c \in U^{H|_{X}}_{\setof{z}}$ is equivalent to $(c,z) \in R^*_{H|_{X}}$, \\
+\oo We want to show for all $c$, that $c \in U^{H|_X}_{\setof{z}} \cup H^H_X$ iff $c \in U^H_{X \cup \setof{z}}$. \\
+\oo First, note that the second condition is equivalent to $c \in U^H_X \vee c \in U^H_{\setof{z}}$. \\
+\oo Next, note $c \in U^{H|_{X}}_{\setof{z}}$ is equivalent to $(c,z) \in R^*_{H|_{X}}$, \\
 \oo which is equivalent to  $(c, z) \in R^*_H \land c \not\in U^H_{X} \land z \not\in U^H_{X}$, \\
-\oo which is equivalent to  $c \in U^H_{\setof{z}} \land c \not\in U^H_{X} \land z \not\in U^H_{X}$, \\
-\oo Expanding $c \in U^{H|_X}_{\setof{z}}$ in the formula $c \in U^{H|_{X}}_{\setof{z}} \vee (c \not\in U^{H|_{X}}_{\setof{z}} \land c \in U^H_{X})$, we get \\
-\oox $(c \in U^H_{\setof{z}} \land c \not\in U^H_{X} \land z \not\in U^H_{X}) \;\vee$ \\
-\oox $(\lnot(c \in U^H_{\setof{z}} \land c \not\in U^H_{X} \land z \not\in U^H_{X}) \land c \in U^H_{X})$   \\
-\oo We can simplify the second clause as follows: \\
-\oo $\lnot(c \in U^H_{\setof{z}} \land c \not\in U^H_{X} \land z \not\in U^H_{X}) \land c \in U^H_{X}$   \\
-\ooo $\simeq (c \not\in U^H_{\setof{z}} \vee c \in U^H_X \vee z \in U^H_X) \land c \in U^H_X$ \\
-\ooo $\simeq (c \not\in U^H_{\setof{z}} \land c \in U^H_X) \vee 
-             (z \in U^H_X \land c \in U^H_X) \vee 
-             c \in U^H_X$ \\
-\ooo $\simeq c \in U^H_X$ \\
+\oo which is equivalent to  $c \in U^H_{\setof{z}} \land c \not\in U^H_{X} \land z \not\in U^H_{X}$. \\
+% \oo Expanding $c \in U^{H|_X}_{\setof{z}}$ in the formula $c \in U^{H|_{X}}_{\setof{z}} \vee (c \not\in U^{H|_{X}}_{\setof{z}} \land c \in U^H_{X})$, we get \\
+% \oox $(c \in U^H_{\setof{z}} \land c \not\in U^H_{X} \land z \not\in U^H_{X}) \;\vee$ \\
+% \oox $(\lnot(c \in U^H_{\setof{z}} \land c \not\in U^H_{X} \land z \not\in U^H_{X}) \land c \in U^H_{X})$   \\
+% \oo We can simplify the second clause as follows: \\
+% \oo $\lnot(c \in U^H_{\setof{z}} \land c \not\in U^H_{X} \land z \not\in U^H_{X}) \land c \in U^H_{X}$   \\
+% \ooo $\simeq (c \not\in U^H_{\setof{z}} \vee c \in U^H_X \vee z \in U^H_X) \land c \in U^H_X$ \\
+% \ooo $\simeq (c \not\in U^H_{\setof{z}} \land c \in U^H_X) \vee 
+%              (z \in U^H_X \land c \in U^H_X) \vee 
+%              c \in U^H_X$ \\
+% \ooo $\simeq c \in U^H_X$ \\
 \oo Hence the whole condition is equivalent to:\\
-\oox $(c \in U^H_{\setof{z}} \land c \not\in U^H_{X} \land z \not\in U^H_{X}) \vee c \in U^H_{X}$ \\
-\oo We want to show this is equivalent to $c \in U^H_{\setof{z}} \vee c \in U^H_{X}$ \\
+\oox $(c \in U^H_{\setof{z}} \land c \not\in U^H_{X} \land z \not\in U^H_{X}) \vee c \in U^H_{X}$ if and only if 
+    $c \in U^H_{\setof{z}} \vee c \in U^H_{X}$ \\
 \oo The forward direction of the equivalence trivial. \\
 \oo To prove the backwards direction, assume $c \in U^H_{\setof{z}} \vee c \in U^H_{X}$ \\
 \ooo Now case on this assumption \\
 \ooo Case $c \in U^H_{X}$: \\
 \oooo Then $c \in U^H_{X}$ \\
 \ooo Case $c \in U^H_{\setof{z}}$: \\ 
-\oooo Case on whether $c \in U^H_{X}$ \\
+\oooo Consider whether $c \in U^H_{X}$ \\
 \oooo Case $c \in U^H_{X}$: \\
 \ooooo Then $c \in U^H_{X}$ \\
 \oooo Case $c \not\in U^H_{X}$: \\
-\ooooo Branch on whether $z \in U^H_{X}$ \\
+\ooooo Consider whether $z \in U^H_{X}$ \\
 \ooooo Case $z \in U^H_{X}$: \\
-\oooooo Since $c \in U^H_{\setof{z}}$, there is a sequence $(c, \ldots, z) \in R^*_H$ \\
-\oooooo Since $z \in U^H_{X}$, there is a sequence $(z, \ldots, x) \in R^*_H$ for some $x \in X$ \\
-\oooooo By concatenation, there is a sequence $(c, \ldots, x) \in R^*_H$ for some  $x \in X$ \\
+\oooooo Since $c \in U^H_{\setof{z}}$, we know $(c, z) \in R^*_H$ \\
+\oooooo Since $z \in U^H_{X}$, we know $(z, x) \in R^*_H$ for some $x \in X$ \\
+\oooooo By transitivity, $(c, x) \in R^*_H$  \\
 \oooooo Hence $c \in U^H_{X}$, which is a contradiction \\
 \ooooo Case $z \not\in U^H_{X}$: \\
-\oooooo Hence $c \in U^H_{\setof{z}} \land c \not\in U^H_{X} \land z \not\in U^H_{X}$ \\
+\oooooo Then $c \in U^H_{\setof{z}} \land c \not\in U^H_{X} \land z \not\in U^H_{X}$ \\
 \end{tabbedproof}
 \end{proof}
 
@@ -793,41 +792,41 @@ We prove this by induction on the size of $Y$.
 \ooo By induction, we know that $H|_X|_Z = H|_{X \cup Z}$ \\
 \ooo Consider whether $z \in X \cup Z$ \\
 \ooo Case $z \in X \cup Z$: \\
-\oooo Then $U^{H|_{X \cup Z}}_{\setof{z}} = \emptyset$ \\
-\oooo Therefore $H|_{X \cup Z}|_{\setof{z}} = H|_{X \cup Z} = H|_{X \cup Y}$  \\ 
+\oooo Now consider whether $z \in V_H$ \\
+\oooo If $z \in V_H$:\\
+\ooooo Then we know that $z \in U^H_{X \cup Z}$, since $(z, z) \in R^\ast_H$ \\
+\ooooo Then $U^{H|_{X \cup Z}}_{\setof{z}} = \emptyset$ \\
+\ooooo Therefore $H|_{X \cup Z}|_{\setof{z}} = H|_{X \cup Z} = H|_{X \cup Y}$  \\ 
+\oooo If $z \not\in V_H$: \\
+\ooooo Then $z \not\in V_{H|_{X \cup Z}}$, and so $U^{H|_{X \cup Z}}_{\setof{z}} = \emptyset$ \\
+\ooooo Therefore $H|_{X \cup Z}|_{\setof{z}} = H|_{X \cup Z} = H|_{X \cup Y}$  \\ 
 \ooo Case $z \not\in X \cup Z$: \\
 \oooo To show that $H|_{X \cup Z}|_{\setof{z}} = H|_{\setof X \cup Z \cup \setof{z}} $, we need to show $h|_{X \cup Z}|_{\setof{z}} = h|_{\setof X \cup Z \cup \setof{z}}$ \\
 \oooo 1. Consider $\mathit{reads}(h|_{X \cup Z}|_{\setof{z}}(c))$ \\
 \ooooo $\mathit{reads}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^{H|_{X \cup Z}}_{\setof{z}}}{\emptyset}{\mathit{reads}(h|_{X \cup Z}(c))}$ \\
 \ooooo $\mathit{reads}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^{H|_{X \cup Z}}_{\setof{z}}}{\emptyset}{\IfThenElse{c \in U^H_{X \cup Z}}{\emptyset}{\mathit{reads}(h(c))}}$ \\
-\ooooo $\mathit{reads}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^{H|_{X \cup Z}}_{\setof{z}} \vee (c \not\in U^{H|_{X \cup Z}}_{\setof{z}} \land c \in U^H_{X \cup Z})}{\emptyset}{\mathit{reads}(h(c))}$ \\
+\ooooo $\mathit{reads}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^{H|_{X \cup Z}}_{\setof{z}} \vee c \in U^H_{X \cup Z}}{\emptyset}{\mathit{reads}(h(c))}$ \\
 \ooooo By the path union lemma, \\
-\ooooox $\mathit{reads}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^H_{X \cup Z \setof{z}}}{\emptyset}{\mathit{reads}(h(c))}$ \\
+\ooooox $\mathit{reads}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^H_{X \cup Z \cup \setof{z}}}{\emptyset}{\mathit{reads}(h(c))}$ \\
 \ooooo Hence $\mathit{reads}(h|_{X \cup Z}|_{\setof{z}}(c)) = \mathit{reads}(h|_{X \cup Z \cup \setof{z}})$ \\
 \oooo 2. Consider $\mathit{value}(h|_{X \cup Z}|_{\setof{z}}(c))$ \\
 \ooooo $\mathit{value}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^{H|_{X \cup Z}}_{\setof{z}}}{\None}{\mathit{value}(h|_{X \cup Z}(c))}$ \\
 \ooooo $\mathit{value}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^{H|_{X \cup Z}}_{\setof{z}}}{\None}{\IfThenElse{c \in U^H_{X \cup Z}}{\None}{\mathit{value}(h(c))}}$ \\
-\ooooo $\mathit{value}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^{H|_{X \cup Z}}_{\setof{z}} \vee (c \not\in U^{H|_{X \cup Z}}_{\setof{z}} \land c \in U^H_{X \cup Z})}{\None}{\mathit{value}(h(c))}$ \\
+\ooooo $\mathit{value}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^{H|_{X \cup Z}}_{\setof{z}} \vee c \in U^H_{X \cup Z}}{\None}{\mathit{value}(h(c))}$ \\
 \ooooo By the path union lemma, \\
-\ooooox $\mathit{value}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^H_{X \cup Z \setof{z}}}{\None}{\mathit{value}(h(c))}$ \\
+\ooooox $\mathit{value}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^H_{X \cup Z \cup \setof{z}}}{\None}{\mathit{value}(h(c))}$ \\
 \ooooo Hence $\mathit{value}(h|_{X \cup Z}|_{\setof{z}}(c)) = \mathit{value}(h|_{X \cup Z \cup \setof{z}})$ \\
 \oooo 3. Consider $\mathit{obs}(h|_{X \cup Z}|_{\setof{z}}(c))$ \\
 \ooooo $\mathit{obs}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^{H|_{X \cup Z}}_{\setof{z}}}{\emptyset}{\mathit{obs}(h|_{X \cup Z}(c)) - U^{H|_{X \cup Z}}_{\setof{z}}}$ \\
 \ooooo $\mathit{obs}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^{H|_{X \cup Z}}_{\setof{z}}}{\emptyset}{\IfThenElse{c \in U^H_{X \cup Z}}{\emptyset}{\mathit{obs}(h|_{X \cup Z}(c)) - U^{H|_{X \cup Z}}_{\setof{z}}}}$ \\
-\ooooo $\mathit{obs}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^{H|_{X \cup Z}}_{\setof{z}} \vee (c \not\in U^{H|_{X \cup Z}}_{\setof{z}} \land c \in U^H_{X \cup Z})}{\emptyset}{\mathit{obs}(h|_{X \cup Z}(c)) - U^{H|_{X \cup Z}}_{\setof{z}}}$ \\
+\ooooo $\mathit{obs}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^{H|_{X \cup Z}}_{\setof{z}} \vee c \in U^H_{X \cup Z}}{\emptyset}{\mathit{obs}(h|_{X \cup Z}(c)) - U^{H|_{X \cup Z}}_{\setof{z}}}$ \\
 \ooooo By the path union lemma, \\
-\ooooox $\mathit{obs}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^H_{X \cup Z \setof{z}}}{\emptyset}{\mathit{obs}(h|_{X \cup Z}(c)) - U^{H|_{X \cup Z}}_{\setof{z}}}$ \\
-\ooooo So $\mathit{obs}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^H_{X \cup Z \setof{z}}}{\emptyset}{\mathit{obs}(h(c)) - U^H_{X \cup Z} - U^{H|_{X \cup Z}}_{\setof{z}}}$ \\
-\ooooo So $\mathit{obs}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^H_{X \cup Z \setof{z}}}{\emptyset}{\mathit{obs}(h(c)) - (U^H_{X \cup Z} \cup U^{H|_{X \cup Z}}_{\setof{z}})}$ \\
-\ooooo Now, suppose $y \in U^H_{X \cup Z} \cup U^{H|_{X \cup Z}}_{\setof{z}}$ \\
-\ooooo This is equivalent to $y \in U^H_{X \cup Z} \vee y \in U^{H|_{X \cup Z}}_{\setof{z}}$ \\
-\ooooo This is equivalent to $(y \not\in U^{H|_{X \cup Z}}_{\setof{z}} \land y \in U^H_{X \cup Z}) \vee (y \in U^{H|_{X \cup Z}}_{\setof{z}} \land y \in U^H_{X \cup Z}) \vee y \in U^H_{X \cup Z}$ \\
-\ooooo This is equivalent to $(y \not\in U^{H|_{X \cup Z}}_{\setof{z}} \land y \in U^H_{X \cup Z}) \vee y \in U^H_{X \cup Z}$ \\
-\ooooo By path union, this is equivalent to $y \in U^H_{X \cup Z} \vee y \in U^H_{X \cup Z}$ \\
-\ooooo Hence $U^H_{X \cup Z} \cup U^{H|_{X \cup Z}}_{\setof{z}} = U^H_{X \cup Z \cup \setof{z}}$ \\
-\ooooo Hence we know that \\
-\ooooo $\mathit{obs}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^H_{X \cup Z \setof{z}}}{\emptyset}{\mathit{obs}(h(c)) - U^H_{X \cup Z \cup \setof{z}}}$\\
-\ooooo Hence $\mathit{obs}(h|_{X \cup Z}|_{\setof{z}}(c)) = \mathit{obs}(h|_{X \cup Z \cup \setof{z}})$ \\
+\ooooox $\mathit{obs}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^H_{X \cup Z \cup \setof{z}}}{\emptyset}{\mathit{obs}(h|_{X \cup Z}(c)) - U^{H|_{X \cup Z}}_{\setof{z}}}$ \\
+\ooooo So $\mathit{obs}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^H_{X \cup Z \cup \setof{z}}}{\emptyset}{\mathit{obs}(h(c)) - U^H_{X \cup Z} - U^{H|_{X \cup Z}}_{\setof{z}}}$ \\
+\ooooo So $\mathit{obs}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^H_{X \cup Z \cup \setof{z}}}{\emptyset}{\mathit{obs}(h(c)) - (U^H_{X \cup Z} \cup U^{H|_{X \cup Z}}_{\setof{z}})}$ \\
+\ooooo By the path union lemma, $U^H_{X \cup Z} \cup U^{H|_{X \cup Z}}_{\setof{z}} = U^H_{X \cup Z \cup \setof{z}}$ \\
+\ooooo Hence $\mathit{obs}(h|_{X \cup Z}|_{\setof{z}}(c)) = \IfThenElse{c \in U^H_{X \cup Z \cup \setof{z}}}{\emptyset}{\mathit{obs}(h(c)) - U^H_{X \cup Z \cup \setof{z}}}$ \\
+\ooooo Hence $\mathit{obs}(h|_{X \cup Z}|_{\setof{z}}(c)) = \mathit{obs}(h|_{X \cup Z \cup \setof{z}}(c))$
 \end{tabbedproof}
 \end{proof}
 
@@ -853,13 +852,13 @@ Suppose we have $H = (D,h)$ such that
 \begin{enumerate}
 \item $R^+_{H'}$ is a strict partial order 
   \begin{tabbedproof}
-    \oo This follows if $R^+_{H'}$ is transitive relation without any $(a,a) \in R^+_H$ \\
+    \oo This follows if $R^+_{H'}$ is a transitive relation without any $(a,a) \in R^+_H$ \\
     \oo Since it is a transitive closure, it is a transitive relation \\
     \oo To show that there is no $a \in D$ such that $(a,a) \in R^+_{H'}$, \\
     \ox we will show that $R^+_{H'} \subseteq R^+_H$ \\
     \oo Assume that $(a_0,b) \in R^+_{H'}$ \\
     \oo Then there is a sequence $a_0, \ldots, a_k$ such that $b = a_k$ and each $a_{i+1} \in \mathit{reads}(h'(a_i))$ \\
-    \oo Suppose we have an arbitrary $a_i, a_{i+1}$, such that $a_{i+1} \in \mathit{reads}(h'(a_i))$ \\
+    \oo Suppose we have an $i$ such that $a_{i+1} \in \mathit{reads}(h'(a_i))$ \\
     \oo Hence it follows that $a_i \not\in U^H_{\setof{c}}$, since otherwise $\mathit{reads}(h'(a_i)) = \emptyset$ \\
     \oo Hence it follows that $\mathit{reads}(h'(a_i)) = \mathit{reads}(h(a_i))$ for $i < k$ \\
     \oo Hence $a_0, \ldots, a_k$ such that $b = a_k$ and each $a_{i+1} \in \mathit{reads}(h(a_i))$ \\
@@ -915,7 +914,7 @@ Suppose we have $H = (D,h)$ such that
     \ooo So $(a,b) \in O_H$ \\
     \ooo So $(b,a) \in R_H$, and so $a \in \mathit{reads}(h(b))$ \\
     \ooo Since $b \not\in U^H_{\setof{c}}$, $\mathit{reads}(h'(b)) = \mathit{reads}(h(b))$ \\
-    \ooo Therefore $b \in \mathit{reads}(h'(a))$, and so $(b,a) \in R_{H'}$ \\
+    \ooo Therefore $a \in \mathit{reads}(h'(b))$, and so $(b,a) \in R_{H'}$ \\
     \ooo Therefore $(a,b) \in R^\dagger_{H'}$ 
   \end{tabbedproof}
 
@@ -927,7 +926,7 @@ This is immediate, since $\mathit{identity}(h) = \mathit{identity}(h')$
 
 
 \begin{lemma}{(Updating the Abstract Heap)}
-Suppose we have $H = (D,h)$ and $H, D', \models \phi \otimes
+Suppose we have $H = (D,h)$ and $H, D' \models \phi \otimes
 \celleither{c}{\cmd}$ and $c \in D$. Then for $H' = (D, h') = H|_{\setof{c}}$, we
 have $H', D' \models \phi \otimes \cellneg{c}{\cmd}$.
 \end{lemma}
@@ -938,7 +937,7 @@ have $H', D' \models \phi \otimes \cellneg{c}{\cmd}$.
 \oo Then we have $D_1, D_2$ such that $D_1 \uplus D_2 = D'$ and $H, D_1 \models \phi$ and $H, D_2 \models \celleither{c}{\cmd}$ \\
 \oo Note that this means $c$ is not in $D_1$ \\
 \oo First, consider $(D,h), D_1 \models \phi$ \\
-\ooo We will show by induction that $(D,h'), D_1 \models \phi$ \\
+\ooo We will show by induction that for all $\phi, D_1$ such that $c \not\in D_1$, $(D,h'), D_1 \models \phi$ \\
 \ooo Case $\phi = I$ or $\phi = \localref{r}{v}$: \\
 \oooo In this case, by the definition of satisfaction, $(D,h), D_1 \models I$ or $(D,h), D_1 \models \localref{r}{v}$\\
 \ooo Case $\phi = \psi \otimes \theta$: \\
@@ -964,16 +963,19 @@ have $H', D' \models \phi \otimes \cellneg{c}{\cmd}$.
 \ooooo Now consider whether $a \in U^H_{\setof{c}}$ \\
 \ooooo If $a \in U^H_{\setof{c}}$: \\
 \oooooo First, note $a \not\in V_{(D,h')}$ \\
-\oooooo Then $(a, c) \in R^*_H$ \\
-\oooooo Since $c \not= a$ (since $c$ is not in the domain of $\phi$), we know $(a, c) \in R^+_H$ \\
+\oooooo Next, note $(a, c) \in R^*_H$ \\
+\oooooo Since $c \not= a$ (since $c$ is not in $D_1$), we know $(a, c) \in R^+_H$ \\
 \oooooo Hence there is a $d \in r$ such that $(a,d) \in R_H$ and $(d, c) \in R^*_H$  \\
-\oooooo Hence $d \in r$ and $d \in U^H_{\setof{c}}$ and $\mathit{value}(h'(d)) = \None$, and so $d \not\in V_{(D,h')}$\\
+\oooooo Since $(a,d) \in R_H$, we know $d \in r$, and since $(d, c) \in R^*_H$, we know $d \in U^H_{\setof{c}}$ \\
+\oooooo Consequently, $\mathit{value}(h'(d)) = \None$, and so $d \not\in V_{(D,h')}$\\
 \oooooo Hence $r \not\subseteq V_{(D, h')}$ \\
 \oooooo Hence $(D,h'), D_1 \models \cellpos{a}{\cmd}{v}{r}$ \\
 \ooooo If $a \not\in U^H_{\setof{c}}$: \\
 \oooooo Then note $a \in V_{(D,h')}$ \\
-\oooooo Furthermore, $(a, c) \not\in R^*_H$ \\
-\oooooo Hence there is no $d \in r$ such that $(c, d) \in R^*_H$  \\
+\oooooo Furthermore, $(a, c) \not\in R^*_H$, and so $a \not\in U^H_{\setof{c}}$ \\
+\oooooo Therefore $\mathit{value}(h|_{\setof{c}}(a)) = \mathit{value}(h(a)) = \Some(v)$ and \\
+\oooooo we know $\mathit{reads}(h|_{\setof{c}}(a)) = \mathit{reads}(h(a)) = r$ \\
+\oooooo Since $(a, c) \not\in R^*_H$, there is no $d \in r$ such that $(d, c) \in R^*_H$  \\
 \oooooo Hence $r \cap U^H_{\setof{c}} = \emptyset$ \\
 \oooooo Hence $r \subseteq V_{(D,h')}$ \\
 \oooooo Hence $(D,h'), D_1 \models \cellpos{a}{\cmd}{v}{r}$ \\
@@ -984,6 +986,7 @@ have $H', D' \models \phi \otimes \cellneg{c}{\cmd}$.
 % \ooooo Hence $U = \emptyset$ \\
 % \ooooo Hence $h' = h$ \\
 \ooooo Hence $(D,h'), D_1 \models \cellpos{a}{\cmd}{v}{r}$ \\
+\oo As a result, we can conclude that $(D,h'), D_1 \models \phi$ \\
 \oo Next, consider $(D,h), D_2 \models \celleither{c}{\cmd}$: \\
 \ooo Since $(c, c) \in R^*_H$,  we know $c \in U$ \\
 \ooo Hence it follows $c \not\in V_{(D, h')}$ \\
