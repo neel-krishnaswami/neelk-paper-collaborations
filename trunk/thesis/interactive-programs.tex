@@ -1047,25 +1047,33 @@ Now we'll proceed line-by-line through the function body of $\ctext{mark\_unread
 \oooo $\letv{rs}{[!(a.reads)]}{}$ \\
 \oooo From the definition of $\mathit{heap}(H)$, we know that  \\
 \oooo $\mathit{set}(D, os, \mathit{obs}(h(c)))$ and $\mathit{set}(D, rs, \mathit{reads}(h(c)))$ \\
+\oooo Furthermore, we also know that for every $o \in os$, $(c, o) \in O_H$, and hence $(o, c) \in R_H$. \\
+\oooo Since $R^+_H$ is a strict partial order, $c \not \in U^H_{\setof{o}}$ for any $o \in os$ \\
+\oooo Therefore, we know that $c \not\in U^H_{os}$ and that $U^H_{os \cup \setof{c}} = U^H_{os} \cup \setof{c} = U^H_{\setof{c}}$ \\
 \oooo Now, by the equational axioms in the cellset interface, $\ctext{iterseq\;mark\_unready}\;os$ \\
 \ooox is equal to a sequence of calls to $\ctext{mark\_unready}$, once for each element of $\mathit{obs}(h(c))$\\
 \oooo By induction on the size of $\mathit{obs}(h(c))$, we end in a logical state $(D, h|_{os})$, \\
 \ooox and a physical state $\mathit{heap}(D, h|_{\setof{os}})$, which (using lemma 79)  \\
 \ooox satisfies the properties $R^\dagger_{(D,h|_{os})} = O_{(D,h|_{os})}$, $R^+_{(D,h|_{os})}$ is a strict partial order, \\
 \ooox $R_{(D,h|_{os})} \subseteq V_{(D,h|_{os})} \times V_{(D,h|_{os})}$ and $\mathit{unique}(D,h|_{os})$ \\
-\oooo Hence in $H' = (D,h|_{\setof{os}})$, every $c'$ which read $c$ in $H$ is no longer in $V_{H'}$ \\ 
-\oooo As a result $U^{H'}_{\setof{c}} = \setof{c}$ \\ 
-\oooo Since $R_H$ was a strict partial order, $c$ is still in $V_{H'}$ \\
-\oooo Therefore consider $h'' = h'|_{\setof{c}}$, which is equivalent to   \\
-\oooox $\mathit{value}(h'') = \semfun{c'}{\IfThenElse{c' = c}{\None}{\mathit{value}(h'(c'))}}$ \\
-\oooox $\mathit{reads}(h'') = \semfun{c'}{\IfThenElse{c' = c}{\emptyset}{\mathit{reads}(h'(c'))}}$ \\
-\oooox $\mathit{obs}(h'') = \semfun{c'}{\IfThenElse{c'\in \mathit{obs}(h(c))}{\emptyset}{\mathit{obs}(h'(c')) - \setof{c}}}$ \\
-\oooo Likewise, by the equational axiom in the cellset interface, $\ctext{iterseq}\;(\ctext{remove\_obs}\;cell)\;rs$ \\
+\oooo Since $V_{H|_{os}} = V_H - U^H_{os}$, and $c \not \in U^H_{os}$, we know $c \in V_{H|_{os}}$ \\ 
+\oooo Furthermore, we know that $U^{H|_{os}}_{\setof{c}} = \setof{c}$, since we know that \\
+\oooox $U^{H|_{os}}_{\setof{c}} \cup U^H_{os} = U^H_{os \cup \setof{c}} = U^H_{os} \cup \setof{c}$ \\
+\oooo Therefore consider $h' = h|_{os}|_{\setof{c}}$, which is equivalent to  \\
+\oooox $\mathit{value}(h'') = \semfun{c'}{\IfThenElse{c' = c}{\None}{\mathit{value}(h|_{os}(c'))}}$ \\
+\oooox $\mathit{reads}(h'') = \semfun{c'}{\IfThenElse{c' = c}{\emptyset}{\mathit{reads}(h|_{os}(c'))}}$ \\
+\oooox $\mathit{obs}(h'') = \semfun{c'}{\IfThenElse{c'\in \mathit{obs}(h(c))}{\emptyset}{\mathit{obs}(h|_{os}(c')) - \setof{c}}}$ \\
+\oooo This is equivalent to \\
+\oooox $\mathit{value}(h'') = \semfun{c'}{\IfThenElse{c' \in U^{H|_{os}}_{\setof{c}}}{\None}{\mathit{value}(h|_{os}(c'))}}$ \\
+\oooox $\mathit{reads}(h'') = \semfun{c'}{\IfThenElse{c' \in U^{H|_{os}}_{\setof{c}}}{\emptyset}{\mathit{reads}(h|_{os}(c'))}}$ \\
+\oooox $\mathit{obs}(h'') = \semfun{c'}{\IfThenElse{c'\in \mathit{obs}(h(c))}{\emptyset}{\mathit{obs}(h|_{os}(c')) - U^{H|_{os}}_{\setof{c}}}}$ \\
+\oooo By the equational axioms in the cellset interface, $\ctext{iterseq}\;(\ctext{remove\_obs}\;cell)\;rs$ \\
 \ooox is equal to a sequence of calls to $\ctext{remove\_obs}$, once for each element of $\mathit{reads}(h'(c))$\\
 \oooo $\letv{\_}{[a.value := \None]}{}$ \\
 \oooo $\letv{\_}{[a.reads := \emptyset]}{}$ \\
 \oooo $a.obs := \emptyset]$ \\
 \oooo These updates then ensure that $\mathit{heap}(D, h'')$ is satisfied. \\
+\oooo From lemma 78 and line 27,  $h'' = h|_{os}|_{\setof{c}} = h|_{os \cup \setof{c}} = h|_{c} = h'$ from the premise\\ 
 \end{tabbedproof}
 \end{proof}
 
