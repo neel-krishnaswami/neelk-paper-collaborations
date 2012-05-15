@@ -1209,18 +1209,18 @@ Then we can hide $H'$ behind an existential to establish the postcondition.
 \mbox{}
 \begin{mathpar}
   \inferrule*[right=Ready]
-            {\forall a' \in r.\; \exists v.\; \ready{\phi}{a'}{v}}
-            {\ready{\phi \otimes \cellpos{a}{\cmd}{v}{r}}{a}{v}}
+            {\forall c' \in r.\; \exists v.\; \ready{\phi}{c'}{v}}
+            {\ready{\phi \otimes \cellpos{c}{\cmd}{v}{r}}{a}{v}}
   \\
   \\
   \inferrule*[right=UnreadyPos]
-            {\exists a' \in r.\; \unready{\phi}{a'}}
-            {\unready{\phi \otimes \cellpos{a}{\cmd}{v}{r}}
-                     {a}}
+            {\exists c' \in r.\; \unready{\phi}{c'}}
+            {\unready{\phi \otimes \cellpos{c}{\cmd}{v}{r}}
+                     {c}}
   \and
   \inferrule*[right=UnreadyNeg]
             { }
-            {\unready{\phi \otimes \cellneg{a}{\cmd}}{a}}
+            {\unready{\phi \otimes \cellneg{c}{\cmd}}{c}}
 \end{mathpar}
 \caption{Ready and Unready Judgments}
 \label{readiness}
@@ -1248,11 +1248,11 @@ Then we can hide $H'$ behind an existential to establish the postcondition.
       R(s, I)                 & = & I \\
       R(s, \phi \otimes \psi) & = & R(s, \phi) \otimes R(s, \psi) \\
       R(s, \localref{r}{v})   & = & \localref{r}{v} \\
-      R(s, \cellneg{a}{\cmd})    & = & \cellneg{a}{\cmd} \\
-      R(s, \cellpos{a}{\cmd}{v}{r}) & = & \left\{\begin{array}{ll}
-                                                \cellpos{a}{\cmd}{v}{r} 
+      R(s, \cellneg{c}{\cmd})    & = & \cellneg{c}{\cmd} \\
+      R(s, \cellpos{c}{\cmd}{v}{r}) & = & \left\{\begin{array}{ll}
+                                                \cellpos{c}{\cmd}{v}{r} 
                                               & \mbox{if } s \cap r = \emptyset \\
-                                                \cellneg{a}{\cmd}
+                                                \cellneg{c}{\cmd}
                                               & \mbox{otherwise}
                                               \end{array}
                                        \right.
