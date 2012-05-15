@@ -294,13 +294,12 @@ read, in addition to its return value.
 Further interesting things happen with the $\newcell\;\cmd$ operation.
 It creates a new cell value, setting the code field with the argument
 $\cmd$, and generating an id by dereferencing and incrementing the
-contents of the variable $counter$. The $counter$ variable occurs
-freely in this definition, because it is a variable of type
-$\reftype{\N}$ referring to a piece of state global to the module.
-The reference must be initialized by whatever initialization routine
-first constructs the whole module as an existential package.  Since
-$counter$ is otherwise private, we can generate unique identifiers by
-incrementing it as we create new cells.
+contents of the variable $counter$. The $counter$ variable, of type
+$\reftype{\N}$, occurs freely in this definition, because it denotes a
+piece of state global to the module, which must be initialized by
+whatever initialization routine first constructs the whole module as
+an existential package.  Since $counter$ is otherwise private, we can
+generate unique identifiers by incrementing it as we create new cells.
 
 Finally, the $\updatecell\;cell\;\cmd$ operation updates a cell
 $cell$ with a new code expression $\cmd$. (As an aside, it's worth
@@ -309,15 +308,16 @@ we make use of pointers to code, including the ability to dynamically
 modify them.) Once we modify a cell, any memoized value it has is no
 longer necessarily correct.
 
-Therefore, we have to drop the memoized value of the cell, and any
-cell that transitively observes the cell. This is what the
-$\ctext{mark\_unready}$ function does. Given a cell, it takes all of
-the observers of that cell and recursively makes all of them
-unready. Then it removes that cell from the observer sets of all the
-cells it reads, and nulls out that cell's memoized value, as well as
-setting its read and observer sets to empty. Notice that there is no
-explicit base case to the recursive call; if there are any cycles in
-the dependency graph, invalidation could go into an infinite loop.
+Therefore, we have to forget the memoized value of the cell, as well
+as the memoized values of any cell which transitively observes the
+cell. This is what the $\ctext{mark\_unready}$ function does. Given a
+current cell, it takes each observer of the current cell and
+recursively marks it unready. Then it removes the current cell from
+the observer sets of each cell the current cell reads, and nulls out
+the current cell's memoized value, as well as setting he current
+cell's read and observer sets to empty. Notice there is no explicit
+base case in the recursive definition; if there are any cycles in the
+dependency graph, invalidation could go into an infinite loop.
 
 So far, we have described the implementation invariants incrementally
 and informally. Before proceeding to the formal description, we will
@@ -366,14 +366,14 @@ it. The reason for this is that the $\codetype{\alpha}$ is an abstract
 type, and clients can construct terms of this type only by using the
 $\ctext{return}, \ctext{bind}, \ctext{read}, \ctext{getref}$ and
 $\ctext{setref}$ operations. Since none of these operations themselves
-invoke $\ctext{update}$, no client code can put a code expression in a
+invoke $\ctext{update}$, no client code can place a code expression in a
 cell which can invoke it. (Making this argument completely airtight
 would require a parametric model of our language, which we do not
 have, but the intuition is sufficient to guide the design of the
 program invariant.)
 
 As a result, when we evaluate a code expression, we will never
-actually follow the observer fields -- we'll only patch them as
+actually follow the observer fields -- we only patch them as
 needed, whenever we evaluate a cell and change it from unready to
 ready.  As a result, an abstract description of the heap which
 \emph{does not explicitly mention the observer sets} will prove
@@ -404,9 +404,9 @@ needs to be re-evaluated before it can yield a
 value. $\cellpos{a}{\cmd}{v}{r}$ says that $a$ is a cell with code
 $\cmd$ that will deliver the value $v$, under the condition that all
 the cells in its read set $r$ are themselves ready. However, if
-anything it reads is unready, then it itself is unready. (We will
-sometimes write $\celleither{a}{\cmd}$ when we do not care whether $a$
-is ready or not.)
+anything in $r$ is unready (i.e., anything it reads is unready), then
+$a$ itself is unready. (We will sometimes write $\celleither{a}{\cmd}$
+when we do not care whether $a$ is ready or not.)
 
 First, notice the must/may flavor of this reading. The formula
 $\cellneg{a}{\cmd}$ says that $a$ \emph{must} be unready.  The formula
@@ -490,14 +490,18 @@ collection of points-to assertions $r \pointsto v$ from each
 $\localref{r}{v}$ in our formula. 
 
 As a reminder, the specifications of the set operations are given in
-Appendix A of this chapter. One unusual feature of the specification
-is that we have a three-place relation $\mathit{set}(W, v, xs)$, which
-says that $v$ is a value representing a set of $\mathit{ecell}$s $xs$.
-Since we cannot directly compare cells of different type for equality,
-we include a unique integer id field in each cell. Furthermore, since
-these id fields are dynamically-generated, we need to track the
-association of id fields with the natural equality of the
-$\mathit{ecell}$ type.
+Appendix A of this chapter. An unusual feature of this specification
+is that we have a three-place predicate $\mathit{set}(W, v, xs)$,
+which says that $v$ is a value representing a set of $\mathit{ecell}$s
+$xs$.
+
+Naively, we would expect there to be only a two-place
+relation$\mathit{set}(v, xs)$, but unfortuantely that does not work.
+The reason is that since we cannot directly compare cells of different
+type for equality, we include a unique integer id field in each
+cell. These integer identity fields are dynamically generated as the
+program executes, and the $W$ parameter tracks the association between
+the id fields and the natural equality of the $\mathit{ecell}$ type.
 
 Note that the separation requirements in $\mathit{heap}(H)$ ensure
 that every cell value $c$ in set of cells $D$ has a disjoint set of
@@ -532,7 +536,7 @@ where $I_X : X \to X = \fun{x}{x}$ \\[1em]
 
 $\satisfies{(D,h)}{\phi} = (D,h), D \models \phi$ \\[1em]
 
-$\models \;\subseteq\; \Sigma (D,h):CellHeap.\; D' \subseteq D$ \\[0.5em]
+$\models \;\subseteq\; \comprehend{((D,h), D') \in CellHeap \times \powersetfin{\ecell}}{D' \subseteq D}$ \\[0.5em]
 
 $(D,h), D' \models \localref{r}{v} \qquad \qquad$\=$\iff \top$ \\
 $(D,h), D' \models I$                            \>$\iff \top$ \\
@@ -1080,19 +1084,19 @@ Now we'll proceed line-by-line through the function body of $\ctext{mark\_unread
 \begin{lemma}{(Correctness of $\ctext{mark\_unready}$)}
 The $\ctext{mark\_unready}$ function satisfies the following specification:   
 \begin{displaymath}
-\mspec{G(H, \phi \otimes \celleither{c}{\cmd})}{\ctext{mark\_unready}}{a:\unittype}{\exists H'.\;G(H', \phi \otimes \cellneg{c}{\cmd})}
+\mspec{Inv(H, \phi \otimes \celleither{c}{\cmd})}{\ctext{mark\_unready}}{a:\unittype}{\exists H'.\;Inv(H', \phi \otimes \cellneg{c}{\cmd})}
 \end{displaymath}
 \end{lemma}
 
 \begin{proof}
-  This follows immediately from the previous lemma, together with the lemma about updating the 
-abstract heap. 
+  This follows immediately from the previous lemma, together with lemmas 79 and 80. 
 \end{proof}
 
+\ \\
 
 \begin{lemma}{(Updating Negative Formulas)}
 Suppose we have  $H = (D,h)$ and $H, D' \models \phi \otimes \cellneg{c}{\cmd}$. Then, if
-we define $h'$ such that $\mathit{code}(h'(c)) = \cmd'$ and is equal to $h$ otherwise, 
+we define $h'$ such that $\mathit{code}(h'(c)) = \cmd'$ and $h'$ is equal to $h$ otherwise, 
 it follows that with $H' = (D,h')$, we have $H', D' \models \phi \otimes \cellneg{c}{\cmd'}$. 
 \end{lemma}
 
@@ -1101,31 +1105,32 @@ it follows that with $H' = (D,h')$, we have $H', D' \models \phi \otimes \cellne
     \oo Assume $H, D' \models \phi \otimes \cellneg{c}{\cmd}$. \\
     \ooo So we have $D_1, D_2$ such that $D' = D_1 \uplus D_2$ and $H, D_1 \models \phi$ and $H, D_2 \models \cellneg{c}{\cmd}$ \\
     \ooo Since $H, D_2 \models \cellneg{c}{\cmd}$, we know that $c \in D_2$ and $c \not\in D_1$ \\
-    \ooo Now proceed by induction on $\phi$: \\
-    \ooo Explicitly, our induction hypothesis is that if $H, \hat{D} \models \phi$ and $c \not \in D$, then $H', \hat{D} \models \phi$ \\
-    \ooo Case $\phi = I$ or $\phi = \localref{r}{v}$: \\
-    \oooo This case is immediate \\
-    \ooo Case $\phi = \psi \otimes \theta$: \\
-    \oooo In this case, we have $D_3, D_4$ such that $D_1 = D_3 \uplus D_4$ and  \\
-    \oooox $H, D_3 \models \psi$ and $H, D_4 \models \theta$ \\
-    \oooo So by induction we have $H', D_3 \models \psi$ and $H', D_4 \models \theta$ \\
-    \oooo Hence $H', D_1 \models \phi$\\
-    \ooo Case $\phi = \cellneg{c'}{\cmd}$: \\
-    \oooo We know $c' \in D_1$ \\
-    \oooo We know that $c' \not= c$. Hence $\mathit{code}(h'(c')) = \mathit{code}(h(c))$ \\
-    \oooo Hence $H', D_1 \models \cellneg{c'}{\cmd}$ \\
-    \ooo Case $\phi = \cellpos{c'}{\cmd}{v}{r}$: \\
-    \oooo We know that $c' \in D_1$ and hence $c \not= c'$ \\
-    \oooo Hence $\mathit{code}(h'(c')) = \mathit{code}(h(c))$ \\
-    \oooo Furthermore, $V_{H'} = V_H$ since $\mathit{value} \circ h' = \mathit{value} \circ h$\\
-    \oooo Also $\mathit{reads} \circ h' = \mathit{reads} \circ h$ \\
-    \oooo Hence $H', D_1 \models \cellpos{c'}{\cmd}{v}{r}$: \\
-    \ooo Therefore $H', D_1 \models \phi$ \\
+    \ooo As a lemma, we show $\forall \hat{D}$, if $H, \hat{D} \models \phi$ and $c \not \in \hat{D}$, then $H', \hat{D} \models \phi$ \\
+    \ooo We proceed by induction on $\phi$: \\
+    \oooo Case $\phi = I$ or $\phi = \localref{r}{v}$: \\
+    \ooooo This case is immediate \\
+    \oooo Case $\phi = \psi \otimes \theta$: \\
+    \ooooo In this case, we have $D_3, D_4$ such that $\hat{D} = D_3 \uplus D_4$ and  \\
+    \ooooox $H, D_3 \models \psi$ and $H, D_4 \models \theta$ \\
+    \ooooo So by induction we have $H', D_3 \models \psi$ and $H', D_4 \models \theta$ \\
+    \ooooo Hence $H', \hat{D} \models \phi$\\
+    \oooo Case $\phi = \cellneg{c'}{\cmd}$: \\
+    \ooooo We know $c' \in \hat{D}$, and therefore $c' \not= c$. \\
+    \ooooo Hence $h'(c') = h(c)$ \\
+    \ooooo Hence $H', \hat{D} \models \cellneg{c'}{\cmd}$ \\
+    \oooo Case $\phi = \cellpos{c'}{\cmd}{v}{r}$: \\
+    \ooooo We know that $c' \in \hat{D}$, and therefore $c \not= c'$ \\
+    \ooooo Hence $h'(c') = h(c')$ \\
+    \ooooo Therefore $\mathit{reads}(h'(c')) = \mathit{reads}(h(c'))$, $\mathit{value}(h'(c')) = \mathit{value}(h(c'))$, \\
+    \oooox and $\mathit{code}(h'(c')) = \mathit{code}(h(c'))$ \\ 
+    \ooooo Furthermore, $V_{H'} = V_H$ since $\mathit{value} \circ h' = \mathit{value} \circ h$\\
+    \ooooo Hence $H', \hat{D} \models \cellpos{c'}{\cmd}{v}{r}$: \\
+    \ooo Therefore we conclude that $H', D_1 \models \phi$ \\
     \ooo Now, we want to show $H', D_2 \models \cellneg{c}{\cmd'}$ \\
-    \oooo We know $c \in D_2$ \\
-    \oooo Furthermore, $\mathit{code}(h'(c)) = \cmd'$ \\
+    \oooo We know $c \in D_2$ and $\mathit{value}(h(c)) = \None$ \\
+    \oooo Furthermore, $\mathit{code}(h'(c)) = \cmd'$ and $\mathit{value}(h'(c)) = \None$ \\
     \oooo Hence $H', D_2 \models \cellneg{c}{\cmd'}$ \\
-    \ooo Hence $H', D' \models \phi \otimes \cellneg{c}{\cmd'}$ 
+    \ooo Since $D' = D_1 \uplus D_2$, we conclude $H', D' \models \phi \otimes \cellneg{c}{\cmd'}$ 
   \end{tabbedproof}
 \end{proof}
 
@@ -1142,7 +1147,7 @@ $\forall \psi:\formula.\; $\=$\setof{G(\celleither{o}{\cmd'} \otimes \psi)}$ \\
 
 \begin{proof}
 This follows immediately from first applying the specification of $\ctext{mark\_unready}$, 
-and then using the lemma that updating negative lemmas works as expected. 
+and then using the previous lemma on updating negative formulas. 
 \end{proof}
 
 
@@ -1172,7 +1177,7 @@ on lines 29-30 of Figure~\ref{notification-implementation}, we
 increment the global counter by 1, and let $id = |D|$.  Then, on lines
 31-34, we allocate a pointer $\mathit{code}$ to the code $\cmd$, a
 pointer $\mathit{value}$ to $\None$ (to indicate the unitialized
-state), as well as pointers to $\mathit{read}$ and $\mathit{obs}$ to
+state), as well as pointers $\mathit{reads}$ and $\mathit{obs}$ to
 empty read and observer sets.
 
 At line 35, all of these values are bound to variables in scope, so we
@@ -1187,7 +1192,8 @@ only fact that does not carry over immediately are the predicates
 establishing the the read and observer sets are implemented
 correctly. This is because they held for world $D$, and we are now in
 world $D'$. Happily, we required as an axiom that $(W \subseteq W')
-\implies \mathit{set}(W, v, S) \implies \mathit{set}(W', v, S)$.
+\implies \mathit{set}(W, v, S) \implies \mathit{set}(W', v, S)$. (See 
+lines 22-23 of Appendix 6.8.)
 
 Finally, we need to show that $\cellneg{a}{\cmd} \otimes \psi$ is
 satisfied by $H'$. This follows from an easy induction on $\psi$:
