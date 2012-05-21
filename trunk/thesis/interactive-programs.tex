@@ -3194,7 +3194,7 @@ Assume have that $\Transducer(i, m, f, \sigma, \sigma', U')$ and $\Transducer(m,
   \oooo Hence the state is equivalent to \\
   \ooooo $G(O_n \otimes (\theta'\;(\mathit{drop}\;k\;vs))_{n-k} \otimes (\sigma\;vs)_k\otimes \localref{r}{n+1} \otimes R(U_n \cup U''_n, \psi))$ \\ 
   \oooo Completing the $\AUnready$ rule, our state is: \\
-  \ooooo $G(\cellpos{o}{e}{(g\;(\mathit{drop}\;k\;vs))_{n-k}}{\setof{c}} \otimes \localref{r}{n+1}$ \\
+  \ooooo $G(\cellpos{o}{e}{(g\;(\mathit{drop}\;k\;vs))_{n-k}}{\setof{c}} \otimes \localref{r}{n+1})$ \\
   \oooooo $R(\setof{o}, O_n \otimes (\theta'\;(\mathit{drop}\;k\;vs))_{n-k} \otimes (\sigma\;vs)_k \otimes R(U_n \cup U''_n, \psi))$ \\ 
   \oooo with a return value of $\pair{(g\;(\mathit{drop}\;k\;vs))_{n-k}}{\setof{o}}$ \\
   \oooo Note that $R(\setof{o}, O_n \otimes (\theta'\;(\mathit{drop}\;k\;vs))_{n-k}) = O_n \otimes (\theta'\;(\mathit{drop}\;k\;vs))_{n-k}$, \\
@@ -3213,16 +3213,17 @@ Assume have that $\Transducer(i, m, f, \sigma, \sigma', U')$ and $\Transducer(m,
 \end{proof}
 
 
+
 \subsubsection{The $\loopop$ transducer}
 \begin{lemma}{(The $\ctext{loop}$ network)}
 If we have that $\Transducer(ab, ac, f, \sigma, \sigma', U')$ 
-then it follows that $\Transducer(i, o, \mathit{loop}\;a_0\;f, \phi, \phi', U''')$, where 
+then it follows that $\Transducer(i, o, \mathit{loop}\;a_0\;f, \phi, \phi', U'')$, where 
 
 \begin{itemize}
 \item $\phi\;vs\;n = (\sigma\;vs)_n \otimes (\varsigma\;vs)_n $
 \item $\phi'\;vs\;n = (\sigma'\;vs)_n \otimes (\varsigma'\;vs)_n$
 \item $\varsigma\;vs\;n = \localref{r}{(aseq\;vs)_n} \otimes \cellneg{ab}{e_1} \otimes \cellneg{o}{e_2}$ 
-\item $\varsigma'\;vs\;n = {\small \localref{r}{(aseq\;vs)_{n+1}} \otimes \cellpos{ab}{e_1}{(abseq\;vs)_n}{\setof{b}} \otimes \cellpos{o}{e_2}{(cseq\;vs)_n}{\setof{ac}}}$ 
+\item $\varsigma'\;vs\;n = {\small \localref{r}{(aseq\;vs)_{n+1}} \otimes \cellpos{ab}{e_1}{(abseq\;vs)_n}{\setof{i}} \otimes \cellpos{o}{e_2}{(cseq\;vs)_n}{\setof{ac}}}$ 
 \item $acseq\;vs = \mathit{cycle}\;a_0\;f\;vs$
 \item $aseq\;vs = \mathit{map}\;\pi_1\;(acseq\;vs)$
 \item $abseq\;vs = \mathit{zip}\;(aseq\;vs)\;vs$
@@ -3231,33 +3232,169 @@ then it follows that $\Transducer(i, o, \mathit{loop}\;a_0\;f, \phi, \phi', U'''
 \item $U''_n = U'_n \cup \setof{ab,o}$
 \end{itemize}
 \end{lemma}
+
 \begin{proof}
-Assume have that $\Transducer(i, x, f, \sigma, \sigma', U')$. 
+Assume we have $\Transducer(i, x, f, \sigma, \sigma', U')$. 
 \begin{enumerate}
 \item $\forall n, vs.\; o \in \domain{(\phi\;vs)_n}$ 
 
+Immediate, since $(\phi\;vs)_n = \ldots \cellneg{o}{e_2}$. 
 
 \item $\forall n, vs.\; R(\setof{i}, (\phi'\;vs)_n) \dashv\vdash (\phi\;vs)_{n+1}$
 
+Assume we have $n$ and $vs$. (continued on next page)
+\newpage
+\begin{displaymath}
+  \begin{array}{lcll}
+    R(\setof{i}, (\phi'\;vs)_n) 
+    & = & R(\setof{i}, (\sigma'\;vs)_n \otimes (\varsigma\;vs)_n) 
+    & \\
+    & = & R(\setof{i}, (\sigma'\;vs)_n) \otimes R(\setof{i}, (\varsigma\;vs)_n) 
+    & \\ 
+    & = & (\sigma'\;vs)_n \otimes R(\setof{i}, (\varsigma\;vs)_n) 
+    & (1) \\[1em]
+    & = & \begin{array}{l}
+              (\sigma'\;vs)_n \;\otimes \\
+              R(\setof{i}, \localref{r}{(aseq\;vs)_{n+1}}) \;\otimes \\
+              R(\setof{i}, \cellpos{ab}{e_1}{(abseq\;vs)_n}{\setof{i}}) \;\otimes \\
+              R(\setof{i}, \cellpos{o}{e_2}{(cseq\;vs)_n}{\setof{ac}}) \\
+            \end{array}
+    & \\[3em]
+    & = & \begin{array}{l}
+              (\sigma'\;vs)_n \;\otimes \\
+              \localref{r}{(aseq\;vs)_{n+1}} \;\otimes \\
+              \cellneg{ab}{e_1} \;\otimes \\
+              \cellpos{o}{e_2}{(cseq\;vs)_n}{\setof{ac}} \\
+            \end{array}
+    & \\[3em]
+    & \simeq & R\left(\setof{ab}, \begin{array}{l}
+              (\sigma'\;vs)_n \;\otimes \\
+              \localref{r}{(aseq\;vs)_{n+1}} \;\otimes \\
+              \cellneg{ab}{e_1} \;\otimes \\
+              \cellpos{o}{e_2}{(cseq\;vs)_n}{\setof{ac}} \\
+            \end{array}\right)
+    & (2) \\[3em]
+    & = & \begin{array}{l}
+              R(\setof{ab}, (\sigma'\;vs)_n) \;\otimes \\
+              \localref{r}{(aseq\;vs)_{n+1}} \;\otimes \\
+              \cellneg{ab}{e_1} \;\otimes \\
+              \cellpos{o}{e_2}{(cseq\;vs)_n}{\setof{ac}} \\
+            \end{array}
+    & \\[3em]
+    & \simeq & \begin{array}{l}
+                (\sigma\;vs)_{n+1} \;\otimes \\
+                \localref{r}{(aseq\;vs)_{n+1}} \;\otimes \\
+                \cellneg{ab}{e_1} \;\otimes \\
+                \cellpos{o}{e_2}{(cseq\;vs)_n}{\setof{ac}} \\
+              \end{array}
+    & (3) \\[3em]
+    & \simeq & R\left(\setof{ac}, \begin{array}{l}
+                (\sigma\;vs)_{n+1} \;\otimes \\
+                \localref{r}{(aseq\;vs)_{n+1}} \;\otimes \\
+                \cellneg{ab}{e_1} \;\otimes \\
+                \cellpos{o}{e_2}{(cseq\;vs)_n}{\setof{ac}} \\
+              \end{array}\right)
+    & (4) \\[3em]
+    & = & \begin{array}{l}
+                R(\setof{ac}, (\sigma\;vs)_{n+1}) \;\otimes \\
+                \localref{r}{(aseq\;vs)_{n+1}} \;\otimes \\
+                \cellneg{ab}{e_1} \;\otimes \\
+                \cellneg{o}{e_2} \\
+              \end{array}
+    & \\[3em]
+    & \simeq & \begin{array}{l}
+                (\sigma\;vs)_{n+1} \;\otimes \\
+                \localref{r}{(aseq\;vs)_{n+1}} \;\otimes \\
+                \cellneg{ab}{e_1} \;\otimes \\
+                \cellneg{o}{e_2} \\
+              \end{array}
+    & (5) \\ 
+    & = & (\phi\;vs)_{n+1}
+  \end{array}
+\end{displaymath}
+  \begin{itemize}
+  \item[(1)] Since $\closed{(\sigma'\;vs)_n}{\domain{(\sigma'\;vs)_n} \cup \setof{ab}}$, and 
+             $i \not \in \domain{(\sigma'\;vs)_n} \cup \setof{ab}$
+  \item[(2)] Since $ab$ is unready, since $\cellneg{ab}{e_1}$
+  \item[(3)] Since $\Transducer(i, x, f, \sigma, \sigma', U')$.
+  \item[(4)] Since $\unready{(\sigma\;vs)_{n+1}}{ac}$ 
+  \item[(5)] Since $\closed{(\sigma\;vs)_{n+1}}{\domain{(\sigma\;vs)_{n+1}}}$
+  \end{itemize}
 
 \item $\forall n, vs.\; \unready{(\phi\;vs)_n}{o}$.
 
+  Immediate, since $(\phi\;vs)_n = \ldots \cellneg{o}{e_2}$ 
+
 \item $\forall n, vs.\; \closed{(\phi\;vs)_n}{\domain{(\phi\;vs)_n}}$
+  
+  We know $(\phi\;vs)_n = (\sigma\;vs)_n \otimes (\varsigma\;vs)_n$. \\
+  We know from our hypothesis that $\closed{(\sigma\;vs)_n}{\domain{(\sigma\;vs)_n}}$. \\
+  Hence $\closed{(\sigma\;vs)_n}{\domain{(\phi\;vs)_n}}$. \\
+  We know $(\varsigma\;vs)_n = \localref{r}{(aseq\;vs)_{n}} \otimes \cellneg{ab}{e_1} \otimes \cellneg{o}{e_2}$. \\
+  Hence $\closed{(\varsigma\;vs)_n}{\emptyset}$. \\
+  Hence $\closed{(\varsigma\;vs)_n}{\domain{(\phi\;vs)_n}}$. \\
+  Hence $\closed{(\phi\;vs)_n}{\domain{(\phi\;vs)_n}}.$
 
 
 \item $\forall n, vs.\; \closed{(\phi'\;vs)_n}{\domain{(\phi'\;vs)_n} \cup \setof{i}}$ 
 
-\item For all $vs, I, O$, and $U$, if we have $\Stream(i, vs, I, O, U)$ then it follows that $\Stream(o, \mathit{switch}\;k\;f\;g\;vs, I \otimes (\phi\;vs), O \otimes (\phi'\;vs), U \cup U''')$
+  We know $(\phi'\;vs)_n = (\sigma'\;vs)_n \otimes (\varsigma'\;vs)_n$. \\
+  We know from our hypothesis that $\closed{(\sigma'\;vs)_n}{\domain{(\sigma\;vs)_n} \cup \setof{i}}$. \\
+  Hence $\closed{(\sigma'\;vs)_n}{\domain{(\phi'\;vs)_n}}$. \\
+  We know $(\varsigma'\;vs)_n = \localref{r}{(aseq\;vs)_{n+1}} \otimes 
+                                \cellpos{ab}{e_1}{(abseq\;vs)_n}{\setof{i}} \otimes \\
+                                \cellpos{o}{e_2}{(cseq\;vs)_n}{\setof{ac}}$. \\
+  Hence $\closed{(\varsigma\;vs)_n}{\setof{i, ac}}$. \\
+  Since ${i,ac} \subseteq \domain{(\sigma\;vs)_n} \cup \setof{i}$, 
+  we know $\closed{(\varsigma'\;vs)_n}{\domain{(\phi'\;vs)_n} \cup \setof{i}}.$ \\
+  Hence $\closed{(\phi\;vs)_n}{\domain{(\phi\;vs)_n} \cup \setof{i}}.$
+ 
+
+\item For all $vs, I, O$, and $U$, if we have $\Stream(i, vs, I, O, U)$ then it follows that $\Stream(o, \mathit{switch}\;k\;f\;g\;vs, I \otimes (\phi\;vs), O \otimes (\phi'\;vs), U \cup U')$
   \begin{tabbedproof}
-  Assume we have $vs, I, O$, and $U$, and that $\Stream(i, vs, I, O, U)$ holds. \\
+    Assume we have $vs, I, O$, and $U$, and that $\Stream(i, vs, I, O, U)$ holds. \\
+    
+  \oo Define $\alpha_n = \localref{r}{(aseq\;vs)_n} \otimes \cellneg{ab}{e_1}$, and \\
+  \oo define $\alpha'_n = \localref{r}{(aseq\;vs)_{n+1}} \otimes \cellpos{ab}{e_1}{(abseq\;vs)_n}{\setof{i}}$, and \\
+  \oo define $\hat{U}_n = U'_n \cup \setof{ab}$. \\
+  \oo Then it follows that $\Stream(ab, I \otimes \alpha, O \otimes \alpha', \hat{U})$ holds. \\
+  \oo Hence we have $\Stream(ac, I \otimes \alpha \otimes (\sigma\;vs), O \otimes \alpha' \otimes (\sigma'\;vs), U \cup \hat{U})$\\
 
   \\ \oo 1. We want for all $n$, that $o \in \domain{I_n \otimes (\phi\;vs)_n}$ \\
+  \ooo This is immediate, since $(\phi\;vs)_n = \ldots \cellneg{o}{e}.$ \\ 
 
   \\ \oo 2. We want for all $n$, that $\domain{I_n \otimes (\phi\;vs)_n} = \domain{O_n \otimes (\phi'\;vs)_n}$ \\
+  \ooo We know that $(\phi\;vs)_n = (\sigma\;vs)_n \otimes (\varsigma\;vs)_n$. \\
+  \ooo We know that $(\phi'\;vs)_n = (\sigma'\;vs)_n \otimes (\varsigma'\;vs)_n$. \\
+  \ooo We know that $(\varsigma\;vs)_n = \alpha_n \otimes \cellneg{o}{e}$ \\
+  \ooo We know that $(\varsigma'\;vs)_n = \alpha'_n \otimes \cellpos{o}{e}{(cseq\;vs)_n}{\setof{ac}}$ \\
+  \ooo By the stream hypothesis, we know that \\
+  \ooox $\domain{I_n \otimes \alpha_n \otimes (\sigma\;vs)_n} = 
+       \domain{O_n \otimes \alpha'_n \otimes (\sigma'\;vs)_n}$ \\
+  \ooo Obviously, $\domain{\cellneg{o}{e}} = \domain{\cellpos{o}{e}{(cseq\;vs)_n}{\setof{ac}}}$ \\
+  \ooo Hence $\domain{I_n \otimes (\phi\;vs)_n} = \domain{O_n \otimes (\phi'\;vs)_n}$ \\
 
   \\ \oo 3. We want for all $n$, that $\closed{I_n \otimes (\phi\;vs)_n}{\domain{I_n \otimes (\phi\;vs)_n}}$\\
+  \ooo We know that $(\phi\;vs)_n = (\sigma\;vs)_n \otimes (\varsigma\;vs)_n$. \\
+  \ooo We know that $(\varsigma\;vs)_n = \alpha_n \otimes \cellneg{o}{e}$. \\
+  \ooo By the stream hypothesis, we know that \\
+  \oooo $\closed{I_n \otimes \alpha_n \otimes (\sigma\;vs)_n}{\domain{I_n \otimes \alpha_n \otimes (\sigma\;vs)_n}}$. \\
+  \ooo Obviously, $\closed{\cellneg{o}{e}}{\emptyset}$. \\
+  \ooo Note $\emptyset \subseteq \domain{I_n \otimes \alpha_n \otimes (\sigma\;vs)_n} \subseteq \domain{(\phi\;vs)_n}$. \\
+  \ooo Hence $\closed{I_n \otimes \alpha_n \otimes (\sigma\;vs)_n}{\domain{(\phi\;vs)_n}}$. \\ 
+  \ooo Hence $\closed{\cellneg{o}{e}}{\domain{(\phi\;vs)_n}}$. \\
+  \ooo Hence $\closed{I_n \otimes (\phi\;vs)_n}{\domain{I_n \otimes (\phi\;vs)_n}}$\\
 
   \\ \oo 4. We want for all $n$, that $\closed{O_n \otimes (\phi'\;vs)_n}{\domain{O_n \otimes (\phi'\;vs)_n}}$\\
+  \ooo We know that $(\phi'\;vs)_n = (\sigma'\;vs)_n \otimes (\varsigma'\;vs)_n$. \\
+  \ooo We know that $(\varsigma'\;vs)_n = \alpha'_n \otimes \cellpos{o}{e}{(aseq\;vs)_n}{\setof{ac}}$. \\
+  \ooo By the stream hypothesis, we know that \\
+  \oooo $\closed{O_n \otimes \alpha'_n \otimes (\sigma'\;vs)_n}{\domain{O_n \otimes \alpha'_n \otimes (\sigma'\;vs)_n}}$. \\
+  \ooo Obviously, $\closed{\cellpos{o}{e}}{\setof{ac}}$. \\
+  \ooo Note $\setof{ac} \subseteq \domain{O_n \otimes \alpha'_n \otimes (\sigma'\;vs)_n} \subseteq \domain{(\phi'\;vs)_n}$. \\
+  \ooo Hence $\closed{O_n \otimes \alpha'_n \otimes (\sigma'\;vs)_n}{\domain{(\phi'\;vs)_n}}$. \\ 
+  \ooo Hence $\closed{\cellpos{o}{e}{(cseq\;vs)_n}{\setof{ac}}}{\domain{(\phi'\;vs)_n}}$. \\
+  \ooo Hence $\closed{O_n \otimes (\phi'\;vs)_n}{\domain{O_n \otimes (\phi'\;vs)_n}}$\\
 
   \\ \oo 5. We want for all $n$, that $U_n \cup U'''_n \subseteq \domain{I_n \otimes (\phi\;vs)_n}$ \\
 
