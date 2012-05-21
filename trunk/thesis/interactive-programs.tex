@@ -3215,18 +3215,20 @@ Assume have that $\Transducer(i, m, f, \sigma, \sigma', U')$ and $\Transducer(m,
 
 \subsubsection{The $\loopop$ transducer}
 \begin{lemma}{(The $\ctext{loop}$ network)}
-If we have that $\Transducer(i, x, f, \sigma, \sigma', U')$ 
+If we have that $\Transducer(ab, ac, f, \sigma, \sigma', U')$ 
 then it follows that $\Transducer(i, o, \mathit{loop}\;a_0\;f, \phi, \phi', U''')$, where 
 
 \begin{itemize}
-\item $\phi\;vs\;n = \IfThenElse{n < k}{(\sigma\;vs)_n \otimes (\theta\;(\mathit{drop}\;k\;vs))_0}{(\sigma\;vs)_k \otimes (\theta\;(\mathit{drop}\;k\;vs))_{n-k}} \otimes (\varsigma\;vs)_n$
-\item $\varsigma\;vs\;n = \cellneg{o}{e} \otimes \localref{r}{n}$ 
-\item $\phi'\;vs\;n = \IfThenElse{n < k}{(\sigma'\;vs)_n \otimes (\theta\;(\mathit{drop}\;k\;vs))_0}{(\sigma\;vs)_k \otimes (\theta'\;(\mathit{drop}\;k\;vs))_{n-k}} \otimes  \otimes (\varsigma'\;vs)_n$
-\item $\varsigma'\;vs\;n = \IfThenElse{n < k}{\cellpos{o}{e}{(\mathit{switch}\;f\;g\;vs)_n}{\setof{b}}}
-                                        {\cellpos{o}{e}{(\mathit{switch}\;f\;g\;vs)_n}{\setof{c}}} \otimes \localref{r}{n+1}$
-\item $e = \bind (\getref\;l)\;(\semfun{i}{\bind\;(\setref\;r\;(i+1))\; (\semfun{\unit}{\IfThenElse{i < k}{\readcell\;b}{\readcell\;c}})})$
-\item $U'''_n = \IfThenElse{n < k}{U'_n \cup \setof{o}}{U''_{n-k} \cup \setof{o}}$
-\item $e = \bind (\readcell\;b)\; (\semfun{b_0}{\bind (\readcell c)\;(\semfun{c_0}{\return\pair{b_0}{c_0}})})$
+\item $\phi\;vs\;n = (\sigma\;vs)_n \otimes (\varsigma\;vs)_n $
+\item $\phi'\;vs\;n = (\sigma'\;vs)_n \otimes (\varsigma'\;vs)_n$
+\item $\varsigma\;vs\;n = \localref{r}{(aseq\;vs)_n} \otimes \cellneg{ab}{e_1} \otimes \cellneg{o}{e_2}$ 
+\item $\varsigma'\;vs\;n = {\small \localref{r}{(aseq\;vs)_{n+1}} \otimes \cellpos{ab}{e_1}{(abseq\;vs)_n}{\setof{b}} \otimes \cellpos{o}{e_2}{(cseq\;vs)_n}{\setof{ac}}}$ 
+\item $acseq\;vs = \mathit{cycle}\;a_0\;f\;vs$
+\item $aseq\;vs = \mathit{map}\;\pi_1\;(acseq\;vs)$
+\item $abseq\;vs = \mathit{zip}\;(aseq\;vs)\;vs$
+\item $e_1 = \bind (\getref\;r)\;(\semfun{a}{\bind\;(\readcell\;i)\; (\semfun{b}{\return\pair{a}{b}})})$
+\item $e_2 = \bind (\readcell\;ac)\;(\semfun{(a,c)}{\bind (\setref\;r\;a)\; (\semfun{\unit}{\return\;c})})$
+\item $U''_n = U'_n \cup \setof{ab,o}$
 \end{itemize}
 \end{lemma}
 \begin{proof}
