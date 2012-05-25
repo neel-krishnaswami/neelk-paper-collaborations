@@ -1038,7 +1038,8 @@ detail obscures the key ideas.)
 Now we will proceed line-by-line through the function body of $\ctext{mark\_unready}(c)$: 
 
 \begin{tabbedproof}
-\oo We know \\
+\oo Assume $\WF(H) \land \mathit{heap}(H)$ \\
+\oo Hence we know \\
 \oox $R^\dagger_H = O_H$ \\
 \oox $R^+_H$ strict partial order \\
 \oox $R_H \subseteq V_H \times V_H$ \\
@@ -1068,14 +1069,13 @@ Now we will proceed line-by-line through the function body of $\ctext{mark\_unre
 \oooo From the definition of $\mathit{heap}(H)$, we know that  \\
 \oooo $\mathit{set}(D, os, \mathit{obs}(h(c)))$ and $\mathit{set}(D, rs, \mathit{reads}(h(c)))$ \\
 \oooo Furthermore, we also know that for every $o \in os$, $(c, o) \in O_H$, and hence $(o, c) \in R_H$. \\
-\oooo Likewise, we know that if $(c, o') \in O_H$, then $o' \in os$, and symmetrically for $R_H$. \\ 
+\oooo Likewise, we know for all $o'$, that if $(c, o') \in O_H$, then $o' \in os$, and symmetrically for $R_H$. \\ 
 \oooo Since $R^+_H$ is a strict partial order, $c \not \in U^H_{\setof{o}}$ for any $o \in os$ \\
 \oooo Therefore, we know that $c \not\in U^H_{os}$ and that $U^H_{os \cup \setof{c}} = U^H_{os} \cup \setof{c} = U^H_{\setof{c}}$ \\
 \oooo Now, by the equational axioms in the cellset interface, $\ctext{iterseq\;mark\_unready}\;os$ \\
 \ooox is equal to a sequence of calls to $\ctext{mark\_unready}$, once for each element of $\mathit{obs}(h(c))$\\
 \oooo By induction on the size of $\mathit{obs}(h(c))$, we end in a logical state $(D, h|_{os})$, \\
-\ooox and a physical state $\mathit{heap}(D, h|_{\setof{os}})$, which (using lemmas 78 and 79)  \\
-\ooox satisfies the property $\WF((D,h|_{os}))$\\
+\ooox and a physical state $\mathit{heap}(D, h|_{\setof{os}})$, which  satisfies the property $\WF((D,h|_{os}))$\\
 \oooo Since $V_{H|_{os}} = V_H - U^H_{os}$, and $c \not \in U^H_{os}$, we know $c \in V_{H|_{os}}$ \\ 
 \oooo Furthermore, we know that $U^{H|_{os}}_{\setof{c}} = \setof{c}$, since we know that \\
 \oooox $U^{H|_{os}}_{\setof{c}} \cup U^H_{os} = U^H_{os \cup \setof{c}} = U^H_{os} \cup \setof{c}$ \\
@@ -1121,7 +1121,7 @@ it follows that with $H' = (D,h')$, we have $H', D' \models \phi \otimes \cellne
     \oo Assume $H, D' \models \phi \otimes \cellneg{c}{\cmd}$. \\
     \ooo So we have $D_1, D_2$ such that $D' = D_1 \uplus D_2$ and $H, D_1 \models \phi$ and $H, D_2 \models \cellneg{c}{\cmd}$ \\
     \ooo Since $H, D_2 \models \cellneg{c}{\cmd}$, we know that $c \in D_2$ and $c \not\in D_1$ \\
-    \ooo As a lemma, we show $\forall \hat{D}$, if $H, \hat{D} \models \phi$ and $c \not \in \hat{D}$, then $H', \hat{D} \models \phi$ \\
+    \ooo As a lemma, we show $\forall \phi, \hat{D}$, if $H, \hat{D} \models \phi$ and $c \not \in \hat{D}$, then $H', \hat{D} \models \phi$ \\
     \ooo We proceed by induction on $\phi$: \\
     \oooo Case $\phi = I$ or $\phi = \localref{r}{v}$: \\
     \ooooo This case is immediate \\
