@@ -935,7 +935,7 @@ Suppose we have $H = (D,h)$ such that
     \ooo Therefore $(a,b) \in R^\dagger_{H'}$ 
   \end{tabbedproof}
 
-\item $\mathit{unique}(h) = \mathit{unique}(h')$.
+\item $\mathit{unique}(H')$.
 
 This is immediate, since $\mathit{identity}(h) = \mathit{identity}(h')$ 
 \end{enumerate}
@@ -1395,14 +1395,28 @@ that $o \not\in V_H$.
 \end{enumerate}
 \end{proof}
 
+In Figure~\ref{closedness}, we define the $\closed{\phi}{s}$
+predicate, which asserts that every cell formula in $\phi$ reads at
+most the cells in $s$. Now, we can summarize the monotonicity properties
+of these three relations as follows:
 
-In Figure~\ref{closedness}, we define the $\closed{\phi}{s}$ predicate,
-which asserts that every cell formula in $\phi$ reads at most the
-cells in $s$. Now, we can summarize the interactions between the 
-ramification operator $R$ and abstract heap formulas as follows: 
+\begin{prop}{(Monotonicity properties of $\ready{\phi}{o}{v}$, $\unready{\phi}{o}$, and $\closed{\phi}{u}$ )}
+We have that:
+\begin{enumerate}
+\item If $\unready{\phi}{o}$, then $\unready{\phi \otimes \psi}{o}$.
+\item If $\ready{\phi}{o}{v}$, then $\ready{\phi \otimes \psi}{o}{v}$.
+\item If $\closed{\phi \otimes \psi}{u}$, then $\closed{\phi}{u}$
+\end{enumerate}
+\end{prop}
+\begin{proof}
+These properties all follow from routine inductions. 
+\end{proof}
+
+Next, we can summarize the interactions between the ramification
+operator $R$ and abstract heap formulas as follows:
 
 \begin{prop}{(Interaction Properties)}
-Given sets of cells $s$ and $u$, cell $o$, value $v$, and formula $\phi$, we have
+Given sets of cells $s$ and $u$, cell $o$, value $v$, and formulas $\phi$ and $\psi$, we have
 that:
 \begin{itemize}
 \item $R(s, R(u, \phi)) = R(s \cup u, \phi)$
@@ -1411,81 +1425,101 @@ that:
 \item If $R(u, \phi)$ and $\closed{\phi}{s}$, then $R(u, \phi) = R(u \cap s, \phi)$ 
 \end{itemize}
 \end{prop}
-
+\begin{proof}
 All of these facts can be proved with simple inductive arguments. 
+\end{proof}
 
 The first property means that if we evaluate two expressions, we can
 simply combine their ramification effects without having to worry
 about the order that they were evaluated in. The second and third let
 us know that a ramification cannot make us forget a cell is unready,
 nor can it make anything ready that was not ready before. The last
-property permits us to constrain the effect of a ramification --- if we
-know that two parts of the abstract heap formula do not read each
-other at all, we can deduce that ramifications from one will not
-affect the other.
+property permits us to constrain the effect of a ramification --- if
+we know that part of the abstract heap formula does not read some
+cells at all, then we can deduce that ramifications from those cells
+will not affect that part of the abstract heap.
+
+Finally, we can give the entailment relation for abstract
+formulas. Since we lack implication and quantifiers in our little
+logic, the relation is very simple, except for the interaction 
+with the ramification operator. 
 
 \begin{prop}{(Entailments)}
 Define $\phi \vdash \theta$ to mean that for all $H$ and $D$, that if $H, D \models \phi$ then 
 $H, D \models \theta$. 
 
 \begin{itemize}
-\item For all $\phi, \theta$, we have $\phi \otimes \theta \vdash \phi$
-\item For all $\phi, \phi', \psi$, if $\phi \vdash \phi'$ then $\phi \otimes \psi \vdash \phi' \otimes \psi$  
-\item If $\unready{\phi}{c}$ then $\phi \dashv\vdash R(\setof{c}, \phi)$
-\item If $\unready{\phi \otimes \celleither{c}{\cmd}}{c}$ then $\phi \otimes \celleither{c}{\cmd} \dashv\vdash \phi \otimes \cellneg{c}{\cmd}$
+\item For all $\phi, \theta$, we have $\phi \otimes \theta \vdash \phi$.
+\item For all $\phi, \phi', \psi$, if $\phi \vdash \phi'$ then $\phi \otimes \psi \vdash \phi' \otimes \psi$.
+\item For all $\phi, \psi, \theta$, if $\phi \vdash \psi$ and $\psi \vdash \theta$, then $\phi \vdash \theta$. 
+\item For all $\phi, \theta$, we have $\phi \otimes \theta \vdash \theta \otimes \phi$. 
+\item For all $\phi$, we have $\phi \vdash \phi \otimes I$. 
+\item For all $\phi, \theta, \psi$, we have $(\phi \otimes \theta) \otimes \psi \dashv\vdash \phi \otimes (\theta \otimes \psi)$. 
+\item If $\unready{\phi}{c}$ then $\phi \dashv\vdash R(\setof{c}, \phi)$.
+\item If $\unready{\phi \otimes \celleither{c}{\cmd}}{c}$ then $\phi \otimes \celleither{c}{\cmd} \dashv\vdash \phi \otimes \cellneg{c}{\cmd}$.
 \end{itemize}
 \end{prop}
 
 \begin{proof}
 \begin{itemize}
-\item For all $\phi, \theta$, we have $\phi \otimes \theta \vdash \phi$
-\begin{tabbedproof}
-\oo Assume we have $\phi, \theta$ and $H, D \models \phi \otimes \theta$ \\
-\oo As a lemma, we inductively show that \\
-\ox for all $\phi$ and $D' \supseteq D$, we have that $H, D \models \phi$ implies $H, D' \models \phi$ \\
-\ooo Case $\phi = I$: \\
-\oooo Immediate \\
-\ooo Case $\phi = \localref{r}{v}$: \\
-\oooo Immediate\\
-\ooo Case $\phi = \psi \otimes \theta$: \\
-\oooo If $D' \supseteq D$, then there is a $D''$ such that $D' = D \uplus D''$ \\
-\oooo By inversion, we have $D_1$ and $D_2$ with $D = D_1 \uplus D_2$ such that \\
-\ooox $H, D_1 \models \psi$ and $H, D_2 \models \theta$ \\
-\oooo By induction, we know that $H, D_1 \uplus D'' \models \psi$ \\
-\oooo Since $D''$ is disjoint from $D$, we know it is disjoint from $D_1$ and $D_2$ \\
-\oooo Hence $D_1 \uplus D''$ is disjoint from $D_2$ \\
-\oooo Hence $H, D_1 \uplus D'' \uplus D_2 \models \psi \otimes \theta$ \\
-\oooo Hence $H, D' \models \phi$ \\
-\ooo Case $\phi = \cellneg{c}{\cmd}$: \\
-\oooo Since $c \in D$, we know $c \in D'$ \\
-\oooo Hence $H, D' \models \cellneg{c}{\cmd}$ \\
-\ooo Case $\phi = \cellpos{c}{\cmd}{v}{r}$: \\
-\oooo Since $c \in D$, we know $c \in D'$ \\
-\oooo Hence $H, D' \models \cellneg{c}{\cmd}$ \\
-\oo Now note that we have $D_1, D_2$ such that $D = D_1 \uplus D_2$ and \\
-\ox $H, D_1 \models \phi$ and $H, D_2 \models \theta$ \\
-\oo Since $D \supseteq D_1$, we know that $H, D \models \phi$ \\
-\end{tabbedproof}
+\item For all $\phi, \theta$, we have $\phi \otimes \theta \vdash \phi$.
+\item For all $\phi, \phi', \psi$, if $\phi \vdash \phi'$ then $\phi \otimes \psi \vdash \phi' \otimes \psi$.
+\item For all $\phi, \psi, \theta$, if $\phi \vdash \psi$ and $\psi \vdash \theta$, then $\phi \vdash \theta$. 
+\item For all $\phi, \theta$, we have $\phi \otimes \theta \vdash \theta \otimes \phi$. 
+\item For all $\phi$, we have $\phi \vdash \phi \otimes I$. 
+\item For all $\phi, \theta, \psi$, we have $(\phi \otimes \theta) \otimes \psi \dashv\vdash \phi \otimes (\theta \otimes \psi)$. 
 
-\item For all $\phi, \phi', \psi$, if $\phi \vdash \phi'$ then $\phi \otimes \psi \vdash \phi' \otimes \psi$  
-\begin{tabbedproof}
-\oo Assume we have $\phi \vdash \phi'$ \\
-\oo Now, assume we have $H, D$ such that $H,D \models \phi \otimes \psi$ \\
-\ooo So we know that there are $D_1, D_2$ such that $D = D_1 \uplus D_2$ and \\
-\oox $H, D_1 \models \phi$ and $H, D_2 \models \psi$ \\
-\ooo Since $\phi \vdash \phi'$, we know $H, D_1 \models \phi'$ \\
-\ooo Hence $H, D_1 \uplus D_2 \models \phi' \otimes \psi$ \\
-\ooo Hence $H, D \models \phi' \otimes \psi$ \\
-\end{tabbedproof}
+  These cases are all routine unwindings of the definitions. 
+
+% \item For all $\phi, \theta$, we have $\phi \otimes \theta \vdash \phi$
+% \begin{tabbedproof}
+% \oo Assume we have $\phi, \theta$ and $H, D \models \phi \otimes \theta$ \\
+% \oo As a lemma, we inductively show that \\
+% \ox for all $\phi$ and $D' \supseteq D$, we have that $H, D \models \phi$ implies $H, D' \models \phi$ \\
+% \ooo Case $\phi = I$: \\
+% \oooo Immediate \\
+% \ooo Case $\phi = \localref{r}{v}$: \\
+% \oooo Immediate\\
+% \ooo Case $\phi = \psi \otimes \theta$: \\
+% \oooo If $D' \supseteq D$, then there is a $D''$ such that $D' = D \uplus D''$ \\
+% \oooo By inversion, we have $D_1$ and $D_2$ with $D = D_1 \uplus D_2$ such that \\
+% \ooox $H, D_1 \models \psi$ and $H, D_2 \models \theta$ \\
+% \oooo By induction, we know that $H, D_1 \uplus D'' \models \psi$ \\
+% \oooo Since $D''$ is disjoint from $D$, we know it is disjoint from $D_1$ and $D_2$ \\
+% \oooo Hence $D_1 \uplus D''$ is disjoint from $D_2$ \\
+% \oooo Hence $H, D_1 \uplus D'' \uplus D_2 \models \psi \otimes \theta$ \\
+% \oooo Hence $H, D' \models \phi$ \\
+% \ooo Case $\phi = \cellneg{c}{\cmd}$: \\
+% \oooo Since $c \in D$, we know $c \in D'$ \\
+% \oooo Hence $H, D' \models \cellneg{c}{\cmd}$ \\
+% \ooo Case $\phi = \cellpos{c}{\cmd}{v}{r}$: \\
+% \oooo Since $c \in D$, we know $c \in D'$ \\
+% \oooo Hence $H, D' \models \cellneg{c}{\cmd}$ \\
+% \oo Now note that we have $D_1, D_2$ such that $D = D_1 \uplus D_2$ and \\
+% \ox $H, D_1 \models \phi$ and $H, D_2 \models \theta$ \\
+% \oo Since $D \supseteq D_1$, we know that $H, D \models \phi$ \\
+% \end{tabbedproof}
+% 
+% \item For all $\phi, \phi', \psi$, if $\phi \vdash \phi'$ then $\phi \otimes \psi \vdash \phi' \otimes \psi$  
+% \begin{tabbedproof}
+% \oo Assume we have $\phi \vdash \phi'$ \\
+% \oo Now, assume we have $H, D$ such that $H,D \models \phi \otimes \psi$ \\
+% \ooo So we know that there are $D_1, D_2$ such that $D = D_1 \uplus D_2$ and \\
+% \oox $H, D_1 \models \phi$ and $H, D_2 \models \psi$ \\
+% \ooo Since $\phi \vdash \phi'$, we know $H, D_1 \models \phi'$ \\
+% \ooo Hence $H, D_1 \uplus D_2 \models \phi' \otimes \psi$ \\
+% \ooo Hence $H, D \models \phi' \otimes \psi$ \\
+% \end{tabbedproof}
 
 
 \item If $\unready{\phi}{c}$ then $\phi \dashv\vdash R(\setof{c}, \phi)$
 \begin{tabbedproof}
 \oo Assume $\unready{\phi}{c}$ \\
 \oo We want to show that for all $H$ and $D$, that $H, D \models \phi$ iff $H, D \models R(\setof{c}, \phi)$ \\
-\oo Assume $H$ \\
-\oo $\Rightarrow$: We will show inductively that for all $D$, if $H, D \models \phi$ then $H, D \models R(\setof{c}, \phi)$ \\ 
-\ooo Assume $H, D \models \phi$ \\ 
+\oo $\Rightarrow$: for all $H$ and $D$, if $H, D \models \phi$ then $H, D \models R(\setof{c}, \phi)$ \\
+\ooo As a lemma, we will show inductively that \\
+\ooox for all $D$, if $H, D \models \phi$ and $c \not\in V_H$ then $H, D \models R(\setof{c}, \phi)$ \\ 
+\ooo Assume $H, D \models \phi$ and $c \not\in V_H$ \\ 
 \ooo Case $\phi = I$: \\
 \oooo Since $R(\setof{c}, I) = I$, this case is immediate \\
 \ooo Case $\phi = \localref{r}{v}$: \\
@@ -1503,13 +1537,18 @@ $H, D \models \theta$.
 \oooo If $c \not\in r'$: \\
 \ooooo Then $R(\setof{c}, \cellpos{c'}{e'}{v'}{r'}) = \cellpos{c'}{e'}{v'}{r'}$ and this case is immediate \\
 \oooo If $c \in r'$: \\
-\ooooo Since $\unready{c}{\cmd}$ is sound, we know that $c \not\in V_H$. \\ 
+\ooooo Recall we know that $c \not\in V_H$. \\ 
 \ooooo Hence $r' \not\subseteq V_H$, and so we know that $c' \not\in V_H$ \\
 \ooooo Furthermore, we know that $c' \in D$, and $\mathit{code}(h(c')) = e'$, \\
 \oooox so we know $H, D \models \cellneg{c'}{e'}$ \\
 \ooooo Since $c \in r'$, we know $R(\setof{c}, \cellpos{c'}{e'}{v'}{r'}) = \cellneg{c'}{e'}$ \\
 \ooooo Hence $H, D \models R(\setof{c}, \cellpos{c'}{e'}{v'}{r'})$ \\
-\oo $\Leftarrow$: We show inductively that for all $D$, if $H, D \models R(\setof{c}, \phi)$ then $H, D \models \phi$\\
+\ooo Now, assume we have $H, D, \models \phi$. \\
+\ooo Since $\unready{\phi}{c}$ is sound, we know that $c \not\in V_H$. \\ 
+\ooo Hence by our lemma, we know that $H, D \models R(\setof{c}, \phi)$ \\
+\oo $\Leftarrow$: for all $H$ and $D$, if $H, D \models R(\setof{c}, \phi)$ then $H, D \models \phi$ \\
+\ooo As a lemma, we show inductively that \\
+\ooox for all $D$, if $H, D \models R(\setof{c}, \phi)$ and $c \not\in V_H$ then $H, D \models \phi$\\
 \ooo Assume $H, D \models R(\setof{c}, \phi)$ \\ 
 \ooo Case $\phi = I$: \\
 \oooo Since $R(\setof{c}, I) = I$, this case is immediate \\
@@ -1530,9 +1569,13 @@ $H, D \models \theta$.
 \oooo If $c \in r'$: \\
 \ooooo We know $H, D \models R(\setof{c}, \cellpos{c'}{e'}{v'}{r'}) = \cellneg{c'}{e'}$ \\
 \ooooo Hence $c' \not\in V_H$ \\
-\ooooo Since $\unready{c}{\cmd}$ is sound, we know that $c \not\in V_H$. \\ 
+\ooooo Recall we know that $c \not\in V_H$. \\ 
 \ooooo Since $c \in r'$, we know that $r' \not\subseteq V_H$, and so $c' \not\in V_H$ lets us conclude \\
 \ooooo that $H, D \models \cellpos{c'}{e'}{v'}{r'}$ \\
+\ooo Assume $H$ and $D$, and that $H, D \models R(\setof{c}, \phi)$ \\
+\ooo We know that $\unready{\phi}{c}$, so we know that $\unready{R(\setof{c}, \phi)}{c}$ \\ 
+\ooo Hence we know that $c \not\in V_H$ \\
+\ooo Hence by our lemma we know that $H, D \models \phi$ \\
 \end{tabbedproof}
 
 
@@ -1772,10 +1815,10 @@ The following specification is derivable:
 \ooo Now consider the body of $\bind$ \\
 \ooo $[\letv{(v_1, z_1)}{\cmd}{}$ \\
 \ooo So we know $G(\phi' \otimes R(u', \psi)) \land v_1 = v' \land \mathit{set}(r', z_1, r')$ \\
-\ooo Simplifying $v_1$ away, we continue with \\
+\ooo Substituting $v$ for $v_1$ in the remainder, we continue with \\
 \ooo $\letv{(v_2, z_2)}{f\;v'}{}$ \\
 \ooo Now we know $G(\phi'' \otimes R(u'', R(u', \psi))) \land v_2 = v'' \land \mathit{set}(r', z_1, r') \land \mathit{set}(r'', z_2, r'')$ \\
-\ooo Simplifying $v_2$ away, and using the $\textsf{union}$ spec on lines 14-15 of the set specification, \\
+\ooo Substituting $v''$ for $v_2$, and using the $\textsf{union}$ spec on lines 14-15 of the set specification, \\
 \ooo we can take $z = \mathsf{union}\;z_1\;z_2$ and know $\mathit{set}(r' \cup r'', z, r' \cup r'')$ \\
 \ooo Hence we know $G(\phi'' \otimes R(u' \cup u'', \psi)) \land \mathit{set}(r' \cup r'', z, r' \cup r'')$ \\
 \ooo Then the return value: \\
@@ -1853,7 +1896,16 @@ showing the code actually implements this update.
 
 
 \begin{lemma}{(Reading an Unready Cell Preserves Order Structure)}
-Suppose that $H = (D,h)$ and $c \in D - V_H$. Then for any subset $r
+Suppose that $H = (D,h)$ and $c \in D - V_H$, such that  
+\begin{enumerate}
+\item $R^+_{H}$ is a strict partial order 
+\item $R_{H} \subseteq V_{H} \times V_{H}$
+\item $R^\dagger_{H} = O_{H}$ 
+\item $\mathit{unique}(H)$
+\end{enumerate}
+
+
+Then for any subset $r
 \subseteq V_H$ and value $v$, define $h'$ so that
 \begin{itemize}
 \item $\mathit{code} \circ h' = \mathit{code} \circ h$ 
@@ -1868,7 +1920,7 @@ Suppose that $H = (D,h)$ and $c \in D - V_H$. Then for any subset $r
 \item $R^+_{H'}$ is a strict partial order 
 \item $R_{H'} \subseteq V_{H'} \times V_{H'}$
 \item $R^\dagger_{H'} = O_{H'}$ 
-\item $\mathit{unique}(H') = \mathit{unique}(H)$
+\item $\mathit{unique}(H')$
 \end{enumerate}
 \end{lemma}
 
@@ -1908,12 +1960,12 @@ Suppose that $H = (D,h)$ and $c \in D - V_H$. Then for any subset $r
     \ox and for each $i \leq k$, $a_{i+1} \in \mathit{reads}(h'(a_i))$ \\
     \oo Now consider whether $c$ is equal to any of the $a_i$ \\
     \oo Suppose $a_i \not= c$ for all $0 \leq i \leq k+1$: \\
-    \ooo Then in this case, it follows that $\mathit{reads}(h'(a_i)) = \mathit{reads}(h(a_i))$ for all $i$\\
+    \ooo Then in this case, it follows that $\mathit{reads}(h'(a_i)) = \mathit{reads}(h(a_i))$ for all $i \leq k$\\
     \ooo Then $(a_0, a_{k+1}) \in R^+_H$ \\
     \ooo Then $a_0 \not= a_{k+1}$ since $R^+_H$ is irreflexive \\
     \oo Suppose $a_i = c$ for some $0 \leq i \leq k+1$: \\
     \ooo Note that $\mathit{reads}(h'(a)) \subseteq V_H$ for all $a$  \\
-    \ooo Since $c \not\in V_H$, it follows $c \not\in \mathit{reads}(h'(a))$ for any $a \in D$ \\
+    \ooo Since $c \not\in V_H$ and $R_H \subseteq V_H \times V_H$, it follows $c \not\in \mathit{reads}(h'(a))$ for any $a \in D$ \\
     \ooo Hence $c \not= a_j$ for any $j > 0$, and so $c = a_0$ and $c \not= a_{k+1}$\\
     \ooo Hence $a_0 \not= a_{k+1}$
   \end{tabbedproof}
@@ -1969,7 +2021,7 @@ Suppose that $H = (D,h)$ and $c \in D - V_H$. Then for any subset $r
     \ooooo Therefore $a \in \mathit{reads}(h'(b))$ 
   \end{tabbedproof}
 
-\item $\mathit{unique}(H') = \mathit{unique}(H)$
+\item $\mathit{unique}(H')$
 
 This is immediate since $\mathit{identity} \circ h' = \mathit{identity} \circ h$.
 \end{enumerate}
@@ -2147,9 +2199,9 @@ The following specification is valid:
 \oo Assume we know $\phi' \vdash \phi$ and $\psi \vdash \psi'$ \\
 \oo Furthermore assume $\forall \psi.\; \spec{G(\phi \otimes \psi) \land P}{\cmd}{(x,z)}{G(\theta\otimes R(u, \psi)) \land Q}$ \\
 \ooo Now assume $\psi$, and that we are in a prestate $G(\phi' \otimes \psi) \land P$ \\
-\ooo So we know there is an $H$ such that $\mathit{Inv}(H, \phi' \otimes \psi)$ \\
+\ooo So we know there is an $H = (D,h)$ such that $\mathit{Inv}(H, \phi' \otimes \psi)$ \\
 \ooo Since $\phi' \vdash \phi$, we know that $H, D \models \phi \otimes \psi$ \\
-\ooo Hiding the existential again, we know that $G(\phi \otimes \psi) \land P$ \\
+\ooo Hence $\mathit{Inv}(H, \phi \otimes \psi)$, and hiding the existential gives $G(\phi \otimes \psi) \land P$ \\
 \ooo $\cmd$ \\
 \ooo Now by assumption we know $G(\theta \otimes R(u, \psi)) \land Q$ \\
 \ooo So we know there is an $H$ such that $\mathit{Inv}(H, \theta \otimes \psi)$ \\
@@ -2185,6 +2237,9 @@ The following specification is valid:
 \oo $\pair{v}{\ctext{emptyset}}]$ \\
 \oo We can now conclude \\
 \oo $G(\localref{r}{v} \otimes \psi) \land a = \pair{v}{\ctext{emptyset}}$ \\
+\oo Since $\mathit{set}(\emptyset, \ctext{emptyset}, \emptyset)$, we can get \\
+\oo $G(\localref{r}{v} \otimes \psi) \land \exists z.\; a = \pair{v}{z} \land \mathit{set}(\emptyset, z, \emptyset)$ \\
+
 \end{tabbedproof}
 \end{proof}
 
@@ -2196,7 +2251,7 @@ We first note a useful property:
 We have that $H, D \models \localref{r}{v} \otimes \psi$ if and only if $H, D \models \localref{r}{v'} \otimes \psi$ 
 \end{lemma}
 \begin{proof}
-This follows by an easy induction on $\psi$, since $sat(H, D, \localref{r}{v}) = \top$. 
+This follows by an easy induction on $\psi$, since $H', D' \models \localref{r}{v})$ for any $H'$ and $D'$. 
 \end{proof}
 
 \ \\
@@ -2224,8 +2279,7 @@ The following specification is valid:
 \begin{proof}
 \begin{tabbedproof}
 \oo Assume we are in a prestate $G(\localref{r}{v'} \otimes \psi)$ \\
-\oo Then there is an $H = (D,h)$ such that $R^\dagger_H$ and  $R^+_H$ is a strict partial order, \\
-\oo and $R_H \subseteq V_H \times V_H$ and $\mathit{unique}(H)$ and $H, D \models \localref{r}{v'} \otimes \phi$ \\
+\oo Then there is an $H = (D,h)$ such that $\WF(H)$ and $H, D \models \localref{r}{v'} \otimes \phi$ \\
 \oo and $\mathit{heap}(H) * \mathit{refs}(\localref{r}{v'} \otimes \phi)$\\
 \oo The spatial part is equivalent to $\mathit{heap}(H) * r \pointsto v' * \mathit{refs}(\phi)$ \\
 \oo $[\letv{()}{[r := v]}{}$ \\
