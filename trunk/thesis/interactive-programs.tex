@@ -534,7 +534,7 @@ where $I_X : X \to X = \fun{x}{x}$ \\[1em]
 
 $\satisfies{(D,h)}{\phi} = (D,h), D \models \phi$ \\[1em]
 
-$\models \;\subseteq\; \comprehend{((D,h), D') \in CellHeap \times \powersetfin{\ecell}}{D' \subseteq D}$ \\[0.5em]
+$\models \;\subseteq\; \comprehend{(((D,h), D'), \phi) \in (CellHeap \times \powersetfin{\ecell}) \times \formula}{D' \subseteq D}$ \\[0.5em]
 
 $(D,h), D' \models \localref{r}{v} \qquad \qquad$\=$\iff \top$ \\
 $(D,h), D' \models I$                            \>$\iff \top$ \\
@@ -680,7 +680,8 @@ $h|_X$ so that:
 \end{itemize}
 If $H = (D,h)$, we will write $H|_X$ to mean $(D,h|_X)$. Since $R_H \subseteq V_H \times V_H$,
 when defining the reflexive, transitive closure, we define the reflexive relation  $R^0_H$ to be the 
-identity relation on $V_H$. 
+identity relation on $V_H$. Similarly, we define the reflexive relation  $R^0_{H|_X}$ to be the 
+identity relation on $V_{H|_X}$. 
 
 Then, it is the case that $(d,c) \in R^*_{H|_X}$ if and only if $(d,c) \in R^*_H \land c \not\in U^H_X \land d \not\in U^H_X$. 
 \end{lemma}
@@ -699,7 +700,7 @@ Then, it is the case that $(d,c) \in R^*_{H|_X}$ if and only if $(d,c) \in R^*_H
 \oooo Since $\mathit{value}(h|_{X}(c)) = \IfThenElse{c \in U^H_X}{\None}{\mathit{value}(h(c))}$, we know $c \not\in U^H_X$ \\
 \ooo Case $n = k+1$: \\
 \oooo Hence we have a sequence $(d, \ldots, c_k, c)$ with each adjacent pair in $R_{H|_X}$, \\
-\oooo such that $(d, c_k) \in R^*_H$ and $d \not \in U^H_X$ and $c_k \not \in U^H_x$ \\ 
+\oooo such that $(d, c_k) \in R^*_H$ and $d \not \in U^H_X$ and $c_k \not \in U^H_X$ \\ 
 \oooo We know $c \in \mathit{reads}(h|_X(c_k)) = \IfThenElse{c_k \in U^H_X}{\emptyset}{\mathit{reads}(h(c_k))}$ \\
 \oooo Since $c_k \not \in U^H_X$, we know $c \in \mathit{reads}(h(c_k))$, so $(c_k, c) \in R_H$ \\
 \oooo Hence $(d, c) \in R^*_H$ \\
@@ -707,15 +708,15 @@ Then, it is the case that $(d,c) \in R^*_{H|_X}$ if and only if $(d,c) \in R^*_H
 \oo $\Leftarrow$: \\
 \ooo Assume $(d,c) \in R^*_H \land c \not\in U^H_X \land d \not\in U^H_X$. \\
 \ooo So we have a sequence $(d, \ldots, c)$ with each adjacent pair, if any, in $R_H$ \\
-\ooo Now, we will show $(d, \ldots, c) \in R^*_{H|X}$ by induction on the number of steps from $d$ to $c$ \\
+\ooo Now, we will show $(d, c) \in R^*_{H|X}$ by induction on the number of steps from $d$ to $c$ \\
 \ooo Case $n = 0$: \\
-\oooo So $d = c \in V_{H|_X}$. \\
+\oooo So $d = c \in V_H$. \\
 \oooo Since $d \not\in U^H_X$, we know $d \in V_{H|_X}$ \\
 \oooo Hence $(d,c) \in R^*_{H|_X}$ \\
 \ooo Case $n = k+1$: \\
 \oooo We have $(d, \ldots, c_k, c)$ such that $(d,c_k) \in R^*_H \land (c_k,c) \in R_H \land c \not\in U^H_X \land d \not\in U^H_X$. \\
 \oooo If $c_k \in U^H_X$ then $d \in U^H_X$, which is a contradiction, and so $c_k \not\in U^H_X$ \\
-\oooo By induction, $(d,   c_k) \in R^*_H$ \\
+\oooo By induction, $(d,   c_k) \in R^*_{H|_X}$ \\
 \oooo Since $(c_k,c) \in R_H$, we know $c \in \mathit{reads}(h(c_k))$ \\ 
 \oooo Since $c_k \not\in U^H_X$, it follows $c \in \IfThenElse{c_k \in U^H_X}{\emptyset}{\mathit{reads}(h(c_k))}$ \\
 \oooo Hence $c \in \mathit{reads }(h|_X(c_k))$ \\
