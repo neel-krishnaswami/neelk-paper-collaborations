@@ -133,7 +133,7 @@ their documentation.
   Each iterator also has its own traversal state, which tracks how 
   many of the collection's elements it has yet to yield. 
 
-\item Iterator can be constructed from other iterators, and these
+\item Iterators can be constructed from other iterators, and these
   composite iterators depend on the traversal states of all of the
   iterators they are constructed from. As a result, they also depend
   on the state of each collection each constituent iterator depends
@@ -1259,7 +1259,7 @@ hypotheses, and proceed with the proof as follows:
                                                     S \cup S' = S_1 \cup S_2 \;\land $
 \nextline $\;\;\mergemath\;f\;xs\;xs' = \mergemath\;f\;xs_1\;xs_2 \land 
                                                     a = \Merge(f, i, i')\}$ 
-\nextline $\setof{\exists i,i'.\; \iterpred_\gamma(\Merge(f, i, i'), \mergemath\;f\;xs\;xs', S \cup S')}$ 
+\nextline $\setof{\exists i,i'.\; \iterpred_\gamma(\Merge(f, i, i'), \mergemath\;f\;xs\;xs', S \cup S') \wedge a = Merge(f,i,i')}$ 
 \nextline $\setof{\iterpred_\alpha(a, \mergemath\;f\;xs\;xs', S \cup S')}$
 
 \end{specification}
@@ -1375,11 +1375,11 @@ follows:
 \nextline \> \> $\Run\;\ctext{if}($\=$p\;z,$ 
 \nextline \> \> \> $\{p\;z = \True \land ys = z\cdot zs \land \iterpred_\alpha(i', zs, S) * \mathit{colls}(S) \land v = \Some(z)\}$
 \nextline \> \> \> Hence $xs = \mathit{filter}\;p\;ys = z\cdot(\mathit{filter}\;p\;zs)$. So 
-\nextline \> \> \> $\{xs = z\cdot(\mathit{filter}\;p\;zs) \land \iterpred_\alpha(i', zs, S) * \mathit{colls}(S)\}$
+\nextline \> \> \> $\{xs = z\cdot(\mathit{filter}\;p\;zs) \land \iterpred_\alpha(i', zs, S) * \mathit{colls}(S) \wedge v = Some(z)\}$
 \nextline \> \> \> $\{\exists xs'.\; xs = z\cdot xs' \land \iterpred_\alpha(\Filter(p, i'), xs', S) * \mathit{colls}(S) \land v = \Some(z)\}$
 \nextline \> \> \> $\{\exists xs'.\; xs = z\cdot xs' \land \iterpred_\alpha(i, xs', S) * \mathit{colls}(S) \land v = \Some(z)\}$
 \nextline \> \> \> $[v],$
-\nextline \> \> \> $\{a.\; \exists z, zs.\; xs = z\cdot zs \land a = \Some(z) \land \iterpred_\alpha(i, zs, S) * \mathit{colls}(S) \land v = \Some(z)\}$
+\nextline \> \> \> $\{a.\; \exists z, zs.\; xs = z\cdot zs \land a = \Some(z) \land \iterpred_\alpha(i, zs, S) * \mathit{colls}(S) \}$
 \nextline \> \> \> $\{a.\;$\=$((a = \None \land xs = \epsilon \land \iterpred(i, xs, S)) \; \vee$ 
 \nextline \> \> \>         \>$(\exists z, zs.\; a = \Some(z) \land xs = z\cdot zs \land \iterpred(i, zs, S))) \;*$ 
 \nextline \> \> \>         \>$\mathit{colls}(S)\}$
@@ -1428,14 +1428,14 @@ annotated proof as follows:
                   S = S_1 \cup S_2 \land$ 
 \\ \>\;     $[(ys = \epsilon \land v_1 = \None \land \iterpred_\beta(i_1, ys, S_1))$ 
 \\ \>\;\;    $\vee\; (\exists b, bs.\; ys = b\cdot bs \land v_1 = \Some(b) \land 
-                                \iterpred_\alpha(i, bs, S_1))] \;*$ 
+                                \iterpred_\alpha(i_1, bs, S_1))] \;*$ 
 \\ \>\;     $\iterpred_\gamma(i_2, zs, S_2) * 
              \mathit{colls}(S_1) * \mathit{colls}(S - S_1)$\}
 \nextline \{$xs = \mathit{map2}\;f\;ys\;zs \land 
                   S = S_1 \cup S_2 \land$ 
 \\ \>\;     $[(ys = \epsilon \land v_1 = \None \land \iterpred_\beta(i_1, ys, S_1))$ 
 \\ \>\;\;    $\vee\; (\exists b, bs.\; ys = b\cdot bs \land v_1 = \Some(b) \land 
-                                \iterpred_\alpha(i, bs, S_1))] \;*$ 
+                                \iterpred_\alpha(i_1, bs, S_1))] \;*$ 
 \\ \>\;     $\iterpred_\gamma(i_2, zs, S_2) * 
              \mathit{colls}(S_2) * \mathit{colls}(S - S_2)$\}
 \nextline $\letv{v_2}{\nextiter_\gamma(i_2)}{}$ 
@@ -1558,7 +1558,7 @@ annotated proof as follows:
 $\nextiter$ (lines 18-33 of Figure~\ref{iterator-implementation})
 recursively walks down the structure of the iterator tree, and
 combines the results from the leaves upwards.  The base case is the
-$\One(ii)$ case (lines 18-22). The iterator pointer is
+$\One(i)$ case (lines 18-22). The iterator pointer is
 doubly-dereferenced, and then the contents examined. If the end of the
 list has been reached and the contents are $\Nil$, then $\None$ is
 returned to indicate there are no more elements. Otherwise, the
@@ -1706,7 +1706,7 @@ make use of existentially-quantified \emph{state}.
 \nextline \> \>\>\> $\ctext{run}\;\ctext{case}(x,$\=
 $\None \to [$\=$\ctext{letv}\; r = [\newref{\ctext{char} \times \ctext{font}}{c,f}] \;\ctext{in}$
 \nextline \> \>\>\>\>\> $\ctext{letv } \_ = \ctext{update}(t, c, r) \;\ctext{ in }\;r],$ 
-\nextline \> \>\>\>\> $\Some(r) \to [r])] \;\ctext{in}$ 
+\nextline \> \>\>\>\> $\Some(r) \to [r])]] \;\ctext{in}$ 
 \nextline \> \> $\ctext{letv\;}\mathit{getdata} = [\lambda r.\; [!r]] \;\ctext{in}$ 
 \nextline \> \> $(\mathit{newglyph}, \mathit{getdata})]]$
 \\
@@ -1798,7 +1798,7 @@ them with whatever actual terms in context that we need to use.
 \oo Assume we are in the precondition state $J(f, t, h)$ \\
 \oo Hence we are in the precondition state $\mathit{table}(t, h) * \forall^{*}c \in \domain{h}.\;h(c) \pointsto (c,f)$ \\
 \oo $\letv{x}{\ctext{lookup}(t,c)}{}$ \\
-\oo We now have $\mathit{table}(t, h) * \forall^{*}c \in \domain{h}.\;h(c) \pointsto (c,f)$  \\
+\oo We now have $\mathit{table}(t, h) * \forall^{*}c' \in \domain{h}.\;h(c) \pointsto (c',f)$  \\
 \ox $\land\; ((c \not \in \domain{h} \land x = \None) \vee (c \in \domain{h} \land x = \Some(h(c))))$ \\
 \oo $\mathsf{case}(x,$ \\
 \ooo $\None \to$ \\
@@ -1816,7 +1816,7 @@ them with whatever actual terms in context that we need to use.
 \ooo $\Some(r) \to $ \\
 \oooo We know $x = \Some(r)$, \\
 \oooo Hence $\mathit{table}(t, h) * \forall^{*}c' \in \domain{h}.\;h(c') \pointsto (c',f) \land x = \Some(h(c))$\\
-\oooo So $J(f, t, h) \land h(c) = r$
+\oooo So $J(f, t, h) \land h(c) = r$ \\
 \oooo $[r])$ \\
 \oooo Hence $a.\; J(f, t, h) \land h(c) = a$ \\ 
 \oooo Choose the witness to the existential to be $h$, yielding \\
@@ -1879,7 +1879,7 @@ of the function.
           {a:\chartp \times \fonttp}
           {J(f, t, \sigma) \land a = (c, f)}$\\
 \oo Then since valid specs allow us to introduce validity assertions, we know  \\
-\ox $J(f, t, []) \land \validprop{\mbox{Flyweight}((\semfun{\sigma}{J(f,t,\sigma)}, \mathit{newglyph}, \mathit{getdata}, f)}$  \\
+\ox $J(f, t, []) \land \validprop{\mbox{Flyweight}(\semfun{\sigma}{J(f,t,\sigma)}, \mathit{newglyph}, \mathit{getdata}, f)}$  \\
 \oo We can existentially quantify, choosing a witness $I' = \semfun{\sigma}{J(f,t,\sigma)}$ to get \\
 \ox $\exists I'.\; I'([]) \land \validprop{\mbox{Flyweight}(I', \mathit{newglyph}, \mathit{getdata}, f)}$  \\
 \oo $(\mathit{newglyph}, \mathit{getdata})]$\\
@@ -2214,7 +2214,7 @@ For all $k$, $fs$  and $os$ we have
 \ooo This is equivalent to $\mathit{Good}(os') \land \mathit{list}(fs, \mathit{map}\;\snd{}\;os) * \mathit{obs\_at}(os, k)$ \\
 \ooo Since we know $\mathit{Good}(os)$, we can strengthen this to  \\
 \ooo  $\mathit{Good}(os) \land \mathit{list}(fs, \mathit{map}\;\snd{}\;os) * \mathit{obs\_at}(os, k)$ \\
-\oo Hence $\mathit{Good} \land \mathit{list}(fs, \mathit{map}\;\snd{}\;os) * \mathit{obs\_at}(os, k)$
+\oo Hence $\mathit{list}(fs, \mathit{map}\;\snd{}\;os) * \mathit{obs\_at}(os, k)$
 \end{tabbedproof}
 \end{proof}
 
@@ -2311,3 +2311,7 @@ Now, the proof of the $\mathsf{broadcast}$ function is quite easy:
 
 
 
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "thesis"
+%%% End: 

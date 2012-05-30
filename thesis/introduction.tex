@@ -54,9 +54,9 @@ In this dissertation, I develop a model higher-order imperative
 programming language, and develop a program logic for it. I
 demonstrate the power of my program logic by verifying a series of
 interesting examples, culminating in the correctness proof of a
-library for event-driven programming, which despite an imperative (and
-higher-order) implementation, nevertheless permits clients to reason
-about it using simple and powerful equational reasoning principles.
+library for the union-find algorithm. Despite the fact that this is a
+program making heavy and essential use of aliasing, clients may
+nevertheless reason using the simple style of separation logic.
 
 \section{Programming Language}
 
@@ -277,37 +277,38 @@ custom modal operators I call \emph{ramifications}. These operators
 commute with the custom separating conjunction, and so allow local
 reasoning even when global effects are in play.
 
-\subsection{Verifying Event-Driven Programs}
+% \subsection{Verifying Event-Driven Programs}
+% 
+% In Chapter 6, I give the culminating examples of the proof methodology
+% I have developed in support of my thesis. This chapter divides into 
+% two main parts. 
+% 
+% In the first part, I implement and prove the correctness of an
+% imperative dataflow graph implementation. In a dataflow graph, we have
+% a collection of cells, which each contain a piece of code, which is
+% executed when the cell is asked for a value. Cells memoize their
+% values and remember their dependencies, so that when they are asked
+% again for a value, they will not unnecessarily recompute a
+% value. Conversely, if a cell is modified, it will invalidate its
+% memoized value and transitively invalidate anything that depended on
+% that value.  The specification of the dataflow graph relies crucially
+% on ramifications in order to modularly specify dependencies and the
+% effects of modifications to the graph.
+% 
+% Then, in the second part, I use this dataflow graph implementation to
+% in turn implement a library for functional reactive
+% programming~\cite{frp}. I prove the correctness of the imperative
+% implementation relative to a mathematically simple (but unusably
+% inefficient) semantics somewhat in the style of realizability, which
+% allows programmers to reason about the imperative implementation as if
+% it were a pure one. 
+% 
+% Furthermore, this correctness proof relies only on the interface to
+% the the dataflow graph library, and not to its implementation. This
+% demonstrates that very sophisticated libraries can still be factored
+% into modular parts, and moreover that the correctness proofs can be
+% cleanly factored as well. 
 
-In Chapter 6, I give the culminating examples of the proof methodology
-I have developed in support of my thesis. This chapter divides into 
-two main parts. 
-
-In the first part, I implement and prove the correctness of an
-imperative dataflow graph implementation. In a dataflow graph, we have
-a collection of cells, which each contain a piece of code, which is
-executed when the cell is asked for a value. Cells memoize their
-values and remember their dependencies, so that when they are asked
-again for a value, they will not unnecessarily recompute a
-value. Conversely, if a cell is modified, it will invalidate its
-memoized value and transitively invalidate anything that depended on
-that value.  The specification of the dataflow graph relies crucially
-on ramifications in order to modularly specify dependencies and the
-effects of modifications to the graph.
-
-Then, in the second part, I use this dataflow graph implementation to
-in turn implement a library for functional reactive
-programming~\cite{frp}. I prove the correctness of the imperative
-implementation relative to a mathematically simple (but unusably
-inefficient) semantics somewhat in the style of realizability, which
-allows programmers to reason about the imperative implementation as if
-it were a pure one. 
-
-Furthermore, this correctness proof relies only on the interface to
-the the dataflow graph library, and not to its implementation. This
-demonstrates that very sophisticated libraries can still be factored
-into modular parts, and moreover that the correctness proofs can be
-cleanly factored as well. 
 
 \section{Related Work}
 
@@ -487,15 +488,17 @@ observer actions plus their invariants and specifications, directly as
 a higher-order predicate.
 
 The ability to make use of full higher-order logic turns out to be
-very important for more complex examples. This initial verification of
-the subject-observer pattern turned out to be inadequate for real use,
-which lead to my development of embedded separation logics for
-verifying programs making use of heavily aliased mutable state (as in
-Chapter 5 and 6). There, I make free use of the full machinery of
-higher-order logic to define custom logics as index
-domains. Furthermore, the specification in chapter 6 relies
-essentially on the ability to work compositionally with higher-order
-programs, without having to defunctionalize a whole program.
+very important for more complex examples. The ability to freely add
+new definitions to the logic permits the use of \emph{embedded
+  separation logics} for verifying programs making use of heavily
+aliased mutable state (as in the union-find example of Chapter
+5). There, I make free use of the full machinery of higher-order logic
+to define custom logics as index domains. 
+
+%Furthermore, the
+%specification in chapter 6 relies essentially on the ability to work
+%compositionally with higher-order programs, without having to
+%defunctionalize a whole program.
 
 \subsubsection{Hoare Type Theory}
 
@@ -548,8 +551,7 @@ In the original formulation of HTT, which is predicative, this causes
 size issues to arise, since a heap at universe level $n$ can only
 contain commands which manipulate heaps at universe level $n-1$ or
 lower. As a result, examples such as the subject-observer example in
-Chapter 4 or the dataflow network example of Chapter 6 cannot be
-written in predicative HTT. 
+Chapter 4 cannot be written in predicative HTT.
 
 This difficulty has been overcome by Petersen~\emph{et al.}, who give
 an impredicative model of Hoare Type Theory. However, Svendsen
@@ -678,10 +680,9 @@ dependencies are known statically enough to include them in the model
 programs --- again, a limitation which is problematic in the case of
 GUIs.
 
-In Chapter 6, I give a better specification of callbacks which is
-modular and handles chains of notifications gracefully. This
-specification is very much unlike any of the other specifications for
-subject-observer that I have seen. 
+In a paper not part of this thesis~\cite{tldi10}, I use the logic
+developed here to give a better specification of callbacks which is
+modular and handles chains of notifications gracefully.
 
 
 
