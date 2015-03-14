@@ -1,0 +1,1 @@
+This is a source repo to give coauthors access to my LaTeX sources. There should be a directory for each paper.
